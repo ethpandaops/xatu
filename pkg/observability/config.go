@@ -3,6 +3,7 @@ package observability
 import (
 	"crypto/tls"
 	"fmt"
+	"math"
 
 	"github.com/ethpandaops/beacon/pkg/human"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -26,8 +27,9 @@ type TracingConfig struct {
 }
 
 func (t *TracingConfig) Validate() error {
-	if t.Sampling.Rate < 0 || t.Sampling.Rate > 1 {
-		return fmt.Errorf("sampling.rate must be between 0 and 1, got %f", t.Sampling.Rate)
+	r := t.Sampling.Rate
+	if math.IsNaN(r) || math.IsInf(r, 0) || r < 0 || r > 1 {
+		return fmt.Errorf("sampling.rate must be a finite number between 0 and 1, got %f", r)
 	}
 
 	return nil

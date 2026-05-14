@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -40,7 +41,7 @@ func NewItemExporter(name string, config *Config, log observability.ContextualLo
 		log:    log,
 
 		client: &http.Client{
-			Transport: t,
+			Transport: otelhttp.NewTransport(t),
 			Timeout:   config.ExportTimeout,
 		},
 		compressor: &Compressor{Strategy: config.Compression},
@@ -48,7 +49,7 @@ func NewItemExporter(name string, config *Config, log observability.ContextualLo
 }
 
 func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
-	_, span := observability.Tracer().Start(ctx, "HTTPItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
+	ctx, span := observability.Tracer().Start(ctx, "HTTPItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
 	defer span.End()
 
 	e.log.WithField("events", len(items)).WithContext(ctx).Debug("Sending batch of events to HTTP sink")

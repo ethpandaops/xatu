@@ -322,7 +322,7 @@ func (o *xatuClickHouseOutput) processGroup(
 	}
 
 	links := make([]trace.Link, 0, len(g.messages))
-	seen := make(map[trace.SpanID]struct{}, len(g.messages))
+	seen := make(map[[24]byte]struct{}, len(g.messages))
 
 	for _, gm := range g.messages {
 		if gm.traceCtx == nil {
@@ -334,19 +334,27 @@ func (o *xatuClickHouseOutput) processGroup(
 			continue
 		}
 
-		if _, dup := seen[sc.SpanID()]; dup {
+		var key [24]byte
+
+		tid := sc.TraceID()
+		sid := sc.SpanID()
+		copy(key[:16], tid[:])
+		copy(key[16:], sid[:])
+
+		if _, dup := seen[key]; dup {
 			continue
 		}
 
-		seen[sc.SpanID()] = struct{}{}
+		seen[key] = struct{}{}
 
 		links = append(links, trace.Link{SpanContext: sc})
 	}
 
 	ctx, span := observability.Tracer().Start(ctx, "consumoor.WriteGroup",
-		trace.WithSpanKind(trace.SpanKindProducer),
+		trace.WithSpanKind(trace.SpanKindClient),
 		trace.WithLinks(links...),
 		trace.WithAttributes(
+			attribute.String("db.system", "clickhouse"),
 			attribute.Int("messaging.batch.message_count", len(g.messages)),
 			attribute.Int("clickhouse.tables", len(tableEvents)),
 		),

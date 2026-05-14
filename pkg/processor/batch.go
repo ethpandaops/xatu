@@ -268,6 +268,11 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 }
 
 // exportWithTimeout exports items with a timeout.
+//
+// Items are partitioned by their caller's trace_id before export so each
+// ExportItems call carries the correct trace context for its items.
+// Mixed-trace batches produce one ExportItems call per trace; single-trace
+// batches (the common case) stay one call.
 func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBatch []*TraceableItem[T]) error {
 	if len(itemsBatch) == 0 {
 		return nil
@@ -283,49 +288,34 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 		defer cancel()
 	}
 
-	exportCtx := exportContext(ctx, itemsBatch)
-
-	// Since the batch processor filters out nil items upstream,
-	// we can optimize by pre-allocating the full slice size.
-	// Worst case is a few wasted allocations if any nil items slip through.
-	items := make([]*T, len(itemsBatch))
-
-	for i, item := range itemsBatch {
-		if item == nil {
-			bvp.log.WithContext(exportCtx).Warnf("Attempted to export a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
-
-			continue
-		}
-
-		items[i] = item.item
-	}
+	partitions := partitionByTrace(ctx, itemsBatch, bvp.log)
 
 	startTime := time.Now()
 
-	err := bvp.e.ExportItems(exportCtx, items)
+	for _, p := range partitions {
+		err := bvp.e.ExportItems(p.ctx, p.items)
 
-	duration := time.Since(startTime)
-
-	bvp.metrics.ObserveExportDuration(bvp.name, duration)
-
-	if err != nil {
-		bvp.metrics.IncItemsFailedBy(bvp.name, float64(len(items)))
-	} else {
-		bvp.metrics.IncItemsExportedBy(bvp.name, float64(len(items)))
-		bvp.metrics.ObserveBatchSize(bvp.name, float64(len(items)))
-	}
-
-	for _, item := range itemsBatch {
-		if item.errCh != nil {
-			item.errCh <- err
-			close(item.errCh)
+		if err != nil {
+			bvp.metrics.IncItemsFailedBy(bvp.name, float64(len(p.items)))
+		} else {
+			bvp.metrics.IncItemsExportedBy(bvp.name, float64(len(p.items)))
+			bvp.metrics.ObserveBatchSize(bvp.name, float64(len(p.items)))
 		}
 
-		if item.completedCh != nil {
-			item.completedCh <- struct{}{}
-			close(item.completedCh)
+		for _, ti := range p.traceItems {
+			if ti.errCh != nil {
+				ti.errCh <- err
+				close(ti.errCh)
+			}
+
+			if ti.completedCh != nil {
+				ti.completedCh <- struct{}{}
+				close(ti.completedCh)
+			}
 		}
 	}
+
+	bvp.metrics.ObserveExportDuration(bvp.name, time.Since(startTime))
 
 	return nil
 }
@@ -520,32 +510,70 @@ func (bvp *BatchItemProcessor[T]) drainQueue() {
 	close(bvp.queue)
 }
 
-// exportContext builds the context an exporter sees: trace context
-// (and any baggage) from the first item that carried one, combined
-// with the worker's cancellation/timeout chain so shutdown still
-// propagates. Items without a caller context fall through to the
-// worker context.
+// exportPartition is a sub-batch of items that share one trace context.
+type exportPartition[T any] struct {
+	ctx        context.Context //nolint:containedctx // export ctx for this partition's trace
+	items      []*T
+	traceItems []*TraceableItem[T]
+}
+
+// partitionByTrace groups items by their caller's trace_id so each
+// downstream ExportItems call carries the correct trace context. Items
+// without a valid trace context all share the no-trace partition.
 //
-// For batches that bridge multiple traces, only the first item's
-// trace becomes the parent; all other source traces are not linked
-// here. That edge case is acceptable for xatu's current shape (Write
-// is typically called per single calling trace) and can be revisited
-// with Span Links if cross-trace batching becomes common.
-func exportContext[T any](workerCtx context.Context, itemsBatch []*TraceableItem[T]) context.Context {
+// The partition's ctx is derived from workerCtx (preserving cancellation
+// and timeout) with the partition's trace span context grafted on.
+func partitionByTrace[T any](workerCtx context.Context, itemsBatch []*TraceableItem[T], log observability.ContextualLogger) []*exportPartition[T] {
+	byTrace := make(map[trace.TraceID]*exportPartition[T], 1)
+	noTrace := (*exportPartition[T])(nil)
+
 	for _, item := range itemsBatch {
-		if item == nil || item.callerCtx == nil {
+		if item == nil {
+			log.WithContext(workerCtx).Warnf("Attempted to export a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
+
 			continue
 		}
 
-		sc := trace.SpanContextFromContext(item.callerCtx)
-		if !sc.IsValid() {
-			continue
+		var sc trace.SpanContext
+		if item.callerCtx != nil {
+			sc = trace.SpanContextFromContext(item.callerCtx)
 		}
 
-		return trace.ContextWithSpanContext(workerCtx, sc)
+		var partition *exportPartition[T]
+
+		if sc.IsValid() {
+			tid := sc.TraceID()
+
+			partition = byTrace[tid]
+			if partition == nil {
+				partition = &exportPartition[T]{
+					ctx: trace.ContextWithSpanContext(workerCtx, sc),
+				}
+				byTrace[tid] = partition
+			}
+		} else {
+			if noTrace == nil {
+				noTrace = &exportPartition[T]{ctx: workerCtx}
+			}
+
+			partition = noTrace
+		}
+
+		partition.items = append(partition.items, item.item)
+		partition.traceItems = append(partition.traceItems, item)
 	}
 
-	return workerCtx
+	out := make([]*exportPartition[T], 0, len(byTrace)+1)
+
+	if noTrace != nil {
+		out = append(out, noTrace)
+	}
+
+	for _, p := range byTrace {
+		out = append(out, p)
+	}
+
+	return out
 }
 
 func recoverSendOnClosedChan() {

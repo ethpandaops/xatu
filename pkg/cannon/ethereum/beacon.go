@@ -13,21 +13,21 @@ import (
 	ehttp "github.com/ethpandaops/go-eth2-client/http"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/services"
-	"github.com/ethpandaops/xatu/pkg/networks"
-	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/singleflight"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/services"
+	"github.com/ethpandaops/xatu/pkg/networks"
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 type BeaconNode struct {
 	config *Config
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 
 	beacon  beacon.Node
 	metrics *Metrics
@@ -47,7 +47,7 @@ type BeaconNode struct {
 	validatorsPreloadSem  chan struct{}
 }
 
-func NewBeaconNode(ctx context.Context, name string, config *Config, log logrus.FieldLogger) (*BeaconNode, error) {
+func NewBeaconNode(ctx context.Context, name string, config *Config, log observability.ContextualLogger) (*BeaconNode, error) {
 	namespace := "xatu_cannon"
 
 	opts := *beacon.
@@ -121,14 +121,14 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 			wg.Add(1)
 
 			service.OnReady(ctx, func(ctx context.Context) error {
-				b.log.WithField("service", service.Name()).Info("Service is ready")
+				b.log.WithField("service", service.Name()).WithContext(ctx).Info("Service is ready")
 
 				wg.Done()
 
 				return nil
 			})
 
-			b.log.WithField("service", service.Name()).Info("Starting service")
+			b.log.WithField("service", service.Name()).WithContext(ctx).Info("Starting service")
 
 			if err := service.Start(ctx); err != nil {
 				errs <- fmt.Errorf("failed to start service: %w", err)
@@ -141,7 +141,7 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 			errs <- errors.New("unknown network detected. Please override the network name via config if you are using a custom network")
 		}
 
-		b.log.Info("All services are ready")
+		b.log.WithContext(ctx).Info("All services are ready")
 
 		for _, callback := range b.onReadyCallbacks {
 			if err := callback(ctx); err != nil {
@@ -155,7 +155,7 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 	}
 
 	b.blockCache.OnEviction(func(ctx context.Context, reason ttlcache.EvictionReason, item *ttlcache.Item[string, *spec.VersionedSignedBeaconBlock]) {
-		b.log.WithField("identifier", item.Key()).WithField("reason", reason).Trace("Block evicted from cache")
+		b.log.WithField("identifier", item.Key()).WithField("reason", reason).WithContext(ctx).Trace("Block evicted from cache")
 	})
 
 	go b.blockCache.Start()
@@ -165,7 +165,7 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 			for identifier := range b.blockPreloadChan {
 				b.metrics.SetPreloadBlockQueueSize(string(b.Metadata().Network.Name), len(b.blockPreloadChan))
 
-				b.log.WithField("identifier", identifier).Trace("Preloading block")
+				b.log.WithField("identifier", identifier).WithContext(ctx).Trace("Preloading block")
 
 				//nolint:errcheck // We don't care about errors here.
 				b.GetBeaconBlock(ctx, identifier, true)
@@ -175,7 +175,7 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 
 	go func() {
 		for identifier := range b.validatorsPreloadChan {
-			b.log.WithField("identifier", identifier).Trace("Preloading validators")
+			b.log.WithField("identifier", identifier).WithContext(ctx).Trace("Preloading validators")
 
 			//nolint:errcheck // We don't care about errors here.
 			b.GetValidators(ctx, identifier)
@@ -343,7 +343,7 @@ func (b *BeaconNode) GetValidators(ctx context.Context, identifier string) (map[
 
 	// Check the cache first.
 	if item := b.validatorsCache.Get(identifier); item != nil {
-		b.log.WithField("identifier", identifier).Debug("Validator cache hit")
+		b.log.WithField("identifier", identifier).WithContext(ctx).Debug("Validator cache hit")
 
 		span.SetAttributes(attribute.Bool("cached", true))
 

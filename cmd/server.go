@@ -4,9 +4,12 @@ import (
 	"os"
 
 	"github.com/creasty/defaults"
-	"github.com/ethpandaops/xatu/pkg/server"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v3"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/server"
 )
 
 var (
@@ -113,6 +116,16 @@ var serverCmd = &cobra.Command{
 				log.Fatal(errr)
 			}
 		}
+
+		shutdownObs, err := observability.Setup(cmd.Context(), log,
+			xatu.WithModule(xatu.ModuleName_SERVER), xatu.Short(),
+			&config.Tracing,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer shutdownObservability(shutdownObs)
 
 		server, err := server.NewXatu(cmd.Context(), log, config, o)
 		if err != nil {

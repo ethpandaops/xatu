@@ -3,22 +3,22 @@ package node
 import (
 	"context"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/persistence"
 	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
-	"github.com/sirupsen/logrus"
 )
 
 type Record struct {
-	log         logrus.FieldLogger
+	log         observability.ContextualLogger
 	config      *Config
 	persistence *persistence.Client
 
 	proc *processor.BatchItemProcessor[node.Record]
 }
 
-func NewRecord(ctx context.Context, log logrus.FieldLogger, conf *Config, p *persistence.Client) (*Record, error) {
+func NewRecord(ctx context.Context, log observability.ContextualLogger, conf *Config, p *persistence.Client) (*Record, error) {
 	return &Record{
 		log:         log.WithField("component", "node_record"),
 		config:      conf,
@@ -53,17 +53,17 @@ func (r *Record) Start(ctx context.Context) error {
 func (r *Record) Stop(ctx context.Context) error {
 	if r.proc != nil {
 		if err := r.proc.Shutdown(ctx); err != nil {
-			r.log.WithError(err).Error("failed to shutdown processor")
+			r.log.WithError(err).WithContext(ctx).Error("failed to shutdown processor")
 		}
 	}
 
-	r.log.Info("Component stopped")
+	r.log.WithContext(ctx).Info("Component stopped")
 
 	return nil
 }
 
 func (r *Record) Write(ctx context.Context, record *node.Record) {
 	if err := r.proc.Write(ctx, []*node.Record{record}); err != nil {
-		r.log.WithError(err).Error("failed to write record")
+		r.log.WithError(err).WithContext(ctx).Error("failed to write record")
 	}
 }

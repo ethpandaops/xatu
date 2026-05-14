@@ -3,8 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/spf13/cobra"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 var versionCmd = &cobra.Command{

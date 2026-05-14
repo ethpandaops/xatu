@@ -8,15 +8,16 @@ import (
 	"time"
 
 	"github.com/ClickHouse/ch-go"
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type chTableWriter struct {
-	log       logrus.FieldLogger
+	log       observability.ContextualLogger
 	table     string
 	baseTable string
 	database  string
@@ -52,7 +53,7 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 	start := time.Now()
 
 	if tw.newBatch == nil {
-		tw.log.WithField("events", len(events)).
+		tw.log.WithField("events", len(events)).WithContext(ctx).
 			Error("No columnar batch factory registered")
 		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(len(events)))
 
@@ -133,7 +134,7 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 	if flattenErrs > 0 && tw.config.SkipFlattenErrors {
 		tw.log.WithError(lastErr).
 			WithField("failed", flattenErrs).
-			WithField("total", len(events)).
+			WithField("total", len(events)).WithContext(ctx).
 			Warn("Skipped unflattenable events")
 	}
 
@@ -171,7 +172,7 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 
 	if !tw.insertQueryOK {
 		tw.log.WithError(tw.queryInitErr).
-			WithField("rows", rows).
+			WithField("rows", rows).WithContext(ctx).
 			Error("Invalid insert settings")
 		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(rows))
 
@@ -186,7 +187,7 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 		Input: input,
 	}, nil); err != nil {
 		tw.log.WithError(err).
-			WithField("rows", rows).
+			WithField("rows", rows).WithContext(ctx).
 			Error("Failed to send ch-go batch")
 		tw.metrics.WriteErrors().WithLabelValues(tw.table).Add(float64(rows))
 
@@ -204,7 +205,7 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 
 	tw.log.WithField("rows", rows).
 		WithField("events", len(events)).
-		WithField("duration", duration).
+		WithField("duration", duration).WithContext(ctx).
 		Debug("Flushed ch-go batch")
 
 	return invalidEvents, nil

@@ -10,10 +10,11 @@ import (
 	"github.com/redpanda-data/benthos/v4/public/service"
 	_ "github.com/redpanda-data/connect/v4/public/components/kafka"
 
+	yaml "gopkg.in/yaml.v3"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/router"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
-	"github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v3"
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 const benthosOutputType = "xatu_clickhouse"
@@ -34,8 +35,7 @@ type GroupRetryConfig struct {
 // (Start/Stop). When false the caller is responsible for the writer lifecycle,
 // which is the case when multiple streams share a single writer.
 func NewBenthosStream(
-	log logrus.FieldLogger,
-	logLevel string,
+	log observability.ContextualLogger, logLevel string,
 	kafkaConfig *KafkaConfig,
 	metrics *telemetry.Metrics,
 	routeEngine *router.Engine,

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"net"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -16,12 +16,12 @@ const (
 )
 
 type BeaconP2PAttestation struct {
-	log           logrus.FieldLogger
+	log           observability.ContextualLogger
 	event         *xatu.DecoratedEvent
 	geoipProvider geoip.Provider
 }
 
-func NewBeaconP2PAttestation(log logrus.FieldLogger, event *xatu.DecoratedEvent, geoipProvider geoip.Provider) *BeaconP2PAttestation {
+func NewBeaconP2PAttestation(log observability.ContextualLogger, event *xatu.DecoratedEvent, geoipProvider geoip.Provider) *BeaconP2PAttestation {
 	return &BeaconP2PAttestation{
 		log:           log.WithField("event", BeaconP2PAttestationType),
 		event:         event,
@@ -49,7 +49,7 @@ func (b *BeaconP2PAttestation) Filter(_ context.Context) bool {
 func (b *BeaconP2PAttestation) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
 	additionalData, ok := b.event.Meta.Client.AdditionalData.(*xatu.ClientMeta_BeaconP2PAttestation)
 	if !ok {
-		b.log.Error("failed to cast client additional data")
+		b.log.WithContext(ctx).Error("failed to cast client additional data")
 
 		return meta
 	}
@@ -61,7 +61,7 @@ func (b *BeaconP2PAttestation) AppendServerMeta(ctx context.Context, meta *xatu.
 		if ip != nil && b.geoipProvider != nil {
 			geoipLookupResult, err := b.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 			if err != nil {
-				b.log.WithField("ip", ipAddress).WithError(err).Warn("failed to lookup geoip data")
+				b.log.WithField("ip", ipAddress).WithError(err).WithContext(ctx).Warn("failed to lookup geoip data")
 			}
 
 			if geoipLookupResult != nil {

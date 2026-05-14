@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type EventsChainReorg struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewEventsChainReorg(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsChainReorg {
+func NewEventsChainReorg(log observability.ContextualLogger, event *xatu.DecoratedEvent) *EventsChainReorg {
 	return &EventsChainReorg{
 		log:   log.WithField("event", EventsChainReorgType),
 		event: event,

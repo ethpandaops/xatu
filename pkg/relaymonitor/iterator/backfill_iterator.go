@@ -8,14 +8,15 @@ import (
 
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/pkg/errors"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/coordinator"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 type BackfillIterator struct {
-	log              logrus.FieldLogger
+	log              observability.ContextualLogger
 	relayMonitorType xatu.RelayMonitorType
 	coordinator      coordinator.Client
 	wallclock        *ethwallclock.EthereumBeaconChain
@@ -28,8 +29,7 @@ type BackfillIterator struct {
 }
 
 func NewBackfillIterator(
-	log logrus.FieldLogger,
-	networkName, clientName string,
+	log observability.ContextualLogger, networkName, clientName string,
 	relayMonitorType xatu.RelayMonitorType,
 	relayName string,
 	coordinatorClient *coordinator.Client,
@@ -82,7 +82,7 @@ func (b *BackfillIterator) Next(ctx context.Context) (*phase0.Slot, error) {
 
 	// Check if we've reached the target
 	if backfillSlot <= uint64(b.toSlot) {
-		b.log.Debug("Backfill complete")
+		b.log.WithContext(ctx).Debug("Backfill complete")
 
 		return nil, nil //nolint:nilnil // nil slot indicates backfill complete
 	}
@@ -120,7 +120,7 @@ func (b *BackfillIterator) NextBatch(ctx context.Context) (*BatchRequest, error)
 
 	// Check if we've reached the target
 	if currentSlot <= uint64(b.toSlot) {
-		b.log.Debug("Backfill complete")
+		b.log.WithContext(ctx).Debug("Backfill complete")
 
 		return nil, nil //nolint:nilnil // nil indicates backfill complete
 	}
@@ -146,7 +146,7 @@ func (b *BackfillIterator) UpdateLocation(ctx context.Context, slot phase0.Slot)
 	// Create new location with updated slot
 	newLocation := b.createLocation(uint64(slot))
 
-	b.log.WithField("slot", slot).Debug("Updating backfill location")
+	b.log.WithField("slot", slot).WithContext(ctx).Debug("Updating backfill location")
 
 	return b.coordinator.UpsertRelayMonitorLocation(ctx, newLocation)
 }

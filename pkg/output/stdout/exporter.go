@@ -3,20 +3,20 @@ package stdout
 import (
 	"context"
 
-	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type ItemExporter struct {
 	config *Config
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 }
 
-func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
+func NewItemExporter(name string, config *Config, log observability.ContextualLogger) (ItemExporter, error) {
 	return ItemExporter{
 		config: config,
 		log:    log.WithField("output_name", name).WithField("output_type", SinkType),
@@ -27,12 +27,12 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEv
 	_, span := observability.Tracer().Start(ctx, "StdOutItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
 	defer span.End()
 
-	e.log.WithField("events", len(items)).Debug("Sending batch of events to stdout sink")
+	e.log.WithField("events", len(items)).WithContext(ctx).Debug("Sending batch of events to stdout sink")
 
 	if err := e.sendUpstream(ctx, items); err != nil {
 		e.log.
 			WithError(err).
-			WithField("num_events", len(items)).
+			WithField("num_events", len(items)).WithContext(ctx).
 			Error("Failed to send events upstream")
 
 		return err

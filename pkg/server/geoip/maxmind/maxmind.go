@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/jellydator/ttlcache/v3"
+	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/maxmind/database"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/maxmind/geonames"
-	"github.com/jellydator/ttlcache/v3"
-	"github.com/sirupsen/logrus"
 )
 
 const Type = "maxmind"
@@ -17,7 +19,7 @@ const Type = "maxmind"
 type Maxmind struct {
 	config *Config
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	client *ttlcache.Cache[string, string]
 
@@ -31,7 +33,7 @@ type Maxmind struct {
 	metrics *Metrics
 }
 
-func New(config *Config, log logrus.FieldLogger) (*Maxmind, error) {
+func New(config *Config, log observability.ContextualLogger) (*Maxmind, error) {
 	nLog := log.WithField("geoip/provider", Type)
 
 	// Load GeoNames city data if configured

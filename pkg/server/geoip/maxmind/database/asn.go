@@ -4,13 +4,14 @@ import (
 	"net"
 
 	"github.com/oschwald/maxminddb-golang"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 type ASN struct {
 	config *Config
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	db *maxminddb.Reader
 }
@@ -20,7 +21,7 @@ type LookupASN struct {
 	AutonomousSystemOrganization string `maxminddb:"autonomous_system_organization"`
 }
 
-func NewASN(config *Config, log logrus.FieldLogger) *ASN {
+func NewASN(config *Config, log observability.ContextualLogger) *ASN {
 	return &ASN{
 		config: config,
 		log:    log.WithField("database", "city"),

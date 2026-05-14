@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/store"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -18,13 +19,13 @@ const (
 )
 
 type BeaconBlock struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 
 	cache store.Cache
 }
 
-func NewBeaconBlock(log logrus.FieldLogger, event *xatu.DecoratedEvent, cache store.Cache) *BeaconBlock {
+func NewBeaconBlock(log observability.ContextualLogger, event *xatu.DecoratedEvent, cache store.Cache) *BeaconBlock {
 	return &BeaconBlock{
 		log:   log.WithField("event", BeaconBlockType),
 		event: event,
@@ -48,21 +49,21 @@ func (b *BeaconBlock) Validate(ctx context.Context) error {
 func (b *BeaconBlock) Filter(ctx context.Context) bool {
 	data, ok := b.event.Data.(*xatu.DecoratedEvent_EthV2BeaconBlock)
 	if !ok {
-		b.log.Error("failed to cast event data")
+		b.log.WithContext(ctx).Error("failed to cast event data")
 
 		return true
 	}
 
 	additionalData, ok := b.event.Meta.Client.AdditionalData.(*xatu.ClientMeta_EthV2BeaconBlock)
 	if !ok {
-		b.log.Error("failed to cast client additional data")
+		b.log.WithContext(ctx).Error("failed to cast client additional data")
 
 		return true
 	}
 
 	version := additionalData.EthV2BeaconBlock.GetVersion()
 	if version == "" {
-		b.log.Error("failed to get version")
+		b.log.WithContext(ctx).Error("failed to get version")
 
 		return true
 	}
@@ -92,20 +93,20 @@ func (b *BeaconBlock) Filter(ctx context.Context) bool {
 		//nolint:staticcheck // Handled by v2
 		fuluBlock, ok := data.EthV2BeaconBlock.Message.(*v2.EventBlock_FuluBlock)
 		if !ok {
-			b.log.Error("failed to cast message to FuluBlock")
+			b.log.WithContext(ctx).Error("failed to cast message to FuluBlock")
 
 			return true
 		}
 
 		hash = fuluBlock.FuluBlock.StateRoot
 	default:
-		b.log.Error(fmt.Errorf("unknown version: %s", version))
+		b.log.WithContext(ctx).Error(fmt.Errorf("unknown version: %s", version))
 
 		return true
 	}
 
 	if hash == "" {
-		b.log.Error("failed to get hash")
+		b.log.WithContext(ctx).Error("failed to get hash")
 
 		return true
 	}
@@ -114,7 +115,7 @@ func (b *BeaconBlock) Filter(ctx context.Context) bool {
 
 	_, retrieved, err := b.cache.GetOrSet(ctx, key, version, time.Minute*30)
 	if err != nil {
-		b.log.WithError(err).Error("failed to retrieve from cache")
+		b.log.WithError(err).WithContext(ctx).Error("failed to retrieve from cache")
 
 		return true
 	}

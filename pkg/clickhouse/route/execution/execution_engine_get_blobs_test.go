@@ -3,9 +3,10 @@ package execution
 import (
 	"testing"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/testfixture"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestSnapshot_execution_engine_get_blobs(t *testing.T) {

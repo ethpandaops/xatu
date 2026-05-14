@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/creasty/defaults"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/server/store/memory"
 	redisCluster "github.com/ethpandaops/xatu/pkg/server/store/redis/cluster"
 	redisServer "github.com/ethpandaops/xatu/pkg/server/store/redis/server"
-	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -25,7 +26,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewCache(cacheType Type, config *RawMessage, log logrus.FieldLogger) (Cache, error) {
+func NewCache(cacheType Type, config *RawMessage, log observability.ContextualLogger) (Cache, error) {
 	if cacheType == TypeUnknown {
 		return nil, errors.New("cache type is required")
 	}

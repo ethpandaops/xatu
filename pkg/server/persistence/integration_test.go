@@ -12,13 +12,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
+
+	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 )
 
 const (

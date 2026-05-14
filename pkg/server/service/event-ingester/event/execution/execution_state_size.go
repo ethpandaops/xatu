@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type ExecutionStateSize struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewExecutionStateSize(log logrus.FieldLogger, event *xatu.DecoratedEvent) *ExecutionStateSize {
+func NewExecutionStateSize(log observability.ContextualLogger, event *xatu.DecoratedEvent) *ExecutionStateSize {
 	return &ExecutionStateSize{
 		log:   log.WithField("event", ExecutionStateSizeType),
 		event: event,

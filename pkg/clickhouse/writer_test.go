@@ -12,12 +12,13 @@ import (
 
 	"github.com/ClickHouse/ch-go"
 	"github.com/ClickHouse/ch-go/proto"
-	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
-	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
+	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 var (

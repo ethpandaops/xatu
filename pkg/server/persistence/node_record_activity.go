@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	"github.com/huandu/go-sqlbuilder"
+
+	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 )
 
 var nodeRecordActivityStruct = sqlbuilder.NewStruct(new(node.Activity)).For(sqlbuilder.PostgreSQL)

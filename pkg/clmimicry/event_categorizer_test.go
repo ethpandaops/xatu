@@ -3,8 +3,9 @@ package clmimicry
 import (
 	"testing"
 
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func TestEventCategorization(t *testing.T) {

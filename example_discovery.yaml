@@ -139,3 +139,10 @@ p2p:
   #   # When set, networkIds/forkIdHashes/forkDigests are auto-computed.
   #   # networkConfig:
   #   #   url: https://config.blob-devnet-0.ethpandaops.io
+
+tracing:
+  enabled: false
+  endpoint: localhost:4318
+  insecure: true
+  sampling:
+    rate: 0.01

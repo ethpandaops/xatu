@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TracePrune struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTracePrune(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TracePrune {
+func NewTracePrune(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TracePrune {
 	return &TracePrune{
 		log:   log.WithField("event", TracePruneType),
 		event: event,

@@ -6,8 +6,9 @@ import (
 
 	"github.com/redpanda-data/benthos/v4/public/service"
 
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const unknownKafkaTopic = "unknown"

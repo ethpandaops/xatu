@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/creasty/defaults"
+
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/static"
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu"
 	xatuCoordinator "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu/coordinator"
 	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
-	"github.com/sirupsen/logrus"
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 type Config struct {
@@ -29,7 +30,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewCoordinator(ctx context.Context, name string, coordinatorType Type, config *RawMessage, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log logrus.FieldLogger) (Coordinator, error) {
+func NewCoordinator(ctx context.Context, name string, coordinatorType Type, config *RawMessage, handlers *handler.Peer, captureDelay time.Duration, ethereumConfig *ethereum.Config, log observability.ContextualLogger) (Coordinator, error) {
 	if coordinatorType == TypeUnknown {
 		return nil, errors.New("coordinator type is required")
 	}

@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 	"github.com/huandu/go-sqlbuilder"
+
+	"github.com/ethpandaops/xatu/pkg/server/persistence/node"
 )
 
 var nodeRecordExecutionStruct = sqlbuilder.NewStruct(new(node.Execution)).For(sqlbuilder.PostgreSQL)
@@ -34,7 +35,7 @@ func (c *Client) InsertNodeRecordExecution(ctx context.Context, record *node.Exe
 
 	_, err := c.db.ExecContext(ctx, sql, args...)
 	if err != nil {
-		c.log.WithError(err).Error("failed to insert node record execution")
+		c.log.WithError(err).WithContext(ctx).Error("failed to insert node record execution")
 	}
 
 	return err

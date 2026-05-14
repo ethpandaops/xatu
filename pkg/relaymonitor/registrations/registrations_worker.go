@@ -5,13 +5,14 @@ import (
 	"time"
 
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/mevrelay"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"
-	"github.com/sirupsen/logrus"
 )
 
 type RelayValidatorRegistrationScraper struct {
-	log             logrus.FieldLogger
+	log             observability.ContextualLogger
 	workers         int
 	relay           *relay.Client
 	pending         chan *apiv1.Validator
@@ -21,8 +22,7 @@ type RelayValidatorRegistrationScraper struct {
 
 // NewRelayValidatorRegistrationScraper creates a new validator registration scraper
 func NewRelayValidatorRegistrationScraper(
-	log logrus.FieldLogger,
-	workers int,
+	log observability.ContextualLogger, workers int,
 	r *relay.Client,
 	cb func(ctx context.Context, validator *apiv1.Validator, relay *relay.Client, registration *mevrelay.ValidatorRegistration),
 ) *RelayValidatorRegistrationScraper {
@@ -38,7 +38,7 @@ func NewRelayValidatorRegistrationScraper(
 }
 
 func (w *RelayValidatorRegistrationScraper) Start(ctx context.Context) error {
-	w.log.WithField("workers", w.workers).Info("Starting validator registration scraper")
+	w.log.WithField("workers", w.workers).WithContext(ctx).Info("Starting validator registration scraper")
 
 	for i := 0; i < w.workers; i++ {
 		go w.startWorker(ctx, i)
@@ -64,7 +64,7 @@ func (w *RelayValidatorRegistrationScraper) startWorker(ctx context.Context, _ i
 			}
 
 			if validator == nil {
-				w.log.Warn("Received nil validator, skipping")
+				w.log.WithContext(ctx).Warn("Received nil validator, skipping")
 
 				continue
 			}
@@ -79,13 +79,13 @@ func (w *RelayValidatorRegistrationScraper) startWorker(ctx context.Context, _ i
 					w.rateLimitedTill = time.Now().Add(time.Second * 30)
 
 					w.log.
-						WithField("rate_limited_till", w.rateLimitedTill).
+						WithField("rate_limited_till", w.rateLimitedTill).WithContext(ctx).
 						Warn("Received rate limited response from relay, backing off. If this persists, adjust targetSweepDuration in the config.")
 
 					continue
 				}
 
-				w.log.WithError(err).WithField("pubkey", validator.Validator.PublicKey.String()).Error("Failed to get validator registration")
+				w.log.WithError(err).WithField("pubkey", validator.Validator.PublicKey.String()).WithContext(ctx).Error("Failed to get validator registration")
 
 				continue
 			}

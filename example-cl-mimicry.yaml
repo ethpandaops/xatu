@@ -130,3 +130,10 @@ outputs:
 #   gossipSubAttestationEnabled: false
 #   gossipSubBlobSidecarEnabled: false
 #   gossipSubDataColumnSidecarEnabled: false
+
+tracing:
+  enabled: false
+  endpoint: localhost:4318
+  insecure: true
+  sampling:
+    rate: 0.01

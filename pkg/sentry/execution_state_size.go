@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	execEvent "github.com/ethpandaops/xatu/pkg/sentry/event/execution"
 	"github.com/ethpandaops/xatu/pkg/sentry/execution"
-	"github.com/sirupsen/logrus"
 )
 
 // stateSizeWatcher holds the state size watcher instance.
@@ -17,13 +18,13 @@ var stateSizeWatcher *execution.StateSizeWatcher
 func (s *Sentry) startExecutionStateSizeWatcher(ctx context.Context) error {
 	// Check if execution is enabled and state size monitoring is configured.
 	if s.Config.Execution == nil || !s.Config.Execution.Enabled {
-		s.log.Info("Execution debug state size watcher disabled (execution not enabled)")
+		s.log.WithContext(ctx).Info("Execution debug state size watcher disabled (execution not enabled)")
 
 		return nil
 	}
 
 	if s.Config.Execution.StateSize == nil || !s.Config.Execution.StateSize.Enabled {
-		s.log.Info("Execution debug state size watcher disabled")
+		s.log.WithContext(ctx).Info("Execution debug state size watcher disabled")
 
 		return nil
 	}
@@ -76,7 +77,7 @@ func (s *Sentry) startExecutionStateSizeWatcher(ctx context.Context) error {
 		return stateSizeWatcher.Stop()
 	})
 
-	s.log.WithField("trigger_mode", s.Config.Execution.StateSize.TriggerMode).Info("Execution debug state size watcher started")
+	s.log.WithField("trigger_mode", s.Config.Execution.StateSize.TriggerMode).WithContext(ctx).Info("Execution debug state size watcher started")
 
 	return nil
 }
@@ -88,7 +89,7 @@ func (s *Sentry) processStateSizeData(ctx context.Context, data *execution.Debug
 	// Get execution client metadata.
 	execMetadata := s.execution.GetClientMetadata()
 	if !execMetadata.Initialized {
-		s.log.Debug("Skipping state size event - execution client metadata not yet initialized")
+		s.log.WithContext(ctx).Debug("Skipping state size event - execution client metadata not yet initialized")
 
 		return nil
 	}
@@ -96,7 +97,7 @@ func (s *Sentry) processStateSizeData(ctx context.Context, data *execution.Debug
 	// Create client metadata.
 	meta, err := s.createNewClientMeta(ctx)
 	if err != nil {
-		s.log.WithError(err).Error("Failed to create client meta for state size event")
+		s.log.WithError(err).WithContext(ctx).Error("Failed to create client meta for state size event")
 
 		return err
 	}
@@ -122,7 +123,7 @@ func (s *Sentry) processStateSizeData(ctx context.Context, data *execution.Debug
 	// Check if we should ignore this event (duplicate detection).
 	ignore, err := event.ShouldIgnore(ctx)
 	if err != nil {
-		s.log.WithError(err).Error("Failed to check if state size event should be ignored")
+		s.log.WithError(err).WithContext(ctx).Error("Failed to check if state size event should be ignored")
 
 		return err
 	}
@@ -134,7 +135,7 @@ func (s *Sentry) processStateSizeData(ctx context.Context, data *execution.Debug
 	// Decorate the event.
 	decoratedEvent, err := event.Decorate(ctx)
 	if err != nil {
-		s.log.WithError(err).WithField("state_root", data.StateRoot).Error("Failed to decorate state size event")
+		s.log.WithError(err).WithField("state_root", data.StateRoot).WithContext(ctx).Error("Failed to decorate state size event")
 
 		return err
 	}
@@ -144,7 +145,7 @@ func (s *Sentry) processStateSizeData(ctx context.Context, data *execution.Debug
 		s.log.WithError(err).WithFields(logrus.Fields{
 			"state_root":   data.StateRoot,
 			"block_number": data.BlockNumber,
-		}).Error("Failed to handle decorated state size event")
+		}).WithContext(ctx).Error("Failed to handle decorated state size event")
 
 		return err
 	}
@@ -154,7 +155,7 @@ func (s *Sentry) processStateSizeData(ctx context.Context, data *execution.Debug
 	s.log.WithFields(logrus.Fields{
 		"state_root":   data.StateRoot,
 		"block_number": data.BlockNumber,
-	}).Debug("Processed execution debug state size event")
+	}).WithContext(ctx).Debug("Processed execution debug state size event")
 
 	return nil
 }

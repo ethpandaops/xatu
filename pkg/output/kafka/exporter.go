@@ -6,19 +6,20 @@ import (
 	"strings"
 
 	"github.com/IBM/sarama"
-	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // ItemExporter sends batches of events to Kafka topics. It supports both
 // a static Topic and a dynamic TopicPattern that resolves per event.
 type ItemExporter struct {
 	config *Config
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 	client sarama.SyncProducer
 }
 
@@ -27,8 +28,7 @@ type ItemExporter struct {
 func NewItemExporter(
 	name string,
 	config *Config,
-	log logrus.FieldLogger,
-	producer sarama.SyncProducer,
+	log observability.ContextualLogger, producer sarama.SyncProducer,
 ) ItemExporter {
 	return ItemExporter{
 		config: config,
@@ -39,18 +39,18 @@ func NewItemExporter(
 
 // ExportItems sends a batch of decorated events to Kafka.
 func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
-	_, span := observability.Tracer().Start(ctx,
+	ctx, span := observability.Tracer().Start(ctx,
 		"KafkaItemExporter.ExportItems",
 		trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))),
 	)
 	defer span.End()
 
-	e.log.WithField("events", len(items)).Debug("Sending batch of events to Kafka sink")
+	e.log.WithField("events", len(items)).WithContext(ctx).Debug("Sending batch of events to Kafka sink")
 
 	if err := e.sendUpstream(ctx, items); err != nil {
 		e.log.
 			WithError(err).
-			WithField("num_events", len(items)).
+			WithField("num_events", len(items)).WithContext(ctx).
 			Error("Failed to send events upstream")
 
 		span.SetStatus(codes.Error, err.Error())
@@ -66,8 +66,10 @@ func (e ItemExporter) Shutdown(_ context.Context) error {
 	return e.client.Close()
 }
 
-func (e *ItemExporter) sendUpstream(_ context.Context, items []*xatu.DecoratedEvent) error {
+func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.DecoratedEvent) error {
 	msgs := make([]*sarama.ProducerMessage, 0, len(items))
+
+	propagator := otel.GetTextMapPropagator()
 
 	for _, p := range items {
 		r, err := e.config.MarshalEvent(p)
@@ -85,12 +87,14 @@ func (e *ItemExporter) sendUpstream(_ context.Context, items []*xatu.DecoratedEv
 			Value: eventPayload,
 		}
 
+		propagator.Inject(ctx, newSaramaHeaderCarrier(&m.Headers))
+
 		msgByteSize := m.ByteSize(2)
 		if msgByteSize > e.config.MaxMessageBytes {
 			e.log.
 				WithField("event_id", routingKey).
 				WithField("msg_size", msgByteSize).
-				WithField("max_message_bytes", e.config.MaxMessageBytes).
+				WithField("max_message_bytes", e.config.MaxMessageBytes).WithContext(ctx).
 				Warn("Message exceeds max_message_bytes, dropping")
 
 			continue
@@ -114,7 +118,7 @@ func (e *ItemExporter) sendUpstream(_ context.Context, items []*xatu.DecoratedEv
 			for _, producerError := range errs {
 				e.log.
 					WithError(producerError.Err).
-					WithField("events", errorCount).
+					WithField("events", errorCount).WithContext(ctx).
 					Error("Failed to send events to Kafka")
 
 				return producerError
@@ -124,7 +128,7 @@ func (e *ItemExporter) sendUpstream(_ context.Context, items []*xatu.DecoratedEv
 		return err
 	}
 
-	e.log.WithField("count", len(msgs)-errorCount).Debug("Items written to Kafka")
+	e.log.WithField("count", len(msgs)-errorCount).WithContext(ctx).Debug("Items written to Kafka")
 
 	return nil
 }

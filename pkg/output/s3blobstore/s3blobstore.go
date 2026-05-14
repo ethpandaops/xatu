@@ -22,11 +22,12 @@ import (
 	"errors"
 	"fmt"
 
+	"golang.org/x/sync/errgroup"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output/internal/s3"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/sync/errgroup"
 )
 
 // SinkType identifies this sink in output.Config.
@@ -40,7 +41,7 @@ const (
 // Sink archives beacon blob sidecars to an S3-compatible store.
 type Sink struct {
 	name        string
-	log         logrus.FieldLogger
+	log         observability.ContextualLogger
 	client      s3Uploader
 	filter      xatu.EventFilter
 	keyPrefix   string
@@ -61,8 +62,7 @@ type s3Uploader interface {
 func New(
 	name string,
 	cfg *Config,
-	log logrus.FieldLogger,
-	filterConfig *xatu.EventFilterConfig,
+	log observability.ContextualLogger, filterConfig *xatu.EventFilterConfig,
 	shippingMethod processor.ShippingMethod,
 ) (*Sink, error) {
 	if cfg == nil {

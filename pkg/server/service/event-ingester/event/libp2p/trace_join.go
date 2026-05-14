@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TraceJoin struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceJoin(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceJoin {
+func NewTraceJoin(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceJoin {
 	return &TraceJoin{
 		log:   log.WithField("event", TraceJoinType),
 		event: event,

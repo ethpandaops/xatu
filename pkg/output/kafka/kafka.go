@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const SinkType = "kafka"
@@ -15,14 +15,14 @@ const SinkType = "kafka"
 type Kafka struct {
 	name   string
 	config *Config
-	log    logrus.FieldLogger
+	log    observability.ContextualLogger
 	proc   *processor.BatchItemProcessor[xatu.DecoratedEvent]
 	filter xatu.EventFilter
 }
 
 // New creates a new Kafka sink. It builds the Sarama SyncProducer and
 // wires it into the ItemExporter used by the batch processor.
-func New(name string, config *Config, log logrus.FieldLogger, filterConfig *xatu.EventFilterConfig, shippingMethod processor.ShippingMethod) (*Kafka, error) {
+func New(name string, config *Config, log observability.ContextualLogger, filterConfig *xatu.EventFilterConfig, shippingMethod processor.ShippingMethod) (*Kafka, error) {
 	if config == nil {
 		return nil, errors.New("config is required")
 	}

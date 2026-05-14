@@ -8,15 +8,16 @@ import (
 	"time"
 
 	"github.com/ClickHouse/ch-go"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	tabledefs "github.com/ethpandaops/xatu/pkg/clickhouse/route/all"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/types/known/timestamppb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const benchTable = "beacon_api_eth_v1_events_head"

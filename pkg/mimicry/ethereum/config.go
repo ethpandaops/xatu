@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 type Config struct {
@@ -41,7 +42,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func (c *Config) ApplyOverrides(overrideNetworkName string, log logrus.FieldLogger) {
+func (c *Config) ApplyOverrides(overrideNetworkName string, log observability.ContextualLogger) {
 	if overrideNetworkName != "" {
 		log.WithField("network", overrideNetworkName).Info("Overriding network name")
 		c.OverrideNetworkName = overrideNetworkName

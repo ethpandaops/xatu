@@ -5,9 +5,12 @@ import (
 	"os"
 
 	"github.com/creasty/defaults"
-	"github.com/ethpandaops/xatu/pkg/cannon"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v3"
+
+	"github.com/ethpandaops/xatu/pkg/cannon"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 var (
@@ -134,6 +137,16 @@ var cannonCmd = &cobra.Command{
 				log.Fatal(errr)
 			}
 		}
+
+		shutdownObs, err := observability.Setup(cmd.Context(), log,
+			xatu.WithModule(xatu.ModuleName_CANNON), xatu.Short(),
+			&config.Tracing,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer shutdownObservability(shutdownObs)
 
 		cannon, err := cannon.New(cmd.Context(), log, config, overrides)
 		if err != nil {

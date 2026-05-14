@@ -4,11 +4,12 @@ import (
 	"testing"
 
 	"github.com/IBM/sarama"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func TestProducerConfigValidate(t *testing.T) {

@@ -3,9 +3,10 @@ package v2
 import (
 	"encoding/json"
 
-	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 )
 
 func (b *EventBlock) UnmarshalJSON(data []byte) error {

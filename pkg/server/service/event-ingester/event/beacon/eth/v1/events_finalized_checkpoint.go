@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type EventsFinalizedCheckpoint struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewEventsFinalizedCheckpoint(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsFinalizedCheckpoint {
+func NewEventsFinalizedCheckpoint(log observability.ContextualLogger, event *xatu.DecoratedEvent) *EventsFinalizedCheckpoint {
 	return &EventsFinalizedCheckpoint{
 		log:   log.WithField("event", EventsFinalizedCheckpointType),
 		event: event,

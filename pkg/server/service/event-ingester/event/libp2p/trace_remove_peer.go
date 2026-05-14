@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TraceRemovePeer struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceRemovePeer(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceRemovePeer {
+func NewTraceRemovePeer(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceRemovePeer {
 	return &TraceRemovePeer{
 		log:   log.WithField("event", TraceRemovePeerType),
 		event: event,

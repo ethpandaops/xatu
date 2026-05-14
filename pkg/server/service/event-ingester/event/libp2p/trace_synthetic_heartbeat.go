@@ -6,21 +6,21 @@ import (
 	"net"
 	"strings"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
-	"github.com/sirupsen/logrus"
 )
 
 var TraceSyntheticHeartbeatType = xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT.String()
 
 type TraceSyntheticHeartbeat struct {
-	log           logrus.FieldLogger
+	log           observability.ContextualLogger
 	event         *xatu.DecoratedEvent
 	geoipProvider geoip.Provider
 }
 
-func NewTraceSyntheticHeartbeat(log logrus.FieldLogger, event *xatu.DecoratedEvent, geoipProvider geoip.Provider) *TraceSyntheticHeartbeat {
+func NewTraceSyntheticHeartbeat(log observability.ContextualLogger, event *xatu.DecoratedEvent, geoipProvider geoip.Provider) *TraceSyntheticHeartbeat {
 	return &TraceSyntheticHeartbeat{
 		log:           log.WithField("event", TraceSyntheticHeartbeatType),
 		event:         event,
@@ -52,7 +52,7 @@ func (th *TraceSyntheticHeartbeat) Filter(ctx context.Context) bool {
 func (th *TraceSyntheticHeartbeat) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
 	data, ok := th.event.Data.(*xatu.DecoratedEvent_Libp2PTraceSyntheticHeartbeat)
 	if !ok {
-		th.log.Error("failed to get remote maddrs")
+		th.log.WithContext(ctx).Error("failed to get remote maddrs")
 
 		return meta
 	}
@@ -74,7 +74,7 @@ func (th *TraceSyntheticHeartbeat) AppendServerMeta(ctx context.Context, meta *x
 		if ip != nil && th.geoipProvider != nil {
 			geoipLookupResult, err := th.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 			if err != nil {
-				th.log.WithField("ip", ipAddress).WithError(err).Warn("failed to lookup geoip data")
+				th.log.WithField("ip", ipAddress).WithError(err).WithContext(ctx).Warn("failed to lookup geoip data")
 			}
 
 			if geoipLookupResult != nil {

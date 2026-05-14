@@ -9,10 +9,12 @@ import (
 
 	"github.com/ClickHouse/ch-go"
 	"github.com/ClickHouse/ch-go/chpool"
+	"github.com/sirupsen/logrus"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 // FlushResult holds the structured outcome of a FlushTableEvents call.
@@ -43,7 +45,7 @@ func (r *FlushResult) Err() error {
 
 // Writer manages batched inserts using the ch-go client.
 type Writer struct {
-	log     logrus.FieldLogger
+	log     observability.ContextualLogger
 	config  *Config
 	metrics *telemetry.Metrics
 
@@ -74,8 +76,7 @@ type Writer struct {
 
 // NewWriter creates a new ch-go writer.
 func NewWriter(
-	log logrus.FieldLogger,
-	config *Config,
+	log observability.ContextualLogger, config *Config,
 	metrics *telemetry.Metrics,
 ) (*Writer, error) {
 	opts, err := parseChGoOptions(
@@ -163,7 +164,7 @@ func (w *Writer) Start(ctx context.Context) error {
 	}
 
 	w.log.WithField("max_conns", w.chgoCfg.MaxConns).
-		WithField("min_conns", w.chgoCfg.MinConns).
+		WithField("min_conns", w.chgoCfg.MinConns).WithContext(ctx).
 		Info("ch-go ClickHouse connection pool established")
 
 	// Validate that all registered route tables exist in the target
@@ -415,7 +416,7 @@ func (w *Writer) doWithRetry(
 				"max":       w.chgoCfg.MaxRetries,
 				"delay":     delay,
 				"error":     lastErr,
-			}).Debug("Retrying ch-go operation after transient error")
+			}).WithContext(ctx).Debug("Retrying ch-go operation after transient error")
 
 			select {
 			case <-ctx.Done():

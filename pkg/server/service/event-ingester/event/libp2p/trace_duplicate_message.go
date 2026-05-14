@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TraceDuplicateMessage struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceDuplicateMessage(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceDuplicateMessage {
+func NewTraceDuplicateMessage(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceDuplicateMessage {
 	return &TraceDuplicateMessage{
 		log:   log.WithField("event", TraceDuplicateMessageType),
 		event: event,

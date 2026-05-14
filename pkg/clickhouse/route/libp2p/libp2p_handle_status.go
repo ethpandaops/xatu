@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	xatuProto "github.com/ethpandaops/xatu/pkg/proto/xatu"
 )

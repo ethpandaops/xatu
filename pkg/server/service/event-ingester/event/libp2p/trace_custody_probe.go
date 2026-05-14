@@ -4,18 +4,18 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const TypeLibp2pRPCDataColumnCustodyProbe = "LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE"
 
 type DataColumnCustodyProbe struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewDataColumnCustodyProbe(log logrus.FieldLogger, event *xatu.DecoratedEvent) *DataColumnCustodyProbe {
+func NewDataColumnCustodyProbe(log observability.ContextualLogger, event *xatu.DecoratedEvent) *DataColumnCustodyProbe {
 	return &DataColumnCustodyProbe{
 		log:   log.WithField("event_type", TypeLibp2pRPCDataColumnCustodyProbe),
 		event: event,

@@ -6,10 +6,10 @@ import (
 	"net"
 	"strings"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/lookup"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -17,12 +17,12 @@ var (
 )
 
 type TraceDisconnected struct {
-	log           logrus.FieldLogger
+	log           observability.ContextualLogger
 	event         *xatu.DecoratedEvent
 	geoipProvider geoip.Provider
 }
 
-func NewTraceDisconnected(log logrus.FieldLogger, event *xatu.DecoratedEvent, geoipProvider geoip.Provider) *TraceDisconnected {
+func NewTraceDisconnected(log observability.ContextualLogger, event *xatu.DecoratedEvent, geoipProvider geoip.Provider) *TraceDisconnected {
 	return &TraceDisconnected{
 		log:           log.WithField("event", TraceDisconnectedType),
 		event:         event,
@@ -50,7 +50,7 @@ func (td *TraceDisconnected) Filter(ctx context.Context) bool {
 func (td *TraceDisconnected) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {
 	data, ok := td.event.Data.(*xatu.DecoratedEvent_Libp2PTraceDisconnected)
 	if !ok {
-		td.log.Error("failed to get remote maddrs")
+		td.log.WithContext(ctx).Error("failed to get remote maddrs")
 
 		return meta
 	}
@@ -72,7 +72,7 @@ func (td *TraceDisconnected) AppendServerMeta(ctx context.Context, meta *xatu.Se
 		if ip != nil && td.geoipProvider != nil {
 			geoipLookupResult, err := td.geoipProvider.LookupIP(ctx, ip, lookup.PrecisionFull)
 			if err != nil {
-				td.log.WithField("ip", ipAddress).WithError(err).Warn("failed to lookup geoip data")
+				td.log.WithField("ip", ipAddress).WithError(err).WithContext(ctx).Warn("failed to lookup geoip data")
 			}
 
 			if geoipLookupResult != nil {

@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+//nolint:goconst // map keys and literals are deliberately reused across sibling event tests
 func TestSnapshot_beacon_api_eth_v1_events_fast_confirmation(t *testing.T) {
 	testfixture.AssertSnapshot(t, newbeaconApiEthV1EventsFastConfirmationBatch(), &xatu.DecoratedEvent{
 		Event: &xatu.Event{
@@ -30,7 +31,7 @@ func TestSnapshot_beacon_api_eth_v1_events_fast_confirmation(t *testing.T) {
 		Data: &xatu.DecoratedEvent_EthV1EventsFastConfirmation{
 			EthV1EventsFastConfirmation: &ethv1.EventFastConfirmation{
 				Slot:  wrapperspb.UInt64(100),
-				Block: "0xfastconfirmblock", //nolint:goconst // shared block hash literal
+				Block: "0xfastconfirmblock",
 			},
 		},
 	}, 1, map[string]any{
@@ -38,13 +39,14 @@ func TestSnapshot_beacon_api_eth_v1_events_fast_confirmation(t *testing.T) {
 		"block":                       "0xfastconfirmblock",
 		"meta_client_name":            "test-client",
 		"meta_network_name":           "mainnet",
-		"propagation_slot_start_diff": uint32(500), //nolint:goconst // column key reused across event tests
-		"epoch":                       uint32(3),   //nolint:goconst // column key reused across event tests
-		"wallclock_slot":              uint32(100), //nolint:goconst // column key reused across event tests
-		"wallclock_epoch":             uint32(3),   //nolint:goconst // column key reused across event tests
+		"propagation_slot_start_diff": uint32(500),
+		"epoch":                       uint32(3),
+		"wallclock_slot":              uint32(100),
+		"wallclock_epoch":             uint32(3),
 	})
 }
 
+//nolint:goconst // map keys and literals are deliberately reused across sibling event tests
 func TestSnapshot_beacon_api_eth_v1_events_fast_confirmation_no_additional_data(t *testing.T) {
 	testfixture.AssertSnapshot(t, newbeaconApiEthV1EventsFastConfirmationBatch(), &xatu.DecoratedEvent{
 		Event: &xatu.Event{
@@ -64,10 +66,10 @@ func TestSnapshot_beacon_api_eth_v1_events_fast_confirmation_no_additional_data(
 		"block":                           "0xfastconfirmblock",
 		"propagation_slot_start_diff":     nil,
 		"epoch":                           nil,
-		"epoch_start_date_time":           nil, //nolint:goconst // column key reused across event tests
+		"epoch_start_date_time":           nil,
 		"wallclock_slot":                  nil,
-		"wallclock_slot_start_date_time":  nil, //nolint:goconst // column key reused across event tests
+		"wallclock_slot_start_date_time":  nil,
 		"wallclock_epoch":                 nil,
-		"wallclock_epoch_start_date_time": nil, //nolint:goconst // column key reused across event tests
+		"wallclock_epoch_start_date_time": nil,
 	})
 }

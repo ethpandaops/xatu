@@ -21,7 +21,34 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
+
+// traceCtx returns a context carrying a distinct, valid SpanContext built
+// from a deterministic seed. Used to verify that BatchItemProcessor does
+// NOT fan out exports by caller trace_id (regression for OOM from #835).
+func traceCtx(seed byte) context.Context {
+	var tid trace.TraceID
+
+	var sid trace.SpanID
+
+	for i := range tid {
+		tid[i] = seed
+	}
+
+	for i := range sid {
+		sid[i] = seed
+	}
+
+	sc := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    tid,
+		SpanID:     sid,
+		TraceFlags: trace.FlagsSampled,
+		Remote:     true,
+	})
+
+	return trace.ContextWithSpanContext(context.Background(), sc)
+}
 
 type TestItem struct {
 	name string
@@ -988,4 +1015,81 @@ func TestBatchItemProcessorNilItemAfterQueue(t *testing.T) {
 
 	// Verify that valid items were still exported
 	require.Equal(t, 2, exporter.len())
+}
+
+// Regression for the v1.12.0 OOM (#835): exportWithTimeout used to
+// partition each batch by caller trace_id, which fanned a single batch
+// out into one ExportItems call per distinct caller trace. Under wide
+// gRPC fan-in this exploded outbound POST volume and starved the http
+// pool. With the partitioning removed, items from N distinct caller
+// trace contexts must still drain in batches sized by
+// MaxExportBatchSize -- not 1 export per trace.
+func TestBatchItemProcessorSingleExportAcrossDistinctTraces(t *testing.T) {
+	te := testBatchExporter[TestItem]{}
+
+	bsp, err := NewBatchItemProcessor[TestItem](
+		&te,
+		"processor",
+		nullLogger(),
+		WithMaxExportBatchSize(10),
+		WithWorkers(5),
+		WithBatchTimeout(5*time.Minute),
+	)
+	require.NoError(t, err)
+
+	bsp.Start(context.Background())
+
+	const itemsToExport = 50
+
+	for i := range itemsToExport {
+		err := bsp.Write(traceCtx(byte(i+1)), []*TestItem{{name: strconv.Itoa(i)}})
+		require.NoError(t, err)
+	}
+
+	require.NoError(t, bsp.Shutdown(context.Background()))
+
+	require.Equal(t, itemsToExport, te.len(), "all items must export")
+	require.Equal(t, 5, te.getBatchCount(), "must be one ExportItems call per MaxExportBatchSize, not one per trace")
+}
+
+// Sync shipping path must also export items in a single ExportItems
+// call regardless of how many distinct caller trace contexts contribute
+// to the batch.
+func TestBatchItemProcessorSyncShippingAcrossDistinctTraces(t *testing.T) {
+	te := testBatchExporter[TestItem]{}
+
+	bsp, err := NewBatchItemProcessor[TestItem](
+		&te,
+		"processor",
+		nullLogger(),
+		WithMaxExportBatchSize(8),
+		WithWorkers(2),
+		WithBatchTimeout(50*time.Millisecond),
+		WithShippingMethod(ShippingMethodSync),
+	)
+	require.NoError(t, err)
+
+	bsp.Start(context.Background())
+
+	const itemsToExport = 8
+
+	var wg sync.WaitGroup
+
+	for i := range itemsToExport {
+		wg.Add(1)
+
+		go func(seed byte) {
+			defer wg.Done()
+
+			err := bsp.Write(traceCtx(seed), []*TestItem{{name: strconv.Itoa(int(seed))}})
+			assert.NoError(t, err)
+		}(byte(i + 1))
+	}
+
+	wg.Wait()
+
+	require.NoError(t, bsp.Shutdown(context.Background()))
+
+	require.Equal(t, itemsToExport, te.len())
+	require.Equal(t, 1, te.getBatchCount(), "sync shipping must not fan out by trace")
 }

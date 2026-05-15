@@ -1064,7 +1064,7 @@ func TestBatchItemProcessorSyncShippingAcrossDistinctTraces(t *testing.T) {
 		nullLogger(),
 		WithMaxExportBatchSize(8),
 		WithWorkers(2),
-		WithBatchTimeout(50*time.Millisecond),
+		WithBatchTimeout(5*time.Minute),
 		WithShippingMethod(ShippingMethodSync),
 	)
 	require.NoError(t, err)

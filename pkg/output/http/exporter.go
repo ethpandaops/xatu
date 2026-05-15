@@ -28,7 +28,7 @@ type ItemExporter struct {
 func NewItemExporter(name string, config *Config, log observability.ContextualLogger) (ItemExporter, error) {
 	log = log.WithField("output_name", name).WithField("output_type", SinkType)
 
-	t := http.DefaultTransport.(*http.Transport).Clone()
+	t := newTransport(config)
 
 	if config.KeepAlive != nil && !*config.KeepAlive {
 		log.WithField("keep_alive", *config.KeepAlive).Warn("Disabling keep-alives")
@@ -46,6 +46,29 @@ func NewItemExporter(name string, config *Config, log observability.ContextualLo
 		},
 		compressor: &Compressor{Strategy: config.Compression},
 	}, nil
+}
+
+// newTransport clones http.DefaultTransport and sizes the per-host connection
+// pool to the worker count so concurrent exports don't stack up in
+// awaitWantConn against the stdlib default of MaxIdleConnsPerHost=2.
+func newTransport(config *Config) *http.Transport {
+	base, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		base = &http.Transport{}
+	}
+
+	t := base.Clone()
+
+	if config.Workers > 0 {
+		t.MaxConnsPerHost = config.Workers
+		t.MaxIdleConnsPerHost = config.Workers
+
+		if config.Workers > t.MaxIdleConns {
+			t.MaxIdleConns = config.Workers
+		}
+	}
+
+	return t
 }
 
 func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {

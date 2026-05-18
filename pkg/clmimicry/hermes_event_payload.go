@@ -128,9 +128,15 @@ type TraceEventAttesterSlashing struct {
 }
 
 // TraceEventDataColumnSidecar represents a data column sidecar event.
+//
+// Exactly one of DataColumnSidecar / DataColumnSidecarGloas is set, depending
+// on the fork the sidecar was gossiped under. The Gloas variant (EIP-7732)
+// drops the signed block header, so it carries slot and beacon_block_root
+// directly instead.
 type TraceEventDataColumnSidecar struct {
 	TraceEventPayloadMetaData
-	DataColumnSidecar *ethtypes.DataColumnSidecar
+	DataColumnSidecar      *ethtypes.DataColumnSidecar
+	DataColumnSidecarGloas *ethtypes.DataColumnSidecarGloas
 }
 
 // TraceEventExecutionPayloadEnvelope represents a Gloas execution_payload gossip event (EIP-7732).

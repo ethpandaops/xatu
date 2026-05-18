@@ -119,11 +119,19 @@ func NewBlobSidecarPayload(blob *ethtypes.BlobSidecar, meta *TraceEventPayloadMe
 	}
 }
 
-// NewDataColumnSidecarPayload creates a data column sidecar payload.
+// NewDataColumnSidecarPayload creates a Fulu data column sidecar payload.
 func NewDataColumnSidecarPayload(dataColumn *ethtypes.DataColumnSidecar, meta *TraceEventPayloadMetaData) *TraceEventDataColumnSidecar {
 	return &TraceEventDataColumnSidecar{
 		TraceEventPayloadMetaData: *meta,
 		DataColumnSidecar:         dataColumn,
+	}
+}
+
+// NewDataColumnSidecarGloasPayload creates a Gloas data column sidecar payload (EIP-7732).
+func NewDataColumnSidecarGloasPayload(dataColumn *ethtypes.DataColumnSidecarGloas, meta *TraceEventPayloadMetaData) *TraceEventDataColumnSidecar {
+	return &TraceEventDataColumnSidecar{
+		TraceEventPayloadMetaData: *meta,
+		DataColumnSidecarGloas:    dataColumn,
 	}
 }
 

@@ -39,6 +39,8 @@ func NewItemExporter(
 
 // ExportItems sends a batch of decorated events to Kafka.
 func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
+	propagationCtx := ctx
+
 	ctx, span := observability.Tracer().Start(ctx,
 		"KafkaItemExporter.ExportItems",
 		trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))),
@@ -47,7 +49,7 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEv
 
 	e.log.WithField("events", len(items)).WithContext(ctx).Debug("Sending batch of events to Kafka sink")
 
-	if err := e.sendUpstream(ctx, items); err != nil {
+	if err := e.sendUpstream(ctx, propagationCtx, items); err != nil {
 		e.log.
 			WithError(err).
 			WithField("num_events", len(items)).WithContext(ctx).
@@ -66,7 +68,7 @@ func (e ItemExporter) Shutdown(_ context.Context) error {
 	return e.client.Close()
 }
 
-func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.DecoratedEvent) error {
+func (e *ItemExporter) sendUpstream(ctx, propagationCtx context.Context, items []*xatu.DecoratedEvent) error {
 	msgs := make([]*sarama.ProducerMessage, 0, len(items))
 
 	propagator := otel.GetTextMapPropagator()
@@ -87,7 +89,7 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.Decorated
 			Value: eventPayload,
 		}
 
-		propagator.Inject(ctx, newSaramaHeaderCarrier(&m.Headers))
+		propagator.Inject(propagationCtx, newSaramaHeaderCarrier(&m.Headers))
 
 		msgByteSize := m.ByteSize(2)
 		if msgByteSize > e.config.MaxMessageBytes {

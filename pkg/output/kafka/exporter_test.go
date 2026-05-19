@@ -9,6 +9,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -242,6 +247,53 @@ func TestExportItemsEmptyBatchAfterFiltering(t *testing.T) {
 	assert.Empty(t, mock.messages, "no SendMessages call when all messages are oversized")
 }
 
+func TestExportItemsDoesNotPropagateBatchSpan(t *testing.T) {
+	setupKafkaTraceTest(t)
+
+	mock := &mockProducer{}
+	exporter := NewItemExporter("test", &Config{
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1000000},
+		Topic:          "topic",
+	}, newTestLogger(), mock)
+
+	events := []*xatu.DecoratedEvent{
+		newTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK, "id-1"),
+		newTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD, "id-2"),
+	}
+
+	err := exporter.ExportItems(context.Background(), events)
+	require.NoError(t, err)
+	require.Len(t, mock.messages, 2)
+
+	for _, msg := range mock.messages {
+		assert.False(t, spanContextFromHeaders(msg.Headers).IsValid(), "batch exporter span must not be injected into Kafka records")
+	}
+}
+
+func TestExportItemsPropagatesCallerContext(t *testing.T) {
+	setupKafkaTraceTest(t)
+
+	mock := &mockProducer{}
+	exporter := NewItemExporter("test", &Config{
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1000000},
+		Topic:          "topic",
+	}, newTestLogger(), mock)
+
+	ctx, parent := otel.Tracer("test").Start(context.Background(), "caller")
+	defer parent.End()
+
+	err := exporter.ExportItems(ctx, []*xatu.DecoratedEvent{
+		newTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK, "id-1"),
+	})
+	require.NoError(t, err)
+	require.Len(t, mock.messages, 1)
+
+	sc := spanContextFromHeaders(mock.messages[0].Headers)
+	require.True(t, sc.IsValid())
+	assert.Equal(t, parent.SpanContext().TraceID(), sc.TraceID())
+	assert.Equal(t, parent.SpanContext().SpanID(), sc.SpanID())
+}
+
 func TestExportItemsProducerErrors(t *testing.T) {
 	prodErr := &sarama.ProducerError{
 		Msg: &sarama.ProducerMessage{Topic: "t"},
@@ -294,4 +346,37 @@ func TestShutdownClosesProducer(t *testing.T) {
 	err := exporter.Shutdown(context.Background())
 	require.NoError(t, err)
 	assert.True(t, mock.closed, "Shutdown should call Close on the producer")
+}
+
+func setupKafkaTraceTest(t *testing.T) *tracetest.SpanRecorder {
+	t.Helper()
+
+	previousProvider := otel.GetTracerProvider()
+	previousPropagator := otel.GetTextMapPropagator()
+
+	recorder := tracetest.NewSpanRecorder()
+	provider := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithSpanProcessor(recorder),
+	)
+
+	otel.SetTracerProvider(provider)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+
+	t.Cleanup(func() {
+		require.NoError(t, provider.Shutdown(context.Background()))
+		otel.SetTracerProvider(previousProvider)
+		otel.SetTextMapPropagator(previousPropagator)
+	})
+
+	return recorder
+}
+
+func spanContextFromHeaders(headers []sarama.RecordHeader) trace.SpanContext {
+	return trace.SpanContextFromContext(
+		otel.GetTextMapPropagator().Extract(
+			context.Background(),
+			newSaramaHeaderCarrier(&headers),
+		),
+	)
 }

@@ -180,5 +180,5 @@ make sentry-logs-build
 | Event | ID | Description |
 | --- | --- | --- |
 | `EXECUTION_BLOCK_METRICS` | 87 | Block execution performance metrics including timing, state reads/writes, and cache statistics |
-| `EXECUTION_STATE_SIZE_DELTA` | 88 | State size delta per block: account, storage, trienode, and contract code count/byte changes |
-| `EXECUTION_MPT_DEPTH` | 89 | Merkle Patricia Trie depth metrics: per-depth node counts and byte sizes for written/deleted trie nodes |
+| `EXECUTION_STATE_SIZE_DELTA` | 90 | State size delta per block: account, storage, trienode, and contract code count/byte changes |
+| `EXECUTION_MPT_DEPTH` | 91 | Merkle Patricia Trie depth metrics: per-depth node counts and byte sizes for written/deleted trie nodes |

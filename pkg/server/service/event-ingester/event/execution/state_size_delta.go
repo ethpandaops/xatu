@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type StateSizeDelta struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewStateSizeDelta(log logrus.FieldLogger, event *xatu.DecoratedEvent) *StateSizeDelta {
+func NewStateSizeDelta(log observability.ContextualLogger, event *xatu.DecoratedEvent) *StateSizeDelta {
 	return &StateSizeDelta{
 		log:   log.WithField("event", StateSizeDeltaType),
 		event: event,

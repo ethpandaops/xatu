@@ -17,26 +17,26 @@ type executionStateSizeDeltaBatch struct {
 	BlockNumber                               proto.ColUInt64
 	StateRoot                                 route.SafeColFixedStr
 	ParentStateRoot                           route.SafeColFixedStr
-	AccountWrites                             proto.ColInt64
-	AccountWriteBytes                         proto.ColInt64
-	AccountTrienodeWrites                     proto.ColInt64
-	AccountTrienodeWriteBytes                 proto.ColInt64
-	ContractCodeWrites                        proto.ColInt64
-	ContractCodeWriteBytes                    proto.ColInt64
-	StorageWrites                             proto.ColInt64
-	StorageWriteBytes                         proto.ColInt64
-	StorageTrienodeWrites                     proto.ColInt64
-	StorageTrienodeWriteBytes                 proto.ColInt64
-	AccountDeletes                            proto.ColInt64
-	AccountDeleteBytes                        proto.ColInt64
-	AccountTrienodeDeletes                    proto.ColInt64
-	AccountTrienodeDeleteBytes                proto.ColInt64
-	ContractCodeDeletes                       proto.ColInt64
-	ContractCodeDeleteBytes                   proto.ColInt64
-	StorageDeletes                            proto.ColInt64
-	StorageDeleteBytes                        proto.ColInt64
-	StorageTrienodeDeletes                    proto.ColInt64
-	StorageTrienodeDeleteBytes                proto.ColInt64
+	AccountWrites                             proto.ColUInt64
+	AccountWriteBytes                         proto.ColUInt64
+	AccountTrienodeWrites                     proto.ColUInt64
+	AccountTrienodeWriteBytes                 proto.ColUInt64
+	ContractCodeWrites                        proto.ColUInt64
+	ContractCodeWriteBytes                    proto.ColUInt64
+	StorageWrites                             proto.ColUInt64
+	StorageWriteBytes                         proto.ColUInt64
+	StorageTrienodeWrites                     proto.ColUInt64
+	StorageTrienodeWriteBytes                 proto.ColUInt64
+	AccountDeletes                            proto.ColUInt64
+	AccountDeleteBytes                        proto.ColUInt64
+	AccountTrienodeDeletes                    proto.ColUInt64
+	AccountTrienodeDeleteBytes                proto.ColUInt64
+	ContractCodeDeletes                       proto.ColUInt64
+	ContractCodeDeleteBytes                   proto.ColUInt64
+	StorageDeletes                            proto.ColUInt64
+	StorageDeleteBytes                        proto.ColUInt64
+	StorageTrienodeDeletes                    proto.ColUInt64
+	StorageTrienodeDeleteBytes                proto.ColUInt64
 	MetaClientName                            proto.ColStr
 	MetaClientID                              proto.ColStr
 	MetaClientVersion                         proto.ColStr

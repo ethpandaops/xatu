@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type MPTDepth struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewMPTDepth(log logrus.FieldLogger, event *xatu.DecoratedEvent) *MPTDepth {
+func NewMPTDepth(log observability.ContextualLogger, event *xatu.DecoratedEvent) *MPTDepth {
 	return &MPTDepth{
 		log:   log.WithField("event", MPTDepthType),
 		event: event,

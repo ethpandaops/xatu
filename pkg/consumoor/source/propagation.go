@@ -1,6 +1,8 @@
 package source
 
 import (
+	"strings"
+
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
@@ -21,11 +23,21 @@ func (c benthosHeaderCarrier) Get(key string) string {
 	}
 
 	v, ok := c.msg.MetaGet(key)
-	if !ok {
-		return ""
+	if ok {
+		return v
 	}
 
-	return v
+	var value string
+
+	_ = c.msg.MetaWalk(func(k, v string) error {
+		if strings.EqualFold(k, key) {
+			value = v
+		}
+
+		return nil
+	})
+
+	return value
 }
 
 func (c benthosHeaderCarrier) Set(key, value string) {

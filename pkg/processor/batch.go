@@ -35,6 +35,12 @@ type ItemExporter[T any] interface {
 	Shutdown(ctx context.Context) error
 }
 
+// TraceableItemExporter is implemented by exporters that need each queued
+// item's original caller context in addition to the worker/export context.
+type TraceableItemExporter[T any] interface {
+	ExportTraceableItems(ctx context.Context, items []*TraceableItem[T]) error
+}
+
 const (
 	DefaultMaxQueueSize       = 51200
 	DefaultScheduleDelay      = 5000
@@ -121,11 +127,30 @@ type BatchItemProcessor[T any] struct {
 }
 
 type TraceableItem[T any] struct {
-	item *T
+	item      *T
+	callerCtx context.Context //nolint:containedctx // trace context propagation across async batching
 	// resultCh signals export completion for sync shipping. A nil value
 	// means success; a non-nil error means the export failed. Closed
 	// exactly once by the worker after the value is sent.
 	resultCh chan error
+}
+
+// Item returns the queued item.
+func (ti *TraceableItem[T]) Item() *T {
+	if ti == nil {
+		return nil
+	}
+
+	return ti.item
+}
+
+// Context returns the caller context captured when the item was queued.
+func (ti *TraceableItem[T]) Context() context.Context {
+	if ti == nil || ti.callerCtx == nil {
+		return context.Background()
+	}
+
+	return ti.callerCtx
 }
 
 // NewBatchItemProcessor creates a new batch item processor.
@@ -239,7 +264,8 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 			}
 
 			item := &TraceableItem[T]{
-				item: i,
+				item:      i,
+				callerCtx: context.WithoutCancel(ctx),
 			}
 
 			if bvp.o.ShippingMethod == ShippingMethodSync {
@@ -281,7 +307,9 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 		defer cancel()
 	}
 
+	traceableItems := make([]*TraceableItem[T], 0, len(itemsBatch))
 	items := make([]*T, 0, len(itemsBatch))
+
 	for _, ti := range itemsBatch {
 		if ti == nil {
 			bvp.log.WithContext(ctx).Warnf("Attempted to export a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
@@ -289,11 +317,19 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 			continue
 		}
 
+		traceableItems = append(traceableItems, ti)
 		items = append(items, ti.item)
 	}
 
 	startTime := time.Now()
-	err := bvp.e.ExportItems(ctx, items)
+
+	var err error
+	if traceableExporter, ok := bvp.e.(TraceableItemExporter[T]); ok {
+		err = traceableExporter.ExportTraceableItems(ctx, traceableItems)
+	} else {
+		err = bvp.e.ExportItems(ctx, items)
+	}
+
 	bvp.metrics.ObserveExportDuration(bvp.name, time.Since(startTime))
 
 	if err != nil {

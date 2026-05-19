@@ -317,8 +317,10 @@ func TestExportItemsPropagatesCallerContext(t *testing.T) {
 func TestKafkaSinkProcessorPropagatesPerItemContexts(t *testing.T) {
 	setupKafkaTraceTest(t)
 
+	const name = "test"
+
 	mock := &mockProducer{}
-	exporter := NewItemExporter("test", &Config{
+	exporter := NewItemExporter(name, &Config{
 		ProducerConfig: ProducerConfig{MaxMessageBytes: 1000000},
 		Topic:          "topic",
 	}, newTestLogger(), mock)
@@ -337,7 +339,7 @@ func TestKafkaSinkProcessorPropagatesPerItemContexts(t *testing.T) {
 	require.NoError(t, err)
 
 	sink := &Kafka{
-		name:   "test",
+		name:   name,
 		config: &Config{},
 		log:    newTestLogger(),
 		proc:   proc,
@@ -350,10 +352,10 @@ func TestKafkaSinkProcessorPropagatesPerItemContexts(t *testing.T) {
 		require.NoError(t, sink.Stop(context.Background()))
 	}()
 
-	ctx1, span1 := otel.Tracer("test").Start(context.Background(), "event-1")
+	ctx1, span1 := otel.Tracer(name).Start(context.Background(), "event-1")
 	defer span1.End()
 
-	ctx2, span2 := otel.Tracer("test").Start(context.Background(), "event-2")
+	ctx2, span2 := otel.Tracer(name).Start(context.Background(), "event-2")
 	defer span2.End()
 
 	require.NoError(t, sink.HandleNewDecoratedEvent(ctx1, newTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK, "id-1")))
@@ -374,6 +376,54 @@ func TestKafkaSinkProcessorPropagatesPerItemContexts(t *testing.T) {
 	assert.Equal(t, span2.SpanContext().TraceID(), sc2.TraceID())
 	assert.Equal(t, span2.SpanContext().SpanID(), sc2.SpanID())
 	assert.NotEqual(t, sc1.TraceID(), sc2.TraceID())
+}
+
+func TestKafkaSinkProcessorNoActiveSpanDoesNotInjectTraceparent(t *testing.T) {
+	setupKafkaTraceTest(t)
+
+	const name = "test"
+
+	mock := &mockProducer{}
+	exporter := NewItemExporter(name, &Config{
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1000000},
+		Topic:          "topic",
+	}, newTestLogger(), mock)
+
+	proc, err := processor.NewBatchItemProcessor[xatu.DecoratedEvent](
+		exporter,
+		"processor",
+		newTestLogger(),
+		processor.WithMaxExportBatchSize(1),
+		processor.WithWorkers(1),
+		processor.WithBatchTimeout(time.Hour),
+	)
+	require.NoError(t, err)
+
+	filter, err := xatu.NewEventFilter(&xatu.EventFilterConfig{})
+	require.NoError(t, err)
+
+	sink := &Kafka{
+		name:   name,
+		config: &Config{},
+		log:    newTestLogger(),
+		proc:   proc,
+		filter: filter,
+	}
+
+	require.NoError(t, sink.Start(context.Background()))
+
+	defer func() {
+		require.NoError(t, sink.Stop(context.Background()))
+	}()
+
+	require.NoError(t, sink.HandleNewDecoratedEvent(context.Background(), newTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK, "id-1")))
+
+	require.Eventually(t, func() bool {
+		return len(mock.snapshotMessages()) == 1
+	}, time.Second, 10*time.Millisecond)
+
+	messages := mock.snapshotMessages()
+	assert.False(t, spanContextFromHeaders(messages[0].Headers).IsValid())
 }
 
 func TestExportItemsProducerErrors(t *testing.T) {

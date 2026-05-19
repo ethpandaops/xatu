@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 )
@@ -39,6 +41,29 @@ type ItemExporter[T any] interface {
 // item's original caller context in addition to the worker/export context.
 type TraceableItemExporter[T any] interface {
 	ExportTraceableItems(ctx context.Context, items []*TraceableItem[T]) error
+}
+
+// PropagationContext returns a detached context containing only OTel
+// propagation state from ctx.
+func PropagationContext(ctx context.Context) context.Context {
+	return ContextWithPropagation(context.Background(), ctx)
+}
+
+// ContextWithPropagation returns parent with OTel propagation state copied
+// from propagationCtx. It preserves parent cancellation/deadline and avoids
+// retaining unrelated values from propagationCtx.
+func ContextWithPropagation(parent, propagationCtx context.Context) context.Context {
+	if parent == nil {
+		parent = context.Background()
+	}
+
+	if propagationCtx == nil {
+		propagationCtx = context.Background()
+	}
+
+	ctx := trace.ContextWithSpanContext(parent, trace.SpanContextFromContext(propagationCtx))
+
+	return baggage.ContextWithBaggage(ctx, baggage.FromContext(propagationCtx))
 }
 
 const (
@@ -265,7 +290,7 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 
 			item := &TraceableItem[T]{
 				item:      i,
-				callerCtx: context.WithoutCancel(ctx),
+				callerCtx: PropagationContext(ctx),
 			}
 
 			if bvp.o.ShippingMethod == ShippingMethodSync {

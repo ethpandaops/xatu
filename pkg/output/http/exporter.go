@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -49,12 +51,28 @@ func NewItemExporter(name string, config *Config, log observability.ContextualLo
 }
 
 func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
+	return e.exportItems(ctx, items, ctx)
+}
+
+func (e ItemExporter) ExportTraceableItems(ctx context.Context, traceableItems []*processor.TraceableItem[xatu.DecoratedEvent]) error {
+	var err error
+
+	for _, group := range processor.GroupTraceableItemsByPropagation(traceableItems) {
+		if exportErr := e.exportItems(ctx, group.Items, group.Context); exportErr != nil {
+			err = errors.Join(err, exportErr)
+		}
+	}
+
+	return err
+}
+
+func (e ItemExporter) exportItems(ctx context.Context, items []*xatu.DecoratedEvent, propagationCtx context.Context) error {
 	ctx, span := observability.Tracer().Start(ctx, "HTTPItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
 	defer span.End()
 
 	e.log.WithField("events", len(items)).WithContext(ctx).Debug("Sending batch of events to HTTP sink")
 
-	if err := e.sendUpstream(ctx, items); err != nil {
+	if err := e.sendUpstream(ctx, propagationCtx, items); err != nil {
 		e.log.
 			WithError(err).
 			WithField("num_events", len(items)).WithContext(ctx).
@@ -72,7 +90,7 @@ func (e ItemExporter) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.DecoratedEvent) error {
+func (e *ItemExporter) sendUpstream(ctx, propagationCtx context.Context, items []*xatu.DecoratedEvent) error {
 	httpMethod := "POST"
 
 	var rsp *http.Response
@@ -98,7 +116,7 @@ func (e *ItemExporter) sendUpstream(ctx context.Context, items []*xatu.Decorated
 	buf = compressed
 
 	// TODO: check that this also handles processor timeout
-	req, err := http.NewRequestWithContext(ctx, httpMethod, e.config.Address, buf)
+	req, err := http.NewRequestWithContext(processor.ContextWithPropagation(ctx, propagationCtx), httpMethod, e.config.Address, buf)
 	if err != nil {
 		return err
 	}

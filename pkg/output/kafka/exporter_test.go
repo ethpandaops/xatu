@@ -3,40 +3,65 @@ package kafka
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/IBM/sarama"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // mockProducer implements sarama.SyncProducer for testing.
 type mockProducer struct {
+	mu       sync.Mutex
 	messages []*sarama.ProducerMessage
 	err      error
 	closed   bool
 }
 
 func (m *mockProducer) SendMessage(msg *sarama.ProducerMessage) (int32, int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.messages = append(m.messages, msg)
 
 	return 0, 0, m.err
 }
 
 func (m *mockProducer) SendMessages(msgs []*sarama.ProducerMessage) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.messages = append(m.messages, msgs...)
 
 	return m.err
 }
 
 func (m *mockProducer) Close() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.closed = true
 
 	return nil
+}
+
+func (m *mockProducer) snapshotMessages() []*sarama.ProducerMessage {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	return append([]*sarama.ProducerMessage(nil), m.messages...)
 }
 
 func (m *mockProducer) TxnStatus() sarama.ProducerTxnStatusFlag {
@@ -242,6 +267,165 @@ func TestExportItemsEmptyBatchAfterFiltering(t *testing.T) {
 	assert.Empty(t, mock.messages, "no SendMessages call when all messages are oversized")
 }
 
+func TestExportItemsDoesNotPropagateBatchSpan(t *testing.T) {
+	setupKafkaTraceTest(t)
+
+	mock := &mockProducer{}
+	exporter := NewItemExporter("test", &Config{
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1000000},
+		Topic:          "topic",
+	}, newTestLogger(), mock)
+
+	events := []*xatu.DecoratedEvent{
+		newTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK, "id-1"),
+		newTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD, "id-2"),
+	}
+
+	err := exporter.ExportItems(context.Background(), events)
+	require.NoError(t, err)
+	require.Len(t, mock.messages, 2)
+
+	for _, msg := range mock.messages {
+		assert.False(t, spanContextFromHeaders(msg.Headers).IsValid(), "batch exporter span must not be injected into Kafka records")
+	}
+}
+
+func TestExportItemsPropagatesCallerContext(t *testing.T) {
+	setupKafkaTraceTest(t)
+
+	mock := &mockProducer{}
+	exporter := NewItemExporter("test", &Config{
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1000000},
+		Topic:          "topic",
+	}, newTestLogger(), mock)
+
+	ctx, parent := otel.Tracer("test").Start(context.Background(), "caller")
+	defer parent.End()
+
+	err := exporter.ExportItems(ctx, []*xatu.DecoratedEvent{
+		newTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK, "id-1"),
+	})
+	require.NoError(t, err)
+	require.Len(t, mock.messages, 1)
+
+	sc := spanContextFromHeaders(mock.messages[0].Headers)
+	require.True(t, sc.IsValid())
+	assert.Equal(t, parent.SpanContext().TraceID(), sc.TraceID())
+	assert.Equal(t, parent.SpanContext().SpanID(), sc.SpanID())
+}
+
+func TestKafkaSinkProcessorPropagatesPerItemContexts(t *testing.T) {
+	setupKafkaTraceTest(t)
+
+	const name = "test"
+
+	mock := &mockProducer{}
+	exporter := NewItemExporter(name, &Config{
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1000000},
+		Topic:          "topic",
+	}, newTestLogger(), mock)
+
+	proc, err := processor.NewBatchItemProcessor[xatu.DecoratedEvent](
+		exporter,
+		"processor",
+		newTestLogger(),
+		processor.WithMaxExportBatchSize(2),
+		processor.WithWorkers(1),
+		processor.WithBatchTimeout(time.Hour),
+	)
+	require.NoError(t, err)
+
+	filter, err := xatu.NewEventFilter(&xatu.EventFilterConfig{})
+	require.NoError(t, err)
+
+	sink := &Kafka{
+		name:   name,
+		config: &Config{},
+		log:    newTestLogger(),
+		proc:   proc,
+		filter: filter,
+	}
+
+	require.NoError(t, sink.Start(context.Background()))
+
+	defer func() {
+		require.NoError(t, sink.Stop(context.Background()))
+	}()
+
+	ctx1, span1 := otel.Tracer(name).Start(context.Background(), "event-1")
+	defer span1.End()
+
+	ctx2, span2 := otel.Tracer(name).Start(context.Background(), "event-2")
+	defer span2.End()
+
+	require.NoError(t, sink.HandleNewDecoratedEvent(ctx1, newTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK, "id-1")))
+	require.NoError(t, sink.HandleNewDecoratedEvent(ctx2, newTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD, "id-2")))
+
+	require.Eventually(t, func() bool {
+		return len(mock.snapshotMessages()) == 2
+	}, time.Second, 10*time.Millisecond)
+
+	messages := mock.snapshotMessages()
+	sc1 := spanContextFromHeaders(messages[0].Headers)
+	sc2 := spanContextFromHeaders(messages[1].Headers)
+
+	require.True(t, sc1.IsValid())
+	require.True(t, sc2.IsValid())
+	assert.Equal(t, span1.SpanContext().TraceID(), sc1.TraceID())
+	assert.Equal(t, span1.SpanContext().SpanID(), sc1.SpanID())
+	assert.Equal(t, span2.SpanContext().TraceID(), sc2.TraceID())
+	assert.Equal(t, span2.SpanContext().SpanID(), sc2.SpanID())
+	assert.NotEqual(t, sc1.TraceID(), sc2.TraceID())
+}
+
+func TestKafkaSinkProcessorNoActiveSpanDoesNotInjectTraceparent(t *testing.T) {
+	setupKafkaTraceTest(t)
+
+	const name = "test"
+
+	mock := &mockProducer{}
+	exporter := NewItemExporter(name, &Config{
+		ProducerConfig: ProducerConfig{MaxMessageBytes: 1000000},
+		Topic:          "topic",
+	}, newTestLogger(), mock)
+
+	proc, err := processor.NewBatchItemProcessor[xatu.DecoratedEvent](
+		exporter,
+		"processor",
+		newTestLogger(),
+		processor.WithMaxExportBatchSize(1),
+		processor.WithWorkers(1),
+		processor.WithBatchTimeout(time.Hour),
+	)
+	require.NoError(t, err)
+
+	filter, err := xatu.NewEventFilter(&xatu.EventFilterConfig{})
+	require.NoError(t, err)
+
+	sink := &Kafka{
+		name:   name,
+		config: &Config{},
+		log:    newTestLogger(),
+		proc:   proc,
+		filter: filter,
+	}
+
+	require.NoError(t, sink.Start(context.Background()))
+
+	defer func() {
+		require.NoError(t, sink.Stop(context.Background()))
+	}()
+
+	require.NoError(t, sink.HandleNewDecoratedEvent(context.Background(), newTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK, "id-1")))
+
+	require.Eventually(t, func() bool {
+		return len(mock.snapshotMessages()) == 1
+	}, time.Second, 10*time.Millisecond)
+
+	messages := mock.snapshotMessages()
+	assert.False(t, spanContextFromHeaders(messages[0].Headers).IsValid())
+}
+
 func TestExportItemsProducerErrors(t *testing.T) {
 	prodErr := &sarama.ProducerError{
 		Msg: &sarama.ProducerMessage{Topic: "t"},
@@ -294,4 +478,37 @@ func TestShutdownClosesProducer(t *testing.T) {
 	err := exporter.Shutdown(context.Background())
 	require.NoError(t, err)
 	assert.True(t, mock.closed, "Shutdown should call Close on the producer")
+}
+
+func setupKafkaTraceTest(t *testing.T) *tracetest.SpanRecorder {
+	t.Helper()
+
+	previousProvider := otel.GetTracerProvider()
+	previousPropagator := otel.GetTextMapPropagator()
+
+	recorder := tracetest.NewSpanRecorder()
+	provider := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithSpanProcessor(recorder),
+	)
+
+	otel.SetTracerProvider(provider)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+
+	t.Cleanup(func() {
+		require.NoError(t, provider.Shutdown(context.Background()))
+		otel.SetTracerProvider(previousProvider)
+		otel.SetTextMapPropagator(previousPropagator)
+	})
+
+	return recorder
+}
+
+func spanContextFromHeaders(headers []sarama.RecordHeader) trace.SpanContext {
+	return trace.SpanContextFromContext(
+		otel.GetTextMapPropagator().Extract(
+			context.Background(),
+			newSaramaHeaderCarrier(&headers),
+		),
+	)
 }

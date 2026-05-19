@@ -7,20 +7,21 @@ import (
 
 	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec"
-	"github.com/ethpandaops/xatu/pkg/proto/eth"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	ssz "github.com/ferranbt/fastssz"
 	"github.com/golang/snappy"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/eth"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
 type ValidatorBlock struct {
-	log        logrus.FieldLogger
+	log        observability.ContextualLogger
 	snapshot   *ValidatorBlockDataSnapshot
 	event      *api.VersionedProposal
 	beacon     *ethereum.BeaconNode
@@ -34,8 +35,7 @@ type ValidatorBlockDataSnapshot struct {
 }
 
 func NewValidatorBlock(
-	log logrus.FieldLogger,
-	event *api.VersionedProposal,
+	log observability.ContextualLogger, event *api.VersionedProposal,
 	snapshot *ValidatorBlockDataSnapshot,
 	beacon *ethereum.BeaconNode,
 	clientMeta *xatu.ClientMeta,

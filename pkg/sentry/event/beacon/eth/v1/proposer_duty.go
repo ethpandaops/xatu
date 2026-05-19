@@ -8,19 +8,21 @@ import (
 
 	v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
 type ProposerDuty struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -33,7 +35,7 @@ type ProposerDuty struct {
 	id             uuid.UUID
 }
 
-func NewProposerDuty(log logrus.FieldLogger, duty *v1.ProposerDuty, epoch phase0.Epoch, now time.Time, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta, duplicateCache *ttlcache.Cache[string, time.Time]) *ProposerDuty {
+func NewProposerDuty(log observability.ContextualLogger, duty *v1.ProposerDuty, epoch phase0.Epoch, now time.Time, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta, duplicateCache *ttlcache.Cache[string, time.Time]) *ProposerDuty {
 	return &ProposerDuty{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_PROPOSER_DUTY"),
 		now:            now,
@@ -73,7 +75,7 @@ func (e *ProposerDuty) Decorate(ctx context.Context) (*xatu.DecoratedEvent, erro
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra proposer duty data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra proposer duty data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1ProposerDuty{
 			EthV1ProposerDuty: additionalData,
@@ -95,7 +97,7 @@ func (e *ProposerDuty) ShouldIgnore(ctx context.Context) (bool, error) {
 		e.log.WithFields(logrus.Fields{
 			"epoch":                 e.epoch,
 			"time_since_first_item": time.Since(item.Value()),
-		}).Debug("Duplicate proposer duty event received")
+		}).WithContext(ctx).Debug("Duplicate proposer duty event received")
 
 		return true, nil
 	}

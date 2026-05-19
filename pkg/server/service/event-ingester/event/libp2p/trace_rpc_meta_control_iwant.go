@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TraceRPCMetaControlIWant struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceRPCMetaControlIWant(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceRPCMetaControlIWant {
+func NewTraceRPCMetaControlIWant(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceRPCMetaControlIWant {
 	return &TraceRPCMetaControlIWant{
 		log:   log.WithField("event", TraceRPCMetaControlIWantType),
 		event: event,

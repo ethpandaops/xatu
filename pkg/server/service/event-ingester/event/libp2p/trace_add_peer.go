@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TraceAddPeer struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceAddPeer(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceAddPeer {
+func NewTraceAddPeer(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceAddPeer {
 	return &TraceAddPeer{
 		log:   log.WithField("event", TraceAddPeerType),
 		event: event,

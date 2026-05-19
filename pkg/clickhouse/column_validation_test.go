@@ -4,9 +4,10 @@ import (
 	"testing"
 
 	"github.com/ClickHouse/ch-go/proto"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/stretchr/testify/assert"
 )
 
 // colsStubBatch is a tiny route.ColumnarBatch that reports a fixed column

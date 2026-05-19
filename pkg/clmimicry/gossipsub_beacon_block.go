@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	"github.com/OffchainLabs/prysm/v7/consensus-types/primitives"
-	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
-	"github.com/ethpandaops/xatu/pkg/proto/libp2p/gossipsub"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
+	"github.com/ethpandaops/xatu/pkg/proto/libp2p/gossipsub"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func (p *Processor) handleGossipBeaconBlock(

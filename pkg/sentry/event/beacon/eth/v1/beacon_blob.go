@@ -7,15 +7,17 @@ import (
 
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
 // BlobData represents blob metadata derived from block's blob_kzg_commitments.
@@ -30,7 +32,7 @@ type BlobData struct {
 }
 
 type BeaconBlob struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -41,7 +43,7 @@ type BeaconBlob struct {
 	id             uuid.UUID
 }
 
-func NewBeaconBlob(log logrus.FieldLogger, event *BlobData, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *BeaconBlob {
+func NewBeaconBlob(log observability.ContextualLogger, event *BlobData, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *BeaconBlob {
 	return &BeaconBlob{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_BEACON_BLOB"),
 		now:            now,
@@ -78,7 +80,7 @@ func (e *BeaconBlob) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error)
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra beacon blob data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra beacon blob data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1BeaconBlob{
 			EthV1BeaconBlob: additionalData,
@@ -105,7 +107,7 @@ func (e *BeaconBlob) ShouldIgnore(ctx context.Context) (bool, error) {
 			"time_since_first_item": time.Since(item.Value()),
 			"slot":                  e.event.Slot,
 			"index":                 e.event.Index,
-		}).Debug("Duplicate beacon blob event received")
+		}).WithContext(ctx).Debug("Duplicate beacon blob event received")
 
 		return true, nil
 	}

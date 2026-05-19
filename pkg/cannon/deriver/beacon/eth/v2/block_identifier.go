@@ -5,10 +5,11 @@ import (
 
 	"github.com/ethpandaops/ethwallclock"
 	"github.com/ethpandaops/go-eth2-client/spec"
-	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func GetBlockIdentifier(block *spec.VersionedSignedBeaconBlock, wallclock *ethwallclock.EthereumBeaconChain) (*xatu.BlockIdentifier, error) {

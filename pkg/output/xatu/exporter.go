@@ -6,8 +6,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/observability"
-	pb "github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/sirupsen/logrus"
@@ -21,21 +19,25 @@ import (
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	pb "github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type ItemExporter struct {
 	config  *Config
-	log     logrus.FieldLogger
+	log     observability.ContextualLogger
 	headers map[string]string
 
 	client pb.EventIngesterClient
 	conn   *grpc.ClientConn
 }
 
-func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
+func NewItemExporter(name string, config *Config, log observability.ContextualLogger) (ItemExporter, error) {
 	log = log.WithField("output_name", name).WithField("output_type", SinkType)
 
 	opts := []grpc.DialOption{
+		observability.GRPCClientOption(),
 		grpc.WithChainUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor, retry.UnaryClientInterceptor()),
 		grpc.WithChainStreamInterceptor(grpc_prometheus.StreamClientInterceptor, retry.StreamClientInterceptor()),
 	}
@@ -84,12 +86,12 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*pb.DecoratedEven
 	_, span := observability.Tracer().Start(ctx, "XatuItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
 	defer span.End()
 
-	e.log.WithField("events", len(items)).Debug("Sending batch of events to xatu sink")
+	e.log.WithField("events", len(items)).WithContext(ctx).Debug("Sending batch of events to xatu sink")
 
 	if err := e.sendUpstream(ctx, items); err != nil {
 		e.log.
 			WithError(err).
-			WithField("num_events", len(items)).
+			WithField("num_events", len(items)).WithContext(ctx).
 			Error("Failed to send events upstream")
 
 		span.SetStatus(codes.Error, err.Error())

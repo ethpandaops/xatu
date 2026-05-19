@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 // ItemExporter is an interface for exporting items.
@@ -104,7 +104,7 @@ type BatchItemProcessor[T any] struct {
 	e ItemExporter[T]
 	o BatchItemProcessorOptions
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	queue   chan *TraceableItem[T]
 	batchCh chan []*TraceableItem[T]
@@ -121,13 +121,15 @@ type BatchItemProcessor[T any] struct {
 }
 
 type TraceableItem[T any] struct {
-	item        *T
-	errCh       chan error
-	completedCh chan struct{}
+	item *T
+	// resultCh signals export completion for sync shipping. A nil value
+	// means success; a non-nil error means the export failed. Closed
+	// exactly once by the worker after the value is sent.
+	resultCh chan error
 }
 
 // NewBatchItemProcessor creates a new batch item processor.
-func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log logrus.FieldLogger, options ...BatchItemProcessorOption) (*BatchItemProcessor[T], error) {
+func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log observability.ContextualLogger, options ...BatchItemProcessorOption) (*BatchItemProcessor[T], error) {
 	maxQueueSize := DefaultMaxQueueSize
 	maxExportBatchSize := DefaultMaxExportBatchSize
 
@@ -188,7 +190,7 @@ func (bvp *BatchItemProcessor[T]) Start(ctx context.Context) {
 
 	bvp.metrics.SetWorkerCount(bvp.name, float64(bvp.o.Workers))
 
-	bvp.log.Infof("Starting %d workers for %s", bvp.o.Workers, bvp.name)
+	bvp.log.WithContext(ctx).Infof("Starting %d workers for %s", bvp.o.Workers, bvp.name)
 
 	for i := 0; i < bvp.o.Workers; i++ {
 		go func(num int) {
@@ -199,7 +201,7 @@ func (bvp *BatchItemProcessor[T]) Start(ctx context.Context) {
 
 	go func() {
 		bvp.batchBuilder(ctx)
-		bvp.log.Info("Batch builder exited")
+		bvp.log.WithContext(ctx).Info("Batch builder exited")
 	}()
 }
 
@@ -212,9 +214,6 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 	if len(s) == 0 {
 		return nil
 	}
-
-	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.Write")
-	defer span.End()
 
 	if bvp.e == nil {
 		return errors.New("exporter is nil")
@@ -234,7 +233,7 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 			if i == nil {
 				bvp.metrics.IncItemsDroppedBy(bvp.name, float64(1))
 
-				bvp.log.Warnf("Attempted to write a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
+				bvp.log.WithContext(ctx).Warnf("Attempted to write a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
 
 				continue
 			}
@@ -244,8 +243,7 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 			}
 
 			if bvp.o.ShippingMethod == ShippingMethodSync {
-				item.errCh = make(chan error, 1)
-				item.completedCh = make(chan struct{}, 1)
+				item.resultCh = make(chan error, 1)
 			}
 
 			prepared = append(prepared, item)
@@ -276,12 +274,6 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 	bvp.metrics.IncWorkerExportInProgress(bvp.name)
 	defer bvp.metrics.DecWorkerExportInProgress(bvp.name)
 
-	_, span := observability.Tracer().Start(ctx, "BatchItemProcessor.exportWithTimeout")
-	defer span.End()
-
-	span.SetAttributes(attribute.String("processor", bvp.name))
-	span.SetAttributes(attribute.Int("batch_size", len(itemsBatch)))
-
 	if bvp.o.ExportTimeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, bvp.o.ExportTimeout)
@@ -289,28 +281,20 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 		defer cancel()
 	}
 
-	// Since the batch processor filters out nil items upstream,
-	// we can optimize by pre-allocating the full slice size.
-	// Worst case is a few wasted allocations if any nil items slip through.
-	items := make([]*T, len(itemsBatch))
-
-	for i, item := range itemsBatch {
-		if item == nil {
-			bvp.log.Warnf("Attempted to export a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
+	items := make([]*T, 0, len(itemsBatch))
+	for _, ti := range itemsBatch {
+		if ti == nil {
+			bvp.log.WithContext(ctx).Warnf("Attempted to export a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
 
 			continue
 		}
 
-		items[i] = item.item
+		items = append(items, ti.item)
 	}
 
 	startTime := time.Now()
-
 	err := bvp.e.ExportItems(ctx, items)
-
-	duration := time.Since(startTime)
-
-	bvp.metrics.ObserveExportDuration(bvp.name, duration)
+	bvp.metrics.ObserveExportDuration(bvp.name, time.Since(startTime))
 
 	if err != nil {
 		bvp.metrics.IncItemsFailedBy(bvp.name, float64(len(items)))
@@ -319,16 +303,14 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 		bvp.metrics.ObserveBatchSize(bvp.name, float64(len(items)))
 	}
 
-	for _, item := range itemsBatch {
-		if item.errCh != nil {
-			item.errCh <- err
-			close(item.errCh)
+	for _, ti := range itemsBatch {
+		if ti == nil || ti.resultCh == nil {
+			continue
 		}
 
-		if item.completedCh != nil {
-			item.completedCh <- struct{}{}
-			close(item.completedCh)
-		}
+		ti.resultCh <- err
+
+		close(ti.resultCh)
 	}
 
 	return nil
@@ -341,7 +323,7 @@ func (bvp *BatchItemProcessor[T]) Shutdown(ctx context.Context) error {
 	bvp.stopOnce.Do(func() {
 		wait := make(chan struct{})
 		go func() {
-			bvp.log.Info("Stopping processor")
+			bvp.log.WithContext(ctx).Info("Stopping processor")
 
 			close(bvp.stopCh)
 
@@ -355,7 +337,7 @@ func (bvp *BatchItemProcessor[T]) Shutdown(ctx context.Context) error {
 
 			if bvp.e != nil {
 				if err = bvp.e.Shutdown(ctx); err != nil {
-					bvp.log.WithError(err).Error("failed to shutdown processor")
+					bvp.log.WithError(err).WithContext(ctx).Error("failed to shutdown processor")
 				}
 			}
 
@@ -416,12 +398,10 @@ func WithMetrics(metrics *Metrics) BatchItemProcessorOption {
 func (bvp *BatchItemProcessor[T]) waitForBatchCompletion(ctx context.Context, items []*TraceableItem[T]) error {
 	for _, item := range items {
 		select {
-		case err := <-item.errCh:
+		case err := <-item.resultCh:
 			if err != nil {
 				return err
 			}
-		case <-item.completedCh:
-			continue
 		case <-ctx.Done():
 			return ctx.Err()
 		}
@@ -438,7 +418,7 @@ func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 	for {
 		select {
 		case <-bvp.stopWorkersCh:
-			log.Info("Stopping batch builder")
+			log.WithContext(ctx).Info("Stopping batch builder")
 			return
 		case item, ok := <-bvp.queue:
 			if !ok {
@@ -453,7 +433,7 @@ func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 
 			if item == nil {
 				bvp.metrics.IncItemsDroppedBy(bvp.name, float64(1))
-				bvp.log.Warnf("Attempted to build a batch with a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
+				bvp.log.WithContext(ctx).Warnf("Attempted to build a batch with a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
 				continue
 			}
 
@@ -489,14 +469,14 @@ func (bvp *BatchItemProcessor[T]) worker(ctx context.Context, number int) {
 	for {
 		select {
 		case <-bvp.stopWorkersCh:
-			bvp.log.Infof("Stopping worker %d", number)
+			bvp.log.WithContext(ctx).Infof("Stopping worker %d", number)
 
 			return
 		case batch := <-bvp.batchCh:
 			bvp.timer.Reset(bvp.o.BatchTimeout)
 
 			if err := bvp.exportWithTimeout(ctx, batch); err != nil {
-				bvp.log.WithError(err).Error("failed to export items")
+				bvp.log.WithError(err).WithContext(ctx).Error("failed to export items")
 			}
 
 			bvp.metrics.SetItemsQueued(bvp.name, float64(len(bvp.queue)))

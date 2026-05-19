@@ -11,6 +11,8 @@ import (
 	"github.com/cenkalti/backoff/v5"
 	"github.com/sirupsen/logrus"
 	"github.com/sony/gobreaker/v2"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 // MempoolWatcher captures and processes pending transactions from the Ethereum execution client.
@@ -31,7 +33,7 @@ import (
 // not as a permanent mirror of the mempool state.
 type MempoolWatcher struct {
 	client                  ClientProvider
-	log                     logrus.FieldLogger
+	log                     observability.ContextualLogger
 	config                  *Config
 	pendingTxs              map[string]*PendingTxRecord
 	pendingTxsMutex         sync.RWMutex
@@ -53,8 +55,7 @@ type MempoolWatcher struct {
 // for resilient RPC operations
 func NewMempoolWatcher(
 	client ClientProvider,
-	log logrus.FieldLogger,
-	config *Config,
+	log observability.ContextualLogger, config *Config,
 	processTxCallback func(context.Context, *PendingTxRecord, json.RawMessage) error,
 	metrics *Metrics,
 ) *MempoolWatcher {
@@ -203,7 +204,7 @@ func (w *MempoolWatcher) Start(ctx context.Context) error {
 	// Start transaction processor - worker pool to consume from the queue.
 	w.startTransactionProcessor()
 
-	w.log.Info("Started mempool watcher")
+	w.log.WithContext(ctx).Info("Started mempool watcher")
 
 	return nil
 }
@@ -434,7 +435,7 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 				// Convert the txData into a JSON byte array for later processing.
 				txDataBytes, err := json.Marshal(txData)
 				if err != nil {
-					w.log.WithError(err).WithField("tx_hash", txHash).Error("Failed to marshal transaction data")
+					w.log.WithError(err).WithField("tx_hash", txHash).WithContext(ctx).Error("Failed to marshal transaction data")
 
 					continue
 				}
@@ -517,7 +518,7 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 		"fetch_time":         fetchTime.String(),
 		"process_time":       processTime.String(),
 		"total_time":         totalTime.String(),
-	}).Debug("[txpool_content] Processed mempool transactions")
+	}).WithContext(ctx).Debug("[txpool_content] Processed mempool transactions")
 
 	return nil
 }
@@ -589,7 +590,7 @@ func (w *MempoolWatcher) fetchAndProcessPendingTransactions(ctx context.Context)
 		}
 
 		if err := json.Unmarshal(txData, &tx); err != nil {
-			w.log.WithError(err).Debug("Failed to parse transaction data from eth_pendingTransactions")
+			w.log.WithError(err).WithContext(ctx).Debug("Failed to parse transaction data from eth_pendingTransactions")
 
 			continue
 		}
@@ -629,7 +630,7 @@ func (w *MempoolWatcher) fetchAndProcessPendingTransactions(ctx context.Context)
 
 	if len(txsToClear) > 0 {
 		for _, hash := range txsToClear {
-			w.log.WithField("tx_hash", hash).Debug("Transaction previously marked for pruning was found in eth_pendingTransactions, clearing flag")
+			w.log.WithField("tx_hash", hash).WithContext(ctx).Debug("Transaction previously marked for pruning was found in eth_pendingTransactions, clearing flag")
 		}
 
 		w.pendingTxsMutex.Lock()
@@ -658,7 +659,7 @@ func (w *MempoolWatcher) fetchAndProcessPendingTransactions(ctx context.Context)
 		"fetch_time":    fetchTime.String(),
 		"process_time":  processTime.String(),
 		"total_time":    totalTime.String(),
-	}).Debug("[eth_pendingTransactions] Processed mempool transactions")
+	}).WithContext(ctx).Debug("[eth_pendingTransactions] Processed mempool transactions")
 
 	return nil
 }

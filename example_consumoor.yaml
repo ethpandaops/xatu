@@ -88,3 +88,10 @@ clickhouse:
 # disabledEvents:
 #   - BEACON_API_ETH_V1_DEBUG_FORK_CHOICE
 #   - BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2
+
+tracing:
+  enabled: false
+  endpoint: localhost:4318
+  insecure: true
+  sampling:
+    rate: 0.01

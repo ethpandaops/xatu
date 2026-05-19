@@ -8,6 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
@@ -15,17 +19,10 @@ import (
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 	eventHandler "github.com/ethpandaops/xatu/pkg/server/service/event-ingester/event"
 	"github.com/ethpandaops/xatu/pkg/server/store"
-	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/attribute"
-	ocodes "go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/peer"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Handler struct {
-	log            logrus.FieldLogger
+	log            observability.ContextualLogger
 	clockDrift     *time.Duration
 	geoipProvider  geoip.Provider
 	cache          store.Cache
@@ -35,7 +32,7 @@ type Handler struct {
 	eventRouter *eventHandler.EventRouter
 }
 
-func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache, clientNameSalt string) *Handler {
+func NewHandler(log observability.ContextualLogger, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache, clientNameSalt string) *Handler {
 	return &Handler{
 		log:            log,
 		clockDrift:     clockDrift,
@@ -49,11 +46,6 @@ func NewHandler(log logrus.FieldLogger, clockDrift *time.Duration, geoipProvider
 
 //nolint:gocyclo // Needs refactor
 func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {
-	ctx, span := observability.Tracer().Start(ctx,
-		"EventIngester.Events",
-	)
-	defer span.End()
-
 	groupName := "unknown"
 	if group != nil {
 		groupName = group.Name()
@@ -140,7 +132,7 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 			// get geoip locational data
 			geoipLookupResult, err := h.geoipProvider.LookupIP(ctx, ip, precision)
 			if err != nil {
-				h.log.WithField("ip", ipAddress).WithError(err).Warn("failed to lookup geoip data")
+				h.log.WithField("ip", ipAddress).WithError(err).WithContext(ctx).Warn("failed to lookup geoip data")
 			}
 
 			if geoipLookupResult != nil {
@@ -162,11 +154,6 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 		}
 	}
 
-	ctx, span = observability.Tracer().Start(ctx,
-		"EventIngester.routeEvents",
-		trace.WithAttributes(attribute.Int64("events", int64(len(events)))),
-	)
-
 	handlerFilteredEvents := make([]*xatu.DecoratedEvent, 0)
 	// Route the events to the correct handler
 	for _, event := range events {
@@ -182,25 +169,19 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 
 		e, err := h.eventRouter.Route(eventHandler.Type(eventName), event)
 		if err != nil {
-			span.SetStatus(ocodes.Error, err.Error())
-			span.End()
-
-			h.log.WithError(err).WithField("event", eventName).Warn("failed to create event handler")
+			h.log.WithError(err).WithField("event", eventName).WithContext(ctx).Warn("failed to create event handler")
 
 			return nil, fmt.Errorf("failed to create event for %s event handler: %w ", eventName, err)
 		}
 
 		if err := e.Validate(ctx); err != nil {
-			span.SetStatus(ocodes.Error, err.Error())
-			span.End()
-
-			h.log.WithError(err).WithField("event", eventName).Warn("failed to validate event")
+			h.log.WithError(err).WithField("event", eventName).WithContext(ctx).Warn("failed to validate event")
 
 			return nil, fmt.Errorf("%s event failed validation: %w", eventName, err)
 		}
 
 		if shouldFilter := e.Filter(ctx); shouldFilter {
-			h.log.WithField("event", eventName).Debug("event filtered")
+			h.log.WithField("event", eventName).WithContext(ctx).Debug("event filtered")
 
 			continue
 		}
@@ -235,9 +216,6 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 		handlerFilteredEvents = append(handlerFilteredEvents, event)
 	}
 
-	// End the routeEvents span
-	span.End()
-
 	filteredEvents = handlerFilteredEvents
 
 	// Redact the events again
@@ -254,43 +232,25 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 }
 
 func (h *Handler) filterEvents(ctx context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {
-	_, span := observability.Tracer().Start(ctx,
-		"EventIngester.filterEvents",
-		trace.WithAttributes(attribute.Int64("before_filtering", int64(len(events)))),
-	)
-	defer span.End()
-
 	filteredEvents := events
 
-	// Apply the user filter
 	if user != nil {
 		ev, err := user.ApplyFilter(ctx, filteredEvents)
 		if err != nil {
-			errMsg := errors.New("failed to apply user filter")
-
-			span.SetStatus(ocodes.Error, errMsg.Error())
-
-			return nil, fmt.Errorf("%s: %w", errMsg.Error(), err)
+			return nil, fmt.Errorf("failed to apply user filter: %w", err)
 		}
 
 		filteredEvents = ev
 	}
 
-	// Apply the group filter
 	if group != nil {
 		ev, err := group.ApplyFilter(ctx, filteredEvents)
 		if err != nil {
-			errMsg := errors.New("failed to apply group filter")
-
-			span.SetStatus(ocodes.Error, errMsg.Error())
-
-			return nil, fmt.Errorf("%s: %w", errMsg.Error(), err)
+			return nil, fmt.Errorf("failed to apply group filter: %w", err)
 		}
 
 		filteredEvents = ev
 	}
-
-	span.SetAttributes(attribute.Int64("after_filtering", int64(len(filteredEvents))))
 
 	return filteredEvents, nil
 }

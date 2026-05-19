@@ -5,8 +5,9 @@ import (
 	"fmt"
 
 	"github.com/creasty/defaults"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/maxmind"
-	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -28,7 +29,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func NewProvider(providerType Type, config *RawMessage, log logrus.FieldLogger) (Provider, error) {
+func NewProvider(providerType Type, config *RawMessage, log observability.ContextualLogger) (Provider, error) {
 	if providerType == TypeUnknown {
 		return nil, errors.New("geoip provider type is required")
 	}

@@ -6,6 +6,7 @@ import (
 
 	eth2v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+
 	v1 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v1"
 )
 
@@ -17,7 +18,7 @@ func (s *Sentry) startProposerDutyWatcher(ctx context.Context) error {
 	// Subscribe to future proposer duty events.
 	s.beacon.Duties().OnProposerDuties(func(epoch phase0.Epoch, duties []*eth2v1.ProposerDuty) error {
 		if err := s.createNewProposerDutyEvent(ctx, epoch, duties); err != nil {
-			s.log.WithError(err).Error("Failed to create new proposer duties event")
+			s.log.WithError(err).WithContext(ctx).Error("Failed to create new proposer duties event")
 		}
 
 		return nil
@@ -33,13 +34,13 @@ func (s *Sentry) startProposerDutyWatcher(ctx context.Context) error {
 		for _, epoch := range epochs {
 			duties, err := s.beacon.Duties().GetProposerDuties(epoch)
 			if err != nil {
-				s.log.WithError(err).Error("Failed to obtain proposer duties")
+				s.log.WithError(err).WithContext(ctx).Error("Failed to obtain proposer duties")
 
 				continue
 			}
 
 			if err := s.createNewProposerDutyEvent(ctx, epoch, duties); err != nil {
-				s.log.WithError(err).Error("Failed to create new proposer duties event")
+				s.log.WithError(err).WithContext(ctx).Error("Failed to create new proposer duties event")
 			}
 		}
 
@@ -56,7 +57,7 @@ func (s *Sentry) createNewProposerDutyEvent(ctx context.Context, epoch phase0.Ep
 	for _, duty := range duties {
 		meta, err := s.createNewClientMeta(ctx)
 		if err != nil {
-			s.log.WithError(err).Error("Failed to create client meta when handling beacon committee event")
+			s.log.WithError(err).WithContext(ctx).Error("Failed to create client meta when handling beacon committee event")
 
 			continue
 		}
@@ -65,13 +66,13 @@ func (s *Sentry) createNewProposerDutyEvent(ctx context.Context, epoch phase0.Ep
 
 		decoratedEvent, err := event.Decorate(ctx)
 		if err != nil {
-			s.log.WithError(err).Error("Failed to decorate beacon committee event")
+			s.log.WithError(err).WithContext(ctx).Error("Failed to decorate beacon committee event")
 
 			return err
 		}
 
 		if err := s.handleNewDecoratedEvent(ctx, decoratedEvent); err != nil {
-			s.log.WithError(err).Error("Failed to handle decorated beacon committee event")
+			s.log.WithError(err).WithContext(ctx).Error("Failed to handle decorated beacon committee event")
 		}
 	}
 

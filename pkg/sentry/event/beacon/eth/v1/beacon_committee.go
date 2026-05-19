@@ -7,18 +7,20 @@ import (
 
 	v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
 type BeaconCommittee struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	now time.Time
 
@@ -31,7 +33,7 @@ type BeaconCommittee struct {
 	id             uuid.UUID
 }
 
-func NewBeaconCommittee(log logrus.FieldLogger, event *v1.BeaconCommittee, epoch phase0.Epoch, now time.Time, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta, duplicateCache *ttlcache.Cache[string, time.Time]) *BeaconCommittee {
+func NewBeaconCommittee(log observability.ContextualLogger, event *v1.BeaconCommittee, epoch phase0.Epoch, now time.Time, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta, duplicateCache *ttlcache.Cache[string, time.Time]) *BeaconCommittee {
 	return &BeaconCommittee{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_BEACON_COMMITTEE"),
 		now:            now,
@@ -70,7 +72,7 @@ func (e *BeaconCommittee) Decorate(ctx context.Context) (*xatu.DecoratedEvent, e
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra beacon committee data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra beacon committee data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_EthV1BeaconCommittee{
 			EthV1BeaconCommittee: additionalData,
@@ -92,7 +94,7 @@ func (e *BeaconCommittee) ShouldIgnore(ctx context.Context) (bool, error) {
 		e.log.WithFields(logrus.Fields{
 			"epoch":                 e.epoch,
 			"time_since_first_item": time.Since(item.Value()),
-		}).Debug("Duplicate beacon committee event received")
+		}).WithContext(ctx).Debug("Duplicate beacon committee event received")
 
 		return true, nil
 	}

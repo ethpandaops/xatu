@@ -11,8 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/proto/mevrelay"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/proto/mevrelay"
 )
 
 type Config struct {

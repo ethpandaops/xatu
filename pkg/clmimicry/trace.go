@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // FilteredMessageWithIndex represents a filtered message with its original index

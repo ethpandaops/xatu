@@ -7,10 +7,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 )
 
 func TestNewAuthorization(t *testing.T) {

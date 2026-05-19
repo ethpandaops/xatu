@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/consumoor/source"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -27,6 +28,9 @@ type Config struct {
 
 	// DisabledEvents is a list of event names to drop without processing.
 	DisabledEvents []string `yaml:"disabledEvents"`
+
+	// Tracing configuration
+	Tracing observability.TracingConfig `yaml:"tracing"`
 }
 
 // Validate checks the configuration for errors.
@@ -45,6 +49,10 @@ func (c *Config) Validate() error {
 
 	if _, err := c.DisabledEventEnums(); err != nil {
 		return err
+	}
+
+	if err := c.Tracing.Validate(); err != nil {
+		return fmt.Errorf("invalid tracing config: %w", err)
 	}
 
 	return nil

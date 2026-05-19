@@ -7,8 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"gopkg.in/yaml.v3"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const (

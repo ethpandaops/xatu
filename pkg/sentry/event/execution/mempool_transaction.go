@@ -7,19 +7,21 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // MempoolTransaction is an event that represents a transaction in the mempool.
 type MempoolTransaction struct {
-	log            logrus.FieldLogger
+	log            observability.ContextualLogger
 	now            time.Time
 	tx             *types.Transaction
 	duplicateCache *ttlcache.Cache[string, time.Time]
@@ -30,8 +32,7 @@ type MempoolTransaction struct {
 
 // NewMempoolTransaction creates a new MempoolTransaction.
 func NewMempoolTransaction(
-	log logrus.FieldLogger,
-	tx *types.Transaction,
+	log observability.ContextualLogger, tx *types.Transaction,
 	now time.Time,
 	duplicateCache *ttlcache.Cache[string, time.Time],
 	clientMeta *xatu.ClientMeta,
@@ -71,7 +72,7 @@ func (e *MempoolTransaction) Decorate(ctx context.Context) (*xatu.DecoratedEvent
 
 	additionalData, err := e.getAdditionalData(ctx)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get extra transaction data")
+		e.log.WithError(err).WithContext(ctx).Error("Failed to get extra transaction data")
 	} else {
 		decoratedEvent.Meta.Client.AdditionalData = &xatu.ClientMeta_MempoolTransactionV2{
 			MempoolTransactionV2: additionalData,
@@ -106,7 +107,7 @@ func (e *MempoolTransaction) ShouldIgnore(ctx context.Context) (bool, error) {
 			"nonce":                 e.tx.Nonce(),
 			"to_addr":               toAddr,
 			"time_since_first_seen": time.Since(existing.Value()),
-		}).Debug("Ignoring duplicate transaction")
+		}).WithContext(ctx).Debug("Ignoring duplicate transaction")
 
 		return true, nil
 	}
@@ -148,7 +149,7 @@ func (e *MempoolTransaction) getAdditionalData(ctx context.Context) (*xatu.Clien
 		if err == nil {
 			from = sender.String()
 		} else {
-			e.log.WithError(err).Error("Failed to get transaction sender through signature recovery")
+			e.log.WithError(err).WithContext(ctx).Error("Failed to get transaction sender through signature recovery")
 		}
 	}
 

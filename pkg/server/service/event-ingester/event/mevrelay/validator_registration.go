@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type ValidatorRegistration struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewValidatorRegistration(log logrus.FieldLogger, event *xatu.DecoratedEvent) *ValidatorRegistration {
+func NewValidatorRegistration(log observability.ContextualLogger, event *xatu.DecoratedEvent) *ValidatorRegistration {
 	return &ValidatorRegistration{
 		log:   log.WithField("event", ValidatorRegistrationType),
 		event: event,

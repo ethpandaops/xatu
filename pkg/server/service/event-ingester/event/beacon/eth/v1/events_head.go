@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,11 +13,11 @@ const (
 )
 
 type EventsHead struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewEventsHead(log logrus.FieldLogger, event *xatu.DecoratedEvent) *EventsHead {
+func NewEventsHead(log observability.ContextualLogger, event *xatu.DecoratedEvent) *EventsHead {
 	return &EventsHead{
 		log:   log.WithField("event", EventsHeadType),
 		event: event,

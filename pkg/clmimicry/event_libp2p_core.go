@@ -27,7 +27,7 @@ func (p *Processor) handleHermesLibp2pCoreEvent(ctx context.Context, event *Trac
 	// Map libp2p core event to Xatu event.
 	xatuEvent, err := mapLibp2pCoreEventToXatuEvent(event.Type)
 	if err != nil {
-		p.log.WithField("event", event.Type).Tracef("unsupported event in handleHermesLibp2pCoreEvent event")
+		p.log.WithField("event", event.Type).WithContext(ctx).Tracef("unsupported event in handleHermesLibp2pCoreEvent event")
 
 		//nolint:nilerr // we don't want to return an error here.
 		return nil

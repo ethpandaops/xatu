@@ -7,11 +7,13 @@ import (
 	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/time/rate"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/iterator"
 	"github.com/ethpandaops/xatu/pkg/relaymonitor/relay"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/time/rate"
 )
 
 // startConsistencyProcesses starts the consistency processes for all relays if configured.
@@ -19,18 +21,18 @@ import (
 // (both backfill and forward fill) in priority order.
 func (r *RelayMonitor) startConsistencyProcesses(ctx context.Context) error {
 	if r.Config.Consistency == nil {
-		r.log.Info("Consistency processes are disabled")
+		r.log.WithContext(ctx).Info("Consistency processes are disabled")
 
 		return nil
 	}
 
 	if r.coordinatorClient == nil {
-		r.log.Warn("Consistency processes require coordinator to be configured, skipping")
+		r.log.WithContext(ctx).Warn("Consistency processes require coordinator to be configured, skipping")
 
 		return nil
 	}
 
-	r.log.Info("Starting consistency processes")
+	r.log.WithContext(ctx).Info("Starting consistency processes")
 
 	metrics := iterator.NewConsistencyMetrics(namespace)
 
@@ -80,11 +82,11 @@ func (r *RelayMonitor) runConsistencyCoordinator(
 	supportsPayloadCursor := relayClient.SupportsPayloadCursor()
 
 	if !supportsBidTraceCursor {
-		log.Info("Relay does not support cursor for bid traces - using slot-by-slot fetching")
+		log.WithContext(ctx).Info("Relay does not support cursor for bid traces - using slot-by-slot fetching")
 	}
 
 	if !supportsPayloadCursor {
-		log.Info("Relay does not support cursor for payloads - using slot-by-slot fetching")
+		log.WithContext(ctx).Info("Relay does not support cursor for payloads - using slot-by-slot fetching")
 	}
 
 	// Create all iterators (owned by this coordinator, not separate goroutines)
@@ -152,7 +154,7 @@ func (r *RelayMonitor) runConsistencyCoordinator(
 		}
 	}
 
-	log.Info("Starting consistency coordinator")
+	log.WithContext(ctx).Info("Starting consistency coordinator")
 
 	ticker := time.NewTicker(checkInterval)
 	defer ticker.Stop()
@@ -160,7 +162,7 @@ func (r *RelayMonitor) runConsistencyCoordinator(
 	for {
 		select {
 		case <-ctx.Done():
-			log.Info("Stopping consistency coordinator")
+			log.WithContext(ctx).Info("Stopping consistency coordinator")
 
 			return
 		case <-ticker.C:
@@ -192,8 +194,7 @@ func (r *RelayMonitor) runConsistencyCoordinator(
 // Uses batch fetching when cursor is supported, otherwise falls back to slot-by-slot.
 func (r *RelayMonitor) processConsistencyWork(
 	ctx context.Context,
-	log logrus.FieldLogger,
-	relayClient *relay.Client,
+	log observability.ContextualLogger, relayClient *relay.Client,
 	limiter *rate.Limiter,
 	metrics *iterator.ConsistencyMetrics,
 	forwardFillBidTrace, forwardFillPayload *iterator.ForwardFillIterator,
@@ -252,8 +253,7 @@ func (r *RelayMonitor) processConsistencyWork(
 // Returns true if work was processed, false if no work was available.
 func (r *RelayMonitor) tryProcess(
 	ctx context.Context,
-	log logrus.FieldLogger,
-	relayClient *relay.Client,
+	log observability.ContextualLogger, relayClient *relay.Client,
 	limiter *rate.Limiter,
 	metrics *iterator.ConsistencyMetrics,
 	iter BatchIterator,
@@ -285,8 +285,7 @@ type BatchIterator interface {
 // Returns true if a batch was processed, false if no work was available.
 func (r *RelayMonitor) tryProcessBatch(
 	ctx context.Context,
-	log logrus.FieldLogger,
-	relayClient *relay.Client,
+	log observability.ContextualLogger, relayClient *relay.Client,
 	limiter *rate.Limiter,
 	metrics *iterator.ConsistencyMetrics,
 	iter BatchIterator,
@@ -299,7 +298,7 @@ func (r *RelayMonitor) tryProcessBatch(
 		log.WithError(err).WithFields(logrus.Fields{
 			"event_type": eventType.String(),
 			"process":    process,
-		}).Error("Failed to get next batch")
+		}).WithContext(ctx).Error("Failed to get next batch")
 
 		return false
 	}
@@ -322,8 +321,7 @@ func (r *RelayMonitor) tryProcessBatch(
 // Returns true if a slot was processed, false if no work was available.
 func (r *RelayMonitor) tryProcessSlot(
 	ctx context.Context,
-	log logrus.FieldLogger,
-	relayClient *relay.Client,
+	log observability.ContextualLogger, relayClient *relay.Client,
 	limiter *rate.Limiter,
 	metrics *iterator.ConsistencyMetrics,
 	iter SlotIterator,
@@ -336,7 +334,7 @@ func (r *RelayMonitor) tryProcessSlot(
 		log.WithError(err).WithFields(logrus.Fields{
 			"event_type": eventType.String(),
 			"process":    process,
-		}).Error("Failed to get next slot")
+		}).WithContext(ctx).Error("Failed to get next slot")
 
 		return false
 	}
@@ -357,8 +355,7 @@ func (r *RelayMonitor) tryProcessSlot(
 // processSlot applies rate limiting, fetches data for a single slot, and updates location on success.
 func (r *RelayMonitor) processSlot(
 	ctx context.Context,
-	log logrus.FieldLogger,
-	relayClient *relay.Client,
+	log observability.ContextualLogger, relayClient *relay.Client,
 	limiter *rate.Limiter,
 	metrics *iterator.ConsistencyMetrics,
 	slot phase0.Slot,
@@ -380,11 +377,11 @@ func (r *RelayMonitor) processSlot(
 	// Calculate and update lag metric
 	r.updateLagMetric(metrics, process, relayClient.Name(), eventType, network, slot)
 
-	log.Debug("Processing slot")
+	log.WithContext(ctx).Debug("Processing slot")
 
 	// Apply rate limiting
 	if err := limiter.Wait(ctx); err != nil {
-		log.WithError(err).Debug("Rate limiter cancelled")
+		log.WithError(err).WithContext(ctx).Debug("Rate limiter cancelled")
 
 		return
 	}
@@ -405,22 +402,21 @@ func (r *RelayMonitor) processSlot(
 	}
 
 	if err != nil {
-		log.WithError(err).Error("Failed to fetch slot data")
+		log.WithError(err).WithContext(ctx).Error("Failed to fetch slot data")
 
 		return // Don't update location - will retry on next tick
 	}
 
 	// Update coordinator location on success
 	if err := iter.UpdateLocation(ctx, slot); err != nil {
-		log.WithError(err).Error("Failed to update location")
+		log.WithError(err).WithContext(ctx).Error("Failed to update location")
 	}
 }
 
 // processBatch applies rate limiting, fetches batch data, and updates location on success.
 func (r *RelayMonitor) processBatch(
 	ctx context.Context,
-	log logrus.FieldLogger,
-	relayClient *relay.Client,
+	log observability.ContextualLogger, relayClient *relay.Client,
 	limiter *rate.Limiter,
 	metrics *iterator.ConsistencyMetrics,
 	batch *iterator.BatchRequest,
@@ -442,11 +438,11 @@ func (r *RelayMonitor) processBatch(
 	// Calculate and update lag metric
 	r.updateLagMetric(metrics, process, relayClient.Name(), eventType, network, phase0.Slot(batch.CurrentSlot))
 
-	log.Debug("Processing batch")
+	log.WithContext(ctx).Debug("Processing batch")
 
 	// Apply rate limiting (single consumer - no contention)
 	if err := limiter.Wait(ctx); err != nil {
-		log.WithError(err).Debug("Rate limiter cancelled")
+		log.WithError(err).WithContext(ctx).Debug("Rate limiter cancelled")
 
 		return
 	}
@@ -467,7 +463,7 @@ func (r *RelayMonitor) processBatch(
 	}
 
 	if err != nil {
-		log.WithError(err).Error("Failed to fetch batch data")
+		log.WithError(err).WithContext(ctx).Error("Failed to fetch batch data")
 
 		return // Don't update location - will retry on next tick
 	}
@@ -476,7 +472,7 @@ func (r *RelayMonitor) processBatch(
 		"payloads_fetched": count,
 		"highest_slot":     highestSlot,
 		"lowest_slot":      lowestSlot,
-	}).Debug("Batch fetch completed")
+	}).WithContext(ctx).Debug("Batch fetch completed")
 
 	// Determine the new location based on process type
 	var newLocation uint64
@@ -515,7 +511,7 @@ func (r *RelayMonitor) processBatch(
 
 	// Update coordinator location on success
 	if err := iter.UpdateLocation(ctx, phase0.Slot(newLocation)); err != nil {
-		log.WithError(err).Error("Failed to update location")
+		log.WithError(err).WithContext(ctx).Error("Failed to update location")
 	}
 }
 
@@ -567,7 +563,7 @@ func (r *RelayMonitor) fetchBidTracesBatch(
 		}
 
 		if err := r.handleNewDecoratedEvent(ctx, event); err != nil {
-			r.log.WithError(err).Error("Failed to handle new decorated event")
+			r.log.WithError(err).WithContext(ctx).Error("Failed to handle new decorated event")
 		}
 	}
 
@@ -622,7 +618,7 @@ func (r *RelayMonitor) fetchProposerPayloadDeliveredBatch(
 		}
 
 		if err := r.handleNewDecoratedEvent(ctx, event); err != nil {
-			r.log.WithError(err).Error("Failed to handle new decorated event")
+			r.log.WithError(err).WithContext(ctx).Error("Failed to handle new decorated event")
 		}
 	}
 

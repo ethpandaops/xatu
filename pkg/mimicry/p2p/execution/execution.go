@@ -19,11 +19,13 @@ import (
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethpandaops/ethcore/pkg/execution/mimicry"
+
 	"github.com/ethpandaops/xatu/pkg/internal/rpcbootstrap"
 	coordCache "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/cache"
 	"github.com/ethpandaops/xatu/pkg/mimicry/ethereum"
 	"github.com/ethpandaops/xatu/pkg/mimicry/p2p/handler"
 	"github.com/ethpandaops/xatu/pkg/networks"
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -31,7 +33,7 @@ import (
 const PeerType = "execution"
 
 type Peer struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	nodeRecord   string
 	handlers     *handler.Peer
@@ -67,7 +69,7 @@ type Peer struct {
 	connectedMetricSet    bool
 }
 
-func New(ctx context.Context, log logrus.FieldLogger, nodeRecord string, handlers *handler.Peer, captureDelay time.Duration, sharedCache *coordCache.SharedCache, ethereumConfig *ethereum.Config) (*Peer, error) {
+func New(ctx context.Context, log observability.ContextualLogger, nodeRecord string, handlers *handler.Peer, captureDelay time.Duration, sharedCache *coordCache.SharedCache, ethereumConfig *ethereum.Config) (*Peer, error) {
 	opts := []mimicry.Option{}
 
 	if ethereumConfig != nil && ethereumConfig.PrivateKey != "" {
@@ -201,7 +203,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		p.log.WithFields(logrus.Fields{
 			"implementation": p.implmentation,
 			"version":        p.version,
-		}).Debug("connected to client")
+		}).WithContext(ctx).Debug("connected to client")
 
 		return nil
 	})
@@ -231,12 +233,12 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 			}
 
 			if serr := p.handlers.ExecutionStatus(ctx, s); serr != nil {
-				p.log.WithError(serr).Error("failed to handle execution status")
+				p.log.WithError(serr).WithContext(ctx).Error("failed to handle execution status")
 			}
 		}
 
 		if p.ethereumConfig != nil && p.ethereumConfig.OverrideNetworkName != "" {
-			p.log.WithField("network", p.ethereumConfig.OverrideNetworkName).Info("Using override network name")
+			p.log.WithField("network", p.ethereumConfig.OverrideNetworkName).WithContext(ctx).Info("Using override network name")
 			p.network = &networks.Network{
 				Name: networks.NetworkName(p.ethereumConfig.OverrideNetworkName),
 				ID:   status.GetNetworkID(),
@@ -269,7 +271,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 			"network":      p.network.Name,
 			"fork_id_hash": "0x" + fmt.Sprintf("%x", status.GetForkIDHash()),
 			"fork_id_next": fmt.Sprintf("%d", status.GetForkIDNext()),
-		}).Debug("got client status")
+		}).WithContext(ctx).Debug("got client status")
 
 		p.markConnectedMetric()
 
@@ -295,7 +297,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 				}
 
 				if errT := p.processTransaction(ctx, now, hash, txType); errT != nil {
-					p.log.WithError(errT).Error("failed processing event")
+					p.log.WithError(errT).WithContext(ctx).Error("failed processing event")
 				}
 			}
 		}
@@ -313,7 +315,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 
 			transactions, decErr := (*eth.TransactionsPacket)(txs).Items()
 			if decErr != nil {
-				p.log.WithError(decErr).Error("failed to decode transactions")
+				p.log.WithError(decErr).WithContext(ctx).Error("failed to decode transactions")
 
 				return nil
 			}
@@ -324,12 +326,12 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 				if !retrieved {
 					event, errT := p.handleTransaction(ctx, now, tx)
 					if errT != nil {
-						p.log.WithError(errT).Error("failed handling transaction")
+						p.log.WithError(errT).WithContext(ctx).Error("failed handling transaction")
 					}
 
 					if event != nil {
 						if errT := p.handlers.DecoratedEvent(ctx, event); errT != nil {
-							p.log.WithError(errT).Error("failed handling decorated event")
+							p.log.WithError(errT).WithContext(ctx).Error("failed handling decorated event")
 						}
 					}
 				}
@@ -347,7 +349,7 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 
 		p.log.WithFields(logrus.Fields{
 			"reason": str,
-		}).Debug("disconnected from client")
+		}).WithContext(ctx).Debug("disconnected from client")
 
 		p.markDisconnectedMetric(str)
 
@@ -356,11 +358,11 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		return nil
 	})
 
-	p.log.Debug("attempting to connect to client")
+	p.log.WithContext(ctx).Debug("attempting to connect to client")
 
 	err = p.client.Start(ctx)
 	if err != nil {
-		p.log.WithError(err).Debug("failed to dial client")
+		p.log.WithError(err).WithContext(ctx).Debug("failed to dial client")
 
 		return nil, err
 	}

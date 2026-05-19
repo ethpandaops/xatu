@@ -6,9 +6,12 @@ import (
 	"os"
 
 	"github.com/creasty/defaults"
-	"github.com/ethpandaops/xatu/pkg/consumoor"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v3"
+
+	"github.com/ethpandaops/xatu/pkg/consumoor"
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 var (
@@ -94,6 +97,16 @@ var consumoorCmd = &cobra.Command{
 				log.Fatal(errr)
 			}
 		}
+
+		shutdownObs, err := observability.Setup(cmd.Context(), log,
+			xatu.WithComponent("consumoor"), xatu.Short(),
+			&config.Tracing,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer shutdownObservability(shutdownObs)
 
 		c, err := consumoor.New(cmd.Context(), log, config, overrides)
 		if err != nil {

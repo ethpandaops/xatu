@@ -19,11 +19,16 @@ func Full() string {
 }
 
 func FullWithModule(module ModuleName) string {
-	return fmt.Sprintf("%s-%s/%s", Implementation, module.String(), Short())
+	return fmt.Sprintf("%s/%s", WithModule(module), Short())
 }
 
 func WithModule(module ModuleName) string {
-	return fmt.Sprintf("%s-%s", Implementation, module.String())
+	return WithComponent(module.String())
+}
+
+// WithComponent returns the telemetry service name for a Xatu component.
+func WithComponent(component string) string {
+	return fmt.Sprintf("%s-%s", ImplementationLower(), formatComponentName(component))
 }
 
 func Short() string {
@@ -40,4 +45,8 @@ func FullVWithPlatform() string {
 
 func ImplementationLower() string {
 	return strings.ToLower(Implementation)
+}
+
+func formatComponentName(component string) string {
+	return strings.ReplaceAll(strings.ToLower(component), "_", "-")
 }

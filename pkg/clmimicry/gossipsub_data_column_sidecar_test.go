@@ -9,15 +9,16 @@ import (
 	"github.com/OffchainLabs/prysm/v7/consensus-types/primitives"
 	ethtypes "github.com/OffchainLabs/prysm/v7/proto/prysm/v1alpha1"
 	"github.com/ethpandaops/ethwallclock"
-	"github.com/ethpandaops/xatu/pkg/output"
-	"github.com/ethpandaops/xatu/pkg/output/mock"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+
+	"github.com/ethpandaops/xatu/pkg/output"
+	"github.com/ethpandaops/xatu/pkg/output/mock"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func TestDataColumnSidecarIntegration(t *testing.T) {

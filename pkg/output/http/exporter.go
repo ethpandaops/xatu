@@ -8,23 +8,24 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type ItemExporter struct {
 	config     *Config
-	log        logrus.FieldLogger
+	log        observability.ContextualLogger
 	compressor *Compressor
 	client     *http.Client
 }
 
-func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemExporter, error) {
+func NewItemExporter(name string, config *Config, log observability.ContextualLogger) (ItemExporter, error) {
 	log = log.WithField("output_name", name).WithField("output_type", SinkType)
 
 	t := http.DefaultTransport.(*http.Transport).Clone()
@@ -40,7 +41,7 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 		log:    log,
 
 		client: &http.Client{
-			Transport: t,
+			Transport: otelhttp.NewTransport(t),
 			Timeout:   config.ExportTimeout,
 		},
 		compressor: &Compressor{Strategy: config.Compression},
@@ -48,15 +49,15 @@ func NewItemExporter(name string, config *Config, log logrus.FieldLogger) (ItemE
 }
 
 func (e ItemExporter) ExportItems(ctx context.Context, items []*xatu.DecoratedEvent) error {
-	_, span := observability.Tracer().Start(ctx, "HTTPItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
+	ctx, span := observability.Tracer().Start(ctx, "HTTPItemExporter.ExportItems", trace.WithAttributes(attribute.Int64("num_events", int64(len(items)))))
 	defer span.End()
 
-	e.log.WithField("events", len(items)).Debug("Sending batch of events to HTTP sink")
+	e.log.WithField("events", len(items)).WithContext(ctx).Debug("Sending batch of events to HTTP sink")
 
 	if err := e.sendUpstream(ctx, items); err != nil {
 		e.log.
 			WithError(err).
-			WithField("num_events", len(items)).
+			WithField("num_events", len(items)).WithContext(ctx).
 			Error("Failed to send events upstream")
 
 		span.SetStatus(codes.Error, err.Error())

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type BeaconValidators struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewBeaconValidators(log logrus.FieldLogger, event *xatu.DecoratedEvent) *BeaconValidators {
+func NewBeaconValidators(log observability.ContextualLogger, event *xatu.DecoratedEvent) *BeaconValidators {
 	return &BeaconValidators{
 		log:   log.WithField("event", BeaconValidatorsType),
 		event: event,

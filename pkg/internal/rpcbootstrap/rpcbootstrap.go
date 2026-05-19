@@ -26,7 +26,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethpandaops/ethcore/pkg/execution/mimicry"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 const (
@@ -39,7 +40,7 @@ const (
 // Bootstrap serves devp2p Status / headers / bodies / receipts to an eth peer
 // using a backing EL JSON-RPC endpoint as the source of truth.
 type Bootstrap struct {
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	client *ethclient.Client
 
@@ -85,7 +86,7 @@ var sharedBootstraps = struct {
 
 // New returns a Bootstrap for the given EL JSON-RPC URL. Multiple callers with
 // the same URL share a single underlying client and Status cache.
-func New(ctx context.Context, log logrus.FieldLogger, url string) (*Bootstrap, error) {
+func New(ctx context.Context, log observability.ContextualLogger, url string) (*Bootstrap, error) {
 	sharedBootstraps.Lock()
 
 	if bootstrap, ok := sharedBootstraps.byURL[url]; ok {
@@ -125,7 +126,7 @@ func New(ctx context.Context, log logrus.FieldLogger, url string) (*Bootstrap, e
 }
 
 // Validate dials the URL and confirms a Status snapshot can be built.
-func Validate(ctx context.Context, log logrus.FieldLogger, url string) error {
+func Validate(ctx context.Context, log observability.ContextualLogger, url string) error {
 	bootstrap, err := New(ctx, log, url)
 	if err != nil {
 		return err

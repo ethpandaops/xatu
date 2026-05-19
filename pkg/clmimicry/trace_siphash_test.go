@@ -7,8 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethpandaops/xatu/pkg/clmimicry"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ethpandaops/xatu/pkg/clmimicry"
 )
 
 // TestSipHash verifies that our SipHash implementation produces the expected output values

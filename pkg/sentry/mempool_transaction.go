@@ -9,16 +9,17 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/sirupsen/logrus"
+
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	execEvent "github.com/ethpandaops/xatu/pkg/sentry/event/execution"
 	"github.com/ethpandaops/xatu/pkg/sentry/execution"
-	"github.com/sirupsen/logrus"
 )
 
 // startMempoolTransactionWatcher initializes and starts the mempool transaction watcher.
 func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context) error {
 	if s.Config.Execution == nil || !s.Config.Execution.Enabled {
-		s.log.Info("Mempool transaction watcher disabled")
+		s.log.WithContext(ctx).Info("Mempool transaction watcher disabled")
 
 		return nil
 	}
@@ -95,7 +96,7 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 	// First unmarshal into a map to access the hash field and essential metadata.
 	var txMap map[string]any
 	if err := json.Unmarshal(txData, &txMap); err != nil {
-		s.log.WithError(err).WithField("tx_hash", record.Hash).Error("Failed to unmarshal transaction data")
+		s.log.WithError(err).WithField("tx_hash", record.Hash).WithContext(ctx).Error("Failed to unmarshal transaction data")
 
 		return err
 	}
@@ -109,7 +110,7 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 	// Build out the client meta for the event.
 	meta, err := s.createNewClientMeta(ctx)
 	if err != nil {
-		s.log.WithError(err).WithField("tx_hash", record.Hash).Error("Failed to create client meta")
+		s.log.WithError(err).WithField("tx_hash", record.Hash).WithContext(ctx).Error("Failed to create client meta")
 
 		return err
 	}
@@ -117,7 +118,7 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 	// Parse the transaction.
 	tx, err := parseRawTransactionFromTxPool(txData, s.execution.GetSigner(), txHash)
 	if err != nil {
-		s.log.WithError(err).WithField("tx_hash", record.Hash).Error("Failed to parse transaction data")
+		s.log.WithError(err).WithField("tx_hash", record.Hash).WithContext(ctx).Error("Failed to parse transaction data")
 
 		return err
 	}
@@ -146,7 +147,7 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 	// Decorate the event.
 	decoratedEvent, err := event.Decorate(ctx)
 	if err != nil {
-		s.log.WithError(err).WithField("tx_hash", record.Hash).Error("Failed to decorate event")
+		s.log.WithError(err).WithField("tx_hash", record.Hash).WithContext(ctx).Error("Failed to decorate event")
 
 		return err
 	}
@@ -155,7 +156,7 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 	if err = s.handleNewDecoratedEvent(ctx, decoratedEvent); err != nil {
 		s.log.WithError(err).WithFields(logrus.Fields{
 			"tx_hash": record.Hash,
-		}).Error("Failed to handle decorated event")
+		}).WithContext(ctx).Error("Failed to handle decorated event")
 
 		return err
 	}

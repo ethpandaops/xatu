@@ -6,12 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethpandaops/xatu/pkg/observability"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/ethpandaops/xatu/pkg/server/geoip"
-	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
-	"github.com/ethpandaops/xatu/pkg/server/store"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	ocodes "go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -22,6 +16,12 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
+	"github.com/ethpandaops/xatu/pkg/server/geoip"
+	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
+	"github.com/ethpandaops/xatu/pkg/server/store"
 )
 
 const (
@@ -31,7 +31,7 @@ const (
 type Ingester struct {
 	xatu.UnimplementedEventIngesterServer
 
-	log      logrus.FieldLogger
+	log      observability.ContextualLogger
 	config   *Config
 	pipeline *Pipeline
 
@@ -40,8 +40,7 @@ type Ingester struct {
 
 func NewIngester(
 	ctx context.Context,
-	log logrus.FieldLogger,
-	conf *Config,
+	log observability.ContextualLogger, conf *Config,
 	clockDrift *time.Duration,
 	geoipProvider geoip.Provider,
 	cache store.Cache,
@@ -70,7 +69,7 @@ func (e *Ingester) Name() string {
 }
 
 func (e *Ingester) Start(ctx context.Context, grpcServer *grpc.Server) error {
-	e.log.Info("Starting module")
+	e.log.WithContext(ctx).Info("Starting module")
 
 	if err := e.pipeline.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start pipeline: %w", err)
@@ -84,7 +83,7 @@ func (e *Ingester) Start(ctx context.Context, grpcServer *grpc.Server) error {
 }
 
 func (e *Ingester) Stop(ctx context.Context) error {
-	e.log.Info("Stopping module")
+	e.log.WithContext(ctx).Info("Stopping module")
 
 	e.healthServer.SetServingStatus(e.Name(), grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 
@@ -102,7 +101,7 @@ func (e *Ingester) CreateEvents(ctx context.Context, req *xatu.CreateEventsReque
 	)
 	defer span.End()
 
-	e.log.WithField("events", len(req.Events)).Debug("Received batch of events")
+	e.log.WithField("events", len(req.GetEvents())).WithContext(ctx).Debug("Received batch of events")
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {

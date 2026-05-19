@@ -9,9 +9,11 @@ import (
 	"github.com/ethpandaops/ethcore/pkg/consensus/mimicry/crawler"
 	"github.com/ethpandaops/ethcore/pkg/discovery"
 	coreenr "github.com/ethpandaops/ethcore/pkg/ethereum/node/enr"
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 type ConsensusCrawler struct {
@@ -22,7 +24,7 @@ type ConsensusCrawler struct {
 	mu            sync.RWMutex
 }
 
-func NewConsensusCrawler(ctx context.Context, log logrus.FieldLogger, cfg *crawler.Config) (*ConsensusCrawler, error) {
+func NewConsensusCrawler(ctx context.Context, log observability.ContextualLogger, cfg *crawler.Config) (*ConsensusCrawler, error) {
 	// The crawler is noisy, but we want to see INFO logs for debugging
 	// Create a new logger instance specifically for the crawler
 	crawlerLogger := logrus.New()
@@ -49,7 +51,7 @@ func NewConsensusCrawler(ctx context.Context, log logrus.FieldLogger, cfg *crawl
 
 	select {
 	case <-c.OnReady:
-		cc.log.Info("Consensus crawler ready")
+		cc.log.WithContext(ctx).Info("Consensus crawler ready")
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 )
 
 type TraceRejectMessage struct {
-	log   logrus.FieldLogger
+	log   observability.ContextualLogger
 	event *xatu.DecoratedEvent
 }
 
-func NewTraceRejectMessage(log logrus.FieldLogger, event *xatu.DecoratedEvent) *TraceRejectMessage {
+func NewTraceRejectMessage(log observability.ContextualLogger, event *xatu.DecoratedEvent) *TraceRejectMessage {
 	return &TraceRejectMessage{
 		log:   log.WithField("event", TraceRejectMessageType),
 		event: event,

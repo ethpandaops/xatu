@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"slices"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Define events not supplied by libp2p proto pkgs.
@@ -65,7 +66,7 @@ func (p *Processor) HandleHermesEvent(ctx context.Context, event *TraceEvent) er
 		return errors.New("event is nil")
 	}
 
-	p.log.WithField("type", event.Type).Trace("Received Hermes event")
+	p.log.WithField("type", event.Type).WithContext(ctx).Trace("Received Hermes event")
 
 	traceMeta := &libp2p.TraceEventMetadata{
 		PeerId: wrapperspb.String(event.PeerID.String()),
@@ -95,7 +96,7 @@ func (p *Processor) HandleHermesEvent(ctx context.Context, event *TraceEvent) er
 		return p.handleHermesRPCEvent(ctx, event, clientMeta, traceMeta)
 
 	default:
-		p.log.WithField("type", event.Type).Debug("unsupported Hermes event")
+		p.log.WithField("type", event.Type).WithContext(ctx).Debug("unsupported Hermes event")
 
 		return nil
 	}

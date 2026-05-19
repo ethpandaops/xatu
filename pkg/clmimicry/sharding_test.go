@@ -5,10 +5,11 @@ import (
 	"math"
 	"testing"
 
-	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func TestConfigurableTotalShards(t *testing.T) {

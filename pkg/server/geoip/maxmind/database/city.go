@@ -4,13 +4,14 @@ import (
 	"net"
 
 	"github.com/oschwald/maxminddb-golang"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
 type City struct {
 	config *Config
 
-	log logrus.FieldLogger
+	log observability.ContextualLogger
 
 	db *maxminddb.Reader
 }
@@ -39,7 +40,7 @@ type LookupCity struct {
 	} `maxminddb:"location"`
 }
 
-func NewCity(config *Config, log logrus.FieldLogger) *City {
+func NewCity(config *Config, log observability.ContextualLogger) *City {
 	return &City{
 		config: config,
 		log:    log.WithField("database", "city"),

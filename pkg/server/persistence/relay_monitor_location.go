@@ -7,8 +7,9 @@ import (
 
 	perrors "github.com/pkg/errors"
 
-	"github.com/ethpandaops/xatu/pkg/server/persistence/relaymonitor"
 	"github.com/huandu/go-sqlbuilder"
+
+	"github.com/ethpandaops/xatu/pkg/server/persistence/relaymonitor"
 )
 
 var relayMonitorLocationStruct = sqlbuilder.NewStruct(new(relaymonitor.Location)).For(sqlbuilder.PostgreSQL)
@@ -28,7 +29,7 @@ func (c *Client) UpsertRelayMonitorLocation(ctx context.Context, location *relay
 	sqlQuery, args := ub.Build()
 	sqlQuery += " ON CONFLICT ON CONSTRAINT relay_monitor_location_unique DO UPDATE SET update_time = EXCLUDED.update_time, value = EXCLUDED.value"
 
-	c.log.WithField("sql", sqlQuery).WithField("args", args).Debug("UpsertRelayMonitorLocation")
+	c.log.WithField("sql", sqlQuery).WithField("args", args).WithContext(ctx).Debug("UpsertRelayMonitorLocation")
 
 	_, err := c.db.ExecContext(ctx, sqlQuery, args...)
 

@@ -6,13 +6,12 @@ package gossipsub
 
 import (
 	fmt "fmt"
-	io "io"
-	sync "sync"
-
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
 	wrapperspb "github.com/planetscale/vtprotobuf/types/known/wrapperspb"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
+	io "io"
+	sync "sync"
 )
 
 const (

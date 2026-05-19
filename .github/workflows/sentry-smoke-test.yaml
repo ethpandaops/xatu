@@ -157,6 +157,15 @@ jobs:
         done
 
         echo "Injected 15 test log entries (5 raw JSON, 5 terminal, 5 logfmt)"
+
+        # State metrics fixture for execution_state_size_delta + execution_mpt_depth.
+        # Raw JSON format only; the three-format coverage above already exercises
+        # the parser path. State root / parent state root are 66-char hex strings.
+        for i in {1..5}; do
+          echo '{"level":"info","msg":"State metrics","block_number":'${i}',"state_root":"0x'$(printf '%064d' ${i})'","parent_state_root":"0x'$(printf '%064d' $((i - 1)))'","writes":{"account":5,"account_bytes":305,"account_trienode":23,"account_trienode_bytes":8379,"contract_code":0,"contract_code_bytes":0,"storage":0,"storage_bytes":0,"storage_trienode":0,"storage_trienode_bytes":0},"deletes":{"account":5,"account_bytes":296,"account_trienode":23,"account_trienode_bytes":8370,"contract_code":0,"contract_code_bytes":0,"storage":0,"storage_bytes":0,"storage_trienode":0,"storage_trienode_bytes":0},"depth":{"total_account_written_nodes":23,"total_account_written_bytes":8379,"total_account_deleted_nodes":23,"total_account_deleted_bytes":8370,"total_storage_written_nodes":0,"total_storage_written_bytes":0,"total_storage_deleted_nodes":0,"total_storage_deleted_bytes":0,"account_written_nodes":{"0":1,"1":5,"2":5,"3":5,"4":5,"5":2},"account_written_bytes":{"0":532,"1":2660,"2":2660,"3":1636,"4":577,"5":314},"account_deleted_nodes":{"0":1,"1":5,"2":5,"3":5,"4":5,"5":2},"account_deleted_bytes":{"0":532,"1":2660,"2":2660,"3":1636,"4":577,"5":305},"storage_written_nodes":{},"storage_written_bytes":{},"storage_deleted_nodes":{},"storage_deleted_bytes":{}}}' >> deploy/local/docker-compose/sentry-logs/logs/geth.log
+        done
+
+        echo "Injected 5 state metrics log entries"
     - name: Create sentry config
       if: steps.canary.outputs.skip != 'true'
       run: |
@@ -264,6 +273,45 @@ jobs:
         # Verify data content
         echo "Sample execution_block_metrics data:"
         docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT block_number, total_ms, mgas_per_sec, meta_client_name FROM default.execution_block_metrics LIMIT 5"
+
+    - name: Verify sentry-logs (execution_state_size_delta + execution_mpt_depth) pipelines
+      if: steps.canary.outputs.skip != 'true'
+      timeout-minutes: 3
+      run: |
+        echo "Testing sentry-logs state metrics pipelines"
+
+        # Each "State metrics" log fans out to both tables, so we expect rows in
+        # each independently.
+        for table in execution_state_size_delta execution_mpt_depth; do
+          max_retries=30
+          retry_count=0
+          while true; do
+            data_count=$(docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT COUNT(*) FROM default.${table}" 2>/dev/null || echo "0")
+            if [[ "$data_count" -ge 5 ]]; then
+              echo "SUCCESS: ${table} has $data_count entries"
+              break
+            fi
+            echo "Waiting for ${table} data... (current: $data_count, attempt: $((retry_count + 1))/$max_retries)"
+            retry_count=$((retry_count + 1))
+            if [[ $retry_count -ge $max_retries ]]; then
+              echo "FAILED: Timeout waiting for ${table} data"
+              echo "=== Final sentry-logs logs ==="
+              docker logs xatu-sentry-logs 2>&1 | tail -100 || echo "Container not found"
+              echo "=== Final xatu-server logs ==="
+              docker logs xatu-server 2>&1 | tail -50 || echo "Container not found"
+              echo "=== xatu-consumoor logs ==="
+              docker logs xatu-consumoor 2>&1 | tail -50 || echo "Container not found"
+              exit 1
+            fi
+            sleep 5
+          done
+        done
+
+        echo "Sample execution_state_size_delta data:"
+        docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT block_number, account_writes, account_deletes, account_delta, meta_client_name FROM default.execution_state_size_delta LIMIT 5"
+
+        echo "Sample execution_mpt_depth data:"
+        docker exec xatu-clickhouse-01 clickhouse-client --query "SELECT block_number, total_account_written_nodes, total_account_deleted_nodes, account_written_nodes, meta_client_name FROM default.execution_mpt_depth LIMIT 5"
 
     - name: Dump diagnostic info on failure
       if: failure() || cancelled()

@@ -6,15 +6,13 @@ package v2
 
 import (
 	fmt "fmt"
-	io "io"
-	sync "sync"
-
+	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
 	wrapperspb "github.com/planetscale/vtprotobuf/types/known/wrapperspb"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
-
-	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	io "io"
+	sync "sync"
 )
 
 const (

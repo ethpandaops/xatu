@@ -7,14 +7,12 @@
 package v2
 
 import (
-	reflect "reflect"
-	sync "sync"
-
+	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	_ "google.golang.org/protobuf/types/descriptorpb"
-
-	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	reflect "reflect"
+	sync "sync"
 )
 
 const (

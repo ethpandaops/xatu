@@ -17,7 +17,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
@@ -28,13 +30,16 @@ import (
 type recordedCreateEventsCall struct {
 	traceparent string
 	eventCount  int
+	eventIDs    []string
+	eventNames  []pb.Event_Name
 }
 
 type recordingIngester struct {
 	pb.UnimplementedEventIngesterServer
 
-	mu    sync.Mutex
-	calls []recordedCreateEventsCall
+	mu     sync.Mutex
+	calls  []recordedCreateEventsCall
+	errFor func(recordedCreateEventsCall) error
 }
 
 func (r *recordingIngester) CreateEvents(ctx context.Context, req *pb.CreateEventsRequest) (*pb.CreateEventsResponse, error) {
@@ -45,15 +50,34 @@ func (r *recordingIngester) CreateEvents(ctx context.Context, req *pb.CreateEven
 		traceparent = values[0]
 	}
 
-	r.mu.Lock()
-	r.calls = append(r.calls, recordedCreateEventsCall{
+	events := req.GetEvents()
+	eventIDs := make([]string, 0, len(events))
+	eventNames := make([]pb.Event_Name, 0, len(events))
+
+	for _, event := range events {
+		eventIDs = append(eventIDs, event.GetEvent().GetId())
+		eventNames = append(eventNames, event.GetEvent().GetName())
+	}
+
+	call := recordedCreateEventsCall{
 		traceparent: traceparent,
-		eventCount:  len(req.GetEvents()),
-	})
+		eventCount:  len(events),
+		eventIDs:    eventIDs,
+		eventNames:  eventNames,
+	}
+
+	r.mu.Lock()
+	r.calls = append(r.calls, call)
 	r.mu.Unlock()
 
+	if r.errFor != nil {
+		if err := r.errFor(call); err != nil {
+			return nil, err
+		}
+	}
+
 	return &pb.CreateEventsResponse{
-		EventsIngested: wrapperspb.UInt64(uint64(len(req.GetEvents()))),
+		EventsIngested: wrapperspb.UInt64(uint64(len(events))),
 	}, nil
 }
 
@@ -157,14 +181,134 @@ func TestXatuSinkProcessorBatchesSharedContext(t *testing.T) {
 	assert.Equal(t, span.SpanContext().TraceID(), spanContextFromTraceparent(calls[0].traceparent).TraceID())
 }
 
+func TestXatuSinkProcessorPreservesSparseMixedTraceGroups(t *testing.T) {
+	setupXatuTraceTest(t)
+
+	addr, ingester := startRecordingIngester(t)
+
+	sink, err := New("test", &Config{
+		Address:            addr,
+		Headers:            map[string]string{},
+		MaxQueueSize:       12,
+		BatchTimeout:       time.Hour,
+		ExportTimeout:      5 * time.Second,
+		MaxExportBatchSize: 12,
+		Workers:            1,
+	}, logrus.New(), &pb.EventFilterConfig{}, processor.ShippingMethodAsync)
+	require.NoError(t, err)
+
+	require.NoError(t, sink.Start(context.Background()))
+
+	defer func() {
+		require.NoError(t, sink.Stop(context.Background()))
+	}()
+
+	for i := range 10 {
+		require.NoError(t, sink.HandleNewDecoratedEvent(
+			context.Background(),
+			newTestEvent(pb.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2, fmt.Sprintf("attestation-%d", i)),
+		))
+	}
+
+	headCtx, headSpan := otel.Tracer("test").Start(context.Background(), "head")
+	defer headSpan.End()
+
+	blockCtx, blockSpan := otel.Tracer("test").Start(context.Background(), "block")
+	defer blockSpan.End()
+
+	require.NoError(t, sink.HandleNewDecoratedEvent(headCtx, newTestEvent(pb.Event_BEACON_API_ETH_V1_EVENTS_HEAD_V2, "head-1")))
+	require.NoError(t, sink.HandleNewDecoratedEvent(blockCtx, newTestEvent(pb.Event_BEACON_API_ETH_V1_EVENTS_BLOCK_V2, "block-1")))
+
+	require.Eventually(t, func() bool {
+		return len(ingester.snapshotCalls()) == 3
+	}, time.Second, 10*time.Millisecond)
+
+	calls := ingester.snapshotCalls()
+	require.Len(t, calls, 3)
+
+	assert.Equal(t, 10, calls[0].eventCount)
+	assert.Equal(t, 1, calls[1].eventCount)
+	assert.Equal(t, 1, calls[2].eventCount)
+	assert.Equal(t, []string{"head-1"}, calls[1].eventIDs)
+	assert.Equal(t, []string{"block-1"}, calls[2].eventIDs)
+	assert.Equal(t, []pb.Event_Name{pb.Event_BEACON_API_ETH_V1_EVENTS_HEAD_V2}, calls[1].eventNames)
+	assert.Equal(t, []pb.Event_Name{pb.Event_BEACON_API_ETH_V1_EVENTS_BLOCK_V2}, calls[2].eventNames)
+
+	assert.Equal(t, headSpan.SpanContext().TraceID(), spanContextFromTraceparent(calls[1].traceparent).TraceID())
+	assert.Equal(t, blockSpan.SpanContext().TraceID(), spanContextFromTraceparent(calls[2].traceparent).TraceID())
+}
+
+func TestXatuSinkProcessorAttemptsSparseGroupsAfterEarlierGroupFailure(t *testing.T) {
+	setupXatuTraceTest(t)
+
+	addr, ingester := startRecordingIngesterWithError(t, func(call recordedCreateEventsCall) error {
+		if call.eventCount == 10 {
+			return status.Error(codes.Internal, "first group failed")
+		}
+
+		return nil
+	})
+
+	sink, err := New("test", &Config{
+		Address:            addr,
+		Headers:            map[string]string{},
+		MaxQueueSize:       12,
+		BatchTimeout:       time.Hour,
+		ExportTimeout:      5 * time.Second,
+		MaxExportBatchSize: 12,
+		Workers:            1,
+	}, logrus.New(), &pb.EventFilterConfig{}, processor.ShippingMethodAsync)
+	require.NoError(t, err)
+
+	require.NoError(t, sink.Start(context.Background()))
+
+	defer func() {
+		require.NoError(t, sink.Stop(context.Background()))
+	}()
+
+	for i := range 10 {
+		require.NoError(t, sink.HandleNewDecoratedEvent(
+			context.Background(),
+			newTestEvent(pb.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2, fmt.Sprintf("attestation-%d", i)),
+		))
+	}
+
+	headCtx, headSpan := otel.Tracer("test").Start(context.Background(), "head")
+	defer headSpan.End()
+
+	blockCtx, blockSpan := otel.Tracer("test").Start(context.Background(), "block")
+	defer blockSpan.End()
+
+	require.NoError(t, sink.HandleNewDecoratedEvent(headCtx, newTestEvent(pb.Event_BEACON_API_ETH_V1_EVENTS_HEAD_V2, "head-1")))
+	require.NoError(t, sink.HandleNewDecoratedEvent(blockCtx, newTestEvent(pb.Event_BEACON_API_ETH_V1_EVENTS_BLOCK_V2, "block-1")))
+
+	require.Eventually(t, func() bool {
+		return len(ingester.snapshotCalls()) == 3
+	}, time.Second, 10*time.Millisecond)
+
+	calls := ingester.snapshotCalls()
+	require.Len(t, calls, 3)
+
+	assert.Equal(t, []string{"head-1"}, calls[1].eventIDs)
+	assert.Equal(t, []string{"block-1"}, calls[2].eventIDs)
+	assert.Equal(t, headSpan.SpanContext().TraceID(), spanContextFromTraceparent(calls[1].traceparent).TraceID())
+	assert.Equal(t, blockSpan.SpanContext().TraceID(), spanContextFromTraceparent(calls[2].traceparent).TraceID())
+}
+
 func startRecordingIngester(t *testing.T) (string, *recordingIngester) {
+	t.Helper()
+
+	return startRecordingIngesterWithError(t, nil)
+}
+
+func startRecordingIngesterWithError(t *testing.T, errFor func(recordedCreateEventsCall) error) (string, *recordingIngester) {
 	t.Helper()
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
 	server := grpc.NewServer()
-	ingester := &recordingIngester{}
+	ingester := &recordingIngester{errFor: errFor}
 	pb.RegisterEventIngesterServer(server, ingester)
 
 	go func() {

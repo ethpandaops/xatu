@@ -2,6 +2,7 @@ package xatu
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -88,13 +89,15 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*pb.DecoratedEven
 }
 
 func (e ItemExporter) ExportTraceableItems(ctx context.Context, traceableItems []*processor.TraceableItem[pb.DecoratedEvent]) error {
+	var err error
+
 	for _, group := range processor.GroupTraceableItemsByPropagation(traceableItems) {
-		if err := e.exportItems(ctx, group.Items, group.Context); err != nil {
-			return err
+		if exportErr := e.exportItems(ctx, group.Items, group.Context); exportErr != nil {
+			err = errors.Join(err, exportErr)
 		}
 	}
 
-	return nil
+	return err
 }
 
 func (e ItemExporter) exportItems(ctx context.Context, items []*pb.DecoratedEvent, propagationCtx context.Context) error {

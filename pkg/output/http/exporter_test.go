@@ -19,6 +19,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/ethpandaops/xatu/pkg/processor"
@@ -28,12 +29,15 @@ import (
 type recordedHTTPRequest struct {
 	traceparent string
 	eventCount  int
+	eventIDs    []string
+	eventNames  []xatu.Event_Name
 }
 
 type recordingHTTPServer struct {
-	mu       sync.Mutex
-	requests []recordedHTTPRequest
-	server   *httptest.Server
+	mu        sync.Mutex
+	requests  []recordedHTTPRequest
+	server    *httptest.Server
+	statusFor func(recordedHTTPRequest) int
 }
 
 func TestHTTPSinkProcessorPropagatesAndBatchesByTraceContext(t *testing.T) {
@@ -109,10 +113,110 @@ func TestHTTPSinkProcessorBatchesSharedTraceContext(t *testing.T) {
 	assert.Equal(t, span.SpanContext().TraceID(), spanContextFromHTTPTraceparent(requests[0].traceparent).TraceID())
 }
 
+func TestHTTPSinkProcessorPreservesSparseMixedTraceGroups(t *testing.T) {
+	setupHTTPTraceTest(t)
+
+	recorder := startRecordingHTTPServer(t)
+	sink := newTestHTTPSink(t, recorder.server.URL, 12)
+
+	require.NoError(t, sink.Start(context.Background()))
+
+	defer func() {
+		require.NoError(t, sink.Stop(context.Background()))
+	}()
+
+	for i := range 10 {
+		require.NoError(t, sink.HandleNewDecoratedEvent(
+			context.Background(),
+			newHTTPTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2, fmt.Sprintf("attestation-%d", i)),
+		))
+	}
+
+	headCtx, headSpan := otel.Tracer("test").Start(context.Background(), "head")
+	defer headSpan.End()
+
+	blockCtx, blockSpan := otel.Tracer("test").Start(context.Background(), "block")
+	defer blockSpan.End()
+
+	require.NoError(t, sink.HandleNewDecoratedEvent(headCtx, newHTTPTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD_V2, "head-1")))
+	require.NoError(t, sink.HandleNewDecoratedEvent(blockCtx, newHTTPTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK_V2, "block-1")))
+
+	require.Eventually(t, func() bool {
+		return len(recorder.snapshotRequests()) == 3
+	}, time.Second, 10*time.Millisecond)
+
+	requests := recorder.snapshotRequests()
+	require.Len(t, requests, 3)
+
+	assert.Equal(t, 10, requests[0].eventCount)
+	assert.Equal(t, 1, requests[1].eventCount)
+	assert.Equal(t, 1, requests[2].eventCount)
+	assert.Equal(t, []string{"head-1"}, requests[1].eventIDs)
+	assert.Equal(t, []string{"block-1"}, requests[2].eventIDs)
+	assert.Equal(t, []xatu.Event_Name{xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD_V2}, requests[1].eventNames)
+	assert.Equal(t, []xatu.Event_Name{xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK_V2}, requests[2].eventNames)
+
+	assert.Equal(t, headSpan.SpanContext().TraceID(), spanContextFromHTTPTraceparent(requests[1].traceparent).TraceID())
+	assert.Equal(t, blockSpan.SpanContext().TraceID(), spanContextFromHTTPTraceparent(requests[2].traceparent).TraceID())
+}
+
+func TestHTTPSinkProcessorAttemptsSparseGroupsAfterEarlierGroupFailure(t *testing.T) {
+	setupHTTPTraceTest(t)
+
+	recorder := startRecordingHTTPServerWithStatus(t, func(req recordedHTTPRequest) int {
+		if req.eventCount == 10 {
+			return stdhttp.StatusInternalServerError
+		}
+
+		return stdhttp.StatusOK
+	})
+	sink := newTestHTTPSink(t, recorder.server.URL, 12)
+
+	require.NoError(t, sink.Start(context.Background()))
+
+	defer func() {
+		require.NoError(t, sink.Stop(context.Background()))
+	}()
+
+	for i := range 10 {
+		require.NoError(t, sink.HandleNewDecoratedEvent(
+			context.Background(),
+			newHTTPTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_ATTESTATION_V2, fmt.Sprintf("attestation-%d", i)),
+		))
+	}
+
+	headCtx, headSpan := otel.Tracer("test").Start(context.Background(), "head")
+	defer headSpan.End()
+
+	blockCtx, blockSpan := otel.Tracer("test").Start(context.Background(), "block")
+	defer blockSpan.End()
+
+	require.NoError(t, sink.HandleNewDecoratedEvent(headCtx, newHTTPTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD_V2, "head-1")))
+	require.NoError(t, sink.HandleNewDecoratedEvent(blockCtx, newHTTPTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK_V2, "block-1")))
+
+	require.Eventually(t, func() bool {
+		return len(recorder.snapshotRequests()) == 3
+	}, time.Second, 10*time.Millisecond)
+
+	requests := recorder.snapshotRequests()
+	require.Len(t, requests, 3)
+
+	assert.Equal(t, []string{"head-1"}, requests[1].eventIDs)
+	assert.Equal(t, []string{"block-1"}, requests[2].eventIDs)
+	assert.Equal(t, headSpan.SpanContext().TraceID(), spanContextFromHTTPTraceparent(requests[1].traceparent).TraceID())
+	assert.Equal(t, blockSpan.SpanContext().TraceID(), spanContextFromHTTPTraceparent(requests[2].traceparent).TraceID())
+}
+
 func startRecordingHTTPServer(t *testing.T) *recordingHTTPServer {
 	t.Helper()
 
-	recorder := &recordingHTTPServer{}
+	return startRecordingHTTPServerWithStatus(t, nil)
+}
+
+func startRecordingHTTPServerWithStatus(t *testing.T, statusFor func(recordedHTTPRequest) int) *recordingHTTPServer {
+	t.Helper()
+
+	recorder := &recordingHTTPServer{statusFor: statusFor}
 
 	recorder.server = httptest.NewServer(stdhttp.HandlerFunc(func(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 		raw, err := io.ReadAll(r.Body)
@@ -122,19 +226,63 @@ func startRecordingHTTPServer(t *testing.T) *recordingHTTPServer {
 			return
 		}
 
-		recorder.mu.Lock()
-		recorder.requests = append(recorder.requests, recordedHTTPRequest{
+		events, err := decodeRecordedHTTPEvents(raw)
+		if err != nil {
+			w.WriteHeader(stdhttp.StatusInternalServerError)
+
+			return
+		}
+
+		eventIDs := make([]string, 0, len(events))
+		eventNames := make([]xatu.Event_Name, 0, len(events))
+
+		for _, event := range events {
+			eventIDs = append(eventIDs, event.GetEvent().GetId())
+			eventNames = append(eventNames, event.GetEvent().GetName())
+		}
+
+		recorded := recordedHTTPRequest{
 			traceparent: r.Header.Get("traceparent"),
-			eventCount:  strings.Count(string(raw), "\n"),
-		})
+			eventCount:  len(events),
+			eventIDs:    eventIDs,
+			eventNames:  eventNames,
+		}
+
+		recorder.mu.Lock()
+		recorder.requests = append(recorder.requests, recorded)
 		recorder.mu.Unlock()
 
-		w.WriteHeader(stdhttp.StatusOK)
+		status := stdhttp.StatusOK
+		if recorder.statusFor != nil {
+			status = recorder.statusFor(recorded)
+		}
+
+		w.WriteHeader(status)
 	}))
 
 	t.Cleanup(recorder.server.Close)
 
 	return recorder
+}
+
+func decodeRecordedHTTPEvents(raw []byte) ([]*xatu.DecoratedEvent, error) {
+	lines := strings.Split(string(raw), "\n")
+	events := make([]*xatu.DecoratedEvent, 0, len(lines))
+
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+
+		event := &xatu.DecoratedEvent{}
+		if err := protojson.Unmarshal([]byte(line), event); err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	return events, nil
 }
 
 func (r *recordingHTTPServer) snapshotRequests() []recordedHTTPRequest {

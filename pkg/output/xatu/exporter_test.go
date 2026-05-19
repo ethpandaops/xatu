@@ -2,6 +2,7 @@ package xatu
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"sync"
 	"testing"
@@ -111,6 +112,49 @@ func TestXatuSinkProcessorPropagatesPerItemContexts(t *testing.T) {
 	assert.Equal(t, span1.SpanContext().TraceID(), sc1.TraceID())
 	assert.Equal(t, span2.SpanContext().TraceID(), sc2.TraceID())
 	assert.NotEqual(t, sc1.TraceID(), sc2.TraceID())
+}
+
+func TestXatuSinkProcessorBatchesSharedContext(t *testing.T) {
+	setupXatuTraceTest(t)
+
+	addr, ingester := startRecordingIngester(t)
+
+	sink, err := New("test", &Config{
+		Address:            addr,
+		Headers:            map[string]string{},
+		MaxQueueSize:       100,
+		BatchTimeout:       time.Hour,
+		ExportTimeout:      5 * time.Second,
+		MaxExportBatchSize: 100,
+		Workers:            1,
+	}, logrus.New(), &pb.EventFilterConfig{}, processor.ShippingMethodAsync)
+	require.NoError(t, err)
+
+	require.NoError(t, sink.Start(context.Background()))
+
+	defer func() {
+		require.NoError(t, sink.Stop(context.Background()))
+	}()
+
+	ctx, span := otel.Tracer("test").Start(context.Background(), "shared")
+	defer span.End()
+
+	events := make([]*pb.DecoratedEvent, 0, 100)
+	for i := range 100 {
+		events = append(events, newTestEvent(pb.Event_BEACON_API_ETH_V1_EVENTS_BLOCK, fmt.Sprintf("id-%d", i)))
+	}
+
+	require.NoError(t, sink.HandleNewDecoratedEvents(ctx, events))
+
+	require.Eventually(t, func() bool {
+		calls := ingester.snapshotCalls()
+
+		return len(calls) == 1 && calls[0].eventCount == 100
+	}, time.Second, 10*time.Millisecond)
+
+	calls := ingester.snapshotCalls()
+	require.Len(t, calls, 1)
+	assert.Equal(t, span.SpanContext().TraceID(), spanContextFromTraceparent(calls[0].traceparent).TraceID())
 }
 
 func startRecordingIngester(t *testing.T) (string, *recordingIngester) {

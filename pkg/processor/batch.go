@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -43,6 +45,11 @@ type TraceableItemExporter[T any] interface {
 	ExportTraceableItems(ctx context.Context, items []*TraceableItem[T]) error
 }
 
+type TraceableItemGroup[T any] struct {
+	Context context.Context //nolint:containedctx // minimal OTel propagation context for this export group
+	Items   []*T
+}
+
 // PropagationContext returns a detached context containing only OTel
 // propagation state from ctx.
 func PropagationContext(ctx context.Context) context.Context {
@@ -64,6 +71,65 @@ func ContextWithPropagation(parent, propagationCtx context.Context) context.Cont
 	ctx := trace.ContextWithSpanContext(parent, trace.SpanContextFromContext(propagationCtx))
 
 	return baggage.ContextWithBaggage(ctx, baggage.FromContext(propagationCtx))
+}
+
+func GroupTraceableItemsByPropagation[T any](items []*TraceableItem[T]) []TraceableItemGroup[T] {
+	groupsByKey := make(map[string]int, len(items))
+	groups := make([]TraceableItemGroup[T], 0, len(items))
+
+	for _, item := range items {
+		if item == nil || item.Item() == nil {
+			continue
+		}
+
+		itemCtx := item.Context()
+		key := propagationGroupKey(itemCtx)
+
+		idx, ok := groupsByKey[key]
+		if !ok {
+			idx = len(groups)
+			groupsByKey[key] = idx
+
+			groups = append(groups, TraceableItemGroup[T]{
+				Context: itemCtx,
+				Items:   make([]*T, 0, 1),
+			})
+		}
+
+		groups[idx].Items = append(groups[idx].Items, item.Item())
+	}
+
+	return groups
+}
+
+func propagationGroupKey(ctx context.Context) string {
+	sc := trace.SpanContextFromContext(ctx)
+
+	return fmt.Sprintf(
+		"%s\x00%s\x00%x\x00%t\x00%s\x00%s",
+		sc.TraceID(),
+		sc.SpanID(),
+		byte(sc.TraceFlags()),
+		sc.IsRemote(),
+		sc.TraceState().String(),
+		canonicalBaggage(baggage.FromContext(ctx)),
+	)
+}
+
+func canonicalBaggage(bag baggage.Baggage) string {
+	members := bag.Members()
+	if len(members) == 0 {
+		return ""
+	}
+
+	out := make([]string, 0, len(members))
+	for _, member := range members {
+		out = append(out, member.String())
+	}
+
+	sort.Strings(out)
+
+	return strings.Join(out, "\x00")
 }
 
 const (

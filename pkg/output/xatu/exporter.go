@@ -88,12 +88,8 @@ func (e ItemExporter) ExportItems(ctx context.Context, items []*pb.DecoratedEven
 }
 
 func (e ItemExporter) ExportTraceableItems(ctx context.Context, traceableItems []*processor.TraceableItem[pb.DecoratedEvent]) error {
-	for _, item := range traceableItems {
-		if item == nil || item.Item() == nil {
-			continue
-		}
-
-		if err := e.exportItems(ctx, []*pb.DecoratedEvent{item.Item()}, item.Context()); err != nil {
+	for _, group := range processor.GroupTraceableItemsByPropagation(traceableItems) {
+		if err := e.exportItems(ctx, group.Items, group.Context); err != nil {
 			return err
 		}
 	}

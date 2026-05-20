@@ -7,21 +7,23 @@ package xatu
 import (
 	binary "encoding/binary"
 	fmt "fmt"
-	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
-	libp2p "github.com/ethpandaops/xatu/pkg/proto/libp2p"
-	gossipsub "github.com/ethpandaops/xatu/pkg/proto/libp2p/gossipsub"
-	mevrelay "github.com/ethpandaops/xatu/pkg/proto/mevrelay"
-	noderecord "github.com/ethpandaops/xatu/pkg/proto/noderecord"
+	io "io"
+	math "math"
+	sync "sync"
+
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
 	timestamppb "github.com/planetscale/vtprotobuf/types/known/timestamppb"
 	wrapperspb "github.com/planetscale/vtprotobuf/types/known/wrapperspb"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb1 "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
-	io "io"
-	math "math"
-	sync "sync"
+
+	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
+	libp2p "github.com/ethpandaops/xatu/pkg/proto/libp2p"
+	gossipsub "github.com/ethpandaops/xatu/pkg/proto/libp2p/gossipsub"
+	mevrelay "github.com/ethpandaops/xatu/pkg/proto/mevrelay"
+	noderecord "github.com/ethpandaops/xatu/pkg/proto/noderecord"
 )
 
 const (

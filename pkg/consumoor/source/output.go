@@ -129,12 +129,13 @@ func (o *xatuClickHouseOutput) WriteBatch(
 
 	propagator := otel.GetTextMapPropagator()
 	tracer := observability.Tracer()
+	batchCtx := contextWithoutActiveSpan(ctx)
 
 	for i, msg := range msgs {
 		kafka := kafkaMetadata(msg)
 		o.metrics.MessagesConsumed().WithLabelValues(kafka.Topic).Inc()
 
-		msgCtx := propagator.Extract(ctx, newBenthosHeaderCarrier(msg))
+		msgCtx := propagator.Extract(batchCtx, newBenthosHeaderCarrier(msg))
 		msgCtx, msgSpan := tracer.Start(msgCtx, "consumoor.HandleMessage",
 			trace.WithSpanKind(trace.SpanKindConsumer),
 			trace.WithAttributes(
@@ -351,7 +352,7 @@ func (o *xatuClickHouseOutput) processGroup(
 		links = append(links, trace.Link{SpanContext: sc})
 	}
 
-	ctx, span := observability.Tracer().Start(ctx, "consumoor.WriteGroup",
+	ctx, span := observability.Tracer().Start(contextWithoutActiveSpan(ctx), "consumoor.WriteGroup",
 		trace.WithSpanKind(trace.SpanKindClient),
 		trace.WithLinks(links...),
 		trace.WithAttributes(
@@ -561,6 +562,10 @@ func (o *xatuClickHouseOutput) rejectMessage(
 	}
 
 	return nil
+}
+
+func contextWithoutActiveSpan(ctx context.Context) context.Context {
+	return trace.ContextWithSpanContext(ctx, trace.SpanContext{})
 }
 
 func addBatchFailure(

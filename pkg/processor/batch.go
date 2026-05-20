@@ -5,10 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 )
@@ -33,6 +37,99 @@ type ItemExporter[T any] interface {
 	// requires while honoring all timeouts and cancellations contained in
 	// the passed context.
 	Shutdown(ctx context.Context) error
+}
+
+// TraceableItemExporter is implemented by exporters that need each queued
+// item's original caller context in addition to the worker/export context.
+type TraceableItemExporter[T any] interface {
+	ExportTraceableItems(ctx context.Context, items []*TraceableItem[T]) error
+}
+
+type TraceableItemGroup[T any] struct {
+	Context context.Context //nolint:containedctx // minimal OTel propagation context for this export group
+	Items   []*T
+}
+
+// PropagationContext returns a detached context containing only OTel
+// propagation state from ctx.
+func PropagationContext(ctx context.Context) context.Context {
+	return ContextWithPropagation(context.Background(), ctx)
+}
+
+// ContextWithPropagation returns parent with OTel propagation state copied
+// from propagationCtx. It preserves parent cancellation/deadline and avoids
+// retaining unrelated values from propagationCtx.
+func ContextWithPropagation(parent, propagationCtx context.Context) context.Context {
+	if parent == nil {
+		parent = context.Background()
+	}
+
+	if propagationCtx == nil {
+		propagationCtx = context.Background()
+	}
+
+	ctx := trace.ContextWithSpanContext(parent, trace.SpanContextFromContext(propagationCtx))
+
+	return baggage.ContextWithBaggage(ctx, baggage.FromContext(propagationCtx))
+}
+
+func GroupTraceableItemsByPropagation[T any](items []*TraceableItem[T]) []TraceableItemGroup[T] {
+	groupsByKey := make(map[string]int, len(items))
+	groups := make([]TraceableItemGroup[T], 0, len(items))
+
+	for _, item := range items {
+		if item == nil || item.Item() == nil {
+			continue
+		}
+
+		itemCtx := item.Context()
+		key := propagationGroupKey(itemCtx)
+
+		idx, ok := groupsByKey[key]
+		if !ok {
+			idx = len(groups)
+			groupsByKey[key] = idx
+
+			groups = append(groups, TraceableItemGroup[T]{
+				Context: itemCtx,
+				Items:   make([]*T, 0, 1),
+			})
+		}
+
+		groups[idx].Items = append(groups[idx].Items, item.Item())
+	}
+
+	return groups
+}
+
+func propagationGroupKey(ctx context.Context) string {
+	sc := trace.SpanContextFromContext(ctx)
+
+	return fmt.Sprintf(
+		"%s\x00%s\x00%x\x00%t\x00%s\x00%s",
+		sc.TraceID(),
+		sc.SpanID(),
+		byte(sc.TraceFlags()),
+		sc.IsRemote(),
+		sc.TraceState().String(),
+		canonicalBaggage(baggage.FromContext(ctx)),
+	)
+}
+
+func canonicalBaggage(bag baggage.Baggage) string {
+	members := bag.Members()
+	if len(members) == 0 {
+		return ""
+	}
+
+	out := make([]string, 0, len(members))
+	for _, member := range members {
+		out = append(out, member.String())
+	}
+
+	sort.Strings(out)
+
+	return strings.Join(out, "\x00")
 }
 
 const (
@@ -121,11 +218,30 @@ type BatchItemProcessor[T any] struct {
 }
 
 type TraceableItem[T any] struct {
-	item *T
+	item      *T
+	callerCtx context.Context //nolint:containedctx // trace context propagation across async batching
 	// resultCh signals export completion for sync shipping. A nil value
 	// means success; a non-nil error means the export failed. Closed
 	// exactly once by the worker after the value is sent.
 	resultCh chan error
+}
+
+// Item returns the queued item.
+func (ti *TraceableItem[T]) Item() *T {
+	if ti == nil {
+		return nil
+	}
+
+	return ti.item
+}
+
+// Context returns the caller context captured when the item was queued.
+func (ti *TraceableItem[T]) Context() context.Context {
+	if ti == nil || ti.callerCtx == nil {
+		return context.Background()
+	}
+
+	return ti.callerCtx
 }
 
 // NewBatchItemProcessor creates a new batch item processor.
@@ -239,7 +355,8 @@ func (bvp *BatchItemProcessor[T]) Write(ctx context.Context, s []*T) error {
 			}
 
 			item := &TraceableItem[T]{
-				item: i,
+				item:      i,
+				callerCtx: PropagationContext(ctx),
 			}
 
 			if bvp.o.ShippingMethod == ShippingMethodSync {
@@ -281,7 +398,9 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 		defer cancel()
 	}
 
+	traceableItems := make([]*TraceableItem[T], 0, len(itemsBatch))
 	items := make([]*T, 0, len(itemsBatch))
+
 	for _, ti := range itemsBatch {
 		if ti == nil {
 			bvp.log.WithContext(ctx).Warnf("Attempted to export a nil item. This item has been dropped. This probably shouldn't happen and is likely a bug.")
@@ -289,11 +408,19 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 			continue
 		}
 
+		traceableItems = append(traceableItems, ti)
 		items = append(items, ti.item)
 	}
 
 	startTime := time.Now()
-	err := bvp.e.ExportItems(ctx, items)
+
+	var err error
+	if traceableExporter, ok := bvp.e.(TraceableItemExporter[T]); ok {
+		err = traceableExporter.ExportTraceableItems(ctx, traceableItems)
+	} else {
+		err = bvp.e.ExportItems(ctx, items)
+	}
+
 	bvp.metrics.ObserveExportDuration(bvp.name, time.Since(startTime))
 
 	if err != nil {

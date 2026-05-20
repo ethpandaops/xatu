@@ -6,11 +6,13 @@ package v2
 
 import (
 	fmt "fmt"
-	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
-	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
 	sync "sync"
+
+	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+
+	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 )
 
 const (

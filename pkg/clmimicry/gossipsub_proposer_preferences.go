@@ -34,7 +34,7 @@ func (p *Processor) handleGossipProposerPreferences(
 		Slot:           wrapperspb.UInt64(uint64(prefs.GetProposalSlot())),
 		ValidatorIndex: wrapperspb.UInt64(uint64(prefs.GetValidatorIndex())),
 		FeeRecipient:   wrapperspb.String(fmt.Sprintf("0x%x", prefs.GetFeeRecipient())),
-		GasLimit:       wrapperspb.UInt64(prefs.GetGasLimit()),
+		GasLimit:       wrapperspb.UInt64(prefs.GetTargetGasLimit()),
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)

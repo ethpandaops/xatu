@@ -7,22 +7,26 @@ go 1.26.2
 // Match tysm's tablewriter version requirement
 replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
 
-// Pin go-ethereum to bal-devnet-6 — the EL branch deployed on glamsterdam-devnet-3
-// per ethpandaops/glamsterdam-devnets ansible inventory. Carries the latest BAL
-// (EIP-7928) refinements plus Amsterdam slot-number support (EIP-7843) needed for
-// Gloas. ethcore was bumped to match the new 5-arg eth.NewPeer signature.
+// Pin go-ethereum to bal-devnet-6 — carries the BAL (EIP-7928) AccountAccess
+// type with StorageChanges/StorageReads + EncodedStorage.ToHash() that
+// pkg/proto/eth/v1/conversion.go depends on. Mainline v1.17.3 shipped a
+// different shape (ConstructionAccountAccess with StorageWrites), and
+// bal-devnet-7 dropped access_list.go / bal_encoding_json.go. Both prysm's
+// glamsterdam-devnet-4-tmp and ethpandaops/{beacon,ethcore} release/gloas
+// only require pseudo-versions of v1.17.3, which lose MVS to mainline, so this
+// replace is needed to force the bal-devnet-6 fork at build time.
 replace github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.17.3-0.20260507223249-73944e329925
 
 require (
 	github.com/ClickHouse/ch-go v0.71.0
 	github.com/IBM/sarama v1.46.2
-	github.com/OffchainLabs/prysm/v7 v7.1.3-rc.3.0.20260511221050-17a03b4a55e4
+	github.com/OffchainLabs/prysm/v7 v7.1.3-rc.3.0.20260518030851-d6648d3ed7b0
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/beevik/ntp v1.4.3
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
-	github.com/ethereum/go-ethereum v1.17.3-0.20260507223249-73944e329925
+	github.com/ethereum/go-ethereum v1.17.3
 	github.com/ethpandaops/beacon v0.69.1-0.20260514032911-81b9ef3395fd
 	github.com/ethpandaops/ethcore v0.0.0-20260514003726-f67d7a6e9f91
 	github.com/ethpandaops/ethwallclock v0.4.0

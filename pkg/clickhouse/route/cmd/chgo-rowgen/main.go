@@ -170,8 +170,11 @@ func fetchColumns(ctx context.Context, opts *options) ([]column, error) {
 		positions proto.ColUInt64
 	)
 
+	// Skip MATERIALIZED columns — they are derived server-side from other
+	// columns at INSERT time and cannot appear in the insert column list.
+	// ALIAS columns are similarly skipped because they're never stored.
 	query := fmt.Sprintf(
-		"SELECT name, type, position FROM system.columns WHERE database = %s AND table = %s ORDER BY position",
+		"SELECT name, type, position FROM system.columns WHERE database = %s AND table = %s AND default_kind NOT IN ('MATERIALIZED', 'ALIAS') ORDER BY position",
 		quoteCHString(opts.Database),
 		quoteCHString(opts.Table),
 	)

@@ -7,10 +7,14 @@ go 1.26.2
 // Match tysm's tablewriter version requirement
 replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
 
-// Pin go-ethereum to bal-devnet-6 — the EL branch deployed on glamsterdam-devnet-3
-// per ethpandaops/glamsterdam-devnets ansible inventory. Carries the latest BAL
-// (EIP-7928) refinements plus Amsterdam slot-number support (EIP-7843) needed for
-// Gloas. ethcore was bumped to match the new 5-arg eth.NewPeer signature.
+// Pin go-ethereum to bal-devnet-6 — carries the BAL (EIP-7928) AccountAccess
+// type with StorageChanges/StorageReads + EncodedStorage.ToHash() that
+// pkg/proto/eth/v1/conversion.go depends on. Mainline v1.17.3 shipped a
+// different shape (ConstructionAccountAccess with StorageWrites), and
+// bal-devnet-7 dropped access_list.go / bal_encoding_json.go. Both prysm's
+// glamsterdam-devnet-4-tmp and ethpandaops/{beacon,ethcore} release/gloas
+// only require pseudo-versions of v1.17.3, which lose MVS to mainline, so this
+// replace is needed to force the bal-devnet-6 fork at build time.
 replace github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.17.3-0.20260507223249-73944e329925
 
 require (

@@ -213,7 +213,7 @@ func TestEPBSHandlerIntegration(t *testing.T) {
 					ProposalSlot:   primitives.Slot(321),
 					ValidatorIndex: primitives.ValidatorIndex(99),
 					FeeRecipient:   make([]byte, 20),
-					GasLimit:       45_000_000,
+					TargetGasLimit: 45_000_000,
 				},
 			},
 		}

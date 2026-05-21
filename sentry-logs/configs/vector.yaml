@@ -406,12 +406,18 @@ sinks:
     encoding:
       codec: json
     request:
+      concurrency: ${XATU_SINK_CONCURRENCY:-adaptive}
+      timeout_secs: ${XATU_SINK_TIMEOUT_SECS:-30}
       headers:
         Content-Type: application/json
         Authorization: "Basic ${XATU_AUTH}"
     batch:
       max_events: ${XATU_BATCH_MAX_EVENTS:-5000}
       timeout_secs: ${XATU_BATCH_TIMEOUT_SECS:-5}
+    buffer:
+      type: ${XATU_SINK_BUFFER_TYPE:-memory}
+      ${XATU_SINK_BUFFER_SIZE:-max_events: 500}
+      when_full: ${XATU_SINK_BUFFER_WHEN_FULL:-block}
 
   # Debug sinks - uncomment for troubleshooting
   # debug_parsed:

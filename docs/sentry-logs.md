@@ -73,8 +73,15 @@ The process will crash on startup if required environment variables are not set.
 | XATU_COMPRESSION | No | `gzip` | Compression algorithm: `gzip`, `none` |
 | XATU_BATCH_MAX_EVENTS | No | `5000` | Maximum events per batch |
 | XATU_BATCH_TIMEOUT_SECS | No | `5` | Batch timeout in seconds |
+| XATU_SINK_CONCURRENCY | No | `adaptive` | In-flight requests to the xatu server; an integer (e.g. `10`) or `adaptive` |
+| XATU_SINK_TIMEOUT_SECS | No | `30` | Per-request timeout to the xatu server, in seconds |
+| XATU_SINK_BUFFER_TYPE | No | `memory` | Sink buffer type: `memory` or `disk` |
+| XATU_SINK_BUFFER_SIZE | No | `max_events: 500` | Buffer size as a `key: value` pair — `max_events: <n>` for memory, `max_size: <bytes>` for disk |
+| XATU_SINK_BUFFER_WHEN_FULL | No | `block` | Behavior when the buffer fills: `block` (backpressure upstream) or `drop_newest` |
 
 **Note:** Requests are gzip-compressed by default for bandwidth efficiency. Set `XATU_COMPRESSION=none` to disable.
+
+**Note:** The buffer defaults to in-memory. For burst-heavy ingestion (e.g. a genesis backfill) set `XATU_SINK_BUFFER_TYPE=disk` and `XATU_SINK_BUFFER_SIZE='max_size: <bytes>'` (Vector's memory/disk buffers require different size keys, hence the `key: value` form). A disk buffer needs a writable Vector `data_dir` (`/var/lib/vector`).
 
 ### Log Sources
 

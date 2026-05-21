@@ -415,8 +415,8 @@ sinks:
       max_events: ${XATU_BATCH_MAX_EVENTS:-5000}
       timeout_secs: ${XATU_BATCH_TIMEOUT_SECS:-5}
     buffer:
-      type: disk
-      max_size: ${XATU_SINK_BUFFER_MAX_SIZE:-1073741824}
+      type: memory
+      max_events: ${XATU_SINK_BUFFER_MAX_EVENTS:-500}
       when_full: ${XATU_SINK_BUFFER_WHEN_FULL:-block}
 
   # Debug sinks - uncomment for troubleshooting

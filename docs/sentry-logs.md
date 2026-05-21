@@ -75,12 +75,12 @@ The process will crash on startup if required environment variables are not set.
 | XATU_BATCH_TIMEOUT_SECS | No | `5` | Batch timeout in seconds |
 | XATU_SINK_CONCURRENCY | No | `adaptive` | In-flight requests to the xatu server; an integer (e.g. `10`) or `adaptive` |
 | XATU_SINK_TIMEOUT_SECS | No | `30` | Per-request timeout to the xatu server, in seconds |
-| XATU_SINK_BUFFER_MAX_SIZE | No | `1073741824` | On-disk sink buffer size in bytes (default 1 GiB) — absorbs ingestion bursts so events aren't dropped |
+| XATU_SINK_BUFFER_MAX_EVENTS | No | `500` | In-memory sink buffer size, in events |
 | XATU_SINK_BUFFER_WHEN_FULL | No | `block` | Behavior when the buffer fills: `block` (backpressure upstream) or `drop_newest` |
 
 **Note:** Requests are gzip-compressed by default for bandwidth efficiency. Set `XATU_COMPRESSION=none` to disable.
 
-**Note:** The sink uses an on-disk buffer at Vector's `data_dir` (`/var/lib/vector`), so that path must be a writable volume with enough free space for `XATU_SINK_BUFFER_MAX_SIZE`. This buffer lets the log reader keep draining the container log while the server is briefly slow, instead of dropping events under burst.
+**Note:** The sink uses an in-memory buffer by default. For burst-heavy ingestion (e.g. a genesis backfill) where the in-memory buffer can backpressure and drop events, switch to a disk buffer by overriding the full Vector config — the `xatu-sentry-logs` chart's `config` value — with `buffer: { type: disk, max_size: <bytes>, when_full: block }`. A disk buffer requires a writable Vector `data_dir` (`/var/lib/vector`).
 
 ### Log Sources
 

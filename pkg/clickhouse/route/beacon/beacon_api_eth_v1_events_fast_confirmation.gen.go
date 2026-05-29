@@ -193,7 +193,7 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) Snapshot() []map[string]any 
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 27)
+		row := make(map[string]any, 31)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["slot"] = b.Slot.Row(i)

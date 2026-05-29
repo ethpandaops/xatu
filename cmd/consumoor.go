@@ -99,7 +99,7 @@ var consumoorCmd = &cobra.Command{
 		}
 
 		shutdownObs, err := observability.Setup(cmd.Context(), log,
-			xatu.Implementation+"/consumoor", xatu.Short(),
+			xatu.WithComponent("consumoor"), xatu.Short(),
 			&config.Tracing,
 		)
 		if err != nil {

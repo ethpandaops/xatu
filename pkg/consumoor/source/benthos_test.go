@@ -17,6 +17,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	yaml "gopkg.in/yaml.v3"
@@ -381,6 +386,84 @@ func TestWriteBatchRejectSinkFailureMakesMessageRetry(t *testing.T) {
 	assert.Equal(t, []int{0}, failedIndexesFromBatchError(t, msgs, err))
 }
 
+func TestWriteBatchTraceScopeDoesNotInheritBatchSpanWithoutHeader(t *testing.T) {
+	recorder := setupConsumoorTraceTest(t)
+	output := newTraceTestOutput(t)
+
+	msgs := service.MessageBatch{
+		newKafkaMessage(mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 1),
+	}
+
+	ctx, parent := otel.Tracer("test").Start(context.Background(), "benthos.batch")
+	err := output.WriteBatch(ctx, msgs)
+
+	parent.End()
+
+	require.NoError(t, err)
+
+	handleSpan := requireEndedSpan(t, recorder, "consumoor.HandleMessage")
+	assert.False(t, handleSpan.Parent().IsValid(), "messages without traceparent must start a local trace, not inherit the Benthos batch context")
+
+	writeSpan := requireEndedSpan(t, recorder, "consumoor.WriteGroup")
+	assert.False(t, writeSpan.Parent().IsValid(), "group write span must not inherit the Benthos batch context")
+}
+
+func TestWriteBatchTraceScopeHonorsKafkaTraceparent(t *testing.T) {
+	recorder := setupConsumoorTraceTest(t)
+	output := newTraceTestOutput(t)
+
+	msg := newKafkaMessage(mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 1)
+	parent := testRemoteSpanContext()
+	otel.GetTextMapPropagator().Inject(
+		oteltrace.ContextWithRemoteSpanContext(context.Background(), parent),
+		newBenthosHeaderCarrier(msg),
+	)
+
+	ctx, batchSpan := otel.Tracer("test").Start(context.Background(), "benthos.batch")
+	err := output.WriteBatch(ctx, service.MessageBatch{msg})
+
+	batchSpan.End()
+
+	require.NoError(t, err)
+
+	handleSpan := requireEndedSpan(t, recorder, "consumoor.HandleMessage")
+	assert.Equal(t, parent.TraceID(), handleSpan.SpanContext().TraceID())
+	assert.Equal(t, parent.SpanID(), handleSpan.Parent().SpanID())
+	assert.True(t, handleSpan.Parent().IsRemote())
+
+	writeSpan := requireEndedSpan(t, recorder, "consumoor.WriteGroup")
+	assert.False(t, writeSpan.Parent().IsValid(), "group write span should link message spans instead of joining an arbitrary batch parent")
+}
+
+func TestWriteBatchTraceScopeSeparatesRecordTraceparents(t *testing.T) {
+	recorder := setupConsumoorTraceTest(t)
+	output := newTraceTestOutput(t)
+
+	parent1 := testRemoteSpanContext()
+	parent2 := testRemoteSpanContext2()
+
+	msg1 := newKafkaMessage(mustEventJSON(t, "evt-1", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 1)
+	msg1.MetaSet("traceparent", traceparentHeader(parent1))
+
+	msg2 := newKafkaMessage(mustEventJSON(t, "evt-2", xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD), "topic-a", 0, 2)
+	msg2.MetaSet("TraceParent", traceparentHeader(parent2))
+
+	err := output.WriteBatch(context.Background(), service.MessageBatch{msg1, msg2})
+	require.NoError(t, err)
+
+	handleSpans := endedSpansByName(recorder, "consumoor.HandleMessage")
+	require.Len(t, handleSpans, 2)
+
+	traceIDs := make(map[oteltrace.TraceID]struct{}, len(handleSpans))
+	for _, span := range handleSpans {
+		traceIDs[span.SpanContext().TraceID()] = struct{}{}
+	}
+
+	assert.Contains(t, traceIDs, parent1.TraceID())
+	assert.Contains(t, traceIDs, parent2.TraceID())
+	assert.Len(t, traceIDs, 2)
+}
+
 func failedIndexesFromBatchError(t *testing.T, msgs service.MessageBatch, err error) []int {
 	t.Helper()
 
@@ -440,6 +523,102 @@ func newKafkaMessage(payload []byte, topic string, partition int32, offset int64
 	msg.MetaSet("kafka_offset", strconv.FormatInt(offset, 10))
 
 	return msg
+}
+
+func newTraceTestOutput(t *testing.T) *xatuClickHouseOutput {
+	t.Helper()
+
+	return &xatuClickHouseOutput{
+		log:      logrus.New(),
+		encoding: "json",
+		router: newRouter(t, []route.Route{
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "beacon_head",
+			},
+		}),
+		writer:     &testWriter{},
+		metrics:    newTestMetrics(),
+		logSampler: telemetry.NewLogSampler(time.Minute),
+		rejectSink: &testRejectSink{},
+	}
+}
+
+func setupConsumoorTraceTest(t *testing.T) *tracetest.SpanRecorder {
+	t.Helper()
+
+	previousProvider := otel.GetTracerProvider()
+	previousPropagator := otel.GetTextMapPropagator()
+
+	recorder := tracetest.NewSpanRecorder()
+	provider := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithSpanProcessor(recorder),
+	)
+
+	otel.SetTracerProvider(provider)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+
+	t.Cleanup(func() {
+		require.NoError(t, provider.Shutdown(context.Background()))
+		otel.SetTracerProvider(previousProvider)
+		otel.SetTextMapPropagator(previousPropagator)
+	})
+
+	return recorder
+}
+
+func requireEndedSpan(t *testing.T, recorder *tracetest.SpanRecorder, name string) sdktrace.ReadOnlySpan {
+	t.Helper()
+
+	for _, span := range recorder.Ended() {
+		if span.Name() == name {
+			return span
+		}
+	}
+
+	require.Failf(t, "span not found", "missing ended span %q", name)
+
+	return nil
+}
+
+func endedSpansByName(recorder *tracetest.SpanRecorder, name string) []sdktrace.ReadOnlySpan {
+	out := make([]sdktrace.ReadOnlySpan, 0)
+
+	for _, span := range recorder.Ended() {
+		if span.Name() == name {
+			out = append(out, span)
+		}
+	}
+
+	return out
+}
+
+func testRemoteSpanContext() oteltrace.SpanContext {
+	return oteltrace.NewSpanContext(oteltrace.SpanContextConfig{
+		TraceID:    oteltrace.TraceID{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10},
+		SpanID:     oteltrace.SpanID{0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18},
+		TraceFlags: oteltrace.FlagsSampled,
+		Remote:     true,
+	})
+}
+
+func testRemoteSpanContext2() oteltrace.SpanContext {
+	return oteltrace.NewSpanContext(oteltrace.SpanContextConfig{
+		TraceID:    oteltrace.TraceID{0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30},
+		SpanID:     oteltrace.SpanID{0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38},
+		TraceFlags: oteltrace.FlagsSampled,
+		Remote:     true,
+	})
+}
+
+func traceparentHeader(sc oteltrace.SpanContext) string {
+	flags := "00"
+	if sc.TraceFlags().IsSampled() {
+		flags = "01"
+	}
+
+	return fmt.Sprintf("00-%s-%s-%s", sc.TraceID(), sc.SpanID(), flags)
 }
 
 func TestWriteBatchMultiTableTransientFailureFailsAllImpactedMessages(t *testing.T) {

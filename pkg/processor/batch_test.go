@@ -21,6 +21,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -53,6 +54,8 @@ func traceCtx(seed byte) context.Context {
 type TestItem struct {
 	name string
 }
+
+type contextValueKey struct{}
 
 type testBatchExporter[T TestItem] struct {
 	mu             sync.Mutex
@@ -149,6 +152,32 @@ func TestNewBatchItemProcessorWithNilExporter(t *testing.T) {
 
 	if err := bsp.Shutdown(context.Background()); err != nil {
 		t.Errorf("failed to Shutdown the BatchItemProcessor: %v", err)
+	}
+}
+
+func TestPropagationContextTrimsValuesAndPreservesOTelState(t *testing.T) {
+	member, err := baggage.NewMember("user", "alice")
+	require.NoError(t, err)
+
+	bag, err := baggage.New(member)
+	require.NoError(t, err)
+
+	ctx := context.WithValue(traceCtx(0x42), contextValueKey{}, "retain-me-not")
+	ctx = baggage.ContextWithBaggage(ctx, bag)
+
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+
+	trimmed := PropagationContext(ctx)
+
+	assert.Nil(t, trimmed.Value(contextValueKey{}))
+	assert.Equal(t, trace.SpanContextFromContext(ctx), trace.SpanContextFromContext(trimmed))
+	assert.Equal(t, "alice", baggage.FromContext(trimmed).Member("user").Value())
+
+	select {
+	case <-trimmed.Done():
+		t.Fatal("propagation context must be detached from caller cancellation")
+	default:
 	}
 }
 

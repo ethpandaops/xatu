@@ -47,6 +47,8 @@ var (
 	TypeExecutionEngineNewPayload               Type = execution.EngineNewPayloadType
 	TypeExecutionEngineGetBlobs                 Type = execution.EngineGetBlobsType
 	TypeExecutionBlockMetrics                   Type = execution.BlockMetricsType
+	TypeExecutionStateSizeDelta                 Type = execution.StateSizeDeltaType
+	TypeExecutionMPTDepth                       Type = execution.MPTDepthType
 	TypeConsensusEngineAPINewPayload            Type = consensus.EngineAPINewPayloadType
 	TypeConsensusEngineAPIGetBlobs              Type = consensus.EngineAPIGetBlobsType
 	TypeBeaconETHV2BeaconBlock                  Type = v2.BeaconBlockType
@@ -238,6 +240,12 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	})
 	router.RegisterHandler(TypeExecutionBlockMetrics, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return execution.NewBlockMetrics(router.log, event), nil
+	})
+	router.RegisterHandler(TypeExecutionStateSizeDelta, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return execution.NewStateSizeDelta(router.log, event), nil
+	})
+	router.RegisterHandler(TypeExecutionMPTDepth, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return execution.NewMPTDepth(router.log, event), nil
 	})
 	router.RegisterHandler(TypeConsensusEngineAPINewPayload, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return consensus.NewEngineAPINewPayload(router.log, event), nil

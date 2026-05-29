@@ -418,7 +418,7 @@ func NewBlockAccessListFromGloas(rawBAL gloas.BlockAccessList) *BlockAccessList 
 		// Code changes
 		for _, code := range access.CodeChanges {
 			entry.CodeChanges = append(entry.CodeChanges, &BlockAccessListCodeChange{
-				BlockAccessIndex: &wrapperspb.UInt32Value{Value: uint32(code.TxIndex)},
+				BlockAccessIndex: &wrapperspb.UInt32Value{Value: code.TxIndex},
 				NewCode:          &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", code.Code)},
 			})
 		}

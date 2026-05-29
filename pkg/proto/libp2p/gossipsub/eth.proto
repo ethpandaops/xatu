@@ -30,3 +30,48 @@ message DataColumnSidecar {
     google.protobuf.UInt32Value kzg_commitments_count = 6 [json_name = "kzg_commitments_count"];
     google.protobuf.StringValue block_root = 7 [json_name = "block_root"];
 }
+
+// EIP-7732 ePBS gossipsub types
+
+// ExecutionPayloadEnvelope is a summary of a SignedExecutionPayloadEnvelope
+// received on the execution_payload gossipsub topic.
+message ExecutionPayloadEnvelope {
+    google.protobuf.UInt64Value slot = 1 [json_name = "slot"];
+    google.protobuf.UInt64Value builder_index = 2 [json_name = "builder_index"];
+    google.protobuf.StringValue beacon_block_root = 3 [json_name = "beacon_block_root"];
+    google.protobuf.StringValue block_hash = 4 [json_name = "block_hash"];
+    google.protobuf.StringValue state_root = 5 [json_name = "state_root"];
+}
+
+// ExecutionPayloadBid is a summary of a SignedExecutionPayloadBid
+// received on the execution_payload_bid gossipsub topic.
+message ExecutionPayloadBid {
+    google.protobuf.UInt64Value slot = 1 [json_name = "slot"];
+    google.protobuf.UInt64Value builder_index = 2 [json_name = "builder_index"];
+    google.protobuf.StringValue block_hash = 3 [json_name = "block_hash"];
+    google.protobuf.StringValue parent_block_hash = 4 [json_name = "parent_block_hash"];
+    google.protobuf.UInt64Value value = 5 [json_name = "value"];
+    google.protobuf.UInt64Value execution_payment = 6 [json_name = "execution_payment"];
+    google.protobuf.StringValue fee_recipient = 7 [json_name = "fee_recipient"];
+    google.protobuf.UInt64Value gas_limit = 8 [json_name = "gas_limit"];
+    google.protobuf.UInt32Value blob_kzg_commitment_count = 9 [json_name = "blob_kzg_commitment_count"];
+}
+
+// PayloadAttestationMessage is a summary of a PayloadAttestationMessage
+// received on the payload_attestation_message gossipsub topic.
+message PayloadAttestationMessage {
+    google.protobuf.UInt64Value slot = 1 [json_name = "slot"];
+    google.protobuf.UInt64Value validator_index = 2 [json_name = "validator_index"];
+    google.protobuf.StringValue beacon_block_root = 3 [json_name = "beacon_block_root"];
+    google.protobuf.BoolValue payload_present = 4 [json_name = "payload_present"];
+    google.protobuf.BoolValue blob_data_available = 5 [json_name = "blob_data_available"];
+}
+
+// ProposerPreferences is a summary of a SignedProposerPreferences
+// received on the proposer_preferences gossipsub topic.
+message ProposerPreferences {
+    google.protobuf.UInt64Value slot = 1 [json_name = "slot"];
+    google.protobuf.UInt64Value validator_index = 2 [json_name = "validator_index"];
+    google.protobuf.StringValue fee_recipient = 3 [json_name = "fee_recipient"];
+    google.protobuf.UInt64Value gas_limit = 4 [json_name = "gas_limit"];
+}

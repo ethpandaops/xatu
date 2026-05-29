@@ -89,10 +89,10 @@ func (e *EventsBlobSidecar) ShouldIgnore(ctx context.Context) (bool, error) {
 	item, retrieved := e.duplicateCache.GetOrSet(fmt.Sprint(hash), e.now, ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
 		e.log.WithFields(logrus.Fields{
-			"hash":                  hash,
-			"time_since_first_item": time.Since(item.Value()),
-			"slot":                  e.event.Slot,
-			"index":                 e.event.Index,
+			hashLogField:               hash,
+			timeSinceFirstItemLogField: time.Since(item.Value()),
+			slotLogField:               e.event.Slot,
+			indexLogField:              e.event.Index,
 		}).WithContext(ctx).Debug("Duplicate blob sidecar event received")
 
 		return true, nil

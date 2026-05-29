@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+// EIP-7732: ePBS Proposer Preferences types
+// https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/p2p-interface.md#new-proposerpreferences
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
+
+// ProposerPreferences signals the proposer's preferences for their upcoming
+// slot (fee recipient, gas limit). Gossiped on P2P.
+//
+// Per the Gloas p2p-interface spec, dependent_root is logically the first
+// field; here it is field 5 because proto field numbers are independent of
+// the spec's container ordering and the other fields predate this addition.
+message ProposerPreferences {
+  google.protobuf.UInt64Value proposal_slot = 1
+      [ json_name = "proposal_slot" ];
+
+  google.protobuf.UInt64Value validator_index = 2
+      [ json_name = "validator_index" ];
+
+  string fee_recipient = 3 [ json_name = "fee_recipient" ];
+
+  google.protobuf.UInt64Value gas_limit = 4 [ json_name = "gas_limit" ];
+
+  string dependent_root = 5 [ json_name = "dependent_root" ];
+}
+
+// SignedProposerPreferences wraps ProposerPreferences with the proposer's
+// signature.
+message SignedProposerPreferences {
+  ProposerPreferences message = 1;
+
+  string signature = 2;
+}

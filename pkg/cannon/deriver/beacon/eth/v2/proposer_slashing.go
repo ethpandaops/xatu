@@ -45,8 +45,8 @@ type ProposerSlashingDeriver struct {
 func NewProposerSlashingDeriver(log observability.ContextualLogger, config *ProposerSlashingDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ProposerSlashingDeriver {
 	return &ProposerSlashingDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/proposer_slashing",
-			"type":   ProposerSlashingDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/proposer_slashing",
+			typeLogField:   ProposerSlashingDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

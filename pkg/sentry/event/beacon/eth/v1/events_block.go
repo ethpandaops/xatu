@@ -87,9 +87,9 @@ func (e *EventsBlock) ShouldIgnore(ctx context.Context) (bool, error) {
 	item, retrieved := e.duplicateCache.GetOrSet(fmt.Sprint(hash), e.now, ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
 		e.log.WithFields(logrus.Fields{
-			"hash":                  hash,
-			"time_since_first_item": time.Since(item.Value()),
-			"slot":                  e.event.Slot,
+			hashLogField:               hash,
+			timeSinceFirstItemLogField: time.Since(item.Value()),
+			slotLogField:               e.event.Slot,
 		}).WithContext(ctx).Debug("Duplicate block event received")
 
 		return true, nil

@@ -16,11 +16,18 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
+// Reusable identifiers and column-name keys for snapshot tests.
+const (
+	SnapshotID        = "snapshot-1"
+	MetaClientName    = "test-client"
+	MetaClientNameKey = "meta_client_name"
+)
+
 // BaseMeta returns a reusable Meta with known deterministic values.
 func BaseMeta() *xatu.Meta {
 	return &xatu.Meta{
 		Client: &xatu.ClientMeta{
-			Name:           "test-client",
+			Name:           MetaClientName,
 			Version:        "0.1.0",
 			Id:             "client-id-1",
 			Implementation: "xatu",
@@ -54,7 +61,7 @@ func TS() *timestamppb.Timestamp {
 func MetaWithAdditional(ad *xatu.ClientMeta) *xatu.Meta {
 	m := BaseMeta()
 	m.Client = ad
-	m.Client.Name = "test-client"
+	m.Client.Name = MetaClientName
 	m.Client.Version = "0.1.0"
 	m.Client.Id = "client-id-1"
 	m.Client.Implementation = "xatu"

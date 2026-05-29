@@ -128,9 +128,39 @@ type TraceEventAttesterSlashing struct {
 }
 
 // TraceEventDataColumnSidecar represents a data column sidecar event.
+//
+// Exactly one of DataColumnSidecar / DataColumnSidecarGloas is set, depending
+// on the fork the sidecar was gossiped under. The Gloas variant (EIP-7732)
+// drops the signed block header, so it carries slot and beacon_block_root
+// directly instead.
 type TraceEventDataColumnSidecar struct {
 	TraceEventPayloadMetaData
-	DataColumnSidecar *ethtypes.DataColumnSidecar
+	DataColumnSidecar      *ethtypes.DataColumnSidecar
+	DataColumnSidecarGloas *ethtypes.DataColumnSidecarGloas
+}
+
+// TraceEventExecutionPayloadEnvelope represents a Gloas execution_payload gossip event (EIP-7732).
+type TraceEventExecutionPayloadEnvelope struct {
+	TraceEventPayloadMetaData
+	ExecutionPayloadEnvelope *ethtypes.SignedExecutionPayloadEnvelope
+}
+
+// TraceEventExecutionPayloadBid represents a Gloas execution_payload_bid gossip event (EIP-7732).
+type TraceEventExecutionPayloadBid struct {
+	TraceEventPayloadMetaData
+	ExecutionPayloadBid *ethtypes.SignedExecutionPayloadBid
+}
+
+// TraceEventPayloadAttestationMessage represents a Gloas payload_attestation_message gossip event (EIP-7732).
+type TraceEventPayloadAttestationMessage struct {
+	TraceEventPayloadMetaData
+	PayloadAttestationMessage *ethtypes.PayloadAttestationMessage
+}
+
+// TraceEventProposerPreferences represents a Gloas proposer_preferences gossip event (EIP-7732).
+type TraceEventProposerPreferences struct {
+	TraceEventPayloadMetaData
+	ProposerPreferences *ethtypes.SignedProposerPreferences
 }
 
 // TraceEventCustodyProbe represents a data column custody probe event.
@@ -217,4 +247,92 @@ type TraceEventConsensusEngineAPIGetBlobs struct {
 	// ExecutionClientVersion is the raw version string from web3_clientVersion RPC.
 	// Parsed into components when converting to protobuf.
 	ExecutionClientVersion string `json:"execution_client_version"`
+}
+
+// TraceEventBeaconSyntheticPayloadStatusResolved represents a fork-choice
+// payload status transition observed from beacon node internals (TYSM-instrumented).
+// EIP-7732 ePBS.
+//
+// PTC vote counts follow the three-state model introduced by consensus-specs
+// PR #5180 (Optional[boolean]): a validator may vote positive, vote negative,
+// or not vote at all. *_VotesPositive is always populated (the existing PTC
+// quorum metric); *_VotesNegative and *_VotesAbsent are *uint64 — nil when
+// the emitting CL doesn't surface the three-state breakdown. The relation
+// positive + negative + absent == ptc_size holds when all three are non-nil.
+//
+//nolint:tagliatelle // JSON tags match expected format for compatibility
+type TraceEventBeaconSyntheticPayloadStatusResolved struct {
+	TraceEventPayloadMetaData
+
+	ResolvedAt time.Time `json:"resolved_at"`
+
+	Slot      uint64 `json:"slot"`
+	BlockRoot string `json:"block_root"`
+	BlockHash string `json:"block_hash"`
+
+	// Status / PreviousStatus follow eth.v1.PayloadStatus enum semantics:
+	// 0=PENDING, 1=FULL, 2=EMPTY, 3=INVALID.
+	Status         uint32 `json:"status"`
+	PreviousStatus uint32 `json:"previous_status"`
+
+	PayloadTimelinessVotesPositive uint64  `json:"payload_timeliness_votes_positive"`
+	PayloadTimelinessVotesNegative *uint64 `json:"payload_timeliness_votes_negative,omitempty"`
+	PayloadTimelinessVotesAbsent   *uint64 `json:"payload_timeliness_votes_absent,omitempty"`
+
+	DataAvailableVotesPositive uint64  `json:"data_available_votes_positive"`
+	DataAvailableVotesNegative *uint64 `json:"data_available_votes_negative,omitempty"`
+	DataAvailableVotesAbsent   *uint64 `json:"data_available_votes_absent,omitempty"`
+
+	PTCSize uint64 `json:"ptc_size"`
+}
+
+// TraceEventBeaconSyntheticPayloadAttestationProcessed represents a PTC vote
+// that has cleared every gossip-validation check (signature, validator-in-PTC,
+// block-root seen/valid, slot-current, first-from-this-validator dedup) and
+// been committed for downstream pipeline use. Observed from beacon-node
+// internals (TYSM-instrumented). EIP-7732 ePBS.
+//
+//nolint:tagliatelle // JSON tags match expected format for compatibility
+type TraceEventBeaconSyntheticPayloadAttestationProcessed struct {
+	TraceEventPayloadMetaData
+
+	ReceivedAt  time.Time `json:"received_at"`
+	ProcessedAt time.Time `json:"processed_at"`
+
+	Slot              uint64 `json:"slot"`
+	BeaconBlockRoot   string `json:"beacon_block_root"`
+	ValidatorIndex    uint64 `json:"validator_index"`
+	PayloadPresent    bool   `json:"payload_present"`
+	BlobDataAvailable bool   `json:"blob_data_available"`
+
+	// PeerID we received this PTC vote from on the gossip wire.
+	PeerID string `json:"peer_id"`
+
+	// ProcessingDurationMs is the time from gossip receipt to processing
+	// completion in milliseconds.
+	ProcessingDurationMs uint64 `json:"processing_duration_ms"`
+}
+
+// TraceEventBeaconSyntheticBuilderPendingPaymentSettlement represents an
+// epoch-boundary builder pending payment settle/drop decision observed from
+// beacon node internals (TYSM-instrumented). EIP-7732 ePBS.
+//
+//nolint:tagliatelle // JSON tags match expected format for compatibility
+type TraceEventBeaconSyntheticBuilderPendingPaymentSettlement struct {
+	TraceEventPayloadMetaData
+
+	ResolvedAt time.Time `json:"resolved_at"`
+
+	Epoch        uint64 `json:"epoch"`
+	BuilderIndex uint64 `json:"builder_index"`
+	FeeRecipient string `json:"fee_recipient"`
+
+	// Amount, Weight, Quorum are Gwei.
+	Amount uint64 `json:"amount"`
+	Weight uint64 `json:"weight"`
+	Quorum uint64 `json:"quorum"`
+
+	// Outcome follows eth.v1.BuilderPendingPaymentOutcome enum semantics:
+	// 0=SETTLED, 1=DROPPED.
+	Outcome uint32 `json:"outcome"`
 }

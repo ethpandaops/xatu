@@ -2208,10 +2208,10 @@ message Event {
     EXECUTION_BLOCK_METRICS = 87;
     LIBP2P_TRACE_IDENTIFY = 88;
     BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION = 89;
-    BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST = 90;
+    EXECUTION_STATE_SIZE_DELTA = 90;
+    EXECUTION_MPT_DEPTH = 91;
 
     // EIP-7732 ePBS: Sentry SSE events
-    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD = 91;
     BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION = 92;
     BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID = 93;
     BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES = 94;
@@ -2235,8 +2235,8 @@ message Event {
     BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT = 104;
     BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED = 105;
 
-    EXECUTION_STATE_SIZE_DELTA = 106;
-    EXECUTION_MPT_DEPTH = 107;
+    BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST = 108;
+    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD = 109;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2637,12 +2637,12 @@ message DecoratedEvent {
         [ json_name = "EXECUTION_BLOCK_METRICS" ];
     xatu.eth.v1.EventFastConfirmation eth_v1_events_fast_confirmation = 210
         [ json_name = "BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION" ];
-    xatu.eth.v1.BlockAccessListChange eth_v2_beacon_block_access_list = 211
-        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
+    ExecutionStateSizeDelta execution_state_size_delta = 211
+        [ json_name = "EXECUTION_STATE_SIZE_DELTA" ];
+    ExecutionMPTDepth execution_mpt_depth = 212
+        [ json_name = "EXECUTION_MPT_DEPTH" ];
 
     // EIP-7732 ePBS: Sentry SSE events
-    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload = 212
-        [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
     xatu.eth.v1.PayloadAttestationMessage eth_v1_events_payload_attestation = 213
         [ json_name = "BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION" ];
     xatu.eth.v1.SignedExecutionPayloadBid eth_v1_events_execution_payload_bid = 214
@@ -2680,10 +2680,10 @@ message DecoratedEvent {
     xatu.eth.v1.PayloadAttestationProcessed beacon_synthetic_payload_attestation_processed = 226
         [ json_name = "BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED" ];
 
-    ExecutionStateSizeDelta execution_state_size_delta = 227
-        [ json_name = "EXECUTION_STATE_SIZE_DELTA" ];
-    ExecutionMPTDepth execution_mpt_depth = 228
-        [ json_name = "EXECUTION_MPT_DEPTH" ];
+    xatu.eth.v1.BlockAccessListChange eth_v2_beacon_block_access_list = 229
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
+    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload = 230
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
   };
 }
 

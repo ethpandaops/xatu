@@ -16306,32 +16306,20 @@ func (m *DecoratedEvent_EthV1EventsFastConfirmation) MarshalToSizedBufferVT(dAtA
 	}
 	return len(dAtA) - i, nil
 }
-func (m *DecoratedEvent_EthV2BeaconBlockAccessList) MarshalToVT(dAtA []byte) (int, error) {
+func (m *DecoratedEvent_ExecutionStateSizeDelta) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *DecoratedEvent_EthV2BeaconBlockAccessList) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *DecoratedEvent_ExecutionStateSizeDelta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.EthV2BeaconBlockAccessList != nil {
-		if vtmsg, ok := interface{}(m.EthV2BeaconBlockAccessList).(interface {
-			MarshalToSizedBufferVT([]byte) (int, error)
-		}); ok {
-			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		} else {
-			encoded, err := proto.Marshal(m.EthV2BeaconBlockAccessList)
-			if err != nil {
-				return 0, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+	if m.ExecutionStateSizeDelta != nil {
+		size, err := m.ExecutionStateSizeDelta.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
 		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xd
 		i--
@@ -16339,32 +16327,20 @@ func (m *DecoratedEvent_EthV2BeaconBlockAccessList) MarshalToSizedBufferVT(dAtA 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *DecoratedEvent_EthV1EventsExecutionPayload) MarshalToVT(dAtA []byte) (int, error) {
+func (m *DecoratedEvent_ExecutionMptDepth) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *DecoratedEvent_EthV1EventsExecutionPayload) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *DecoratedEvent_ExecutionMptDepth) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.EthV1EventsExecutionPayload != nil {
-		if vtmsg, ok := interface{}(m.EthV1EventsExecutionPayload).(interface {
-			MarshalToSizedBufferVT([]byte) (int, error)
-		}); ok {
-			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		} else {
-			encoded, err := proto.Marshal(m.EthV1EventsExecutionPayload)
-			if err != nil {
-				return 0, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+	if m.ExecutionMptDepth != nil {
+		size, err := m.ExecutionMptDepth.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
 		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xd
 		i--
@@ -16834,45 +16810,69 @@ func (m *DecoratedEvent_BeaconSyntheticPayloadAttestationProcessed) MarshalToSiz
 	}
 	return len(dAtA) - i, nil
 }
-func (m *DecoratedEvent_ExecutionStateSizeDelta) MarshalToVT(dAtA []byte) (int, error) {
+func (m *DecoratedEvent_EthV2BeaconBlockAccessList) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *DecoratedEvent_ExecutionStateSizeDelta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *DecoratedEvent_EthV2BeaconBlockAccessList) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.ExecutionStateSizeDelta != nil {
-		size, err := m.ExecutionStateSizeDelta.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+	if m.EthV2BeaconBlockAccessList != nil {
+		if vtmsg, ok := interface{}(m.EthV2BeaconBlockAccessList).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.EthV2BeaconBlockAccessList)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xe
 		i--
-		dAtA[i] = 0x9a
+		dAtA[i] = 0xaa
 	}
 	return len(dAtA) - i, nil
 }
-func (m *DecoratedEvent_ExecutionMptDepth) MarshalToVT(dAtA []byte) (int, error) {
+func (m *DecoratedEvent_EthV1EventsExecutionPayload) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *DecoratedEvent_ExecutionMptDepth) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *DecoratedEvent_EthV1EventsExecutionPayload) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.ExecutionMptDepth != nil {
-		size, err := m.ExecutionMptDepth.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+	if m.EthV1EventsExecutionPayload != nil {
+		if vtmsg, ok := interface{}(m.EthV1EventsExecutionPayload).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.EthV1EventsExecutionPayload)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xe
 		i--
-		dAtA[i] = 0xa2
+		dAtA[i] = 0xb2
 	}
 	return len(dAtA) - i, nil
 }
@@ -21070,11 +21070,11 @@ func (m *DecoratedEvent) ResetVT() {
 		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsFastConfirmation); ok {
 			oneof.EthV1EventsFastConfirmation.ReturnToVTPool()
 		}
-		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockAccessList); ok {
-			oneof.EthV2BeaconBlockAccessList.ReturnToVTPool()
+		if oneof, ok := m.Data.(*DecoratedEvent_ExecutionStateSizeDelta); ok {
+			oneof.ExecutionStateSizeDelta.ReturnToVTPool()
 		}
-		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsExecutionPayload); ok {
-			oneof.EthV1EventsExecutionPayload.ReturnToVTPool()
+		if oneof, ok := m.Data.(*DecoratedEvent_ExecutionMptDepth); ok {
+			oneof.ExecutionMptDepth.ReturnToVTPool()
 		}
 		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsPayloadAttestation); ok {
 			oneof.EthV1EventsPayloadAttestation.ReturnToVTPool()
@@ -21118,11 +21118,11 @@ func (m *DecoratedEvent) ResetVT() {
 		if oneof, ok := m.Data.(*DecoratedEvent_BeaconSyntheticPayloadAttestationProcessed); ok {
 			oneof.BeaconSyntheticPayloadAttestationProcessed.ReturnToVTPool()
 		}
-		if oneof, ok := m.Data.(*DecoratedEvent_ExecutionStateSizeDelta); ok {
-			oneof.ExecutionStateSizeDelta.ReturnToVTPool()
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockAccessList); ok {
+			oneof.EthV2BeaconBlockAccessList.ReturnToVTPool()
 		}
-		if oneof, ok := m.Data.(*DecoratedEvent_ExecutionMptDepth); ok {
-			oneof.ExecutionMptDepth.ReturnToVTPool()
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsExecutionPayload); ok {
+			oneof.EthV1EventsExecutionPayload.ReturnToVTPool()
 		}
 		m.Reset()
 	}
@@ -28152,38 +28152,26 @@ func (m *DecoratedEvent_EthV1EventsFastConfirmation) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *DecoratedEvent_EthV2BeaconBlockAccessList) SizeVT() (n int) {
+func (m *DecoratedEvent_ExecutionStateSizeDelta) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.EthV2BeaconBlockAccessList != nil {
-		if size, ok := interface{}(m.EthV2BeaconBlockAccessList).(interface {
-			SizeVT() int
-		}); ok {
-			l = size.SizeVT()
-		} else {
-			l = proto.Size(m.EthV2BeaconBlockAccessList)
-		}
+	if m.ExecutionStateSizeDelta != nil {
+		l = m.ExecutionStateSizeDelta.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
 }
-func (m *DecoratedEvent_EthV1EventsExecutionPayload) SizeVT() (n int) {
+func (m *DecoratedEvent_ExecutionMptDepth) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.EthV1EventsExecutionPayload != nil {
-		if size, ok := interface{}(m.EthV1EventsExecutionPayload).(interface {
-			SizeVT() int
-		}); ok {
-			l = size.SizeVT()
-		} else {
-			l = proto.Size(m.EthV1EventsExecutionPayload)
-		}
+	if m.ExecutionMptDepth != nil {
+		l = m.ExecutionMptDepth.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -28440,26 +28428,38 @@ func (m *DecoratedEvent_BeaconSyntheticPayloadAttestationProcessed) SizeVT() (n 
 	}
 	return n
 }
-func (m *DecoratedEvent_ExecutionStateSizeDelta) SizeVT() (n int) {
+func (m *DecoratedEvent_EthV2BeaconBlockAccessList) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ExecutionStateSizeDelta != nil {
-		l = m.ExecutionStateSizeDelta.SizeVT()
+	if m.EthV2BeaconBlockAccessList != nil {
+		if size, ok := interface{}(m.EthV2BeaconBlockAccessList).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.EthV2BeaconBlockAccessList)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
 }
-func (m *DecoratedEvent_ExecutionMptDepth) SizeVT() (n int) {
+func (m *DecoratedEvent_EthV1EventsExecutionPayload) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ExecutionMptDepth != nil {
-		l = m.ExecutionMptDepth.SizeVT()
+	if m.EthV1EventsExecutionPayload != nil {
+		if size, ok := interface{}(m.EthV1EventsExecutionPayload).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.EthV1EventsExecutionPayload)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -67016,7 +67016,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 211:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EthV2BeaconBlockAccessList", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionStateSizeDelta", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -67043,37 +67043,21 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockAccessList); ok {
-				if unmarshal, ok := interface{}(oneof.EthV2BeaconBlockAccessList).(interface {
-					UnmarshalVT([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.EthV2BeaconBlockAccessList); err != nil {
-						return err
-					}
+			if oneof, ok := m.Data.(*DecoratedEvent_ExecutionStateSizeDelta); ok {
+				if err := oneof.ExecutionStateSizeDelta.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
 				}
 			} else {
-				v := v1.BlockAccessListChangeFromVTPool()
-				if unmarshal, ok := interface{}(v).(interface {
-					UnmarshalVT([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
-						return err
-					}
+				v := ExecutionStateSizeDeltaFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
 				}
-				m.Data = &DecoratedEvent_EthV2BeaconBlockAccessList{EthV2BeaconBlockAccessList: v}
+				m.Data = &DecoratedEvent_ExecutionStateSizeDelta{ExecutionStateSizeDelta: v}
 			}
 			iNdEx = postIndex
 		case 212:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EthV1EventsExecutionPayload", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionMptDepth", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -67100,32 +67084,16 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsExecutionPayload); ok {
-				if unmarshal, ok := interface{}(oneof.EthV1EventsExecutionPayload).(interface {
-					UnmarshalVT([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.EthV1EventsExecutionPayload); err != nil {
-						return err
-					}
+			if oneof, ok := m.Data.(*DecoratedEvent_ExecutionMptDepth); ok {
+				if err := oneof.ExecutionMptDepth.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
 				}
 			} else {
-				v := v1.SignedExecutionPayloadEnvelopeFromVTPool()
-				if unmarshal, ok := interface{}(v).(interface {
-					UnmarshalVT([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
-						return err
-					}
+				v := ExecutionMPTDepthFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
 				}
-				m.Data = &DecoratedEvent_EthV1EventsExecutionPayload{EthV1EventsExecutionPayload: v}
+				m.Data = &DecoratedEvent_ExecutionMptDepth{ExecutionMptDepth: v}
 			}
 			iNdEx = postIndex
 		case 213:
@@ -67926,9 +67894,9 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				m.Data = &DecoratedEvent_BeaconSyntheticPayloadAttestationProcessed{BeaconSyntheticPayloadAttestationProcessed: v}
 			}
 			iNdEx = postIndex
-		case 227:
+		case 229:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionStateSizeDelta", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV2BeaconBlockAccessList", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -67955,21 +67923,37 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Data.(*DecoratedEvent_ExecutionStateSizeDelta); ok {
-				if err := oneof.ExecutionStateSizeDelta.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+			if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockAccessList); ok {
+				if unmarshal, ok := interface{}(oneof.EthV2BeaconBlockAccessList).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.EthV2BeaconBlockAccessList); err != nil {
+						return err
+					}
 				}
 			} else {
-				v := ExecutionStateSizeDeltaFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				v := v1.BlockAccessListChangeFromVTPool()
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
-				m.Data = &DecoratedEvent_ExecutionStateSizeDelta{ExecutionStateSizeDelta: v}
+				m.Data = &DecoratedEvent_EthV2BeaconBlockAccessList{EthV2BeaconBlockAccessList: v}
 			}
 			iNdEx = postIndex
-		case 228:
+		case 230:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionMptDepth", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1EventsExecutionPayload", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -67996,16 +67980,32 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Data.(*DecoratedEvent_ExecutionMptDepth); ok {
-				if err := oneof.ExecutionMptDepth.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+			if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsExecutionPayload); ok {
+				if unmarshal, ok := interface{}(oneof.EthV1EventsExecutionPayload).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.EthV1EventsExecutionPayload); err != nil {
+						return err
+					}
 				}
 			} else {
-				v := ExecutionMPTDepthFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				v := v1.SignedExecutionPayloadEnvelopeFromVTPool()
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
-				m.Data = &DecoratedEvent_ExecutionMptDepth{ExecutionMptDepth: v}
+				m.Data = &DecoratedEvent_EthV1EventsExecutionPayload{EthV1EventsExecutionPayload: v}
 			}
 			iNdEx = postIndex
 		default:

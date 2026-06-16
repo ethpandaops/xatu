@@ -299,7 +299,18 @@ func (e *Events{EventName}) AppendServerMeta(ctx context.Context, meta *xatu.Ser
 ```
 
 ### 10. Create ClickHouse Migration
-**File**: `deploy/migrations/clickhouse/{NEXT_NUMBER}_{event_name}.up.sql`
+**File**: `deploy/migrations/clickhouse/xatu/{NEXT_NUMBER}_{event_name}.up.sql`
+
+> Sentry events are raw-event tables, so they live in the **`xatu`** migration set.
+> The `xatu` set is **database-agnostic** — it is applied to every raw pipeline
+> database (e.g. `default`, `devnets`) via the migration matrix. Therefore:
+> - **Never** qualify objects with a database name (write `beacon_api_...`, not
+>   `default.beacon_api_...`). Unqualified names resolve to the connection's
+>   `database=` at apply time.
+> - Distributed engines must target **`currentDatabase()`**, not a literal db.
+> - Keep the `{database}` macro in the Replicated path so each database gets its
+>   own ZooKeeper path.
+> - Do **not** `CREATE DATABASE` in a migration (databases are created out-of-band).
 
 ```sql
 CREATE TABLE beacon_api_eth_{api_version}_events_{event_name}_local on cluster '{cluster}' (
@@ -341,7 +352,7 @@ CREATE TABLE beacon_api_eth_{api_version}_events_{event_name}_local on cluster '
 PARTITION BY toStartOfMonth(slot_start_date_time)
 ORDER BY (slot_start_date_time, meta_network_name, meta_client_name);
 
-ALTER TABLE default.beacon_api_eth_{api_version}_events_{event_name}_local ON CLUSTER '{cluster}'
+ALTER TABLE beacon_api_eth_{api_version}_events_{event_name}_local ON CLUSTER '{cluster}'
 MODIFY COMMENT 'Contains beacon API eventstream "{event_name}" data from each sentry client attached to a beacon node.',
 COMMENT COLUMN event_date_time 'When the sentry received the event from a beacon node',
 COMMENT COLUMN slot 'Slot number in the beacon API event stream payload',
@@ -351,10 +362,10 @@ COMMENT COLUMN epoch 'The epoch number in the beacon API event stream payload',
 COMMENT COLUMN epoch_start_date_time 'The wall clock time when the epoch started';
 
 CREATE TABLE beacon_api_eth_{api_version}_events_{event_name} on cluster '{cluster}' AS beacon_api_eth_{api_version}_events_{event_name}_local
-ENGINE = Distributed('{cluster}', default, beacon_api_eth_{api_version}_events_{event_name}_local, rand());
+ENGINE = Distributed('{cluster}', currentDatabase(), beacon_api_eth_{api_version}_events_{event_name}_local, rand());
 ```
 
-**File**: `deploy/migrations/clickhouse/{NEXT_NUMBER}_{event_name}.down.sql`
+**File**: `deploy/migrations/clickhouse/xatu/{NEXT_NUMBER}_{event_name}.down.sql`
 
 ```sql
 DROP TABLE IF EXISTS beacon_api_eth_{api_version}_events_{event_name} on cluster '{cluster}';
@@ -474,8 +485,8 @@ sinks:
 - [ ] `pkg/sentry/cache/duplicate.go` - Cache field and initialization
 - [ ] `pkg/sentry/sentry.go` - Event subscription
 - [ ] `pkg/server/service/event-ingester/event/beacon/eth/{api_version}/events_{event_name}.go` - Server handler
-- [ ] `deploy/migrations/clickhouse/{number}_{event_name}.up.sql` - Schema
-- [ ] `deploy/migrations/clickhouse/{number}_{event_name}.down.sql` - Rollback
+- [ ] `deploy/migrations/clickhouse/xatu/{number}_{event_name}.up.sql` - Schema (database-agnostic: no db qualifiers, Distributed uses currentDatabase())
+- [ ] `deploy/migrations/clickhouse/xatu/{number}_{event_name}.down.sql` - Rollback
 - [ ] `deploy/local/docker-compose/vector-kafka-clickhouse.yaml` - Pipeline config
 
 ## Final Steps

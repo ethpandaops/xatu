@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS default.beacon_api_eth_v1_events_fast_confirmation_local ON CLUSTER '{cluster}'
+CREATE TABLE IF NOT EXISTS beacon_api_eth_v1_events_fast_confirmation_local ON CLUSTER '{cluster}'
 (
     `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
     `event_date_time` DateTime64(3) COMMENT 'When the sentry received the event from a beacon node' CODEC(DoubleDelta, ZSTD(1)),
@@ -37,7 +37,7 @@ PARTITION BY (meta_network_name, toYYYYMM(slot_start_date_time))
 ORDER BY (meta_network_name, slot_start_date_time, meta_client_name, block)
 COMMENT 'Contains beacon API eventstream "fast_confirmation" data from each sentry client attached to a beacon node.';
 
-CREATE TABLE IF NOT EXISTS default.beacon_api_eth_v1_events_fast_confirmation ON CLUSTER '{cluster}'
-AS default.beacon_api_eth_v1_events_fast_confirmation_local
-ENGINE = Distributed('{cluster}', 'default', 'beacon_api_eth_v1_events_fast_confirmation_local', cityHash64(slot_start_date_time, meta_network_name, meta_client_name, block))
+CREATE TABLE IF NOT EXISTS beacon_api_eth_v1_events_fast_confirmation ON CLUSTER '{cluster}'
+AS beacon_api_eth_v1_events_fast_confirmation_local
+ENGINE = Distributed('{cluster}', currentDatabase(), 'beacon_api_eth_v1_events_fast_confirmation_local', cityHash64(slot_start_date_time, meta_network_name, meta_client_name, block))
 COMMENT 'Contains beacon API eventstream "fast_confirmation" data from each sentry client attached to a beacon node.';

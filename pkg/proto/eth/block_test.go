@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/OffchainLabs/go-bitfield"
 	"github.com/ethpandaops/go-eth2-client/api"
 	apiv1deneb "github.com/ethpandaops/go-eth2-client/api/v1/deneb"
 	apiv1electra "github.com/ethpandaops/go-eth2-client/api/v1/electra"
@@ -14,6 +15,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/capella"
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/holiman/uint256"
 
@@ -102,6 +104,15 @@ func TestNewEventBlockV2FromVersionedProposal(t *testing.T) {
 			},
 			expectedError:   false,
 			expectedVersion: v2.BlockVersion_FULU,
+		},
+		{
+			name: "gloas proposal",
+			proposal: &api.VersionedProposal{
+				Version: spec.DataVersionGloas,
+				Gloas:   mockGloasBlock(),
+			},
+			expectedError:   false,
+			expectedVersion: v2.BlockVersion_GLOAS,
 		},
 	}
 
@@ -421,5 +432,165 @@ func mockFuluBlock() *electra.BeaconBlock {
 				Consolidations: []*electra.ConsolidationRequest{},
 			},
 		},
+	}
+}
+
+func mockGloasBlock() *gloas.BeaconBlock {
+	return &gloas.BeaconBlock{
+		Slot:          phase0.Slot(1),
+		ProposerIndex: phase0.ValidatorIndex(1),
+		ParentRoot:    [32]byte{},
+		StateRoot:     [32]byte{},
+		Body: &gloas.BeaconBlockBody{
+			RANDAOReveal: [96]byte{},
+			ETH1Data: &phase0.ETH1Data{
+				DepositRoot:  [32]byte{},
+				DepositCount: 1,
+				BlockHash:    []byte{},
+			},
+			Graffiti:          [32]byte{},
+			ProposerSlashings: []*phase0.ProposerSlashing{},
+			AttesterSlashings: []*electra.AttesterSlashing{},
+			Attestations:      []*electra.Attestation{},
+			Deposits:          []*phase0.Deposit{},
+			VoluntaryExits:    []*phase0.SignedVoluntaryExit{},
+			SyncAggregate: &altair.SyncAggregate{
+				SyncCommitteeBits: []byte{},
+			},
+			BLSToExecutionChanges: []*capella.SignedBLSToExecutionChange{},
+			SignedExecutionPayloadBid: &gloas.SignedExecutionPayloadBid{
+				Message: &gloas.ExecutionPayloadBid{
+					BlobKZGCommitments: []deneb.KZGCommitment{},
+				},
+			},
+			PayloadAttestations: []*gloas.PayloadAttestation{},
+			ParentExecutionRequests: &electra.ExecutionRequests{
+				Deposits:       []*electra.DepositRequest{},
+				Withdrawals:    []*electra.WithdrawalRequest{},
+				Consolidations: []*electra.ConsolidationRequest{},
+			},
+		},
+	}
+}
+
+// TestNewEventBlockFromGloas verifies the EIP-7732 (ePBS) conversion path:
+// SignedExecutionPayloadBid populates field 14 with the builder bid, and
+// PayloadAttestations populates field 15 with PTC aggregations. Pre-ePBS
+// proto fields (10/12/13 — execution_payload, blob_kzg_commitments,
+// execution_requests) are absent from BeaconBlockBodyGloas — that's enforced
+// at compile time by their `reserved` declaration in the proto.
+func TestNewEventBlockFromGloas(t *testing.T) {
+	bidBlockHash := phase0.Hash32{0xaa, 0xbb}
+	feeRecipient := bellatrix.ExecutionAddress{0xfe, 0xfe}
+	commitment := deneb.KZGCommitment{0xc0, 0xc1}
+
+	aggBits := bitfield.NewBitvector512()
+	aggBits.SetBitAt(7, true)
+
+	block := &gloas.BeaconBlock{
+		Slot:          phase0.Slot(42),
+		ProposerIndex: phase0.ValidatorIndex(7),
+		ParentRoot:    phase0.Root{0x01, 0x02},
+		StateRoot:     phase0.Root{0x03, 0x04},
+		Body: &gloas.BeaconBlockBody{
+			RANDAOReveal: phase0.BLSSignature{},
+			ETH1Data: &phase0.ETH1Data{
+				DepositRoot:  phase0.Root{},
+				DepositCount: 1,
+				BlockHash:    []byte{},
+			},
+			Graffiti:          [32]byte{},
+			ProposerSlashings: []*phase0.ProposerSlashing{},
+			AttesterSlashings: []*electra.AttesterSlashing{},
+			Attestations:      []*electra.Attestation{},
+			Deposits:          []*phase0.Deposit{},
+			VoluntaryExits:    []*phase0.SignedVoluntaryExit{},
+			SyncAggregate: &altair.SyncAggregate{
+				SyncCommitteeBits: []byte{},
+			},
+			BLSToExecutionChanges: []*capella.SignedBLSToExecutionChange{},
+			SignedExecutionPayloadBid: &gloas.SignedExecutionPayloadBid{
+				Message: &gloas.ExecutionPayloadBid{
+					BlockHash:          bidBlockHash,
+					FeeRecipient:       feeRecipient,
+					GasLimit:           30_000_000,
+					BuilderIndex:       gloas.BuilderIndex(99),
+					Slot:               phase0.Slot(42),
+					Value:              phase0.Gwei(1234),
+					ExecutionPayment:   phase0.Gwei(56),
+					BlobKZGCommitments: []deneb.KZGCommitment{commitment},
+				},
+			},
+			PayloadAttestations: []*gloas.PayloadAttestation{
+				{
+					AggregationBits: aggBits,
+					Data: &gloas.PayloadAttestationData{
+						BeaconBlockRoot:   phase0.Root{0x05},
+						Slot:              phase0.Slot(42),
+						PayloadPresent:    true,
+						BlobDataAvailable: true,
+					},
+					Signature: phase0.BLSSignature{},
+				},
+			},
+			ParentExecutionRequests: &electra.ExecutionRequests{},
+		},
+	}
+
+	result := NewEventBlockFromGloas(block, nil)
+
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+
+	if result.GetVersion() != v2.BlockVersion_GLOAS {
+		t.Errorf("expected GLOAS version, got %v", result.GetVersion())
+	}
+
+	gloasMsg, ok := result.GetMessage().(*v2.EventBlockV2_GloasBlock)
+	if !ok {
+		t.Fatalf("expected *v2.EventBlockV2_GloasBlock, got %T", result.GetMessage())
+	}
+
+	body := gloasMsg.GloasBlock.GetBody()
+	if body == nil {
+		t.Fatal("expected non-nil body")
+	}
+
+	bid := body.GetSignedExecutionPayloadBid()
+	if bid == nil || bid.GetMessage() == nil {
+		t.Fatal("expected non-nil signed_execution_payload_bid (field 14)")
+	}
+
+	if got := bid.GetMessage().GetBuilderIndex().GetValue(); got != 99 {
+		t.Errorf("bid.builder_index = %d, want 99", got)
+	}
+
+	if got := bid.GetMessage().GetValue().GetValue(); got != 1234 {
+		t.Errorf("bid.value = %d, want 1234", got)
+	}
+
+	if got := len(bid.GetMessage().GetBlobKzgCommitments()); got != 1 {
+		t.Errorf("bid.blob_kzg_commitments len = %d, want 1", got)
+	}
+
+	atts := body.GetPayloadAttestations()
+	if len(atts) != 1 {
+		t.Fatalf("expected 1 payload_attestation (field 15), got %d", len(atts))
+	}
+
+	if !atts[0].GetData().GetPayloadPresent() {
+		t.Error("expected payload_attestation data.payload_present=true")
+	}
+
+	if got := atts[0].GetData().GetSlot().GetValue(); got != 42 {
+		t.Errorf("payload_attestation data.slot = %d, want 42", got)
+	}
+
+	// parent_execution_requests is the parent block's deferred-payload
+	// requests, processed in this block's state transition. It must
+	// round-trip through the conversion even when empty.
+	if body.GetParentExecutionRequests() == nil {
+		t.Error("expected non-nil parent_execution_requests")
 	}
 }

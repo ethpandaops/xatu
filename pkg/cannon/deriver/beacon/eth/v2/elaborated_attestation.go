@@ -47,8 +47,8 @@ type ElaboratedAttestationDeriver struct {
 func NewElaboratedAttestationDeriver(log observability.ContextualLogger, config *ElaboratedAttestationDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ElaboratedAttestationDeriver {
 	return &ElaboratedAttestationDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/elaborated_attestation",
-			"type":   ElaboratedAttestationDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/elaborated_attestation",
+			typeLogField:   ElaboratedAttestationDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

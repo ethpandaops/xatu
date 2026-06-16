@@ -24,6 +24,7 @@ type canonicalBeaconBlockWithdrawalBatch struct {
 	WithdrawalAddress        route.SafeColFixedStr
 	WithdrawalAmount         proto.ColUInt128
 	MetaNetworkName          proto.ColStr
+	WithdrawalType           proto.ColStr
 	rows                     int
 }
 
@@ -61,6 +62,7 @@ func (b *canonicalBeaconBlockWithdrawalBatch) Input() proto.Input {
 		{Name: "withdrawal_address", Data: &b.WithdrawalAddress},
 		{Name: "withdrawal_amount", Data: &b.WithdrawalAmount},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
+		{Name: "withdrawal_type", Data: &b.WithdrawalType},
 	}
 }
 
@@ -77,6 +79,7 @@ func (b *canonicalBeaconBlockWithdrawalBatch) Reset() {
 	b.WithdrawalAddress.Reset()
 	b.WithdrawalAmount.Reset()
 	b.MetaNetworkName.Reset()
+	b.WithdrawalType.Reset()
 	b.rows = 0
 }
 
@@ -85,7 +88,7 @@ func (b *canonicalBeaconBlockWithdrawalBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 12)
+		row := make(map[string]any, 13)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["slot"] = b.Slot.Row(i)
 		row["slot_start_date_time"] = b.SlotStartDateTime.Row(i).Unix()
@@ -98,6 +101,7 @@ func (b *canonicalBeaconBlockWithdrawalBatch) Snapshot() []map[string]any {
 		row["withdrawal_address"] = string(b.WithdrawalAddress.Row(i))
 		row["withdrawal_amount"] = route.UInt128ToString(b.WithdrawalAmount.Row(i))
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
+		row["withdrawal_type"] = b.WithdrawalType.Row(i)
 		out[i] = row
 	}
 

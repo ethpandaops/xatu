@@ -11,6 +11,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/capella"
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
@@ -48,6 +49,8 @@ func NewEventBlockV2FromVersionedProposal(proposal *api.VersionedProposal) (*v2.
 		data = NewEventBlockFromElectra(proposal.Electra.Block, nil)
 	case spec.DataVersionFulu:
 		data = NewEventBlockFromFulu(proposal.Fulu.Block, nil)
+	case spec.DataVersionGloas:
+		data = NewEventBlockFromGloas(proposal.Gloas, nil)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", proposal.Version)
 	}
@@ -73,6 +76,8 @@ func NewEventBlockV2FromVersionSignedBeaconBlock(block *spec.VersionedSignedBeac
 		data = NewEventBlockFromElectra(block.Electra.Message, &block.Electra.Signature)
 	case spec.DataVersionFulu:
 		data = NewEventBlockFromFulu(block.Fulu.Message, &block.Fulu.Signature)
+	case spec.DataVersionGloas:
+		data = NewEventBlockFromGloas(block.Gloas.Message, &block.Gloas.Signature)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", block.Version)
 	}
@@ -391,6 +396,55 @@ func NewEventBlockFromElectra(block *electra.BeaconBlock, signature *phase0.BLSS
 					BlsToExecutionChanges: v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
 					BlobKzgCommitments:    kzgCommitments,
 					ExecutionRequests:     v1.NewElectraExecutionRequestsFromElectra(block.Body.ExecutionRequests),
+				},
+			},
+		},
+	}
+
+	if signature != nil && !signature.IsZero() {
+		event.Signature = signature.String()
+	}
+
+	return event
+}
+
+// NewEventBlockFromGloas creates an EventBlockV2 from a Gloas (EIP-7732 + EIP-7928) beacon block.
+//
+// Under EIP-7732 the block body no longer carries an inline ExecutionPayload,
+// BlobKZGCommitments or ExecutionRequests:
+//   - ExecutionPayload  → arrives separately in an ExecutionPayloadEnvelope (sourced in cannon).
+//   - BlobKZGCommitments → carried inside SignedExecutionPayloadBid.
+//   - ExecutionRequests → moves into ExecutionPayloadEnvelope.ExecutionRequests.
+func NewEventBlockFromGloas(block *gloas.BeaconBlock, signature *phase0.BLSSignature) *v2.EventBlockV2 {
+	event := &v2.EventBlockV2{
+		Version: v2.BlockVersion_GLOAS,
+		Message: &v2.EventBlockV2_GloasBlock{
+			GloasBlock: &v2.BeaconBlockGloas{
+				Slot:          &wrapperspb.UInt64Value{Value: uint64(block.Slot)},
+				ProposerIndex: &wrapperspb.UInt64Value{Value: uint64(block.ProposerIndex)},
+				ParentRoot:    block.ParentRoot.String(),
+				StateRoot:     block.StateRoot.String(),
+				Body: &v2.BeaconBlockBodyGloas{
+					RandaoReveal: block.Body.RANDAOReveal.String(),
+					Eth1Data: &v1.Eth1Data{
+						DepositRoot:  block.Body.ETH1Data.DepositRoot.String(),
+						DepositCount: block.Body.ETH1Data.DepositCount,
+						BlockHash:    fmt.Sprintf("0x%x", block.Body.ETH1Data.BlockHash),
+					},
+					Graffiti:          fmt.Sprintf("0x%x", block.Body.Graffiti[:]),
+					ProposerSlashings: v1.NewProposerSlashingsFromPhase0(block.Body.ProposerSlashings),
+					AttesterSlashings: v1.NewAttesterSlashingsFromElectra(block.Body.AttesterSlashings),
+					Attestations:      v1.NewAttestationsFromElectra(block.Body.Attestations),
+					Deposits:          v1.NewDepositsFromPhase0(block.Body.Deposits),
+					VoluntaryExits:    v1.NewSignedVoluntaryExitsFromPhase0(block.Body.VoluntaryExits),
+					SyncAggregate: &v1.SyncAggregate{
+						SyncCommitteeBits:      fmt.Sprintf("0x%x", block.Body.SyncAggregate.SyncCommitteeBits),
+						SyncCommitteeSignature: block.Body.SyncAggregate.SyncCommitteeSignature.String(),
+					},
+					BlsToExecutionChanges:     v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
+					SignedExecutionPayloadBid: v1.NewSignedExecutionPayloadBidFromGloas(block.Body.SignedExecutionPayloadBid),
+					PayloadAttestations:       v1.NewPayloadAttestationsFromGloas(block.Body.PayloadAttestations),
+					ParentExecutionRequests:   v1.NewElectraExecutionRequestsFromElectra(block.Body.ParentExecutionRequests),
 				},
 			},
 		},

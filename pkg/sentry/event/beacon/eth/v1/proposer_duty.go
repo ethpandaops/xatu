@@ -95,8 +95,8 @@ func (e *ProposerDuty) ShouldIgnore(ctx context.Context) (bool, error) {
 	item, retrieved := e.duplicateCache.GetOrSet(key, e.now, ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
 		e.log.WithFields(logrus.Fields{
-			"epoch":                 e.epoch,
-			"time_since_first_item": time.Since(item.Value()),
+			epochLogField:              e.epoch,
+			timeSinceFirstItemLogField: time.Since(item.Value()),
 		}).WithContext(ctx).Debug("Duplicate proposer duty event received")
 
 		return true, nil

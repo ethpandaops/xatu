@@ -9,6 +9,7 @@ option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
 
 import "google/protobuf/descriptor.proto";
 import "google/protobuf/wrappers.proto";
+import "pkg/proto/eth/v1/block_access_list.proto";
 
 message ExecutionPayload {
   string parent_hash = 1 [ json_name = "parent_hash" ];
@@ -181,6 +182,35 @@ message ExecutionPayloadFulu {
   // TODO(fulu): Is there anything else to add for Fulu?
 }
 
+message ExecutionPayloadGloas {
+  string parent_hash = 1 [ json_name = "parent_hash" ];
+  string fee_recipient = 2 [ json_name = "fee_recipient" ];
+  string state_root = 3 [ json_name = "state_root" ];
+  string receipts_root = 4 [ json_name = "receipts_root" ];
+  string logs_bloom = 5 [ json_name = "logs_bloom" ];
+  string prev_randao = 6 [ json_name = "prev_randao" ];
+  google.protobuf.UInt64Value block_number = 7 [ json_name = "block_number" ];
+  google.protobuf.UInt64Value gas_limit = 8 [ json_name = "gas_limit" ];
+  google.protobuf.UInt64Value gas_used = 9 [ json_name = "gas_used" ];
+  google.protobuf.UInt64Value timestamp = 10;
+  string extra_data = 11 [ json_name = "extra_data" ];
+  string base_fee_per_gas = 12 [ json_name = "base_fee_per_gas" ];
+  string block_hash = 13 [ json_name = "block_hash" ];
+  repeated string transactions = 14;
+  repeated WithdrawalV2 withdrawals = 15;
+  google.protobuf.UInt64Value blob_gas_used = 16
+      [ json_name = "blob_gas_used" ];
+  google.protobuf.UInt64Value excess_blob_gas = 17
+      [ json_name = "excess_blob_gas" ];
+
+  // EIP-7928: Block-level access list
+  BlockAccessList block_access_list = 18
+      [ json_name = "block_access_list" ];
+  // Slot number in execution payload
+  google.protobuf.UInt64Value slot_number = 19
+      [ json_name = "slot_number" ];
+}
+
 message Withdrawal {
   uint64 index = 1;
 
@@ -200,6 +230,11 @@ message WithdrawalV2 {
   string address = 3;
 
   google.protobuf.UInt64Value amount = 4;
+
+  // EIP-7732 ePBS: classification of the withdrawal recipient. Empty on
+  // pre-Gloas blocks; "validator" or "builder" on Gloas+ blocks. Builder
+  // withdrawals are encoded by validator_index >= 2^40 in the spec.
+  string withdrawal_type = 5 [ json_name = "withdrawal_type" ];
 }
 
 message ExecutionPayloadHeaderCapella {

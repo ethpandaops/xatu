@@ -49,8 +49,8 @@ type BeaconBlockDeriver struct {
 func NewBeaconBlockDeriver(log observability.ContextualLogger, config *BeaconBlockDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconBlockDeriver {
 	return &BeaconBlockDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/beacon_block",
-			"type":   BeaconBlockDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/beacon_block",
+			typeLogField:   BeaconBlockDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,
@@ -400,6 +400,8 @@ func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, err
 		return block.Electra.Message, nil
 	case spec.DataVersionFulu:
 		return block.Fulu.Message, nil
+	case spec.DataVersionGloas:
+		return block.Gloas.Message, nil
 	default:
 		return nil, fmt.Errorf("unsupported block version: %s", block.Version)
 	}

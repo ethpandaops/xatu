@@ -48,8 +48,8 @@ type BeaconValidatorsDeriver struct {
 func NewBeaconValidatorsDeriver(log observability.ContextualLogger, config *BeaconValidatorsDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconValidatorsDeriver {
 	return &BeaconValidatorsDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v1/validators",
-			"type":   BeaconValidatorsDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v1/validators",
+			typeLogField:   BeaconValidatorsDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

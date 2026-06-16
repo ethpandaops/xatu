@@ -69,4 +69,11 @@ message ForkChoiceNodeV2 {
   string ExecutionBlockHash = 8 [ json_name = "execution_block_hash" ];
 
   string ExtraData = 9 [ json_name = "extra_data" ];
+
+  // EIP-7732 ePBS: per-node payload status from the Gloas+ fork-choice store
+  // (0 = EMPTY, 1 = FULL, 2 = PENDING). Sourced from the upstream beacon
+  // node's debug/fork_choice extra_data["payload_status"] when present.
+  // Pre-Gloas nodes leave this unset. consensus-specs PR #5094 narrowed the
+  // scope to per-node tracking (no Store-level payload_states mirror).
+  google.protobuf.UInt32Value payload_status = 10 [ json_name = "payload_status" ];
 }

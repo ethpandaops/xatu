@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS default.execution_state_size_delta_local ON CLUSTER '{cluster}' (
+CREATE TABLE IF NOT EXISTS execution_state_size_delta_local ON CLUSTER '{cluster}' (
     `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `state_root` FixedString(66) COMMENT 'State root hash of the execution layer at this block' Codec(ZSTD(1)),
@@ -73,9 +73,9 @@ ORDER BY (
         meta_client_name,
         state_root
     ) COMMENT 'Contains execution layer state size write/delete metrics (count and bytes for accounts, storage, contract code, and account/storage trie nodes) at specific block heights. Net deltas are MATERIALIZED columns derived as writes - deletes.';
-CREATE TABLE IF NOT EXISTS default.execution_state_size_delta ON CLUSTER '{cluster}' AS default.execution_state_size_delta_local ENGINE = Distributed(
+CREATE TABLE IF NOT EXISTS execution_state_size_delta ON CLUSTER '{cluster}' AS execution_state_size_delta_local ENGINE = Distributed(
     '{cluster}',
-    default,
+    currentDatabase(),
     execution_state_size_delta_local,
     cityHash64(
         block_number,
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS default.execution_state_size_delta ON CLUSTER '{clust
         state_root
     )
 );
-CREATE TABLE IF NOT EXISTS default.execution_mpt_depth_local ON CLUSTER '{cluster}' (
+CREATE TABLE IF NOT EXISTS execution_mpt_depth_local ON CLUSTER '{cluster}' (
     `updated_date_time` DateTime COMMENT 'Timestamp when the record was last updated' CODEC(DoubleDelta, ZSTD(1)),
     `block_number` UInt64 COMMENT 'The block number' CODEC(DoubleDelta, ZSTD(1)),
     `state_root` FixedString(66) COMMENT 'State root hash of the execution layer at this block' CODEC(ZSTD(1)),
@@ -142,9 +142,9 @@ ORDER BY (
     state_root
 ) COMMENT 'Contains execution layer Merkle Patricia Trie depth metrics including nodes written and nodes deleted at specific block heights.';
 
-CREATE TABLE IF NOT EXISTS default.execution_mpt_depth ON CLUSTER '{cluster}' AS default.execution_mpt_depth_local ENGINE = Distributed(
+CREATE TABLE IF NOT EXISTS execution_mpt_depth ON CLUSTER '{cluster}' AS execution_mpt_depth_local ENGINE = Distributed(
     '{cluster}',
-    default,
+    currentDatabase(),
     execution_mpt_depth_local,
     cityHash64(
         block_number,

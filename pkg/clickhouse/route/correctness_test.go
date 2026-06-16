@@ -255,7 +255,6 @@ func TestStagingTopicCoverage(t *testing.T) {
 // skipTables lists base table names that are not populated by consumoor and
 // should be excluded from comparison.
 var skipTables = map[string]bool{
-	"schema_migrations":                true,
 	"beacon_api_slot":                  true,
 	"beacon_block_classification":      true,
 	"imported_sources":                 true,

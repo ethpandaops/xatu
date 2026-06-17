@@ -1,6 +1,6 @@
 -- Renames peer_id_unique_key -> local_peer_id_unique_key on the libp2p_join and
 -- libp2p_leave tables. These events come from the local host's RawTracer
--- Join/Leave callbacks, which carry no remote peer; the key is derived from the
+-- Join/Leave callbacks, which carry no remote peer, so the key is derived from the
 -- LOCAL host peer ID. The column is part of the sorting key, which ClickHouse
 -- cannot ALTER ... RENAME, so the tables are recreated. Existing rows are
 -- preserved by staging them in a temporary backup table and copying them back
@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS default.libp2p_leave ON CLUSTER '{cluster}'
 AS default.libp2p_leave_local
 ENGINE = Distributed('{cluster}', 'default', 'libp2p_leave_local', cityHash64(event_date_time, meta_network_name, meta_client_name, local_peer_id_unique_key, topic_fork_digest_value, topic_name));
 
--- 4. Restore staged rows; the historical peer_id_unique_key maps into local_peer_id_unique_key.
+-- 4. Restore staged rows. The historical peer_id_unique_key maps into local_peer_id_unique_key.
 INSERT INTO default.libp2p_join SELECT
     updated_date_time, event_date_time, topic_layer, topic_fork_digest_value, topic_name, topic_encoding,
     peer_id_unique_key AS local_peer_id_unique_key,

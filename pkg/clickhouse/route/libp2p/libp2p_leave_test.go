@@ -39,9 +39,9 @@ func TestSnapshot_libp2p_leave(t *testing.T) {
 			},
 		},
 	}, 1, map[string]any{
-		"local_peer_id_unique_key": expectedPeerIDKey,
-		"topic_layer":              "eth2",
-		"topic_name":               "beacon_block",
-		"topic_encoding":           "ssz_snappy",
+		colLocalPeerIDUniqueKey: expectedPeerIDKey,
+		colTopicLayer:           valTopicLayer,
+		colTopicName:            valTopicName,
+		colTopicEncoding:        "ssz_snappy",
 	})
 }

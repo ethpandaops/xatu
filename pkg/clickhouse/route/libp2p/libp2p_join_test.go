@@ -11,6 +11,17 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
+// Shared column names and topic field values for the join/leave snapshot tests.
+const (
+	colLocalPeerIDUniqueKey = "local_peer_id_unique_key"
+	colTopicLayer           = "topic_layer"
+	colTopicForkDigestValue = "topic_fork_digest_value"
+	colTopicName            = "topic_name"
+	colTopicEncoding        = "topic_encoding"
+	valTopicLayer           = "eth2"
+	valTopicName            = "beacon_block"
+)
+
 func TestSnapshot_libp2p_join(t *testing.T) {
 	const (
 		testPeerID  = "16Uiu2HAmLocalHost"
@@ -39,10 +50,10 @@ func TestSnapshot_libp2p_join(t *testing.T) {
 			},
 		},
 	}, 1, map[string]any{
-		"local_peer_id_unique_key": expectedPeerIDKey,
-		"topic_layer":              "eth2",
-		"topic_fork_digest_value":  "bba4da96",
-		"topic_name":               "beacon_block",
-		"topic_encoding":           "ssz_snappy",
+		colLocalPeerIDUniqueKey: expectedPeerIDKey,
+		colTopicLayer:           valTopicLayer,
+		colTopicForkDigestValue: "bba4da96",
+		colTopicName:            valTopicName,
+		colTopicEncoding:        "ssz_snappy",
 	})
 }

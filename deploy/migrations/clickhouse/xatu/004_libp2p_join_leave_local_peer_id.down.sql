@@ -145,7 +145,7 @@ CREATE TABLE IF NOT EXISTS default.libp2p_leave ON CLUSTER '{cluster}'
 AS default.libp2p_leave_local
 ENGINE = Distributed('{cluster}', 'default', 'libp2p_leave_local', cityHash64(event_date_time, meta_network_name, meta_client_name, peer_id_unique_key, topic_fork_digest_value, topic_name));
 
--- 4. Restore staged rows; local_peer_id_unique_key maps back into peer_id_unique_key.
+-- 4. Restore staged rows. local_peer_id_unique_key maps back into peer_id_unique_key.
 INSERT INTO default.libp2p_join SELECT
     updated_date_time, event_date_time, topic_layer, topic_fork_digest_value, topic_name, topic_encoding,
     local_peer_id_unique_key AS peer_id_unique_key,

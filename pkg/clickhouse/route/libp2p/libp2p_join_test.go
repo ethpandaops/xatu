@@ -5,13 +5,20 @@ import (
 
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/testfixture"
 	libp2ppb "github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func TestSnapshot_libp2p_join(t *testing.T) {
-	const testTopic = "/eth2/bba4da96/beacon_block/ssz_snappy"
+	const (
+		testPeerID  = "16Uiu2HAmLocalHost"
+		testNetwork = "mainnet"
+		testTopic   = "/eth2/bba4da96/beacon_block/ssz_snappy"
+	)
+
+	expectedPeerIDKey := route.SeaHashInt64(testPeerID + testNetwork)
 
 	testfixture.AssertSnapshot(t, newlibp2pJoinBatch(), &xatu.DecoratedEvent{
 		Event: &xatu.Event{
@@ -22,9 +29,7 @@ func TestSnapshot_libp2p_join(t *testing.T) {
 		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
 			AdditionalData: &xatu.ClientMeta_Libp2PTraceJoin{
 				Libp2PTraceJoin: &xatu.ClientMeta_AdditionalLibP2PTraceJoinData{
-					Metadata: &libp2ppb.TraceEventMetadata{
-						PeerId: wrapperspb.String("16Uiu2HAmPeer1"),
-					},
+					LocalPeerId: testPeerID,
 				},
 			},
 		}),
@@ -34,9 +39,10 @@ func TestSnapshot_libp2p_join(t *testing.T) {
 			},
 		},
 	}, 1, map[string]any{
-		"topic_layer":             "eth2",
-		"topic_fork_digest_value": "bba4da96",
-		"topic_name":              "beacon_block",
-		"topic_encoding":          "ssz_snappy",
+		"local_peer_id_unique_key": expectedPeerIDKey,
+		"topic_layer":              "eth2",
+		"topic_fork_digest_value":  "bba4da96",
+		"topic_name":               "beacon_block",
+		"topic_encoding":           "ssz_snappy",
 	})
 }

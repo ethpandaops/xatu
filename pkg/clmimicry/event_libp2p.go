@@ -273,7 +273,8 @@ func (p *Processor) handleJoinEvent(
 
 	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceJoin{
 		Libp2PTraceJoin: &xatu.ClientMeta_AdditionalLibP2PTraceJoinData{
-			Metadata: traceMeta,
+			Metadata:    traceMeta,
+			LocalPeerId: event.PeerID.String(),
 		},
 	}
 
@@ -312,7 +313,8 @@ func (p *Processor) handleLeaveEvent(
 
 	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceLeave{
 		Libp2PTraceLeave: &xatu.ClientMeta_AdditionalLibP2PTraceLeaveData{
-			Metadata: traceMeta,
+			Metadata:    traceMeta,
+			LocalPeerId: event.PeerID.String(),
 		},
 	}
 

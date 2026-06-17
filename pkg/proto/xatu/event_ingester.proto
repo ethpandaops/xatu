@@ -1137,12 +1137,26 @@ message ClientMeta {
 
   // AdditionalLibP2PTraceJoinData: Holds additional data for a join event in LibP2P tracing.
   message AdditionalLibP2PTraceJoinData {
+    // metadata.peer_id is deprecated for join events. Join is a local-host
+    // action with no remote peer; the field was misleadingly named "peer_id"
+    // when it always referred to the local host. Use local_peer_id instead.
     xatu.libp2p.TraceEventMetadata metadata = 1;
+    // LocalPeerId is the libp2p peer.ID of the local host that joined the
+    // topic. Replaces metadata.peer_id, which is kept for backward
+    // compatibility with older sentries.
+    string local_peer_id = 2 [ json_name = "local_peer_id" ];
   }
 
   // AdditionalLibP2PTraceLeaveData: Holds additional data for a leave event in LibP2P tracing.
   message AdditionalLibP2PTraceLeaveData {
+    // metadata.peer_id is deprecated for leave events. Leave is a local-host
+    // action with no remote peer; the field was misleadingly named "peer_id"
+    // when it always referred to the local host. Use local_peer_id instead.
     xatu.libp2p.TraceEventMetadata metadata = 1;
+    // LocalPeerId is the libp2p peer.ID of the local host that left the
+    // topic. Replaces metadata.peer_id, which is kept for backward
+    // compatibility with older sentries.
+    string local_peer_id = 2 [ json_name = "local_peer_id" ];
   }
 
   // AdditionalLibP2PTraceGraftData: Holds additional data for a graft event in LibP2P tracing.

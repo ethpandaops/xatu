@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
+	"github.com/ethpandaops/xatu/pkg/cannon/deriver/execution"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -49,6 +50,9 @@ type Config struct {
 	// Derivers configures the cannon with event derivers
 	Derivers deriver.Config `yaml:"derivers"`
 
+	// Execution configures the EL (execution-layer) cannon dimension.
+	Execution execution.Config `yaml:"execution"`
+
 	// Coordinator configuration
 	Coordinator coordinator.Config `yaml:"coordinator"`
 
@@ -73,6 +77,25 @@ func (c *Config) Validate() error {
 
 	if err := c.Derivers.Validate(); err != nil {
 		return fmt.Errorf("invalid derivers config: %w", err)
+	}
+
+	if err := c.Execution.Validate(); err != nil {
+		return fmt.Errorf("invalid execution config: %w", err)
+	}
+
+	// The xatu-server output path is no longer supported by cannon: both CL and
+	// EL derivers write directly to clickhouse. Fail fast if a xatu-server output
+	// is configured rather than routing through a path we no longer support
+	// (the EL canonical_execution_* events have no xatu-server ingester handlers
+	// at all, and CL data is expected to land in clickhouse directly too).
+	for i := range c.Outputs {
+		out := &c.Outputs[i]
+		if out.SinkType == output.SinkTypeXatu {
+			return fmt.Errorf(
+				"the xatu-server output (type %q) is no longer supported by cannon: output %q must use a clickhouse output instead",
+				output.SinkTypeXatu, out.Name,
+			)
+		}
 	}
 
 	if err := c.Coordinator.Validate(); err != nil {

@@ -60,6 +60,57 @@ ethereum:
 #         enabled: false
 #         toEpoch: 0
 
+# EL (execution-layer) cannon. Uses the cryo binary to extract canonical
+# execution-layer datasets and write them straight to clickhouse. Requires
+# `ethereum.beaconNodeAddress` (the iterator gates EL progress on CL finality)
+# and an execution RPC endpoint (an archive node with trace_/debug_ for the
+# trace/diff/read datasets). Cannon writes directly to clickhouse — a
+# xatu-server output is rejected at config validation (see `outputs` below).
+#
+# The maxRangeSize values below are tuned from benchmarking at block 20M:
+#   * throughput rises with range for overhead-bound datasets (block/tx/logs/
+#     traces) and is FLAT for the node-bound state-reads, so the only reason to
+#     keep high-cardinality datasets at a smaller range is to bound the per-flush
+#     memory (memory ~= maxRangeSize * rows_per_block).
+#   * cryo.maxConcurrentChunks showed no measurable benefit (the 16 derivers
+#     already run concurrently) — leave it at the default.
+#   * requestsPerSecond 0 = unlimited; set a cap only to be polite on a shared
+#     RPC node (the trace/read datasets are node-compute-bound, not rate-bound).
+# chunkSize (rows per DecoratedEvent) defaults to 100 and rarely needs changing.
+# execution:
+#   enabled: true
+#   rpcAddress: http://localhost:8545      # cryo --rpc; basic-auth may be embedded (https://user:pass@host)
+#   cryo:
+#     binaryPath: cryo
+#     outputDir: /tmp/xatu-cannon-cryo
+#     compression: "zstd 1"                 # avoid lz4 (parquet-go mis-decodes it)
+#     requestsPerSecond: 0                  # 0 = unlimited; cap to protect a shared node
+#     maxConcurrentChunks: 0                # 0 = cryo default (tuning showed no benefit)
+#   # --- low cardinality: larger range is faster, memory is trivial ---
+#   block:           { enabled: true, iterator: { maxRangeSize: 500, backfill: { enabled: true, toBlock: 0 } } }
+#   transaction:     { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+#   logs:            { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+#   contracts:       { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+#   fourByteCounts:  { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+#   erc20Transfers:  { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+#   erc721Transfers: { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+#   # --- state diffs (trace_): moderate range ---
+#   balanceDiffs:    { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+#   storageDiffs:    { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+#   nonceDiffs:      { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+#   # --- high cardinality / node-bound (trace_): small range bounds the flush ---
+#   traces:             { enabled: true, iterator: { maxRangeSize: 100, backfill: { enabled: true, toBlock: 0 } } }
+#   nativeTransfers:    { enabled: true, iterator: { maxRangeSize: 100, backfill: { enabled: true, toBlock: 0 } } }
+#   addressAppearances: { enabled: true, iterator: { maxRangeSize: 100, backfill: { enabled: true, toBlock: 0 } } }
+#   # --- state reads (trace_): block 0 is untraceable, so the backfill floor is
+#   #     auto-clamped to >=1 regardless of toBlock ---
+#   balanceReads:    { enabled: true, iterator: { maxRangeSize: 100, backfill: { enabled: true, toBlock: 0 } } }
+#   storageReads:    { enabled: true, iterator: { maxRangeSize: 100, backfill: { enabled: true, toBlock: 0 } } }
+#   nonceReads:      { enabled: true, iterator: { maxRangeSize: 100, backfill: { enabled: true, toBlock: 0 } } }
+#
+# NOTE: for an EL-only cannon, disable the CL `derivers:` above — they hit the
+# beacon API and are unrelated to EL extraction.
+
 outputs:
 - name: http-sink
   type: http
@@ -74,20 +125,18 @@ outputs:
     batchTimeout: 5s
     exportTimeout: 30s
     maxExportBatchSize: 512
-- name: xatu-server
-  type: xatu
+# Cannon writes directly to clickhouse. The xatu-server output (type: xatu) is
+# NO LONGER SUPPORTED by cannon and is rejected at config validation — for both
+# CL and EL data. Use a clickhouse output instead:
+- name: clickhouse-sink
+  type: clickhouse
   # filter:
   #   eventNames:
   #   - BEACON_API_ETH_V1_EVENTS_BLOCK_DEPOSIT
   config:
-    address: localhost:8080
-    tls: false
-    headers:
-      authorization: Someb64Value
-    maxQueueSize: 51200
-    batchTimeout: 5s
-    exportTimeout: 30s
-    maxExportBatchSize: 512
+    dsn: clickhouse://default:password@localhost:9000/default
+    # Cannon applies its own defaults (metrics subsystem + canonical_ route
+    # prefix restriction); per-table insertSettings can be overridden here.
 - name: kafka-sink
   type: kafka
   config:

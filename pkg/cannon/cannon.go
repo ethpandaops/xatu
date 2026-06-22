@@ -28,7 +28,9 @@ import (
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
 	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
+	"github.com/ethpandaops/xatu/pkg/cannon/deriver/execution"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cannon/execution/cryo"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -698,6 +700,43 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				c.beacon,
 				clientMeta,
 			),
+		}
+
+		if c.Config.Execution.Enabled {
+			c.log.WithContext(ctx).Info("Execution-layer cannon enabled, firing up EL derivers")
+
+			cryoRunner := cryo.New(c.log, &c.Config.Execution.Cryo, c.Config.Execution.RPCAddress)
+
+			backfillingBlockMetrics := iterator.NewBackfillingBlockMetrics("xatu_cannon")
+
+			// blockIter builds a CL-gated block iterator for an EL dataset.
+			blockIter := func(ct xatu.CannonType, cfg *iterator.BackfillingBlockConfig) *iterator.BackfillingBlock {
+				return iterator.NewBackfillingBlock(
+					c.log, networkName, networkID, ct,
+					c.coordinatorClient, wallclock, &backfillingBlockMetrics, c.beacon, cfg,
+				)
+			}
+
+			ec := &c.Config.Execution
+
+			eventDerivers = append(eventDerivers,
+				execution.NewBlockDeriver(c.log, &ec.Block, blockIter(xatu.CannonType_EXECUTION_CANONICAL_BLOCK, &ec.Block.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewTransactionDeriver(c.log, &ec.Transaction, blockIter(xatu.CannonType_EXECUTION_CANONICAL_TRANSACTION, &ec.Transaction.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewLogsDeriver(c.log, &ec.Logs, blockIter(xatu.CannonType_EXECUTION_CANONICAL_LOGS, &ec.Logs.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewTracesDeriver(c.log, &ec.Traces, blockIter(xatu.CannonType_EXECUTION_CANONICAL_TRACES, &ec.Traces.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewNativeTransfersDeriver(c.log, &ec.NativeTransfers, blockIter(xatu.CannonType_EXECUTION_CANONICAL_NATIVE_TRANSFERS, &ec.NativeTransfers.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewErc20TransfersDeriver(c.log, &ec.Erc20Transfers, blockIter(xatu.CannonType_EXECUTION_CANONICAL_ERC20_TRANSFERS, &ec.Erc20Transfers.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewErc721TransfersDeriver(c.log, &ec.Erc721Transfers, blockIter(xatu.CannonType_EXECUTION_CANONICAL_ERC721_TRANSFERS, &ec.Erc721Transfers.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewContractsDeriver(c.log, &ec.Contracts, blockIter(xatu.CannonType_EXECUTION_CANONICAL_CONTRACTS, &ec.Contracts.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewBalanceDiffsDeriver(c.log, &ec.BalanceDiffs, blockIter(xatu.CannonType_EXECUTION_CANONICAL_BALANCE_DIFFS, &ec.BalanceDiffs.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewStorageDiffsDeriver(c.log, &ec.StorageDiffs, blockIter(xatu.CannonType_EXECUTION_CANONICAL_STORAGE_DIFFS, &ec.StorageDiffs.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewNonceDiffsDeriver(c.log, &ec.NonceDiffs, blockIter(xatu.CannonType_EXECUTION_CANONICAL_NONCE_DIFFS, &ec.NonceDiffs.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewBalanceReadsDeriver(c.log, &ec.BalanceReads, blockIter(xatu.CannonType_EXECUTION_CANONICAL_BALANCE_READS, &ec.BalanceReads.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewStorageReadsDeriver(c.log, &ec.StorageReads, blockIter(xatu.CannonType_EXECUTION_CANONICAL_STORAGE_READS, &ec.StorageReads.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewNonceReadsDeriver(c.log, &ec.NonceReads, blockIter(xatu.CannonType_EXECUTION_CANONICAL_NONCE_READS, &ec.NonceReads.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewFourByteCountsDeriver(c.log, &ec.FourByteCounts, blockIter(xatu.CannonType_EXECUTION_CANONICAL_FOUR_BYTE_COUNTS, &ec.FourByteCounts.Iterator), cryoRunner, c.beacon, clientMeta),
+				execution.NewAddressAppearancesDeriver(c.log, &ec.AddressAppearances, blockIter(xatu.CannonType_EXECUTION_CANONICAL_ADDRESS_APPEARANCES, &ec.AddressAppearances.Iterator), cryoRunner, c.beacon, clientMeta),
+			)
 		}
 
 		c.eventDerivers = eventDerivers

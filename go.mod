@@ -72,6 +72,7 @@ require (
 )
 
 require (
+	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/casbin/govaluate v1.10.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
@@ -79,10 +80,14 @@ require (
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/moby/moby/api v1.54.1 // indirect
 	github.com/moby/moby/client v0.4.0 // indirect
+	github.com/parquet-go/bitpack v1.0.0 // indirect
+	github.com/parquet-go/jsonlite v1.0.0 // indirect
+	github.com/parquet-go/parquet-go v0.30.1 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pk910/hashtree-bindings v0.1.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/tinylib/msgp v1.6.1 // indirect
+	github.com/twpayne/go-geom v1.6.1 // indirect
 	github.com/zeebo/xxh3 v1.1.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 )

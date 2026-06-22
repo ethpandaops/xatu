@@ -1278,7 +1278,7 @@ CREATE TABLE IF NOT EXISTS canonical_execution_four_byte_counts_local ON CLUSTER
 )
 ENGINE = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
 PARTITION BY (meta_network_name, intDiv(block_number, 5000000))
-ORDER BY (meta_network_name, block_number, transaction_hash)
+ORDER BY (meta_network_name, block_number, transaction_hash, signature)
 COMMENT 'Contains canonical execution four byte count data.';
 
 CREATE TABLE IF NOT EXISTS canonical_execution_logs_local ON CLUSTER '{cluster}'

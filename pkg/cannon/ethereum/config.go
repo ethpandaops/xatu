@@ -9,6 +9,10 @@ import (
 type Config struct {
 	// The address of the Beacon node to connect to
 	BeaconNodeAddress string `yaml:"beaconNodeAddress"`
+	// ExecutionNodeAddress is the execution-layer JSON-RPC endpoint the EL
+	// derivers collect from via cryo. Basic-auth credentials may be embedded
+	// (https://user:pass@host). Required when any execution deriver is enabled.
+	ExecutionNodeAddress string `yaml:"executionNodeAddress"`
 	// OverrideNetworkName is the name of the network to use for the sentry.
 	// If not set, the network name will be retrieved from the beacon node.
 	OverrideNetworkName string `yaml:"overrideNetworkName"  default:""`

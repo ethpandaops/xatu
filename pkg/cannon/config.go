@@ -8,8 +8,8 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
-	"github.com/ethpandaops/xatu/pkg/cannon/deriver/execution"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cryo"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	chSink "github.com/ethpandaops/xatu/pkg/output/clickhouse"
@@ -50,8 +50,8 @@ type Config struct {
 	// Derivers configures the cannon with event derivers
 	Derivers deriver.Config `yaml:"derivers"`
 
-	// Execution configures the EL (execution-layer) cannon dimension.
-	Execution execution.Config `yaml:"execution"`
+	// Cryo configures the cryo runner used by the execution-layer derivers.
+	Cryo cryo.Config `yaml:"cryo"`
 
 	// Coordinator configuration
 	Coordinator coordinator.Config `yaml:"coordinator"`
@@ -79,8 +79,16 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid derivers config: %w", err)
 	}
 
-	if err := c.Execution.Validate(); err != nil {
-		return fmt.Errorf("invalid execution config: %w", err)
+	// Execution (EL) derivers collect via cryo from an execution node. When any
+	// are enabled, that node address and a valid cryo config are required.
+	if c.Derivers.Execution.AnyEnabled() {
+		if c.Ethereum.ExecutionNodeAddress == "" {
+			return errors.New("ethereum.executionNodeAddress is required when any execution deriver is enabled")
+		}
+
+		if err := c.Cryo.Validate(); err != nil {
+			return fmt.Errorf("invalid cryo config: %w", err)
+		}
 	}
 
 	// The xatu-server output path is no longer supported by cannon: both CL and

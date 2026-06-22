@@ -1,15 +1,36 @@
 package cannon
 
 import (
+	"os"
 	"testing"
 
+	"github.com/creasty/defaults"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	yaml "gopkg.in/yaml.v3"
 
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/output"
 )
+
+// TestExampleConfigParsesAndValidates loads example_cannon.yaml exactly as the
+// cannon command does, so the shipped example can't drift from the config
+// structs (it exercises the cryo / ethereum.executionNodeAddress /
+// derivers.consensus / derivers.execution layout end to end).
+func TestExampleConfigParsesAndValidates(t *testing.T) {
+	config := &Config{}
+	require.NoError(t, defaults.Set(config))
+
+	data, err := os.ReadFile("../../example_cannon.yaml")
+	require.NoError(t, err)
+
+	type plain Config
+
+	require.NoError(t, yaml.Unmarshal(data, (*plain)(config)))
+
+	require.NoError(t, config.Validate())
+}
 
 // TestConfig_Validate_RejectsXatuServerOutput asserts cannon no longer accepts
 // the xatu-server output (for any data) and steers users to clickhouse.

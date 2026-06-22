@@ -30,8 +30,8 @@ import (
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver/execution"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
-	"github.com/ethpandaops/xatu/pkg/cannon/execution/cryo"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/cryo"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	oxatu "github.com/ethpandaops/xatu/pkg/output/xatu"
@@ -417,7 +417,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 		eventDerivers := []deriver.EventDeriver{
 			v2.NewAttesterSlashingDeriver(
 				c.log,
-				&c.Config.Derivers.AttesterSlashingConfig,
+				&c.Config.Derivers.Consensus.AttesterSlashingConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -429,14 +429,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
-					&c.Config.Derivers.AttesterSlashingConfig.Iterator,
+					&c.Config.Derivers.Consensus.AttesterSlashingConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewProposerSlashingDeriver(
 				c.log,
-				&c.Config.Derivers.ProposerSlashingConfig,
+				&c.Config.Derivers.Consensus.ProposerSlashingConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -448,14 +448,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
-					&c.Config.Derivers.ProposerSlashingConfig.Iterator,
+					&c.Config.Derivers.Consensus.ProposerSlashingConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewVoluntaryExitDeriver(
 				c.log,
-				&c.Config.Derivers.VoluntaryExitConfig,
+				&c.Config.Derivers.Consensus.VoluntaryExitConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -467,14 +467,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
-					&c.Config.Derivers.VoluntaryExitConfig.Iterator,
+					&c.Config.Derivers.Consensus.VoluntaryExitConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewDepositDeriver(
 				c.log,
-				&c.Config.Derivers.DepositConfig,
+				&c.Config.Derivers.Consensus.DepositConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -486,14 +486,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
-					&c.Config.Derivers.DepositConfig.Iterator,
+					&c.Config.Derivers.Consensus.DepositConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewBLSToExecutionChangeDeriver(
 				c.log,
-				&c.Config.Derivers.BLSToExecutionConfig,
+				&c.Config.Derivers.Consensus.BLSToExecutionConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -505,14 +505,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
-					&c.Config.Derivers.BLSToExecutionConfig.Iterator,
+					&c.Config.Derivers.Consensus.BLSToExecutionConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewExecutionTransactionDeriver(
 				c.log,
-				&c.Config.Derivers.ExecutionTransactionConfig,
+				&c.Config.Derivers.Consensus.ExecutionTransactionConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -524,14 +524,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
-					&c.Config.Derivers.ExecutionTransactionConfig.Iterator,
+					&c.Config.Derivers.Consensus.ExecutionTransactionConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewWithdrawalDeriver(
 				c.log,
-				&c.Config.Derivers.WithdrawalConfig,
+				&c.Config.Derivers.Consensus.WithdrawalConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -543,14 +543,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
-					&c.Config.Derivers.WithdrawalConfig.Iterator,
+					&c.Config.Derivers.Consensus.WithdrawalConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewBeaconBlockDeriver(
 				c.log,
-				&c.Config.Derivers.BeaconBlockConfig,
+				&c.Config.Derivers.Consensus.BeaconBlockConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -562,14 +562,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
-					&c.Config.Derivers.BeaconBlockConfig.Iterator,
+					&c.Config.Derivers.Consensus.BeaconBlockConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v1.NewBeaconBlobDeriver(
 				c.log,
-				&c.Config.Derivers.BeaconBlobSidecarConfig,
+				&c.Config.Derivers.Consensus.BeaconBlobSidecarConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -581,14 +581,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
-					&c.Config.Derivers.BeaconBlobSidecarConfig.Iterator,
+					&c.Config.Derivers.Consensus.BeaconBlobSidecarConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v1.NewProposerDutyDeriver(
 				c.log,
-				&c.Config.Derivers.ProposerDutyConfig,
+				&c.Config.Derivers.Consensus.ProposerDutyConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -600,14 +600,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
-					&c.Config.Derivers.ProposerDutyConfig.Iterator,
+					&c.Config.Derivers.Consensus.ProposerDutyConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewElaboratedAttestationDeriver(
 				c.log,
-				&c.Config.Derivers.ElaboratedAttestationConfig,
+				&c.Config.Derivers.Consensus.ElaboratedAttestationConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -619,14 +619,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
-					&c.Config.Derivers.ElaboratedAttestationConfig.Iterator,
+					&c.Config.Derivers.Consensus.ElaboratedAttestationConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v1.NewBeaconValidatorsDeriver(
 				c.log,
-				&c.Config.Derivers.BeaconValidatorsConfig,
+				&c.Config.Derivers.Consensus.BeaconValidatorsConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -638,14 +638,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					2,
-					&c.Config.Derivers.BeaconValidatorsConfig.Iterator,
+					&c.Config.Derivers.Consensus.BeaconValidatorsConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v1.NewBeaconCommitteeDeriver(
 				c.log,
-				&c.Config.Derivers.BeaconCommitteeConfig,
+				&c.Config.Derivers.Consensus.BeaconCommitteeConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -657,14 +657,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					2,
-					&c.Config.Derivers.BeaconCommitteeConfig.Iterator,
+					&c.Config.Derivers.Consensus.BeaconCommitteeConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v1.NewBeaconSyncCommitteeDeriver(
 				c.log,
-				&c.Config.Derivers.BeaconSyncCommitteeConfig,
+				&c.Config.Derivers.Consensus.BeaconSyncCommitteeConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -676,14 +676,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
-					&c.Config.Derivers.BeaconSyncCommitteeConfig.Iterator,
+					&c.Config.Derivers.Consensus.BeaconSyncCommitteeConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 			v2.NewBeaconBlockSyncAggregateDeriver(
 				c.log,
-				&c.Config.Derivers.BeaconBlockSyncAggregateConfig,
+				&c.Config.Derivers.Consensus.BeaconBlockSyncAggregateConfig,
 				iterator.NewBackfillingCheckpoint(
 					c.log,
 					networkName,
@@ -695,17 +695,17 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 					c.beacon,
 					finalizedCheckpoint,
 					3,
-					&c.Config.Derivers.BeaconBlockSyncAggregateConfig.Iterator,
+					&c.Config.Derivers.Consensus.BeaconBlockSyncAggregateConfig.Iterator,
 				),
 				c.beacon,
 				clientMeta,
 			),
 		}
 
-		if c.Config.Execution.Enabled {
-			c.log.WithContext(ctx).Info("Execution-layer cannon enabled, firing up EL derivers")
+		if c.Config.Derivers.Execution.AnyEnabled() {
+			c.log.WithContext(ctx).Info("Execution-layer derivers enabled, firing them up")
 
-			cryoRunner := cryo.New(c.log, &c.Config.Execution.Cryo, c.Config.Execution.RPCAddress)
+			cryoRunner := cryo.New(c.log, &c.Config.Cryo, c.Config.Ethereum.ExecutionNodeAddress)
 
 			backfillingBlockMetrics := iterator.NewBackfillingBlockMetrics("xatu_cannon")
 
@@ -717,7 +717,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 				)
 			}
 
-			ec := &c.Config.Execution
+			ec := &c.Config.Derivers.Execution
 
 			eventDerivers = append(eventDerivers,
 				execution.NewBlockDeriver(c.log, &ec.Block, blockIter(xatu.CannonType_EXECUTION_CANONICAL_BLOCK, &ec.Block.Iterator), cryoRunner, c.beacon, clientMeta),

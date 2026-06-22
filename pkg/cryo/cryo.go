@@ -71,7 +71,7 @@ type Runner struct {
 // may be embedded as https://user:pass@host).
 func New(log logrus.FieldLogger, cfg *Config, rpc string) *Runner {
 	return &Runner{
-		log: log.WithField("module", "cannon/execution/cryo"),
+		log: log.WithField("module", "cryo"),
 		cfg: cfg,
 		rpc: rpc,
 	}

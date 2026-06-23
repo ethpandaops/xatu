@@ -12,8 +12,6 @@ type EventConfig struct {
 	RpcMetaControlPruneEnabled        bool `yaml:"rpcMetaControlPruneEnabled" default:"false"`
 	RpcMetaSubscriptionEnabled        bool `yaml:"rpcMetaSubscriptionEnabled" default:"false"`
 	RpcMetaMessageEnabled             bool `yaml:"rpcMetaMessageEnabled" default:"false"`
-	AddPeerEnabled                    bool `yaml:"addPeerEnabled" default:"true"`
-	RemovePeerEnabled                 bool `yaml:"removePeerEnabled" default:"true"`
 	ConnectedEnabled                  bool `yaml:"connectedEnabled" default:"true"`
 	DisconnectedEnabled               bool `yaml:"disconnectedEnabled" default:"true"`
 	IdentifyEnabled                   bool `yaml:"identifyEnabled" default:"true"`

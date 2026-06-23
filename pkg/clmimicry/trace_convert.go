@@ -17,46 +17,6 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-// Helper function to convert a Hermes TraceEvent to a libp2p AddPeer
-func TraceEventToAddPeer(event *TraceEvent) (*libp2p.AddPeer, error) {
-	payload, ok := event.Payload.(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("invalid payload type for AddPeer")
-	}
-
-	peerID, ok := payload["PeerID"].(peer.ID)
-	if !ok {
-		return nil, fmt.Errorf("peerID is required for AddPeer")
-	}
-
-	protoc, ok := payload["Protocol"].(protocol.ID)
-	if !ok {
-		return nil, fmt.Errorf("protocol is required for AddPeer")
-	}
-
-	return &libp2p.AddPeer{
-		PeerId:   wrapperspb.String(peerID.String()),
-		Protocol: wrapperspb.String(string(protoc)),
-	}, nil
-}
-
-// Helper function to convert a Hermes TraceEvent to a libp2p RemovePeer
-func TraceEventToRemovePeer(event *TraceEvent) (*libp2p.RemovePeer, error) {
-	payload, ok := event.Payload.(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("invalid payload type for RemovePeer")
-	}
-
-	peerID, ok := payload["PeerID"].(peer.ID)
-	if !ok {
-		return nil, fmt.Errorf("peerID is required for RemovePeer")
-	}
-
-	return &libp2p.RemovePeer{
-		PeerId: wrapperspb.String(peerID.String()),
-	}, nil
-}
-
 // Helper function to convert a Hermes TraceEvent to a libp2p Join
 func TraceEventToJoin(event *TraceEvent) (*libp2p.Join, error) {
 	payload, ok := event.Payload.(map[string]any)

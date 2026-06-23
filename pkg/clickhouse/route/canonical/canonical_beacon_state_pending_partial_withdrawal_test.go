@@ -3,25 +3,42 @@ package canonical
 import (
 	"testing"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/testfixture"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func TestSnapshot_canonical_beacon_state_pending_partial_withdrawal(t *testing.T) {
-	if len(canonicalBeaconStatePendingPartialWithdrawalEventNames) == 0 {
-		t.Skip("no event names registered for canonical_beacon_state_pending_partial_withdrawal")
-	}
-
 	testfixture.AssertSnapshot(t, newcanonicalBeaconStatePendingPartialWithdrawalBatch(), &xatu.DecoratedEvent{
 		Event: &xatu.Event{
-			Name:     canonicalBeaconStatePendingPartialWithdrawalEventNames[0],
+			Name:     xatu.Event_BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL,
 			DateTime: testfixture.TS(),
-			Id:       "snapshot-1",
+			Id:       "ppw-1",
 		},
-		Meta: testfixture.BaseMeta(),
-		// TODO: Add event-specific Data field and MetaWithAdditional for richer assertions.
+		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
+			AdditionalData: &xatu.ClientMeta_EthV1BeaconStatePendingPartialWithdrawal{
+				EthV1BeaconStatePendingPartialWithdrawal: &xatu.ClientMeta_AdditionalEthV1BeaconStatePendingPartialWithdrawalData{
+					Epoch:           testfixture.EpochAdditional(),
+					StateId:         "head",
+					PositionInQueue: wrapperspb.UInt64(7),
+				},
+			},
+		}),
+		Data: &xatu.DecoratedEvent_EthV1BeaconStatePendingPartialWithdrawal{
+			EthV1BeaconStatePendingPartialWithdrawal: &xatu.PendingPartialWithdrawalData{
+				ValidatorIndex:    wrapperspb.UInt64(42),
+				Amount:            wrapperspb.UInt64(1_000_000_000),
+				WithdrawableEpoch: wrapperspb.UInt64(256),
+			},
+		},
 	}, 1, map[string]any{
-		"meta_client_name": "test-client",
-		// TODO: Add payload-specific column assertions.
+		"epoch":              uint32(3),
+		"state_id":           "head",
+		"position_in_queue":  uint32(7),
+		"validator_index":    uint32(42),
+		"amount":             uint64(1_000_000_000),
+		"withdrawable_epoch": uint64(256),
+		"meta_network_name":  "mainnet",
 	})
 }

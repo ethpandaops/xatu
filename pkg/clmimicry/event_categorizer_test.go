@@ -20,8 +20,8 @@ func TestEventCategorization(t *testing.T) {
 		t.Logf("Group %d has %d events", group, len(events))
 	}
 
-	// We should have categorized all 29 known events
-	assert.Equal(t, totalEvents, 29, "Should have exactly 28 events categorized")
+	// We should have categorized all 27 currently emitted events
+	assert.Equal(t, 27, totalEvents, "Should have exactly 27 events categorized")
 
 	// Test specific group queries
 	groupA := ec.GetGroupAEvents()
@@ -34,7 +34,7 @@ func TestEventCategorization(t *testing.T) {
 	assert.Len(t, groupC, 2, "Group C should have 2 events")
 
 	groupD := ec.GetGroupDEvents()
-	assert.GreaterOrEqual(t, len(groupD), 10, "Group D should have at least 10 events")
+	assert.Len(t, groupD, 8, "Group D should have 8 events")
 }
 
 func TestMetaEventIdentification(t *testing.T) {
@@ -53,7 +53,6 @@ func TestMetaEventIdentification(t *testing.T) {
 	nonMetaEvents := []xatu.Event_Name{
 		xatu.Event_LIBP2P_TRACE_PUBLISH_MESSAGE,
 		xatu.Event_LIBP2P_TRACE_JOIN,
-		xatu.Event_LIBP2P_TRACE_ADD_PEER,
 		xatu.Event_LIBP2P_TRACE_CONNECTED,
 	}
 
@@ -113,8 +112,8 @@ func TestEventGroupCharacteristics(t *testing.T) {
 		{
 			name: "Group D events have neither",
 			events: []xatu.Event_Name{
-				xatu.Event_LIBP2P_TRACE_ADD_PEER,
 				xatu.Event_LIBP2P_TRACE_CONNECTED,
+				xatu.Event_LIBP2P_TRACE_DISCONNECTED,
 				xatu.Event_LIBP2P_TRACE_RECV_RPC,
 			},
 			expectTopic:   false,
@@ -164,8 +163,6 @@ func TestEventCompleteness(t *testing.T) {
 		xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT,
 		xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT,
 		// Group D
-		xatu.Event_LIBP2P_TRACE_ADD_PEER,
-		xatu.Event_LIBP2P_TRACE_REMOVE_PEER,
 		xatu.Event_LIBP2P_TRACE_RECV_RPC,
 		xatu.Event_LIBP2P_TRACE_SEND_RPC,
 		xatu.Event_LIBP2P_TRACE_DROP_RPC,

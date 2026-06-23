@@ -70,8 +70,6 @@ func (ec *EventCategorizer) initializeEvents() {
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT, GroupC, false, true, true)
 
 	// Group D: Events with no sharding keys
-	ec.addEvent(xatu.Event_LIBP2P_TRACE_ADD_PEER, GroupD, false, false, false)
-	ec.addEvent(xatu.Event_LIBP2P_TRACE_REMOVE_PEER, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RECV_RPC, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_SEND_RPC, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_DROP_RPC, GroupD, false, false, false)

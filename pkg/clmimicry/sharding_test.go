@@ -190,7 +190,7 @@ func TestUnifiedSharder(t *testing.T) {
 					Enabled: true,
 				},
 			},
-			eventType:      xatu.Event_LIBP2P_TRACE_ADD_PEER,
+			eventType:      xatu.Event_LIBP2P_TRACE_CONNECTED,
 			msgID:          "",
 			topic:          "",
 			expectedResult: true,
@@ -203,7 +203,7 @@ func TestUnifiedSharder(t *testing.T) {
 					Enabled: false,
 				},
 			},
-			eventType:      xatu.Event_LIBP2P_TRACE_REMOVE_PEER,
+			eventType:      xatu.Event_LIBP2P_TRACE_DISCONNECTED,
 			msgID:          "",
 			topic:          "",
 			expectedResult: false,
@@ -408,7 +408,6 @@ func TestEventCategorizer(t *testing.T) {
 		{xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT, GroupC, false, true},
 
 		// Group D tests
-		{xatu.Event_LIBP2P_TRACE_ADD_PEER, GroupD, false, false},
 		{xatu.Event_LIBP2P_TRACE_CONNECTED, GroupD, false, false},
 		{xatu.Event_LIBP2P_TRACE_RECV_RPC, GroupD, false, false},
 	}

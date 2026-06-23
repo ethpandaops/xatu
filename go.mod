@@ -35,7 +35,7 @@ require (
 	github.com/klauspost/compress v1.18.5
 	github.com/lib/pq v1.10.9
 	github.com/libp2p/go-libp2p v0.47.0
-	github.com/libp2p/go-libp2p-pubsub v0.14.2
+	github.com/libp2p/go-libp2p-pubsub v0.16.1-0.20260611143718-41b11d5cb1a7
 	github.com/minio/minio-go/v7 v7.1.0
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/multiformats/go-multiaddr v0.16.1

@@ -2,13 +2,15 @@ package canonical
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-// TODO: Add the xatu.Event_* name(s) that route events to the canonical_beacon_sync_committee_reward table.
-var canonicalBeaconSyncCommitteeRewardEventNames = []xatu.Event_Name{}
+var canonicalBeaconSyncCommitteeRewardEventNames = []xatu.Event_Name{
+	xatu.Event_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD,
+}
 
 func init() {
 	r, err := route.NewStaticRoute(
@@ -27,17 +29,57 @@ func init() {
 	}
 }
 
-func (b *canonicalBeaconSyncCommitteeRewardBatch) FlattenTo(
-	event *xatu.DecoratedEvent,
-) error {
-	// TODO: Implement this method to flatten the event into columnar batch columns.
-	// The generated .gen.go file contains the available column fields for this table.
-	//
-	// Typical structure:
-	//   b.appendRuntime(event)
-	//   b.appendMetadata(event)
-	//   b.appendPayload(event)
-	//   b.rows++
-	//   return nil
-	return fmt.Errorf("canonicalBeaconSyncCommitteeReward: FlattenTo not implemented")
+func (b *canonicalBeaconSyncCommitteeRewardBatch) FlattenTo(event *xatu.DecoratedEvent) error {
+	if event == nil || event.GetEvent() == nil {
+		return nil
+	}
+
+	if event.GetEthV1BeaconSyncCommitteeReward() == nil {
+		return fmt.Errorf("nil eth_v1_beacon_sync_committee_reward payload: %w", route.ErrInvalidEvent)
+	}
+
+	b.appendRuntime()
+	b.appendMetadata(event)
+	b.appendPayload(event)
+	b.appendAdditionalData(event)
+	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconSyncCommitteeRewardBatch) appendRuntime() {
+	b.UpdatedDateTime.Append(time.Now())
+}
+
+//nolint:gosec // G115: proto uint64 values are bounded by ClickHouse column schema
+func (b *canonicalBeaconSyncCommitteeRewardBatch) appendPayload(event *xatu.DecoratedEvent) {
+	payload := event.GetEthV1BeaconSyncCommitteeReward()
+
+	if validatorIndex := payload.GetValidatorIndex(); validatorIndex != nil {
+		b.ValidatorIndex.Append(uint32(validatorIndex.GetValue()))
+	} else {
+		b.ValidatorIndex.Append(0)
+	}
+
+	if reward := payload.GetReward(); reward != nil {
+		b.Reward.Append(reward.GetValue())
+	} else {
+		b.Reward.Append(0)
+	}
+}
+
+func (b *canonicalBeaconSyncCommitteeRewardBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
+	additional := event.GetMeta().GetClient().GetEthV1BeaconSyncCommitteeReward()
+	if additional == nil {
+		b.Slot.Append(0)
+		b.SlotStartDateTime.Append(time.Time{})
+		b.Epoch.Append(0)
+		b.EpochStartDateTime.Append(time.Time{})
+		b.BlockRoot.Append(nil)
+
+		return
+	}
+
+	appendBlockIdentifier(additional.GetBlock(),
+		&b.Slot, &b.SlotStartDateTime, &b.Epoch, &b.EpochStartDateTime, nil, &b.BlockRoot)
 }

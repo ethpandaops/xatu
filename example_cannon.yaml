@@ -20,18 +20,24 @@ coordinator:
   # headers:
   #   authorization: Someb64Value
 
-# Ethereum node connection. The beacon node is REQUIRED — every consensus
-# deriver reads it, and the execution derivers' iterator gates EL progress on CL
-# finality (it never extracts past the CL-finalized execution block). The
-# execution node is REQUIRED only when any execution deriver is enabled.
+# Ethereum node connection, grouped by layer.
+#   ethereum.beacon is ALWAYS required — every deriver reads the beacon node, and
+#     the EL iterator gates execution progress on CL finality (it never extracts
+#     past the CL-finalized execution block).
+#   ethereum.execution is required ONLY when at least one execution deriver is
+#     enabled; with derivers.execution all disabled you can omit it entirely.
 ethereum:
-  beaconNodeAddress: http://localhost:5052
-  executionNodeAddress: http://localhost:8545   # EL archive node; cryo --rpc (creds may be embedded: https://user:pass@host)
-  # beaconNodeHeaders:
-  #   authorization: Someb64Value
-  # overrideNetworkName: mainnet
-  # blockCacheSize: 1000
-  # blockCacheTtl: 1h
+  # overrideNetworkName: mainnet     # network is derived from the beacon node if unset
+  beacon:
+    address: http://localhost:5052
+    # headers:
+    #   Authorization: Someb64Value
+    # blockCacheSize: 1000
+    # blockCacheTtl: 1h
+    # blockPreloadWorkers: 5
+    # blockPreloadQueueSize: 5000
+  execution:
+    address: http://localhost:8545   # EL archive node; cryo --rpc (creds may be embedded: https://user:pass@host)
 
 # cryo runner — the binary + extraction settings shared by all execution
 # derivers. maxConcurrentChunks showed no benefit in benchmarking; leave at 0.

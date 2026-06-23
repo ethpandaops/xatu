@@ -705,7 +705,7 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 		if c.Config.Derivers.Execution.AnyEnabled() {
 			c.log.WithContext(ctx).Info("Execution-layer derivers enabled, firing them up")
 
-			cryoRunner := cryo.New(c.log, &c.Config.Cryo, c.Config.Ethereum.ExecutionNodeAddress)
+			cryoRunner := cryo.New(c.log, &c.Config.Cryo, c.Config.Ethereum.Execution.Address)
 
 			backfillingBlockMetrics := iterator.NewBackfillingBlockMetrics("xatu_cannon")
 

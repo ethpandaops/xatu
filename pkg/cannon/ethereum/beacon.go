@@ -67,8 +67,8 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 
 	node := beacon.NewNode(log, &beacon.Config{
 		Name:    name,
-		Addr:    config.BeaconNodeAddress,
-		Headers: config.BeaconNodeHeaders,
+		Addr:    config.Beacon.Address,
+		Headers: config.Beacon.Headers,
 	}, namespace, opts)
 
 	metadata := services.NewMetadataService(log, node)
@@ -85,7 +85,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 	}
 
 	// Create a buffered channel (semaphore) to limit the number of concurrent goroutines.
-	sem := make(chan struct{}, config.BlockPreloadWorkers)
+	sem := make(chan struct{}, config.Beacon.BlockPreloadWorkers)
 	validatorsSem := make(chan struct{}, 1)
 
 	return &BeaconNode{
@@ -96,10 +96,10 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 		sfGroup:           &singleflight.Group{},
 		validatorsSfGroup: &singleflight.Group{},
 		blockCache: ttlcache.New(
-			ttlcache.WithTTL[string, *spec.VersionedSignedBeaconBlock](config.BlockCacheTTL.Duration),
-			ttlcache.WithCapacity[string, *spec.VersionedSignedBeaconBlock](config.BlockCacheSize),
+			ttlcache.WithTTL[string, *spec.VersionedSignedBeaconBlock](config.Beacon.BlockCacheTTL.Duration),
+			ttlcache.WithCapacity[string, *spec.VersionedSignedBeaconBlock](config.Beacon.BlockCacheSize),
 		),
-		blockPreloadChan: make(chan string, config.BlockPreloadQueueSize),
+		blockPreloadChan: make(chan string, config.Beacon.BlockPreloadQueueSize),
 		blockPreloadSem:  sem,
 		validatorsCache: ttlcache.New(
 			ttlcache.WithTTL[string, map[phase0.ValidatorIndex]*apiv1.Validator](5*time.Minute),
@@ -160,7 +160,7 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 
 	go b.blockCache.Start()
 
-	for i := 0; i < int(b.config.BlockPreloadWorkers); i++ {
+	for i := 0; i < int(b.config.Beacon.BlockPreloadWorkers); i++ {
 		go func() {
 			for identifier := range b.blockPreloadChan {
 				b.metrics.SetPreloadBlockQueueSize(string(b.Metadata().Network.Name), len(b.blockPreloadChan))

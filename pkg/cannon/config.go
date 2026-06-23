@@ -82,8 +82,8 @@ func (c *Config) Validate() error {
 	// Execution (EL) derivers collect via cryo from an execution node. When any
 	// are enabled, that node address and a valid cryo config are required.
 	if c.Derivers.Execution.AnyEnabled() {
-		if c.Ethereum.ExecutionNodeAddress == "" {
-			return errors.New("ethereum.executionNodeAddress is required when any execution deriver is enabled")
+		if c.Ethereum.Execution.Address == "" {
+			return errors.New("ethereum.execution.address is required when any execution deriver is enabled")
 		}
 
 		if err := c.Cryo.Validate(); err != nil {
@@ -195,13 +195,17 @@ func (c *Config) ApplyOverrides(o *Override, log observability.ContextualLogger)
 	if o.BeaconNodeURL.Enabled {
 		log.Info("Overriding beacon node URL")
 
-		c.Ethereum.BeaconNodeAddress = o.BeaconNodeURL.Value
+		c.Ethereum.Beacon.Address = o.BeaconNodeURL.Value
 	}
 
 	if o.BeaconNodeAuthorizationHeader.Enabled {
 		log.Info("Overriding beacon node authorization header")
 
-		c.Ethereum.BeaconNodeHeaders["Authorization"] = o.BeaconNodeAuthorizationHeader.Value
+		if c.Ethereum.Beacon.Headers == nil {
+			c.Ethereum.Beacon.Headers = map[string]string{}
+		}
+
+		c.Ethereum.Beacon.Headers["Authorization"] = o.BeaconNodeAuthorizationHeader.Value
 	}
 
 	if o.XatuCoordinatorAuth.Enabled {

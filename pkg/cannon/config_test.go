@@ -16,7 +16,7 @@ import (
 
 // TestExampleConfigParsesAndValidates loads example_cannon.yaml exactly as the
 // cannon command does, so the shipped example can't drift from the config
-// structs (it exercises the cryo / ethereum.executionNodeAddress /
+// structs (it exercises the cryo / ethereum.beacon / ethereum.execution /
 // derivers.consensus / derivers.execution layout end to end).
 func TestExampleConfigParsesAndValidates(t *testing.T) {
 	config := &Config{}
@@ -38,7 +38,7 @@ func TestConfig_Validate_RejectsXatuServerOutput(t *testing.T) {
 	mk := func(sink output.SinkType) *Config {
 		return &Config{
 			Name:        "test",
-			Ethereum:    ethereum.Config{BeaconNodeAddress: "http://localhost:5052"},
+			Ethereum:    ethereum.Config{Beacon: ethereum.BeaconConfig{Address: "http://localhost:5052"}},
 			Coordinator: coordinator.Config{Address: "localhost:8080"},
 			Outputs:     []output.Config{{Name: "out", SinkType: sink}},
 		}

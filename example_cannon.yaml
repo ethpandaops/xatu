@@ -111,7 +111,21 @@ outputs:
   config:
     dsn: clickhouse://default:password@localhost:9000/default
     # Cannon applies its own defaults (metrics subsystem + canonical_ route
-    # prefix restriction); per-table insertSettings can be overridden here.
+    # prefix restriction). On every canonical_ table it also force-defaults two
+    # insertSettings, because cannon is a cursor-based writer (it advances its
+    # Postgres cursor once an insert succeeds) and a "success" must mean the data
+    # is actually durable — otherwise rows lost in async forwarding leave gaps the
+    # cannon never retries:
+    #   - insert_quorum=auto               (majority of replicas per shard)
+    #   - distributed_foreground_insert=1  (write lands on the target shard
+    #                                       synchronously, not best-effort async)
+    # Override per-table / per-default here. The common override is a SINGLE
+    # replica per shard, where insert_quorum=auto has no peer to form a quorum
+    # with and just adds contention:
+    #
+    # defaults:
+    #   insertSettings:
+    #     insert_quorum: 0
 
 tracing:
   enabled: false

@@ -3,6 +3,7 @@ package clickhouse
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 	"strings"
 	"time"
@@ -52,7 +53,10 @@ type TableConfig struct {
 	SkipFlattenErrors bool `yaml:"skipFlattenErrors"`
 	// InsertSettings appends ClickHouse SETTINGS to INSERT statements.
 	// Canonical tables (name prefix "canonical_") default to
-	// insert_quorum=auto unless explicitly overridden.
+	// insert_quorum=auto and distributed_foreground_insert=1 unless explicitly
+	// overridden. On a single replica per shard, override insert_quorum: 0
+	// (no peer to form a quorum with); on single-node/non-Distributed setups
+	// distributed_foreground_insert is a no-op.
 	// Example:
 	// insertSettings:
 	//   insert_quorum: 2
@@ -318,9 +322,7 @@ func (c *Config) TableConfigFor(table string) TableConfig {
 			cfg.InsertSettings = make(map[string]any, len(override.InsertSettings))
 		}
 
-		for k, v := range override.InsertSettings {
-			cfg.InsertSettings[k] = v
-		}
+		maps.Copy(cfg.InsertSettings, override.InsertSettings)
 	}
 
 	applyCanonicalTableDefaults(table, &cfg)
@@ -334,11 +336,22 @@ func applyCanonicalTableDefaults(table string, cfg *TableConfig) {
 	}
 
 	if cfg.InsertSettings == nil {
-		cfg.InsertSettings = make(map[string]any, 1)
+		cfg.InsertSettings = make(map[string]any, 2)
 	}
 
 	if _, exists := cfg.InsertSettings["insert_quorum"]; !exists {
 		cfg.InsertSettings["insert_quorum"] = "auto"
+	}
+
+	// Make inserts into Distributed tables synchronous: the write must land on
+	// the target shard(s) before the INSERT returns, instead of being buffered
+	// locally and forwarded to peer shards in the background. Cannon is a
+	// cursor-based writer — it advances its cursor once an insert succeeds — so a
+	// "success" that is only locally buffered can silently drop rows on a failed
+	// background forward, leaving gaps the cursor never revisits. (No-op for
+	// non-Distributed/single-node tables.)
+	if _, exists := cfg.InsertSettings["distributed_foreground_insert"]; !exists {
+		cfg.InsertSettings["distributed_foreground_insert"] = 1
 	}
 }
 
@@ -348,9 +361,7 @@ func cloneInsertSettings(settings map[string]any) map[string]any {
 	}
 
 	out := make(map[string]any, len(settings))
-	for k, v := range settings {
-		out[k] = v
-	}
+	maps.Copy(out, settings)
 
 	return out
 }

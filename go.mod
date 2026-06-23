@@ -40,6 +40,7 @@ require (
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/multiformats/go-multiaddr v0.16.1
 	github.com/oschwald/maxminddb-golang v1.13.1
+	github.com/parquet-go/parquet-go v0.30.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
@@ -82,7 +83,6 @@ require (
 	github.com/moby/moby/client v0.4.0 // indirect
 	github.com/parquet-go/bitpack v1.0.0 // indirect
 	github.com/parquet-go/jsonlite v1.0.0 // indirect
-	github.com/parquet-go/parquet-go v0.30.1 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pk910/hashtree-bindings v0.1.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect

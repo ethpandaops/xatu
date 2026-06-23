@@ -183,7 +183,7 @@ func (b *AttestationRewardDeriver) run(rctx context.Context) {
 func (b *AttestationRewardDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
 	ctx, span := observability.Tracer().Start(ctx,
 		"AttestationRewardDeriver.processEpoch",
-		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))),
+		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))), //nolint:gosec // epoch fits int64
 	)
 	defer span.End()
 
@@ -257,11 +257,11 @@ func (b *AttestationRewardDeriver) createEventFromAttestationReward(reward apiv1
 		Data: &xatu.DecoratedEvent_EthV1BeaconAttestationReward{
 			EthV1BeaconAttestationReward: &xatu.AttestationRewardData{
 				ValidatorIndex: wrapperspb.UInt64(uint64(reward.ValidatorIndex)),
-				Head:           wrapperspb.Int64(int64(reward.Head)),
+				Head:           wrapperspb.Int64(int64(reward.Head)), //nolint:gosec // reward value is bounded well within int64 range
 				Target:         wrapperspb.Int64(reward.Target),
 				Source:         wrapperspb.Int64(reward.Source),
 				InclusionDelay: inclusionDelay,
-				Inactivity:     wrapperspb.Int64(int64(reward.Inactivity)),
+				Inactivity:     wrapperspb.Int64(int64(reward.Inactivity)), //nolint:gosec // reward value is bounded well within int64 range
 			},
 		},
 	}

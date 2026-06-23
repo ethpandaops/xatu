@@ -113,6 +113,18 @@ var (
 	TypeLibP2PTraceSyntheticHeartbeat           Type = Type(libp2p.TraceSyntheticHeartbeatType)
 	TypeLibP2PTraceIdentify                     Type = Type(libp2p.TraceIdentifyType)
 	TypeLibP2PRPCDataColumnCustodyProbe         Type = Type(libp2p.TypeLibp2pRPCDataColumnCustodyProbe)
+
+	TypeBeaconEthV2BeaconBlockExecutionRequestDeposit       Type = v2.BeaconBlockExecutionRequestDepositType
+	TypeBeaconEthV2BeaconBlockExecutionRequestWithdrawal    Type = v2.BeaconBlockExecutionRequestWithdrawalType
+	TypeBeaconEthV2BeaconBlockExecutionRequestConsolidation Type = v2.BeaconBlockExecutionRequestConsolidationType
+	TypeBeaconEthV1BeaconBlockReward                        Type = v1.BlockRewardType
+	TypeBeaconEthV1BeaconAttestationReward                  Type = v1.BeaconAttestationRewardType
+	TypeBeaconEthV1BeaconSyncCommitteeReward                Type = v1.BeaconSyncCommitteeRewardType
+	TypeBeaconETHV1BeaconStateRandao                        Type = Type(v1.RandaoType)
+	TypeBeaconETHV1BeaconStateFinalityCheckpoint            Type = Type(v1.FinalityCheckpointType)
+	TypeBeaconETHV1BeaconStatePendingDeposit                Type = Type(v1.BeaconStatePendingDepositType)
+	TypeBeaconETHV1BeaconStatePendingPartialWithdrawal      Type = Type(v1.BeaconStatePendingPartialWithdrawalType)
+	TypeBeaconETHV1BeaconStatePendingConsolidation          Type = Type(v1.BeaconStatePendingConsolidationType)
 )
 
 type Event interface {
@@ -253,6 +265,39 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	})
 	router.RegisterHandler(TypeBeaconEthV2BeaconBlockSyncAggregate, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v2.NewBeaconBlockSyncAggregate(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV2BeaconBlockExecutionRequestDeposit, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v2.NewBeaconBlockExecutionRequestDeposit(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV2BeaconBlockExecutionRequestWithdrawal, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v2.NewBeaconBlockExecutionRequestWithdrawal(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV2BeaconBlockExecutionRequestConsolidation, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v2.NewBeaconBlockExecutionRequestConsolidation(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV1BeaconBlockReward, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBlockReward(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV1BeaconAttestationReward, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconAttestationReward(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV1BeaconSyncCommitteeReward, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconSyncCommitteeReward(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1BeaconStateRandao, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewRandao(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1BeaconStateFinalityCheckpoint, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewFinalityCheckpoint(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1BeaconStatePendingDeposit, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconStatePendingDeposit(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1BeaconStatePendingPartialWithdrawal, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconStatePendingPartialWithdrawal(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1BeaconStatePendingConsolidation, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconStatePendingConsolidation(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconEthV1ValidatorAttestationData, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewValidatorAttestationData(router.log, event), nil

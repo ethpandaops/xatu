@@ -88,6 +88,18 @@ linters:
       - linters:
           - goconst
         path: execution/
+      # CL cannon derivers repeat the logrus "module"/"type" field keys across
+      # many per-type files; these are a fixed convention shared by every deriver
+      # and turning them into Go constants adds no real value.
+      - linters:
+          - goconst
+        path: cannon/deriver/beacon/
+      # ClickHouse route snapshot tests repeat ClickHouse column-name assertion
+      # keys (a fixed external vocabulary) across many per-type files; turning
+      # these identifiers into Go constants adds no real value.
+      - linters:
+          - goconst
+        path: clickhouse/route/canonical/
     paths:
       - third_party$
       - builtin$

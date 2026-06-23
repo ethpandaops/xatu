@@ -29,7 +29,7 @@ func (b *BeaconBlockExecutionRequestWithdrawal) Type() string {
 }
 
 func (b *BeaconBlockExecutionRequestWithdrawal) Validate(ctx context.Context) error {
-	_, ok := b.event.Data.(*xatu.DecoratedEvent_EthV2BeaconBlockExecutionRequestWithdrawal)
+	_, ok := b.event.GetData().(*xatu.DecoratedEvent_EthV2BeaconBlockExecutionRequestWithdrawal)
 	if !ok {
 		return errors.New("failed to cast event data")
 	}

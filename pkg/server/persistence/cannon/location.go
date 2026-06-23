@@ -228,6 +228,28 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 		}
 
 		l.Value = string(b)
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT:
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT", msg.GetEthV2BeaconBlockExecutionRequestDeposit())
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_WITHDRAWAL:
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_WITHDRAWAL", msg.GetEthV2BeaconBlockExecutionRequestWithdrawal())
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_CONSOLIDATION:
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_CONSOLIDATION", msg.GetEthV2BeaconBlockExecutionRequestConsolidation())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOCK_REWARD:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_BLOCK_REWARD", msg.GetEthV1BeaconBlockReward())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD", msg.GetEthV1BeaconAttestationReward())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD", msg.GetEthV1BeaconSyncCommitteeReward())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_RANDAO:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_RANDAO", msg.GetEthV1BeaconStateRandao())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_FINALITY_CHECKPOINT:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_FINALITY_CHECKPOINT", msg.GetEthV1BeaconStateFinalityCheckpoint())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT", msg.GetEthV1BeaconStatePendingDeposit())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL", msg.GetEthV1BeaconStatePendingPartialWithdrawal())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION", msg.GetEthV1BeaconStatePendingConsolidation())
 	case xatu.CannonType_EXECUTION_CANONICAL_BLOCK:
 		l.Type = "EXECUTION_CANONICAL_BLOCK"
 
@@ -489,6 +511,116 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockSyncAggregate{
 			EthV2BeaconBlockSyncAggregate: data,
 		}
+	case "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT
+
+		data := &xatu.CannonLocationEthV2BeaconBlockExecutionRequestDeposit{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockExecutionRequestDeposit{EthV2BeaconBlockExecutionRequestDeposit: data}
+	case "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_WITHDRAWAL":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_WITHDRAWAL
+
+		data := &xatu.CannonLocationEthV2BeaconBlockExecutionRequestWithdrawal{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockExecutionRequestWithdrawal{EthV2BeaconBlockExecutionRequestWithdrawal: data}
+	case "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_CONSOLIDATION":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_CONSOLIDATION
+
+		data := &xatu.CannonLocationEthV2BeaconBlockExecutionRequestConsolidation{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockExecutionRequestConsolidation{EthV2BeaconBlockExecutionRequestConsolidation: data}
+	case "BEACON_API_ETH_V1_BEACON_BLOCK_REWARD":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOCK_REWARD
+
+		data := &xatu.CannonLocationEthV1BeaconBlockReward{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconBlockReward{EthV1BeaconBlockReward: data}
+	case "BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD
+
+		data := &xatu.CannonLocationEthV1BeaconAttestationReward{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconAttestationReward{EthV1BeaconAttestationReward: data}
+	case "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD
+
+		data := &xatu.CannonLocationEthV1BeaconSyncCommitteeReward{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconSyncCommitteeReward{EthV1BeaconSyncCommitteeReward: data}
+	case "BEACON_API_ETH_V1_BEACON_STATE_RANDAO":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_RANDAO
+
+		data := &xatu.CannonLocationEthV1BeaconStateRandao{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconStateRandao{EthV1BeaconStateRandao: data}
+	case "BEACON_API_ETH_V1_BEACON_STATE_FINALITY_CHECKPOINT":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_FINALITY_CHECKPOINT
+
+		data := &xatu.CannonLocationEthV1BeaconStateFinalityCheckpoint{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconStateFinalityCheckpoint{EthV1BeaconStateFinalityCheckpoint: data}
+	case "BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT
+
+		data := &xatu.CannonLocationEthV1BeaconStatePendingDeposit{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconStatePendingDeposit{EthV1BeaconStatePendingDeposit: data}
+	case "BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL
+
+		data := &xatu.CannonLocationEthV1BeaconStatePendingPartialWithdrawal{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconStatePendingPartialWithdrawal{EthV1BeaconStatePendingPartialWithdrawal: data}
+	case "BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION
+
+		data := &xatu.CannonLocationEthV1BeaconStatePendingConsolidation{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconStatePendingConsolidation{EthV1BeaconStatePendingConsolidation: data}
 	case "EXECUTION_CANONICAL_BLOCK":
 		msg.Type = xatu.CannonType_EXECUTION_CANONICAL_BLOCK
 

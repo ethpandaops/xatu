@@ -178,7 +178,7 @@ func (b *BeaconStatePendingConsolidationDeriver) run(rctx context.Context) {
 func (b *BeaconStatePendingConsolidationDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
 	ctx, span := observability.Tracer().Start(ctx,
 		"BeaconStatePendingConsolidationDeriver.processEpoch",
-		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))),
+		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))), //nolint:gosec // epoch fits int64
 	)
 	defer span.End()
 

@@ -21,7 +21,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
+	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -209,7 +209,7 @@ func (b *BlockRewardDeriver) lookAhead(ctx context.Context, epochs []phase0.Epoc
 func (b *BlockRewardDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
 	ctx, span := observability.Tracer().Start(ctx,
 		"BlockRewardDeriver.processEpoch",
-		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))),
+		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))), //nolint:gosec // epoch fits int64
 	)
 	defer span.End()
 
@@ -237,7 +237,7 @@ func (b *BlockRewardDeriver) processEpoch(ctx context.Context, epoch phase0.Epoc
 func (b *BlockRewardDeriver) processSlot(ctx context.Context, slot phase0.Slot) ([]*xatu.DecoratedEvent, error) {
 	ctx, span := observability.Tracer().Start(ctx,
 		"BlockRewardDeriver.processSlot",
-		trace.WithAttributes(attribute.Int64("slot", int64(slot))),
+		trace.WithAttributes(attribute.Int64("slot", int64(slot))), //nolint:gosec // slot fits int64
 	)
 	defer span.End()
 
@@ -282,13 +282,12 @@ func (b *BlockRewardDeriver) getBlockRewards(ctx context.Context, blockID string
 	}
 
 	if response == nil {
-		return nil, nil
+		return nil, errors.New("block rewards response is nil")
 	}
 
 	return response.Data, nil
 }
 
-//nolint:gosec // G115: gwei values are bounded by ClickHouse column schema.
 func (b *BlockRewardDeriver) createEventFromBlockReward(ctx context.Context, rewards *apiv1.BlockRewards, block *spec.VersionedSignedBeaconBlock) (*xatu.DecoratedEvent, error) {
 	// Make a clone of the metadata
 	metadata, ok := proto.Clone(b.clientMeta).(*xatu.ClientMeta)

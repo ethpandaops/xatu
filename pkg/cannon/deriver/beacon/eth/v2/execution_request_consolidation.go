@@ -166,6 +166,7 @@ func (b *ExecutionRequestConsolidationDeriver) run(rctx context.Context) {
 func (b *ExecutionRequestConsolidationDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
 	ctx, span := observability.Tracer().Start(ctx,
 		"ExecutionRequestConsolidationDeriver.processEpoch",
+		//nolint:gosec // G115: epoch is bounded well within int64 range
 		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))),
 	)
 	defer span.End()
@@ -194,6 +195,7 @@ func (b *ExecutionRequestConsolidationDeriver) processEpoch(ctx context.Context,
 func (b *ExecutionRequestConsolidationDeriver) processSlot(ctx context.Context, slot phase0.Slot) ([]*xatu.DecoratedEvent, error) {
 	ctx, span := observability.Tracer().Start(ctx,
 		"ExecutionRequestConsolidationDeriver.processSlot",
+		//nolint:gosec // G115: slot is bounded well within int64 range
 		trace.WithAttributes(attribute.Int64("slot", int64(slot))),
 	)
 	defer span.End()

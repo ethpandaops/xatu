@@ -32,6 +32,18 @@ type ConsensusConfig struct {
 	BeaconCommitteeConfig          v1.BeaconCommitteeDeriverConfig          `yaml:"beaconCommittee"`
 	BeaconSyncCommitteeConfig      v1.BeaconSyncCommitteeDeriverConfig      `yaml:"beaconSyncCommittee"`
 	BeaconBlockSyncAggregateConfig v2.BeaconBlockSyncAggregateDeriverConfig `yaml:"beaconBlockSyncAggregate"`
+
+	ExecutionRequestDepositConfig             v2.ExecutionRequestDepositDeriverConfig             `yaml:"executionRequestDeposit"`
+	ExecutionRequestWithdrawalConfig          v2.ExecutionRequestWithdrawalDeriverConfig          `yaml:"executionRequestWithdrawal"`
+	ExecutionRequestConsolidationConfig       v2.ExecutionRequestConsolidationDeriverConfig       `yaml:"executionRequestConsolidation"`
+	BlockRewardConfig                         v1.BlockRewardDeriverConfig                         `yaml:"blockReward"`
+	AttestationRewardConfig                   v1.AttestationRewardDeriverConfig                   `yaml:"attestationReward"`
+	SyncCommitteeRewardConfig                 v1.SyncCommitteeRewardDeriverConfig                 `yaml:"syncCommitteeReward"`
+	RandaoConfig                              v1.RandaoDeriverConfig                              `yaml:"randao"`
+	FinalityCheckpointConfig                  v1.FinalityCheckpointDeriverConfig                  `yaml:"finalityCheckpoint"`
+	BeaconStatePendingDepositConfig           v1.BeaconStatePendingDepositDeriverConfig           `yaml:"beaconStatePendingDeposit"`
+	BeaconStatePendingPartialWithdrawalConfig v1.BeaconStatePendingPartialWithdrawalDeriverConfig `yaml:"beaconStatePendingPartialWithdrawal"`
+	BeaconStatePendingConsolidationConfig     v1.BeaconStatePendingConsolidationDeriverConfig     `yaml:"beaconStatePendingConsolidation"`
 }
 
 func (c *Config) Validate() error {

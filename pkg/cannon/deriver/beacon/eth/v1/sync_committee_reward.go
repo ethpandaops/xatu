@@ -21,7 +21,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
+	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -214,8 +214,7 @@ func (b *SyncCommitteeRewardDeriver) processEpoch(
 ) ([]*xatu.DecoratedEvent, error) {
 	ctx, span := observability.Tracer().Start(ctx,
 		"SyncCommitteeRewardDeriver.processEpoch",
-		//nolint:gosec // epoch value will never overflow int64
-		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))),
+		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))), //nolint:gosec // epoch fits int64
 	)
 	defer span.End()
 

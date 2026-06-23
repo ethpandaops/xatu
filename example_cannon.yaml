@@ -75,6 +75,23 @@ derivers:
       enabled: true
       iterator:
         backfill: { enabled: false, toEpoch: 0 }
+    # ── Electra execution requests (extracted from the beacon block) ──
+    executionRequestDeposit:       { enabled: true }
+    executionRequestWithdrawal:    { enabled: true }
+    executionRequestConsolidation: { enabled: true }
+    # ── Rewards (beacon API) ──
+    blockReward:           { enabled: false }
+    # attestationReward: per-validator-per-epoch, very high volume — confirm storage before enabling
+    # attestationReward:  { enabled: false }
+    # syncCommitteeReward: per-member-per-slot, high volume — confirm storage before enabling
+    # syncCommitteeReward: { enabled: false }
+    # ── Beacon state metadata ──
+    randao:                { enabled: false }
+    finalityCheckpoint:    { enabled: false }
+    # ── Electra beacon-state queues ──
+    beaconStatePendingDeposit:           { enabled: false }
+    beaconStatePendingPartialWithdrawal: { enabled: false }
+    beaconStatePendingConsolidation:     { enabled: false }
 
   # ── Execution layer — canonical_execution_* datasets via cryo ──
   # maxRangeSize is tuned from benchmarking at block 20M: throughput rises with

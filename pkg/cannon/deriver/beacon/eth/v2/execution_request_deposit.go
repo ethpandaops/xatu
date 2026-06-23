@@ -46,8 +46,7 @@ func NewExecutionRequestDepositDeriver(log observability.ContextualLogger, confi
 	return &ExecutionRequestDepositDeriver{
 		log: log.WithFields(logrus.Fields{
 			"module": "cannon/event/beacon/eth/v2/execution_request_deposit",
-			//nolint:goconst // matches the conventional log field key used across derivers
-			"type": ExecutionRequestDepositDeriverName.String(),
+			"type":   ExecutionRequestDepositDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,
@@ -255,9 +254,17 @@ func (b *ExecutionRequestDepositDeriver) lookAhead(ctx context.Context, epochs [
 }
 
 func (b *ExecutionRequestDepositDeriver) getDeposits(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.ElectraExecutionRequestDeposit, error) {
+	// Execution requests only exist from Electra onwards.
+	if block.Version < spec.DataVersionElectra {
+		return []*xatuethv1.ElectraExecutionRequestDeposit{}, nil
+	}
+
 	requests, err := block.ExecutionRequests()
-	if err != nil || requests == nil {
-		// Blocks before the Electra fork do not carry execution requests.
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain execution requests")
+	}
+
+	if requests == nil {
 		return []*xatuethv1.ElectraExecutionRequestDeposit{}, nil
 	}
 

@@ -20,85 +20,118 @@ coordinator:
   # headers:
   #   authorization: Someb64Value
 
+# Ethereum node connection, grouped by layer.
+#   ethereum.beacon is ALWAYS required — every deriver reads the beacon node, and
+#     the EL iterator gates execution progress on CL finality (it never extracts
+#     past the CL-finalized execution block).
+#   ethereum.execution is required ONLY when at least one execution deriver is
+#     enabled; with derivers.execution all disabled you can omit it entirely.
 ethereum:
-  beaconNodeAddress: http://localhost:5052
-  # beaconNodeHeaders:
-  #   authorization: Someb64Value
-  # overrideNetworkName: mainnet
-  # blockCacheSize: 1000
-  # blockCacheTtl: 1h
-  # blockPreloadWorkers: 5
-  # blockPreloadQueueSize: 5000
+  # overrideNetworkName: mainnet     # network is derived from the beacon node if unset
+  beacon:
+    address: http://localhost:5052
+    # headers:
+    #   Authorization: Someb64Value
+    # blockCacheSize: 1000
+    # blockCacheTtl: 1h
+    # blockPreloadWorkers: 5
+    # blockPreloadQueueSize: 5000
+  execution:
+    address: http://localhost:8545   # EL archive node; cryo --rpc (creds may be embedded: https://user:pass@host)
 
-# derivers:
-#   attesterSlashing:
-#     enabled: true
-#   blsToExecutionChange:
-#     enabled: true
-#   deposit:
-#     enabled: true
-#   withdrawal:
-#     enabled: true
-#   executionTransaction:
-#     enabled: true
-#   proposerSlashing:
-#     enabled: true
-#   voluntaryExit:
-#     enabled: true
-#   blockClassification:
-#     enabled: false
-#   beaconSyncCommittee:
-#     enabled: true
-#     iterator:
-#       backfill:
-#         enabled: false
-#         toEpoch: 0
-#   beaconBlockSyncAggregate:
-#     enabled: true
-#     iterator:
-#       backfill:
-#         enabled: false
-#         toEpoch: 0
+# cryo runner — the binary + extraction settings shared by all execution
+# derivers. maxConcurrentChunks showed no benefit in benchmarking; leave at 0.
+# requestsPerSecond 0 = unlimited (cap only to be polite on a shared RPC node;
+# the trace/read datasets are node-compute-bound, not rate-bound).
+cryo:
+  binaryPath: cryo
+  outputDir: /tmp/xatu-cannon-cryo
+  compression: "zstd 1"          # avoid lz4 (parquet-go mis-decodes it)
+  requestsPerSecond: 0
+  maxConcurrentChunks: 0
 
+# Derivers are grouped by layer.
+derivers:
+  # ── Consensus layer — derive from the beacon chain ──
+  consensus:
+    attesterSlashing:      { enabled: true }
+    proposerSlashing:      { enabled: true }
+    blsToExecutionChange:  { enabled: true }
+    deposit:               { enabled: true }
+    voluntaryExit:         { enabled: true }
+    withdrawal:            { enabled: true }
+    executionTransaction:  { enabled: true }    # EL txs extracted from the beacon block
+    beaconBlock:           { enabled: true }
+    beaconBlobSidecar:     { enabled: true }
+    proposerDuty:          { enabled: true }
+    elaboratedAttestation: { enabled: true }
+    beaconValidators:      { enabled: true }
+    beaconCommittee:       { enabled: true }
+    beaconSyncCommittee:
+      enabled: true
+      iterator:
+        backfill: { enabled: false, toEpoch: 0 }
+    beaconBlockSyncAggregate:
+      enabled: true
+      iterator:
+        backfill: { enabled: false, toEpoch: 0 }
+
+  # ── Execution layer — canonical_execution_* datasets via cryo ──
+  # maxRangeSize is tuned from benchmarking at block 20M: throughput rises with
+  # range for overhead-bound datasets and is flat for the node-bound state-reads,
+  # so high-cardinality datasets use a smaller range to bound per-flush memory
+  # (memory ~= maxRangeSize * rows_per_block). chunkSize (rows per event)
+  # defaults to 100. toBlock 0 = backfill to genesis.
+  execution:
+    # low cardinality → larger range
+    block:           { enabled: true, iterator: { maxRangeSize: 500, backfill: { enabled: true, toBlock: 0 } } }
+    transaction:     { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+    logs:            { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+    contracts:       { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+    fourByteCounts:  { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+    erc20Transfers:  { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+    erc721Transfers: { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+    # state diffs (trace_) → moderate range
+    balanceDiffs:    { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+    storageDiffs:    { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+    nonceDiffs:      { enabled: true, iterator: { maxRangeSize: 250, backfill: { enabled: true, toBlock: 0 } } }
+    # high cardinality / node-bound (trace_) → small range bounds the flush
+    traces:             { enabled: true, iterator: { maxRangeSize: 100, backfill: { enabled: true, toBlock: 0 } } }
+    nativeTransfers:    { enabled: true, iterator: { maxRangeSize: 100, backfill: { enabled: true, toBlock: 0 } } }
+    addressAppearances: { enabled: true, iterator: { maxRangeSize: 100, backfill: { enabled: true, toBlock: 0 } } }
+    # state reads (trace_) — block 0 is untraceable, so the backfill floor is
+    # auto-clamped to >=1 regardless of toBlock
+    balanceReads:    { enabled: true, iterator: { maxRangeSize: 100, backfill: { enabled: true, toBlock: 0 } } }
+    storageReads:    { enabled: true, iterator: { maxRangeSize: 100, backfill: { enabled: true, toBlock: 0 } } }
+    nonceReads:      { enabled: true, iterator: { maxRangeSize: 100, backfill: { enabled: true, toBlock: 0 } } }
+
+# Cannon writes BOTH consensus and execution canonical_* events directly to
+# clickhouse. The xatu-server output (type: xatu) is rejected at config
+# validation — use a clickhouse output.
 outputs:
-- name: http-sink
-  type: http
+- name: clickhouse-sink
+  type: clickhouse
   # filter:
   #   eventNames:
   #   - BEACON_API_ETH_V1_EVENTS_BLOCK_DEPOSIT
   config:
-    address: http://localhost:8080
-    headers:
-      authorization: Someb64Value
-    maxQueueSize: 51200
-    batchTimeout: 5s
-    exportTimeout: 30s
-    maxExportBatchSize: 512
-- name: xatu-server
-  type: xatu
-  # filter:
-  #   eventNames:
-  #   - BEACON_API_ETH_V1_EVENTS_BLOCK_DEPOSIT
-  config:
-    address: localhost:8080
-    tls: false
-    headers:
-      authorization: Someb64Value
-    maxQueueSize: 51200
-    batchTimeout: 5s
-    exportTimeout: 30s
-    maxExportBatchSize: 512
-- name: kafka-sink
-  type: kafka
-  config:
-    brokers: localhost:19092
-    topic: events
-    flushFrequency: 1s
-    flushBytes: 1000000
-    maxRetries: 6
-    compression: snappy
-    requiredAcks: leader
-    partitioning: random
+    dsn: clickhouse://default:password@localhost:9000/default
+    # Cannon applies its own defaults (metrics subsystem + canonical_ route
+    # prefix restriction). On every canonical_ table it also force-defaults two
+    # insertSettings, because cannon is a cursor-based writer (it advances its
+    # Postgres cursor once an insert succeeds) and a "success" must mean the data
+    # is actually durable — otherwise rows lost in async forwarding leave gaps the
+    # cannon never retries:
+    #   - insert_quorum=auto               (majority of replicas per shard)
+    #   - distributed_foreground_insert=1  (write lands on the target shard
+    #                                       synchronously, not best-effort async)
+    # Override per-table / per-default here. The common override is a SINGLE
+    # replica per shard, where insert_quorum=auto has no peer to form a quorum
+    # with and just adds contention:
+    #
+    # defaults:
+    #   insertSettings:
+    #     insert_quorum: 0
 
 tracing:
   enabled: false

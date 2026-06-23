@@ -197,11 +197,36 @@ enum CannonType {
   BEACON_API_ETH_V1_BEACON_COMMITTEE = 13;
   BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE = 14;
   BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE = 15;
+  EXECUTION_CANONICAL_BLOCK = 16;
+  EXECUTION_CANONICAL_TRANSACTION = 17;
+  EXECUTION_CANONICAL_LOGS = 18;
+  EXECUTION_CANONICAL_TRACES = 19;
+  EXECUTION_CANONICAL_NATIVE_TRANSFERS = 20;
+  EXECUTION_CANONICAL_ERC20_TRANSFERS = 21;
+  EXECUTION_CANONICAL_ERC721_TRANSFERS = 22;
+  EXECUTION_CANONICAL_CONTRACTS = 23;
+  EXECUTION_CANONICAL_BALANCE_DIFFS = 24;
+  EXECUTION_CANONICAL_STORAGE_DIFFS = 25;
+  EXECUTION_CANONICAL_NONCE_DIFFS = 26;
+  EXECUTION_CANONICAL_BALANCE_READS = 27;
+  EXECUTION_CANONICAL_STORAGE_READS = 28;
+  EXECUTION_CANONICAL_NONCE_READS = 29;
+  EXECUTION_CANONICAL_FOUR_BYTE_COUNTS = 30;
+  EXECUTION_CANONICAL_ADDRESS_APPEARANCES = 31;
 }
 
 message BackfillingCheckpointMarker {
   uint64 finalized_epoch = 1;
   int64 backfill_epoch = 2;
+}
+
+// BackfillingBlockMarker tracks EL cannon progress in execution-block-number
+// space. finalized_block is forward (head) progress, bounded by the
+// CL-finalized execution block; backfill_block is backward progress toward the
+// floor (genesis / configured toBlock). backfill_block is -1 until started.
+message BackfillingBlockMarker {
+  uint64 finalized_block = 1;
+  int64 backfill_block = 2;
 }
 
 message CannonLocationEthV2BeaconBlockVoluntaryExit {
@@ -275,6 +300,29 @@ message CannonLocationEthV2BeaconBlockSyncAggregate {
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
 }
 
+message CannonLocationExecutionCanonicalBlock {
+  BackfillingBlockMarker backfilling_block_marker = 1;
+}
+
+message CannonLocationExecutionCanonicalTransaction {
+  BackfillingBlockMarker backfilling_block_marker = 1;
+}
+
+message CannonLocationExecutionCanonicalLogs { BackfillingBlockMarker backfilling_block_marker = 1; }
+message CannonLocationExecutionCanonicalTraces { BackfillingBlockMarker backfilling_block_marker = 1; }
+message CannonLocationExecutionCanonicalNativeTransfers { BackfillingBlockMarker backfilling_block_marker = 1; }
+message CannonLocationExecutionCanonicalErc20Transfers { BackfillingBlockMarker backfilling_block_marker = 1; }
+message CannonLocationExecutionCanonicalErc721Transfers { BackfillingBlockMarker backfilling_block_marker = 1; }
+message CannonLocationExecutionCanonicalContracts { BackfillingBlockMarker backfilling_block_marker = 1; }
+message CannonLocationExecutionCanonicalBalanceDiffs { BackfillingBlockMarker backfilling_block_marker = 1; }
+message CannonLocationExecutionCanonicalStorageDiffs { BackfillingBlockMarker backfilling_block_marker = 1; }
+message CannonLocationExecutionCanonicalNonceDiffs { BackfillingBlockMarker backfilling_block_marker = 1; }
+message CannonLocationExecutionCanonicalBalanceReads { BackfillingBlockMarker backfilling_block_marker = 1; }
+message CannonLocationExecutionCanonicalStorageReads { BackfillingBlockMarker backfilling_block_marker = 1; }
+message CannonLocationExecutionCanonicalNonceReads { BackfillingBlockMarker backfilling_block_marker = 1; }
+message CannonLocationExecutionCanonicalFourByteCounts { BackfillingBlockMarker backfilling_block_marker = 1; }
+message CannonLocationExecutionCanonicalAddressAppearances { BackfillingBlockMarker backfilling_block_marker = 1; }
+
 message CannonLocation {
   string network_id = 1;
   CannonType type = 2;
@@ -318,6 +366,38 @@ message CannonLocation {
         [ json_name = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE" ];
     CannonLocationEthV2BeaconBlockSyncAggregate eth_v2_beacon_block_sync_aggregate = 18
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE" ];
+    CannonLocationExecutionCanonicalBlock execution_canonical_block = 19
+        [ json_name = "EXECUTION_CANONICAL_BLOCK" ];
+    CannonLocationExecutionCanonicalTransaction execution_canonical_transaction = 20
+        [ json_name = "EXECUTION_CANONICAL_TRANSACTION" ];
+    CannonLocationExecutionCanonicalLogs execution_canonical_logs = 21
+        [ json_name = "EXECUTION_CANONICAL_LOGS" ];
+    CannonLocationExecutionCanonicalTraces execution_canonical_traces = 22
+        [ json_name = "EXECUTION_CANONICAL_TRACES" ];
+    CannonLocationExecutionCanonicalNativeTransfers execution_canonical_native_transfers = 23
+        [ json_name = "EXECUTION_CANONICAL_NATIVE_TRANSFERS" ];
+    CannonLocationExecutionCanonicalErc20Transfers execution_canonical_erc20_transfers = 24
+        [ json_name = "EXECUTION_CANONICAL_ERC20_TRANSFERS" ];
+    CannonLocationExecutionCanonicalErc721Transfers execution_canonical_erc721_transfers = 25
+        [ json_name = "EXECUTION_CANONICAL_ERC721_TRANSFERS" ];
+    CannonLocationExecutionCanonicalContracts execution_canonical_contracts = 26
+        [ json_name = "EXECUTION_CANONICAL_CONTRACTS" ];
+    CannonLocationExecutionCanonicalBalanceDiffs execution_canonical_balance_diffs = 27
+        [ json_name = "EXECUTION_CANONICAL_BALANCE_DIFFS" ];
+    CannonLocationExecutionCanonicalStorageDiffs execution_canonical_storage_diffs = 28
+        [ json_name = "EXECUTION_CANONICAL_STORAGE_DIFFS" ];
+    CannonLocationExecutionCanonicalNonceDiffs execution_canonical_nonce_diffs = 29
+        [ json_name = "EXECUTION_CANONICAL_NONCE_DIFFS" ];
+    CannonLocationExecutionCanonicalBalanceReads execution_canonical_balance_reads = 30
+        [ json_name = "EXECUTION_CANONICAL_BALANCE_READS" ];
+    CannonLocationExecutionCanonicalStorageReads execution_canonical_storage_reads = 31
+        [ json_name = "EXECUTION_CANONICAL_STORAGE_READS" ];
+    CannonLocationExecutionCanonicalNonceReads execution_canonical_nonce_reads = 32
+        [ json_name = "EXECUTION_CANONICAL_NONCE_READS" ];
+    CannonLocationExecutionCanonicalFourByteCounts execution_canonical_four_byte_counts = 33
+        [ json_name = "EXECUTION_CANONICAL_FOUR_BYTE_COUNTS" ];
+    CannonLocationExecutionCanonicalAddressAppearances execution_canonical_address_appearances = 34
+        [ json_name = "EXECUTION_CANONICAL_ADDRESS_APPEARANCES" ];
   }
 }
 

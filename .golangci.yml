@@ -81,6 +81,13 @@ linters:
           - gosec
           - wsl
         path: _test\.go
+      # EL cannon code (derivers + routes) repeats cryo/ClickHouse column names
+      # (a fixed external vocabulary) across many per-dataset files; goconst flags
+      # the shared names but turning column identifiers into Go constants adds no
+      # real value.
+      - linters:
+          - goconst
+        path: execution/
     paths:
       - third_party$
       - builtin$

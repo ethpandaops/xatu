@@ -2024,6 +2024,22 @@ message Event {
     BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION = 89;
     EXECUTION_STATE_SIZE_DELTA = 90;
     EXECUTION_MPT_DEPTH = 91;
+    EXECUTION_CANONICAL_BLOCK = 92;
+    EXECUTION_CANONICAL_TRANSACTION = 93;
+    EXECUTION_CANONICAL_LOGS = 94;
+    EXECUTION_CANONICAL_TRACES = 95;
+    EXECUTION_CANONICAL_NATIVE_TRANSFERS = 96;
+    EXECUTION_CANONICAL_ERC20_TRANSFERS = 97;
+    EXECUTION_CANONICAL_ERC721_TRANSFERS = 98;
+    EXECUTION_CANONICAL_CONTRACTS = 99;
+    EXECUTION_CANONICAL_BALANCE_DIFFS = 100;
+    EXECUTION_CANONICAL_STORAGE_DIFFS = 101;
+    EXECUTION_CANONICAL_NONCE_DIFFS = 102;
+    EXECUTION_CANONICAL_BALANCE_READS = 103;
+    EXECUTION_CANONICAL_STORAGE_READS = 104;
+    EXECUTION_CANONICAL_NONCE_READS = 105;
+    EXECUTION_CANONICAL_FOUR_BYTE_COUNTS = 106;
+    EXECUTION_CANONICAL_ADDRESS_APPEARANCES = 107;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2219,6 +2235,241 @@ message ExecutionMPTDepth {
   map<uint32, uint64> storage_deleted_nodes = 19 [ json_name = "storage_deleted_nodes" ];
   // StorageDeletedBytes is a map of trie depth to bytes deleted at that depth in storage tries.
   map<uint32, uint64> storage_deleted_bytes = 20 [ json_name = "storage_deleted_bytes" ];
+}
+
+// ExecutionCanonicalBlock is a batch (chunk) of canonical execution-layer
+// blocks derived by EL cannon from the cryo `blocks` dataset. A single
+// DecoratedEvent carries many rows; the clickhouse route flattens them to one
+// row per block in canonical_execution_block.
+message ExecutionCanonicalBlock {
+  repeated ExecutionBlock blocks = 1 [ json_name = "blocks" ];
+}
+
+message ExecutionBlock {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  string block_hash = 2 [ json_name = "block_hash" ];
+  google.protobuf.Timestamp block_date_time = 3
+      [ json_name = "block_date_time" ];
+  google.protobuf.StringValue author = 4 [ json_name = "author" ];
+  google.protobuf.UInt64Value gas_used = 5 [ json_name = "gas_used" ];
+  google.protobuf.UInt64Value gas_limit = 6 [ json_name = "gas_limit" ];
+  google.protobuf.StringValue extra_data = 7 [ json_name = "extra_data" ];
+  google.protobuf.StringValue extra_data_string = 8
+      [ json_name = "extra_data_string" ];
+  google.protobuf.UInt64Value base_fee_per_gas = 9
+      [ json_name = "base_fee_per_gas" ];
+}
+
+// ExecutionCanonicalTransaction is a batch (chunk) of canonical execution-layer
+// transactions derived by EL cannon from the cryo `transactions` dataset.
+message ExecutionCanonicalTransaction {
+  repeated ExecutionTransaction transactions = 1 [ json_name = "transactions" ];
+}
+
+message ExecutionTransaction {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint64 nonce = 4 [ json_name = "nonce" ];
+  string from_address = 5 [ json_name = "from_address" ];
+  google.protobuf.StringValue to_address = 6 [ json_name = "to_address" ];
+  // value is the transfer value as a base-10 decimal string (UInt256).
+  string value = 7 [ json_name = "value" ];
+  google.protobuf.StringValue input = 8 [ json_name = "input" ];
+  uint64 gas_limit = 9 [ json_name = "gas_limit" ];
+  uint64 gas_used = 10 [ json_name = "gas_used" ];
+  uint64 gas_price = 11 [ json_name = "gas_price" ];
+  uint32 transaction_type = 12 [ json_name = "transaction_type" ];
+  uint64 max_priority_fee_per_gas = 13 [ json_name = "max_priority_fee_per_gas" ];
+  uint64 max_fee_per_gas = 14 [ json_name = "max_fee_per_gas" ];
+  bool success = 15 [ json_name = "success" ];
+  uint32 n_input_bytes = 16 [ json_name = "n_input_bytes" ];
+  uint32 n_input_zero_bytes = 17 [ json_name = "n_input_zero_bytes" ];
+  uint32 n_input_nonzero_bytes = 18 [ json_name = "n_input_nonzero_bytes" ];
+}
+
+// EL cannon canonical execution datasets (cryo). Each ExecutionCanonical<X> is
+// a chunk; the row message carries internal_index — a 1-based ordinal within
+// (block_number, transaction_hash), stamped in cryo's parquet row order because
+// ClickHouse does not preserve insert ordering across a cluster. UInt256/UInt128
+// values travel as decimal/hex strings and are parsed in the clickhouse route.
+
+message ExecutionCanonicalLogs { repeated ExecutionLog logs = 1 [ json_name = "logs" ]; }
+message ExecutionLog {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  uint32 log_index = 5 [ json_name = "log_index" ];
+  string address = 6 [ json_name = "address" ];
+  string topic0 = 7 [ json_name = "topic0" ];
+  google.protobuf.StringValue topic1 = 8 [ json_name = "topic1" ];
+  google.protobuf.StringValue topic2 = 9 [ json_name = "topic2" ];
+  google.protobuf.StringValue topic3 = 10 [ json_name = "topic3" ];
+  google.protobuf.StringValue data = 11 [ json_name = "data" ];
+}
+
+message ExecutionCanonicalTraces { repeated ExecutionTrace traces = 1 [ json_name = "traces" ]; }
+message ExecutionTrace {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string action_from = 5 [ json_name = "action_from" ];
+  google.protobuf.StringValue action_to = 6 [ json_name = "action_to" ];
+  string action_value = 7 [ json_name = "action_value" ];
+  uint64 action_gas = 8 [ json_name = "action_gas" ];
+  google.protobuf.StringValue action_input = 9 [ json_name = "action_input" ];
+  string action_call_type = 10 [ json_name = "action_call_type" ];
+  google.protobuf.StringValue action_init = 11 [ json_name = "action_init" ];
+  string action_reward_type = 12 [ json_name = "action_reward_type" ];
+  string action_type = 13 [ json_name = "action_type" ];
+  uint64 result_gas_used = 14 [ json_name = "result_gas_used" ];
+  google.protobuf.StringValue result_output = 15 [ json_name = "result_output" ];
+  google.protobuf.StringValue result_code = 16 [ json_name = "result_code" ];
+  google.protobuf.StringValue result_address = 17 [ json_name = "result_address" ];
+  google.protobuf.StringValue trace_address = 18 [ json_name = "trace_address" ];
+  uint32 subtraces = 19 [ json_name = "subtraces" ];
+  google.protobuf.StringValue error = 20 [ json_name = "error" ];
+}
+
+message ExecutionCanonicalNativeTransfers { repeated ExecutionNativeTransfer native_transfers = 1 [ json_name = "native_transfers" ]; }
+message ExecutionNativeTransfer {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  uint64 transfer_index = 5 [ json_name = "transfer_index" ];
+  string from_address = 6 [ json_name = "from_address" ];
+  string to_address = 7 [ json_name = "to_address" ];
+  string value = 8 [ json_name = "value" ];
+}
+
+message ExecutionCanonicalErc20Transfers { repeated ExecutionErc20Transfer erc20_transfers = 1 [ json_name = "erc20_transfers" ]; }
+message ExecutionErc20Transfer {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  uint64 log_index = 5 [ json_name = "log_index" ];
+  string erc20 = 6 [ json_name = "erc20" ];
+  string from_address = 7 [ json_name = "from_address" ];
+  string to_address = 8 [ json_name = "to_address" ];
+  string value = 9 [ json_name = "value" ];
+}
+
+message ExecutionCanonicalErc721Transfers { repeated ExecutionErc721Transfer erc721_transfers = 1 [ json_name = "erc721_transfers" ]; }
+message ExecutionErc721Transfer {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  uint64 log_index = 5 [ json_name = "log_index" ];
+  string erc721 = 6 [ json_name = "erc721" ];
+  string from_address = 7 [ json_name = "from_address" ];
+  string to_address = 8 [ json_name = "to_address" ];
+  string token = 9 [ json_name = "token" ];
+}
+
+message ExecutionCanonicalContracts { repeated ExecutionContract contracts = 1 [ json_name = "contracts" ]; }
+message ExecutionContract {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  string transaction_hash = 2 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 3 [ json_name = "internal_index" ];
+  uint32 create_index = 4 [ json_name = "create_index" ];
+  string contract_address = 5 [ json_name = "contract_address" ];
+  string deployer = 6 [ json_name = "deployer" ];
+  string factory = 7 [ json_name = "factory" ];
+  string init_code = 8 [ json_name = "init_code" ];
+  google.protobuf.StringValue code = 9 [ json_name = "code" ];
+  string init_code_hash = 10 [ json_name = "init_code_hash" ];
+  uint32 n_init_code_bytes = 11 [ json_name = "n_init_code_bytes" ];
+  uint32 n_code_bytes = 12 [ json_name = "n_code_bytes" ];
+  string code_hash = 13 [ json_name = "code_hash" ];
+}
+
+message ExecutionCanonicalBalanceDiffs { repeated ExecutionBalanceDiff balance_diffs = 1 [ json_name = "balance_diffs" ]; }
+message ExecutionBalanceDiff {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string address = 5 [ json_name = "address" ];
+  string from_value = 6 [ json_name = "from_value" ];
+  string to_value = 7 [ json_name = "to_value" ];
+}
+
+message ExecutionCanonicalStorageDiffs { repeated ExecutionStorageDiff storage_diffs = 1 [ json_name = "storage_diffs" ]; }
+message ExecutionStorageDiff {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string address = 5 [ json_name = "address" ];
+  string slot = 6 [ json_name = "slot" ];
+  string from_value = 7 [ json_name = "from_value" ];
+  string to_value = 8 [ json_name = "to_value" ];
+}
+
+message ExecutionCanonicalNonceDiffs { repeated ExecutionNonceDiff nonce_diffs = 1 [ json_name = "nonce_diffs" ]; }
+message ExecutionNonceDiff {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string address = 5 [ json_name = "address" ];
+  uint64 from_value = 6 [ json_name = "from_value" ];
+  uint64 to_value = 7 [ json_name = "to_value" ];
+}
+
+message ExecutionCanonicalBalanceReads { repeated ExecutionBalanceRead balance_reads = 1 [ json_name = "balance_reads" ]; }
+message ExecutionBalanceRead {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string address = 5 [ json_name = "address" ];
+  string balance = 6 [ json_name = "balance" ];
+}
+
+message ExecutionCanonicalStorageReads { repeated ExecutionStorageRead storage_reads = 1 [ json_name = "storage_reads" ]; }
+message ExecutionStorageRead {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string contract_address = 5 [ json_name = "contract_address" ];
+  string slot = 6 [ json_name = "slot" ];
+  string value = 7 [ json_name = "value" ];
+}
+
+message ExecutionCanonicalNonceReads { repeated ExecutionNonceRead nonce_reads = 1 [ json_name = "nonce_reads" ]; }
+message ExecutionNonceRead {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string address = 5 [ json_name = "address" ];
+  uint64 nonce = 6 [ json_name = "nonce" ];
+}
+
+message ExecutionCanonicalFourByteCounts { repeated ExecutionFourByteCount four_byte_counts = 1 [ json_name = "four_byte_counts" ]; }
+message ExecutionFourByteCount {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  string signature = 4 [ json_name = "signature" ];
+  uint64 size = 5 [ json_name = "size" ];
+  uint64 count = 6 [ json_name = "count" ];
+}
+
+message ExecutionCanonicalAddressAppearances { repeated ExecutionAddressAppearance address_appearances = 1 [ json_name = "address_appearances" ]; }
+message ExecutionAddressAppearance {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  string transaction_hash = 2 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 3 [ json_name = "internal_index" ];
+  string address = 4 [ json_name = "address" ];
+  string relationship = 5 [ json_name = "relationship" ];
 }
 
 // DecoratedEvent is an event that has been decorated with additional
@@ -2428,6 +2679,38 @@ message DecoratedEvent {
         [ json_name = "EXECUTION_STATE_SIZE_DELTA" ];
     ExecutionMPTDepth execution_mpt_depth = 212
         [ json_name = "EXECUTION_MPT_DEPTH" ];
+    ExecutionCanonicalBlock execution_canonical_block = 213
+        [ json_name = "EXECUTION_CANONICAL_BLOCK" ];
+    ExecutionCanonicalTransaction execution_canonical_transaction = 214
+        [ json_name = "EXECUTION_CANONICAL_TRANSACTION" ];
+    ExecutionCanonicalLogs execution_canonical_logs = 215
+        [ json_name = "EXECUTION_CANONICAL_LOGS" ];
+    ExecutionCanonicalTraces execution_canonical_traces = 216
+        [ json_name = "EXECUTION_CANONICAL_TRACES" ];
+    ExecutionCanonicalNativeTransfers execution_canonical_native_transfers = 217
+        [ json_name = "EXECUTION_CANONICAL_NATIVE_TRANSFERS" ];
+    ExecutionCanonicalErc20Transfers execution_canonical_erc20_transfers = 218
+        [ json_name = "EXECUTION_CANONICAL_ERC20_TRANSFERS" ];
+    ExecutionCanonicalErc721Transfers execution_canonical_erc721_transfers = 219
+        [ json_name = "EXECUTION_CANONICAL_ERC721_TRANSFERS" ];
+    ExecutionCanonicalContracts execution_canonical_contracts = 220
+        [ json_name = "EXECUTION_CANONICAL_CONTRACTS" ];
+    ExecutionCanonicalBalanceDiffs execution_canonical_balance_diffs = 221
+        [ json_name = "EXECUTION_CANONICAL_BALANCE_DIFFS" ];
+    ExecutionCanonicalStorageDiffs execution_canonical_storage_diffs = 222
+        [ json_name = "EXECUTION_CANONICAL_STORAGE_DIFFS" ];
+    ExecutionCanonicalNonceDiffs execution_canonical_nonce_diffs = 223
+        [ json_name = "EXECUTION_CANONICAL_NONCE_DIFFS" ];
+    ExecutionCanonicalBalanceReads execution_canonical_balance_reads = 224
+        [ json_name = "EXECUTION_CANONICAL_BALANCE_READS" ];
+    ExecutionCanonicalStorageReads execution_canonical_storage_reads = 225
+        [ json_name = "EXECUTION_CANONICAL_STORAGE_READS" ];
+    ExecutionCanonicalNonceReads execution_canonical_nonce_reads = 226
+        [ json_name = "EXECUTION_CANONICAL_NONCE_READS" ];
+    ExecutionCanonicalFourByteCounts execution_canonical_four_byte_counts = 227
+        [ json_name = "EXECUTION_CANONICAL_FOUR_BYTE_COUNTS" ];
+    ExecutionCanonicalAddressAppearances execution_canonical_address_appearances = 228
+        [ json_name = "EXECUTION_CANONICAL_ADDRESS_APPEARANCES" ];
   };
 }
 

@@ -19,6 +19,8 @@ import "pkg/proto/eth/v1/beacon_block.proto";
 import "pkg/proto/eth/v1/execution_engine.proto";
 import "pkg/proto/eth/v1/validator.proto";
 import "pkg/proto/eth/v1/sync_committee.proto";
+import "pkg/proto/eth/v1/execution_requests.proto";
+import "pkg/proto/eth/v1/checkpoint.proto";
 
 import "pkg/proto/mevrelay/bids.proto";
 import "pkg/proto/mevrelay/relay.proto";
@@ -147,6 +149,109 @@ message SyncAggregateData {
   // ParticipationCount is the number of validators that participated (0-512).
   google.protobuf.UInt64Value participation_count = 5
       [ json_name = "participation_count" ];
+}
+
+// BlockRewardData contains the proposer reward breakdown for a single block,
+// derived from the beacon API /eth/v1/beacon/rewards/blocks/{block_id} endpoint.
+message BlockRewardData {
+  // ProposerIndex is the validator index of the block proposer.
+  google.protobuf.UInt64Value proposer_index = 1 [ json_name = "proposer_index" ];
+  // Total is the total block reward in gwei (attestations + sync aggregate +
+  // proposer slashings + attester slashings).
+  google.protobuf.UInt64Value total = 2 [ json_name = "total" ];
+  // Attestations is the reward from including attestations in gwei.
+  google.protobuf.UInt64Value attestations = 3 [ json_name = "attestations" ];
+  // SyncAggregate is the reward from including the sync aggregate in gwei.
+  google.protobuf.UInt64Value sync_aggregate = 4 [ json_name = "sync_aggregate" ];
+  // ProposerSlashings is the reward from including proposer slashings in gwei.
+  google.protobuf.UInt64Value proposer_slashings = 5 [ json_name = "proposer_slashings" ];
+  // AttesterSlashings is the reward from including attester slashings in gwei.
+  google.protobuf.UInt64Value attester_slashings = 6 [ json_name = "attester_slashings" ];
+}
+
+// AttestationRewardData contains the per-validator attestation reward components
+// for a single epoch, derived from the beacon API
+// /eth/v1/beacon/rewards/attestations/{epoch} endpoint.
+message AttestationRewardData {
+  // ValidatorIndex is the validator index the reward applies to.
+  google.protobuf.UInt64Value validator_index = 1 [ json_name = "validator_index" ];
+  // Head is the reward for correctly attesting to the head in gwei.
+  google.protobuf.Int64Value head = 2 [ json_name = "head" ];
+  // Target is the reward for correctly attesting to the target in gwei.
+  google.protobuf.Int64Value target = 3 [ json_name = "target" ];
+  // Source is the reward for correctly attesting to the source in gwei.
+  google.protobuf.Int64Value source = 4 [ json_name = "source" ];
+  // InclusionDelay is the reward for inclusion delay in gwei.
+  google.protobuf.UInt64Value inclusion_delay = 5 [ json_name = "inclusion_delay" ];
+  // Inactivity is the inactivity penalty in gwei.
+  google.protobuf.Int64Value inactivity = 6 [ json_name = "inactivity" ];
+}
+
+// SyncCommitteeRewardData contains a single sync committee member's reward for a
+// block, derived from the beacon API
+// /eth/v1/beacon/rewards/sync_committee/{block_id} endpoint.
+message SyncCommitteeRewardData {
+  // ValidatorIndex is the validator index the reward applies to.
+  google.protobuf.UInt64Value validator_index = 1 [ json_name = "validator_index" ];
+  // Reward is the sync committee reward in gwei (can be negative as a penalty).
+  google.protobuf.Int64Value reward = 2 [ json_name = "reward" ];
+}
+
+// RandaoData contains the RANDAO mix for an epoch, derived from the beacon API
+// /eth/v1/beacon/states/{state_id}/randao endpoint.
+message RandaoData {
+  // Randao is the RANDAO mix (hex encoded with 0x prefix).
+  string randao = 1 [ json_name = "randao" ];
+}
+
+// FinalityCheckpointData contains the finality checkpoints for a state, derived
+// from the beacon API /eth/v1/beacon/states/{state_id}/finality_checkpoints
+// endpoint.
+message FinalityCheckpointData {
+  // PreviousJustified is the previous justified checkpoint.
+  xatu.eth.v1.Checkpoint previous_justified = 1 [ json_name = "previous_justified" ];
+  // CurrentJustified is the current justified checkpoint.
+  xatu.eth.v1.Checkpoint current_justified = 2 [ json_name = "current_justified" ];
+  // Finalized is the finalized checkpoint.
+  xatu.eth.v1.Checkpoint finalized = 3 [ json_name = "finalized" ];
+}
+
+// PendingDepositData contains a single entry from the Electra pending deposits
+// queue, derived from the beacon API
+// /eth/v1/beacon/states/{state_id}/pending_deposits endpoint.
+message PendingDepositData {
+  // Pubkey is the public key of the validator (hex encoded with 0x prefix).
+  string pubkey = 1 [ json_name = "pubkey" ];
+  // WithdrawalCredentials are the withdrawal credentials (hex encoded with 0x prefix).
+  string withdrawal_credentials = 2 [ json_name = "withdrawal_credentials" ];
+  // Amount is the deposit amount in gwei.
+  google.protobuf.UInt64Value amount = 3 [ json_name = "amount" ];
+  // Signature is the deposit signature (hex encoded with 0x prefix).
+  string signature = 4 [ json_name = "signature" ];
+  // Slot is the slot at which the deposit was queued.
+  google.protobuf.UInt64Value slot = 5 [ json_name = "slot" ];
+}
+
+// PendingPartialWithdrawalData contains a single entry from the Electra pending
+// partial withdrawals queue, derived from the beacon API
+// /eth/v1/beacon/states/{state_id}/pending_partial_withdrawals endpoint.
+message PendingPartialWithdrawalData {
+  // ValidatorIndex is the validator index the withdrawal applies to.
+  google.protobuf.UInt64Value validator_index = 1 [ json_name = "validator_index" ];
+  // Amount is the partial withdrawal amount in gwei.
+  google.protobuf.UInt64Value amount = 2 [ json_name = "amount" ];
+  // WithdrawableEpoch is the epoch at which the withdrawal becomes withdrawable.
+  google.protobuf.UInt64Value withdrawable_epoch = 3 [ json_name = "withdrawable_epoch" ];
+}
+
+// PendingConsolidationData contains a single entry from the Electra pending
+// consolidations queue, derived from the beacon API
+// /eth/v1/beacon/states/{state_id}/pending_consolidations endpoint.
+message PendingConsolidationData {
+  // SourceIndex is the validator index of the consolidation source.
+  google.protobuf.UInt64Value source_index = 1 [ json_name = "source_index" ];
+  // TargetIndex is the validator index of the consolidation target.
+  google.protobuf.UInt64Value target_index = 2 [ json_name = "target_index" ];
 }
 
 message BlockIdentifier {
@@ -739,6 +844,136 @@ message ClientMeta {
     // SyncCommitteePeriod is the sync committee period number (epoch / 256).
     google.protobuf.UInt64Value sync_committee_period = 2
         [ json_name = "sync_committee_period" ];
+  }
+
+  // AdditionalEthV2BeaconBlockExecutionRequestDepositData contains additional
+  // data on EIP-6110 execution request deposits derived from beacon blocks.
+  message AdditionalEthV2BeaconBlockExecutionRequestDepositData {
+    // Block contains the information about the block that we are deriving the
+    // execution request deposit from.
+    BlockIdentifier block = 1;
+
+    // PositionInBlock is the index of the deposit within the block's execution
+    // requests.
+    google.protobuf.UInt64Value position_in_block = 2
+        [ json_name = "position_in_block" ];
+  }
+
+  // AdditionalEthV2BeaconBlockExecutionRequestWithdrawalData contains additional
+  // data on EIP-7002 execution request withdrawals derived from beacon blocks.
+  message AdditionalEthV2BeaconBlockExecutionRequestWithdrawalData {
+    // Block contains the information about the block that we are deriving the
+    // execution request withdrawal from.
+    BlockIdentifier block = 1;
+
+    // PositionInBlock is the index of the withdrawal within the block's
+    // execution requests.
+    google.protobuf.UInt64Value position_in_block = 2
+        [ json_name = "position_in_block" ];
+  }
+
+  // AdditionalEthV2BeaconBlockExecutionRequestConsolidationData contains
+  // additional data on EIP-7251 execution request consolidations derived from
+  // beacon blocks.
+  message AdditionalEthV2BeaconBlockExecutionRequestConsolidationData {
+    // Block contains the information about the block that we are deriving the
+    // execution request consolidation from.
+    BlockIdentifier block = 1;
+
+    // PositionInBlock is the index of the consolidation within the block's
+    // execution requests.
+    google.protobuf.UInt64Value position_in_block = 2
+        [ json_name = "position_in_block" ];
+  }
+
+  // AdditionalEthV1BeaconBlockRewardData contains additional data about the
+  // block reward derived from a beacon block.
+  message AdditionalEthV1BeaconBlockRewardData {
+    // Block contains the block identifier information.
+    BlockIdentifier block = 1;
+  }
+
+  // AdditionalEthV1BeaconAttestationRewardData contains additional data about the
+  // attestation rewards for an epoch.
+  message AdditionalEthV1BeaconAttestationRewardData {
+    // Epoch contains the epoch information for the attestation rewards.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the attestation rewards were requested against.
+    string state_id = 2 [ json_name = "state_id" ];
+  }
+
+  // AdditionalEthV1BeaconSyncCommitteeRewardData contains additional data about
+  // the sync committee rewards derived from a beacon block.
+  message AdditionalEthV1BeaconSyncCommitteeRewardData {
+    // Block contains the block identifier information.
+    BlockIdentifier block = 1;
+  }
+
+  // AdditionalEthV1BeaconStateRandaoData contains additional data about the
+  // RANDAO mix for an epoch.
+  message AdditionalEthV1BeaconStateRandaoData {
+    // Epoch contains the epoch information for the RANDAO mix.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the RANDAO mix was requested against.
+    string state_id = 2 [ json_name = "state_id" ];
+  }
+
+  // AdditionalEthV1BeaconStateFinalityCheckpointData contains additional data
+  // about the finality checkpoints for an epoch.
+  message AdditionalEthV1BeaconStateFinalityCheckpointData {
+    // Epoch contains the epoch information for the finality checkpoints.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the finality checkpoints were requested against.
+    string state_id = 2 [ json_name = "state_id" ];
+  }
+
+  // AdditionalEthV1BeaconStatePendingDepositData contains additional data about
+  // an Electra pending deposit queue entry for an epoch.
+  message AdditionalEthV1BeaconStatePendingDepositData {
+    // Epoch contains the epoch information for the pending deposit.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the pending deposit was requested against.
+    string state_id = 2 [ json_name = "state_id" ];
+
+    // PositionInQueue is the index of the deposit within the pending deposits
+    // queue.
+    google.protobuf.UInt64Value position_in_queue = 3
+        [ json_name = "position_in_queue" ];
+  }
+
+  // AdditionalEthV1BeaconStatePendingPartialWithdrawalData contains additional
+  // data about an Electra pending partial withdrawal queue entry for an epoch.
+  message AdditionalEthV1BeaconStatePendingPartialWithdrawalData {
+    // Epoch contains the epoch information for the pending partial withdrawal.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the pending partial withdrawal was requested
+    // against.
+    string state_id = 2 [ json_name = "state_id" ];
+
+    // PositionInQueue is the index of the withdrawal within the pending partial
+    // withdrawals queue.
+    google.protobuf.UInt64Value position_in_queue = 3
+        [ json_name = "position_in_queue" ];
+  }
+
+  // AdditionalEthV1BeaconStatePendingConsolidationData contains additional data
+  // about an Electra pending consolidation queue entry for an epoch.
+  message AdditionalEthV1BeaconStatePendingConsolidationData {
+    // Epoch contains the epoch information for the pending consolidation.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the pending consolidation was requested against.
+    string state_id = 2 [ json_name = "state_id" ];
+
+    // PositionInQueue is the index of the consolidation within the pending
+    // consolidations queue.
+    google.protobuf.UInt64Value position_in_queue = 3
+        [ json_name = "position_in_queue" ];
   }
 
   message AdditionalMempoolTransactionData {
@@ -1802,6 +2037,28 @@ message ClientMeta {
     // AdditionalEthV1EventsFastConfirmationData contains additional data about
     // the eth v1 fast confirmation event.
     AdditionalEthV1EventsFastConfirmationData eth_v1_events_fast_confirmation = 95 [ json_name = "BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION" ];
+    // AdditionalEthV2BeaconBlockExecutionRequestDepositData contains additional data on EIP-6110 execution request deposits derived from beacon blocks.
+    AdditionalEthV2BeaconBlockExecutionRequestDepositData eth_v2_beacon_block_execution_request_deposit = 96 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT" ];
+    // AdditionalEthV2BeaconBlockExecutionRequestWithdrawalData contains additional data on EIP-7002 execution request withdrawals derived from beacon blocks.
+    AdditionalEthV2BeaconBlockExecutionRequestWithdrawalData eth_v2_beacon_block_execution_request_withdrawal = 97 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_WITHDRAWAL" ];
+    // AdditionalEthV2BeaconBlockExecutionRequestConsolidationData contains additional data on EIP-7251 execution request consolidations derived from beacon blocks.
+    AdditionalEthV2BeaconBlockExecutionRequestConsolidationData eth_v2_beacon_block_execution_request_consolidation = 98 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_CONSOLIDATION" ];
+    // AdditionalEthV1BeaconBlockRewardData contains additional data about the block reward.
+    AdditionalEthV1BeaconBlockRewardData eth_v1_beacon_block_reward = 99 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOCK_REWARD" ];
+    // AdditionalEthV1BeaconAttestationRewardData contains additional data about the attestation rewards.
+    AdditionalEthV1BeaconAttestationRewardData eth_v1_beacon_attestation_reward = 100 [ json_name = "BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD" ];
+    // AdditionalEthV1BeaconSyncCommitteeRewardData contains additional data about the sync committee rewards.
+    AdditionalEthV1BeaconSyncCommitteeRewardData eth_v1_beacon_sync_committee_reward = 101 [ json_name = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD" ];
+    // AdditionalEthV1BeaconStateRandaoData contains additional data about the RANDAO mix.
+    AdditionalEthV1BeaconStateRandaoData eth_v1_beacon_state_randao = 102 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_RANDAO" ];
+    // AdditionalEthV1BeaconStateFinalityCheckpointData contains additional data about the finality checkpoints.
+    AdditionalEthV1BeaconStateFinalityCheckpointData eth_v1_beacon_state_finality_checkpoint = 103 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_FINALITY_CHECKPOINT" ];
+    // AdditionalEthV1BeaconStatePendingDepositData contains additional data about an Electra pending deposit queue entry.
+    AdditionalEthV1BeaconStatePendingDepositData eth_v1_beacon_state_pending_deposit = 104 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT" ];
+    // AdditionalEthV1BeaconStatePendingPartialWithdrawalData contains additional data about an Electra pending partial withdrawal queue entry.
+    AdditionalEthV1BeaconStatePendingPartialWithdrawalData eth_v1_beacon_state_pending_partial_withdrawal = 105 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL" ];
+    // AdditionalEthV1BeaconStatePendingConsolidationData contains additional data about an Electra pending consolidation queue entry.
+    AdditionalEthV1BeaconStatePendingConsolidationData eth_v1_beacon_state_pending_consolidation = 106 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2040,6 +2297,17 @@ message Event {
     EXECUTION_CANONICAL_NONCE_READS = 105;
     EXECUTION_CANONICAL_FOUR_BYTE_COUNTS = 106;
     EXECUTION_CANONICAL_ADDRESS_APPEARANCES = 107;
+    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT = 108;
+    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_WITHDRAWAL = 109;
+    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_CONSOLIDATION = 110;
+    BEACON_API_ETH_V1_BEACON_BLOCK_REWARD = 111;
+    BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD = 112;
+    BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD = 113;
+    BEACON_API_ETH_V1_BEACON_STATE_RANDAO = 114;
+    BEACON_API_ETH_V1_BEACON_STATE_FINALITY_CHECKPOINT = 115;
+    BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT = 116;
+    BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL = 117;
+    BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION = 118;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2711,6 +2979,28 @@ message DecoratedEvent {
         [ json_name = "EXECUTION_CANONICAL_FOUR_BYTE_COUNTS" ];
     ExecutionCanonicalAddressAppearances execution_canonical_address_appearances = 228
         [ json_name = "EXECUTION_CANONICAL_ADDRESS_APPEARANCES" ];
+    xatu.eth.v1.ElectraExecutionRequestDeposit eth_v2_beacon_block_execution_request_deposit = 229
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT" ];
+    xatu.eth.v1.ElectraExecutionRequestWithdrawal eth_v2_beacon_block_execution_request_withdrawal = 230
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_WITHDRAWAL" ];
+    xatu.eth.v1.ElectraExecutionRequestConsolidation eth_v2_beacon_block_execution_request_consolidation = 231
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_CONSOLIDATION" ];
+    BlockRewardData eth_v1_beacon_block_reward = 232
+        [ json_name = "BEACON_API_ETH_V1_BEACON_BLOCK_REWARD" ];
+    AttestationRewardData eth_v1_beacon_attestation_reward = 233
+        [ json_name = "BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD" ];
+    SyncCommitteeRewardData eth_v1_beacon_sync_committee_reward = 234
+        [ json_name = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD" ];
+    RandaoData eth_v1_beacon_state_randao = 235
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_RANDAO" ];
+    FinalityCheckpointData eth_v1_beacon_state_finality_checkpoint = 236
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_FINALITY_CHECKPOINT" ];
+    PendingDepositData eth_v1_beacon_state_pending_deposit = 237
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT" ];
+    PendingPartialWithdrawalData eth_v1_beacon_state_pending_partial_withdrawal = 238
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL" ];
+    PendingConsolidationData eth_v1_beacon_state_pending_consolidation = 239
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION" ];
   };
 }
 

@@ -261,10 +261,13 @@ func startClickHouse(ctx context.Context) (
 	return container, httpPort, nativePort, nil
 }
 
-// applyMigrations reads all *.up.sql files from the migrations directory,
+// applyMigrations reads all *.up.sql files from the xatu migration set,
 // splits each on semicolons, and POSTs each statement to ClickHouse HTTP.
+// The xatu set holds the canonical_*/beacon_api_*/execution_* tables that the
+// route generator emits code for; other sets (admin, observoor) carry tables
+// outside resolvePackage's prefixes and are not needed here.
 func applyMigrations(ctx context.Context, httpPort, root string) error {
-	migrationsDir := filepath.Join(root, "deploy", "migrations", "clickhouse")
+	migrationsDir := filepath.Join(root, "deploy", "migrations", "clickhouse", "xatu")
 
 	entries, err := os.ReadDir(migrationsDir)
 	if err != nil {

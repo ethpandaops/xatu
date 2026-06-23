@@ -213,6 +213,17 @@ enum CannonType {
   EXECUTION_CANONICAL_NONCE_READS = 29;
   EXECUTION_CANONICAL_FOUR_BYTE_COUNTS = 30;
   EXECUTION_CANONICAL_ADDRESS_APPEARANCES = 31;
+  BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT = 32;
+  BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_WITHDRAWAL = 33;
+  BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_CONSOLIDATION = 34;
+  BEACON_API_ETH_V1_BEACON_BLOCK_REWARD = 35;
+  BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD = 36;
+  BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD = 37;
+  BEACON_API_ETH_V1_BEACON_STATE_RANDAO = 38;
+  BEACON_API_ETH_V1_BEACON_STATE_FINALITY_CHECKPOINT = 39;
+  BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT = 40;
+  BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL = 41;
+  BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION = 42;
 }
 
 message BackfillingCheckpointMarker {
@@ -323,6 +334,50 @@ message CannonLocationExecutionCanonicalNonceReads { BackfillingBlockMarker back
 message CannonLocationExecutionCanonicalFourByteCounts { BackfillingBlockMarker backfilling_block_marker = 1; }
 message CannonLocationExecutionCanonicalAddressAppearances { BackfillingBlockMarker backfilling_block_marker = 1; }
 
+message CannonLocationEthV2BeaconBlockExecutionRequestDeposit {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV2BeaconBlockExecutionRequestWithdrawal {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV2BeaconBlockExecutionRequestConsolidation {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV1BeaconBlockReward {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV1BeaconAttestationReward {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV1BeaconSyncCommitteeReward {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV1BeaconStateRandao {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV1BeaconStateFinalityCheckpoint {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV1BeaconStatePendingDeposit {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV1BeaconStatePendingPartialWithdrawal {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV1BeaconStatePendingConsolidation {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
 message CannonLocation {
   string network_id = 1;
   CannonType type = 2;
@@ -398,6 +453,28 @@ message CannonLocation {
         [ json_name = "EXECUTION_CANONICAL_FOUR_BYTE_COUNTS" ];
     CannonLocationExecutionCanonicalAddressAppearances execution_canonical_address_appearances = 34
         [ json_name = "EXECUTION_CANONICAL_ADDRESS_APPEARANCES" ];
+    CannonLocationEthV2BeaconBlockExecutionRequestDeposit eth_v2_beacon_block_execution_request_deposit = 35
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT" ];
+    CannonLocationEthV2BeaconBlockExecutionRequestWithdrawal eth_v2_beacon_block_execution_request_withdrawal = 36
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_WITHDRAWAL" ];
+    CannonLocationEthV2BeaconBlockExecutionRequestConsolidation eth_v2_beacon_block_execution_request_consolidation = 37
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_CONSOLIDATION" ];
+    CannonLocationEthV1BeaconBlockReward eth_v1_beacon_block_reward = 38
+        [ json_name = "BEACON_API_ETH_V1_BEACON_BLOCK_REWARD" ];
+    CannonLocationEthV1BeaconAttestationReward eth_v1_beacon_attestation_reward = 39
+        [ json_name = "BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD" ];
+    CannonLocationEthV1BeaconSyncCommitteeReward eth_v1_beacon_sync_committee_reward = 40
+        [ json_name = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD" ];
+    CannonLocationEthV1BeaconStateRandao eth_v1_beacon_state_randao = 41
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_RANDAO" ];
+    CannonLocationEthV1BeaconStateFinalityCheckpoint eth_v1_beacon_state_finality_checkpoint = 42
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_FINALITY_CHECKPOINT" ];
+    CannonLocationEthV1BeaconStatePendingDeposit eth_v1_beacon_state_pending_deposit = 43
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT" ];
+    CannonLocationEthV1BeaconStatePendingPartialWithdrawal eth_v1_beacon_state_pending_partial_withdrawal = 44
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL" ];
+    CannonLocationEthV1BeaconStatePendingConsolidation eth_v1_beacon_state_pending_consolidation = 45
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION" ];
   }
 }
 

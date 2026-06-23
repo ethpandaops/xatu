@@ -160,7 +160,7 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 
 	go b.blockCache.Start()
 
-	for i := 0; i < int(b.config.Beacon.BlockPreloadWorkers); i++ {
+	for i := uint64(0); i < b.config.Beacon.BlockPreloadWorkers; i++ {
 		go func() {
 			for identifier := range b.blockPreloadChan {
 				b.metrics.SetPreloadBlockQueueSize(string(b.Metadata().Network.Name), len(b.blockPreloadChan))

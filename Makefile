@@ -3,6 +3,13 @@ clickhouse-routes:
 	@echo "Generating ClickHouse route code (requires Docker)..."
 	go run ./pkg/clickhouse/route/cmd/generate
 
+.PHONY: docker
+# Build the local all-in-one image (xatu + cryo, for EL cannon). The cryo git
+# ref is pinned in the Dockerfile (ARG CRYO_GIT_REF); override with
+# --build-arg CRYO_GIT_REF=<ref> to test a different cryo build.
+docker:
+	docker build -t ethpandaops/xatu:local .
+
 proto:
 	@echo "Buf generate:" ; \
 	echo "-----------------" ; \

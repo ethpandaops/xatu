@@ -7,10 +7,10 @@ CREATE TABLE IF NOT EXISTS canonical_beacon_block_execution_request_deposit_loca
     `epoch_start_date_time` DateTime COMMENT 'The wall clock time when the epoch started' CODEC(DoubleDelta, ZSTD(1)),
     `block_root` FixedString(66) COMMENT 'The root hash of the beacon block' CODEC(ZSTD(1)),
     `block_version` LowCardinality(String) COMMENT 'The version of the beacon block',
-    `position_in_block` UInt32 COMMENT 'The index of the deposit within the block execution requests' CODEC(ZSTD(1)),
+    `position_in_block` UInt32 COMMENT 'The index of the deposit within the block execution requests' CODEC(DoubleDelta, ZSTD(1)),
     `pubkey` String COMMENT 'The public key of the validator from the deposit request' CODEC(ZSTD(1)),
-    `withdrawal_credentials` String COMMENT 'The withdrawal credentials from the deposit request' CODEC(ZSTD(1)),
-    `amount` UInt64 COMMENT 'The deposit amount in gwei' CODEC(ZSTD(1)),
+    `withdrawal_credentials` FixedString(66) COMMENT 'The withdrawal credentials from the deposit request' CODEC(ZSTD(1)),
+    `amount` UInt128 COMMENT 'The deposit amount in gwei' CODEC(ZSTD(1)),
     `signature` String COMMENT 'The deposit signature' CODEC(ZSTD(1)),
     `index` UInt64 COMMENT 'The deposit index from the deposit request' CODEC(ZSTD(1)),
     `meta_network_name` LowCardinality(String) COMMENT 'Ethereum network name'

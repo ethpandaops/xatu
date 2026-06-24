@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -78,7 +79,7 @@ func (b *canonicalBeaconBlockExecutionRequestWithdrawalBatch) appendPayload(even
 
 	b.SourceAddress.Append([]byte(withdrawal.GetSourceAddress().GetValue()))
 	b.ValidatorPubkey.Append(withdrawal.GetValidatorPubkey().GetValue())
-	b.Amount.Append(withdrawal.GetAmount().GetValue())
+	b.Amount.Append(proto.UInt128{Low: withdrawal.GetAmount().GetValue()})
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema

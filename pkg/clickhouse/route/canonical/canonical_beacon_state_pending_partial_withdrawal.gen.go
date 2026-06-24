@@ -17,7 +17,7 @@ type canonicalBeaconStatePendingPartialWithdrawalBatch struct {
 	StateID            proto.ColStr
 	PositionInQueue    proto.ColUInt32
 	ValidatorIndex     proto.ColUInt32
-	Amount             proto.ColUInt64
+	Amount             proto.ColUInt128
 	WithdrawableEpoch  proto.ColUInt64
 	MetaNetworkName    proto.ColStr
 	rows               int
@@ -79,7 +79,7 @@ func (b *canonicalBeaconStatePendingPartialWithdrawalBatch) Snapshot() []map[str
 		row["state_id"] = b.StateID.Row(i)
 		row["position_in_queue"] = b.PositionInQueue.Row(i)
 		row["validator_index"] = b.ValidatorIndex.Row(i)
-		row["amount"] = b.Amount.Row(i)
+		row["amount"] = route.UInt128ToString(b.Amount.Row(i))
 		row["withdrawable_epoch"] = b.WithdrawableEpoch.Row(i)
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
 		out[i] = row

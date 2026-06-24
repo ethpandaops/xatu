@@ -17,16 +17,18 @@ type canonicalBeaconStatePendingDepositBatch struct {
 	StateID               proto.ColStr
 	PositionInQueue       proto.ColUInt32
 	Pubkey                proto.ColStr
-	WithdrawalCredentials proto.ColStr
-	Amount                proto.ColUInt64
+	WithdrawalCredentials route.SafeColFixedStr
+	Amount                proto.ColUInt128
 	Signature             proto.ColStr
-	Slot                  proto.ColUInt64
+	Slot                  proto.ColUInt32
 	MetaNetworkName       proto.ColStr
 	rows                  int
 }
 
 func newcanonicalBeaconStatePendingDepositBatch() *canonicalBeaconStatePendingDepositBatch {
-	return &canonicalBeaconStatePendingDepositBatch{}
+	return &canonicalBeaconStatePendingDepositBatch{
+		WithdrawalCredentials: func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+	}
 }
 
 func (b *canonicalBeaconStatePendingDepositBatch) Rows() int {
@@ -85,8 +87,8 @@ func (b *canonicalBeaconStatePendingDepositBatch) Snapshot() []map[string]any {
 		row["state_id"] = b.StateID.Row(i)
 		row["position_in_queue"] = b.PositionInQueue.Row(i)
 		row["pubkey"] = b.Pubkey.Row(i)
-		row["withdrawal_credentials"] = b.WithdrawalCredentials.Row(i)
-		row["amount"] = b.Amount.Row(i)
+		row["withdrawal_credentials"] = string(b.WithdrawalCredentials.Row(i))
+		row["amount"] = route.UInt128ToString(b.Amount.Row(i))
 		row["signature"] = b.Signature.Row(i)
 		row["slot"] = b.Slot.Row(i)
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)

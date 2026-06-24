@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -57,7 +58,7 @@ func (b *canonicalBeaconStatePendingPartialWithdrawalBatch) FlattenTo(event *xat
 	b.StateID.Append(extra.GetStateId())
 	b.PositionInQueue.Append(uint32(extra.GetPositionInQueue().GetValue())) //nolint:gosec // bounded by uint32 column
 	b.ValidatorIndex.Append(uint32(payload.GetValidatorIndex().GetValue())) //nolint:gosec // bounded by uint32 column
-	b.Amount.Append(payload.GetAmount().GetValue())
+	b.Amount.Append(proto.UInt128{Low: payload.GetAmount().GetValue()})
 	b.WithdrawableEpoch.Append(payload.GetWithdrawableEpoch().GetValue())
 	b.appendMetadata(event)
 	b.rows++

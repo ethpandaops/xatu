@@ -21,7 +21,7 @@ type canonicalBeaconBlockExecutionRequestWithdrawalBatch struct {
 	PositionInBlock    proto.ColUInt32
 	SourceAddress      route.SafeColFixedStr
 	ValidatorPubkey    proto.ColStr
-	Amount             proto.ColUInt64
+	Amount             proto.ColUInt128
 	MetaNetworkName    proto.ColStr
 	rows               int
 }
@@ -95,7 +95,7 @@ func (b *canonicalBeaconBlockExecutionRequestWithdrawalBatch) Snapshot() []map[s
 		row["position_in_block"] = b.PositionInBlock.Row(i)
 		row["source_address"] = string(b.SourceAddress.Row(i))
 		row["validator_pubkey"] = b.ValidatorPubkey.Row(i)
-		row["amount"] = b.Amount.Row(i)
+		row["amount"] = route.UInt128ToString(b.Amount.Row(i))
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
 		out[i] = row
 	}

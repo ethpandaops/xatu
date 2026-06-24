@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -85,8 +86,8 @@ func (b *canonicalBeaconBlockExecutionRequestDepositBatch) appendPayload(event *
 	deposit := event.GetEthV2BeaconBlockExecutionRequestDeposit()
 
 	b.Pubkey.Append(deposit.GetPubkey().GetValue())
-	b.WithdrawalCredentials.Append(deposit.GetWithdrawalCredentials().GetValue())
-	b.Amount.Append(deposit.GetAmount().GetValue())
+	b.WithdrawalCredentials.Append([]byte(deposit.GetWithdrawalCredentials().GetValue()))
+	b.Amount.Append(proto.UInt128{Low: deposit.GetAmount().GetValue()})
 	b.Signature.Append(deposit.GetSignature().GetValue())
 	b.Index.Append(deposit.GetIndex().GetValue())
 }

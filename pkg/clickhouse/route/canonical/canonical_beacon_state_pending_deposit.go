@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -55,10 +56,10 @@ func (b *canonicalBeaconStatePendingDepositBatch) FlattenTo(event *xatu.Decorate
 	b.StateID.Append(extra.GetStateId())
 	b.PositionInQueue.Append(uint32(extra.GetPositionInQueue().GetValue())) //nolint:gosec // bounded by uint32 column
 	b.Pubkey.Append(payload.GetPubkey())
-	b.WithdrawalCredentials.Append(payload.GetWithdrawalCredentials())
-	b.Amount.Append(payload.GetAmount().GetValue())
+	b.WithdrawalCredentials.Append([]byte(payload.GetWithdrawalCredentials()))
+	b.Amount.Append(proto.UInt128{Low: payload.GetAmount().GetValue()})
 	b.Signature.Append(payload.GetSignature())
-	b.Slot.Append(payload.GetSlot().GetValue())
+	b.Slot.Append(uint32(payload.GetSlot().GetValue()))
 
 	b.appendMetadata(event)
 	b.rows++

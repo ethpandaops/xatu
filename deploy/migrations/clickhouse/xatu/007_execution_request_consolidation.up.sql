@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS canonical_beacon_block_execution_request_consolidatio
     `epoch_start_date_time` DateTime COMMENT 'The wall clock time when the epoch started' CODEC(DoubleDelta, ZSTD(1)),
     `block_root` FixedString(66) COMMENT 'The root hash of the beacon block' CODEC(ZSTD(1)),
     `block_version` LowCardinality(String) COMMENT 'The version of the beacon block',
-    `position_in_block` UInt32 COMMENT 'The index of the consolidation within the block execution requests' CODEC(ZSTD(1)),
+    `position_in_block` UInt32 COMMENT 'The index of the consolidation within the block execution requests' CODEC(DoubleDelta, ZSTD(1)),
     `source_address` FixedString(42) COMMENT 'The source address that initiated the consolidation request' CODEC(ZSTD(1)),
     `source_pubkey` String COMMENT 'The public key of the consolidation source validator' CODEC(ZSTD(1)),
     `target_pubkey` String COMMENT 'The public key of the consolidation target validator' CODEC(ZSTD(1)),

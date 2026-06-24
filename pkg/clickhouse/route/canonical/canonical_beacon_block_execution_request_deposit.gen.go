@@ -20,8 +20,8 @@ type canonicalBeaconBlockExecutionRequestDepositBatch struct {
 	BlockVersion          proto.ColStr
 	PositionInBlock       proto.ColUInt32
 	Pubkey                proto.ColStr
-	WithdrawalCredentials proto.ColStr
-	Amount                proto.ColUInt64
+	WithdrawalCredentials route.SafeColFixedStr
+	Amount                proto.ColUInt128
 	Signature             proto.ColStr
 	Index                 proto.ColUInt64
 	MetaNetworkName       proto.ColStr
@@ -30,7 +30,8 @@ type canonicalBeaconBlockExecutionRequestDepositBatch struct {
 
 func newcanonicalBeaconBlockExecutionRequestDepositBatch() *canonicalBeaconBlockExecutionRequestDepositBatch {
 	return &canonicalBeaconBlockExecutionRequestDepositBatch{
-		BlockRoot: func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		BlockRoot:             func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		WithdrawalCredentials: func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 	}
 }
 
@@ -99,8 +100,8 @@ func (b *canonicalBeaconBlockExecutionRequestDepositBatch) Snapshot() []map[stri
 		row["block_version"] = b.BlockVersion.Row(i)
 		row["position_in_block"] = b.PositionInBlock.Row(i)
 		row["pubkey"] = b.Pubkey.Row(i)
-		row["withdrawal_credentials"] = b.WithdrawalCredentials.Row(i)
-		row["amount"] = b.Amount.Row(i)
+		row["withdrawal_credentials"] = string(b.WithdrawalCredentials.Row(i))
+		row["amount"] = route.UInt128ToString(b.Amount.Row(i))
 		row["signature"] = b.Signature.Row(i)
 		row["index"] = b.Index.Row(i)
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)

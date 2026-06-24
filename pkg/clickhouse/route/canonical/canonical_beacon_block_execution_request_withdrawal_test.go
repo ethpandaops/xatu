@@ -37,7 +37,7 @@ func TestSnapshot_canonical_beacon_block_execution_request_withdrawal(t *testing
 	}, 1, map[string]any{
 		"source_address":    "0x000000000000000000000000000000000000dead",
 		"validator_pubkey":  "0xabcdef",
-		"amount":            uint64(32000000000),
+		"amount":            "32000000000",
 		"position_in_block": uint32(2),
 	})
 }

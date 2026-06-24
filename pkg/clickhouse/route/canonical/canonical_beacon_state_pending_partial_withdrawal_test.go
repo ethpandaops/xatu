@@ -37,7 +37,7 @@ func TestSnapshot_canonical_beacon_state_pending_partial_withdrawal(t *testing.T
 		"state_id":           "head",
 		"position_in_queue":  uint32(7),
 		"validator_index":    uint32(42),
-		"amount":             uint64(1_000_000_000),
+		"amount":             "1000000000",
 		"withdrawable_epoch": uint64(256),
 		"meta_network_name":  "mainnet",
 	})

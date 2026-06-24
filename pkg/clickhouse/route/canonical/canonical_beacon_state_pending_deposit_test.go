@@ -40,8 +40,8 @@ func TestSnapshot_canonical_beacon_state_pending_deposit(t *testing.T) {
 		"position_in_queue":      uint32(7),
 		"pubkey":                 "0xpub",
 		"withdrawal_credentials": "0xcreds",
-		"amount":                 uint64(32_000_000_000),
+		"amount":                 "32000000000",
 		"signature":              "0xsig",
-		"slot":                   uint64(100),
+		"slot":                   uint32(100),
 	})
 }

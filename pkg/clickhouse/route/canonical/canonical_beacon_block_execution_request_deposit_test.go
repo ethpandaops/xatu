@@ -39,7 +39,7 @@ func TestSnapshot_canonical_beacon_block_execution_request_deposit(t *testing.T)
 	}, 1, map[string]any{
 		"pubkey":                 "0xabc",
 		"withdrawal_credentials": "0xdef",
-		"amount":                 uint64(32000000000),
+		"amount":                 "32000000000",
 		"signature":              "0x123",
 		"index":                  uint64(7),
 		"position_in_block":      uint32(3),

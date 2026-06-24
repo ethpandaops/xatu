@@ -70,7 +70,12 @@ jobs:
         context: .
         load: true
         tags: ethpandaops/xatu:local
-        cache-from: type=gha
+        # Pull the cryo-builder layer from the release pipeline's registry
+        # buildcache so a cold PR branch reuses the prebuilt cryo instead of
+        # recompiling it (~10 min). Read-only: PRs keep writing only gha cache.
+        cache-from: |
+          type=gha
+          type=registry,ref=ethpandaops/xatu:cryo-buildcache
         cache-to: type=gha,mode=max
     - name: Build sentry-logs image
       if: steps.canary.outputs.skip != 'true'

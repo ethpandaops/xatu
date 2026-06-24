@@ -93,8 +93,16 @@ jobs:
       # not fit goreleaser's copy-the-prebuilt-binary docker flow — and building
       # it inside goreleaser would force every PR's test-build to compile cryo.
       # We build it here, release-only. The cryo ref is pinned in ./Dockerfile
-      # (ARG CRYO_GIT_REF); that layer is cache-stable, so GHA layer cache means
-      # cryo only recompiles when the pinned ref changes.
+      # (ARG CRYO_GIT_REF); that layer is cache-stable, so it only recompiles
+      # when the pinned ref changes.
+      #
+      # Cache is a registry image (ethpandaops/xatu:cryo-buildcache), NOT GHA
+      # cache: GHA cache is scoped per git ref, and releases are tag-triggered,
+      # so a v1.18.2 run could not read the v1.18.1 run's cache (only its own
+      # ref + the default branch). Registry cache is ref-agnostic, so every
+      # release reuses the prior cryo-builder layer and skips the ~10 min Rust
+      # compile until CRYO_GIT_REF changes (which invalidates that layer and
+      # recompiles once, then re-warms the cache).
       #
       # amd64-only: EL cannon runs on amd64 servers, and compiling cryo for
       # arm64 under QEMU emulation takes 30-60+ min (it hung a release for
@@ -121,5 +129,5 @@ jobs:
           tags: |
             ethpandaops/xatu:${{ env.CRYO_IMAGE_VERSION }}-cryo
             ethpandaops/xatu:${{ env.RELEASE_SUFFIX && format('{0}-cryo-latest', env.RELEASE_SUFFIX) || 'cryo-latest' }}
-          cache-from: type=gha,scope=xatu-cryo
-          cache-to: type=gha,mode=max,scope=xatu-cryo
+          cache-from: type=registry,ref=ethpandaops/xatu:cryo-buildcache
+          cache-to: type=registry,ref=ethpandaops/xatu:cryo-buildcache,mode=max,ignore-error=true

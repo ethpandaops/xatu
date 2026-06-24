@@ -95,6 +95,11 @@ jobs:
       # We build it here, release-only. The cryo ref is pinned in ./Dockerfile
       # (ARG CRYO_GIT_REF); that layer is cache-stable, so GHA layer cache means
       # cryo only recompiles when the pinned ref changes.
+      #
+      # amd64-only: EL cannon runs on amd64 servers, and compiling cryo for
+      # arm64 under QEMU emulation takes 30-60+ min (it hung a release for
+      # 35+ min). Native amd64 compiles in ~2-3 min. Add linux/arm64 back here
+      # only if cannon ever needs to run on arm64.
       - name: Derive cryo image version
         run: |
           echo "CRYO_GIT_COMMIT=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
@@ -106,7 +111,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           provenance: false
           sbom: false

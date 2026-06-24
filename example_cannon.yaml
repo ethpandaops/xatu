@@ -79,12 +79,13 @@ derivers:
     executionRequestDeposit:       { enabled: true }
     executionRequestWithdrawal:    { enabled: true }
     executionRequestConsolidation: { enabled: true }
-    # ── Rewards (beacon API) ──
-    blockReward:           { enabled: false }
-    # attestationReward: per-validator-per-epoch, very high volume — confirm storage before enabling
-    # attestationReward:  { enabled: false }
-    # syncCommitteeReward: per-member-per-slot, high volume — confirm storage before enabling
-    # syncCommitteeReward: { enabled: false }
+    # ── Rewards (beacon API) ── all default enabled; require a beacon node that
+    # serves the rewards endpoints (archive / reconstruct-historic-states).
+    blockReward:           { enabled: true }   # ~1 row/block, negligible storage
+    syncCommitteeReward:   { enabled: true }   # 512 rows/slot (~11 GB/yr mainnet)
+    # attestationReward is per-active-validator-per-epoch: ~199M rows/day,
+    # ~127 GB/yr on mainnet. Disable here if you don't need it.
+    attestationReward:     { enabled: true }
     # ── Beacon state metadata ──
     randao:                { enabled: false }
     finalityCheckpoint:    { enabled: false }

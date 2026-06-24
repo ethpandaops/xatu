@@ -34,7 +34,7 @@ const (
 )
 
 type BlockRewardDeriverConfig struct {
-	Enabled  bool                                 `yaml:"enabled" default:"false"`
+	Enabled  bool                                 `yaml:"enabled" default:"true"`
 	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 

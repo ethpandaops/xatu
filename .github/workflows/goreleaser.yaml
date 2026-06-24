@@ -87,3 +87,34 @@ jobs:
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e RELEASE_SUFFIX=${{ env.RELEASE_SUFFIX }} \
             goreleaser/goreleaser-cross:v1.26 release --clean --config .goreleaser.yaml.new
+
+      # The xatu+cryo image is the EL-cannon variant: it bundles the cryo binary
+      # alongside xatu. cryo is built from Rust source (./Dockerfile), so it does
+      # not fit goreleaser's copy-the-prebuilt-binary docker flow — and building
+      # it inside goreleaser would force every PR's test-build to compile cryo.
+      # We build it here, release-only. The cryo ref is pinned in ./Dockerfile
+      # (ARG CRYO_GIT_REF); that layer is cache-stable, so GHA layer cache means
+      # cryo only recompiles when the pinned ref changes.
+      - name: Derive cryo image version
+        run: |
+          echo "CRYO_GIT_COMMIT=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          # Match goreleaser's {{ .Version }} (tag with a single leading 'v' stripped).
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "CRYO_IMAGE_VERSION=${TAG_NAME#v}" >> "$GITHUB_ENV"
+      - name: Build and push xatu+cryo image
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: false
+          sbom: false
+          build-args: |
+            VERSION=${{ env.CRYO_IMAGE_VERSION }}
+            GIT_COMMIT=${{ env.CRYO_GIT_COMMIT }}
+          tags: |
+            ethpandaops/xatu:${{ env.CRYO_IMAGE_VERSION }}-cryo
+            ethpandaops/xatu:${{ env.RELEASE_SUFFIX && format('{0}-cryo-latest', env.RELEASE_SUFFIX) || 'cryo-latest' }}
+          cache-from: type=gha,scope=xatu-cryo
+          cache-to: type=gha,mode=max,scope=xatu-cryo

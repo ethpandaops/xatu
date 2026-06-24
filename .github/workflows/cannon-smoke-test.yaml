@@ -232,38 +232,52 @@ jobs:
         labels:
           ethpandaops: rocks
 
-        # Only enable derivers for event types we're testing
+        # Derivers are grouped by layer (consensus/execution). Consensus
+        # derivers default to enabled:true, so every deriver this test does NOT
+        # assert must be explicitly disabled. Execution (cryo) derivers default
+        # to enabled:false and are omitted entirely — this test is consensus-only,
+        # so no ethereum.execution / EL RPC is required.
         derivers:
-          attesterSlashing:
-            enabled: false
-          blsToExecutionChange:
-            enabled: false
-          deposit:
-            enabled: false
-          withdrawal:
-            enabled: true
-          executionTransaction:
-            enabled: true
-          proposerSlashing:
-            enabled: false
-          voluntaryExit:
-            enabled: false
-          beaconBlock:
-            enabled: true
-          beaconBlobSidecar:
-            enabled: true
-          proposerDuty:
-            enabled: true
-          beaconCommittee:
-            enabled: true
+          consensus:
+            withdrawal:
+              enabled: true
+            executionTransaction:
+              enabled: true
+            beaconBlock:
+              enabled: true
+            beaconBlobSidecar:
+              enabled: true
+            proposerDuty:
+              enabled: true
+            beaconCommittee:
+              enabled: true
+            attesterSlashing:
+              enabled: false
+            proposerSlashing:
+              enabled: false
+            blsToExecutionChange:
+              enabled: false
+            deposit:
+              enabled: false
+            voluntaryExit:
+              enabled: false
+            elaboratedAttestation:
+              enabled: false
+            beaconValidators:
+              enabled: false
+            beaconSyncCommittee:
+              enabled: false
+            beaconBlockSyncAggregate:
+              enabled: false
 
         ntpServer: time.google.com
 
         ethereum:
-          beaconNodeAddress: "https://mainnet-archive-lb-bn.utility.production.platform.ethpandaops.io"
-          beaconNodeHeaders:
-            Authorization: "AUTH_HEADER"
           overrideNetworkName: "$NETWORK_NAME"
+          beacon:
+            address: "https://mainnet-archive-lb-bn.utility.production.platform.ethpandaops.io"
+            headers:
+              Authorization: "AUTH_HEADER"
         coordinator:
           address: xatu-server:8080
 

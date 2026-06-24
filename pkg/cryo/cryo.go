@@ -140,10 +140,14 @@ func (r *Runner) Collect(ctx context.Context, dataset string, from, to uint64, c
 		args = append(args, columns...)
 	}
 
-	var stderr bytes.Buffer
+	// cryo reports failures on stdout (its stderr is typically empty), so capture
+	// both and surface them in the error — otherwise a failed run logs only the
+	// opaque "exit status 1" with no cause.
+	var stdout, stderr bytes.Buffer
 
 	//nolint:gosec // cryo binary path and args derive from operator config, not untrusted user input.
 	cmd := exec.CommandContext(ctx, r.cfg.BinaryPath, args...)
+	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
 	r.log.WithFields(logrus.Fields{
@@ -155,7 +159,7 @@ func (r *Runner) Collect(ctx context.Context, dataset string, from, to uint64, c
 	if runErr := cmd.Run(); runErr != nil {
 		_ = os.RemoveAll(dir)
 
-		return nil, fmt.Errorf("cryo %s [%d:%d] failed: %w: %s", dataset, from, to, runErr, stderr.String())
+		return nil, fmt.Errorf("cryo %s [%d:%d] failed: %w: %s", dataset, from, to, runErr, cryoOutput(&stdout, &stderr))
 	}
 
 	files, err := filepath.Glob(filepath.Join(dir, "*.parquet"))
@@ -166,6 +170,23 @@ func (r *Runner) Collect(ctx context.Context, dataset string, from, to uint64, c
 	}
 
 	return &Collection{Dir: dir, Files: files}, nil
+}
+
+// cryoOutput combines cryo's stdout and stderr for error reporting. cryo writes
+// its failure message to stdout, so that comes first; stderr is appended only
+// when non-empty. Either buffer may be empty.
+func cryoOutput(stdout, stderr *bytes.Buffer) string {
+	out := strings.TrimSpace(stdout.String())
+	errOut := strings.TrimSpace(stderr.String())
+
+	switch {
+	case out != "" && errOut != "":
+		return out + "; stderr: " + errOut
+	case errOut != "":
+		return errOut
+	default:
+		return out
+	}
 }
 
 // ReadParquet reads every supplied parquet file into a slice of T. T must be a

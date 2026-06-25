@@ -59,6 +59,7 @@ func (b *canonicalBeaconStatePendingDepositBatch) FlattenTo(event *xatu.Decorate
 	b.WithdrawalCredentials.Append([]byte(payload.GetWithdrawalCredentials()))
 	b.Amount.Append(proto.UInt128{Low: payload.GetAmount().GetValue()})
 	b.Signature.Append(payload.GetSignature())
+	//nolint:gosec // G115: proto uint64 slot bounded by ClickHouse uint32 column schema
 	b.Slot.Append(uint32(payload.GetSlot().GetValue()))
 
 	b.appendMetadata(event)

@@ -218,6 +218,10 @@ func (b *FinalityCheckpointDeriver) fetchFinality(ctx context.Context, stateID s
 		return nil, err
 	}
 
+	if rsp == nil || rsp.Data == nil {
+		return nil, errors.New("finality checkpoints response is nil")
+	}
+
 	return rsp.Data, nil
 }
 

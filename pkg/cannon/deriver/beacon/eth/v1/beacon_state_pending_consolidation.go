@@ -226,6 +226,10 @@ func (b *BeaconStatePendingConsolidationDeriver) getPendingConsolidations(ctx co
 		return nil, err
 	}
 
+	if rsp == nil || rsp.Data == nil {
+		return nil, errors.New("pending consolidations response is nil")
+	}
+
 	return rsp.Data, nil
 }
 

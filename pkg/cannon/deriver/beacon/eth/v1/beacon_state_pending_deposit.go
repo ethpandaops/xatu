@@ -236,6 +236,10 @@ func (b *BeaconStatePendingDepositDeriver) getPendingDeposits(ctx context.Contex
 		return nil, err
 	}
 
+	if response == nil || response.Data == nil {
+		return nil, errors.New("pending deposits response is nil")
+	}
+
 	return response.Data, nil
 }
 

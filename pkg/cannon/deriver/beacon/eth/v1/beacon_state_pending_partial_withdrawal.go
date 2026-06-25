@@ -242,6 +242,10 @@ func (b *BeaconStatePendingPartialWithdrawalDeriver) getPendingPartialWithdrawal
 		return nil, err
 	}
 
+	if response == nil || response.Data == nil {
+		return nil, errors.New("pending partial withdrawals response is nil")
+	}
+
 	return response.Data, nil
 }
 

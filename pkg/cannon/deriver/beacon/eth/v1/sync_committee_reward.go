@@ -306,7 +306,7 @@ func (b *SyncCommitteeRewardDeriver) fetchSyncCommitteeRewards(
 		return nil, errors.Wrap(err, "failed to get sync committee rewards from beacon node")
 	}
 
-	if rsp == nil {
+	if rsp == nil || rsp.Data == nil {
 		return nil, errors.New("sync committee rewards response is nil")
 	}
 

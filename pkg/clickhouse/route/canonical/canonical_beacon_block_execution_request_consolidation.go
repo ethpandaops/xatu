@@ -34,8 +34,21 @@ func (b *canonicalBeaconBlockExecutionRequestConsolidationBatch) FlattenTo(event
 		return nil
 	}
 
-	if event.GetEthV2BeaconBlockExecutionRequestConsolidation() == nil {
+	consolidation := event.GetEthV2BeaconBlockExecutionRequestConsolidation()
+	if consolidation == nil {
 		return fmt.Errorf("nil eth_v2_beacon_block_execution_request_consolidation payload: %w", route.ErrInvalidEvent)
+	}
+
+	if consolidation.GetSourceAddress() == nil {
+		return fmt.Errorf("nil SourceAddress: %w", route.ErrInvalidEvent)
+	}
+
+	if consolidation.GetSourcePubkey() == nil {
+		return fmt.Errorf("nil SourcePubkey: %w", route.ErrInvalidEvent)
+	}
+
+	if consolidation.GetTargetPubkey() == nil {
+		return fmt.Errorf("nil TargetPubkey: %w", route.ErrInvalidEvent)
 	}
 
 	b.appendRuntime(event)

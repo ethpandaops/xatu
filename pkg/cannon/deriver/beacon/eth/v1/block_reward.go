@@ -281,7 +281,7 @@ func (b *BlockRewardDeriver) getBlockRewards(ctx context.Context, blockID string
 		return nil, err
 	}
 
-	if response == nil {
+	if response == nil || response.Data == nil {
 		return nil, errors.New("block rewards response is nil")
 	}
 

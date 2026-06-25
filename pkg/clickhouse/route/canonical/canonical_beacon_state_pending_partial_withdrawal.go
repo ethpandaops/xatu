@@ -40,28 +40,70 @@ func (b *canonicalBeaconStatePendingPartialWithdrawalBatch) FlattenTo(event *xat
 		return fmt.Errorf("nil payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
+	b.appendRuntime(event)
+	b.appendMetadata(event)
+	b.appendPayload(event)
+	b.appendAdditionalData(event)
+	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconStatePendingPartialWithdrawalBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV1BeaconStatePendingPartialWithdrawal()
+
+	if payload.GetValidatorIndex() == nil {
+		return fmt.Errorf("nil ValidatorIndex: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetAmount() == nil {
+		return fmt.Errorf("nil Amount: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetWithdrawableEpoch() == nil {
+		return fmt.Errorf("nil WithdrawableEpoch: %w", route.ErrInvalidEvent)
+	}
+
 	extra := event.GetMeta().GetClient().GetEthV1BeaconStatePendingPartialWithdrawal()
 	if extra == nil || extra.GetEpoch() == nil || extra.GetEpoch().GetNumber() == nil {
 		return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
 	}
 
-	epoch := uint32(extra.GetEpoch().GetNumber().GetValue()) //nolint:gosec // bounded by uint32 column
-
-	var epochStartTime time.Time
-	if start := extra.GetEpoch().GetStartDateTime(); start != nil {
-		epochStartTime = start.AsTime()
+	if extra.GetPositionInQueue() == nil {
+		return fmt.Errorf("nil PositionInQueue: %w", route.ErrInvalidEvent)
 	}
 
+	return nil
+}
+
+func (b *canonicalBeaconStatePendingPartialWithdrawalBatch) appendRuntime(_ *xatu.DecoratedEvent) {
 	b.UpdatedDateTime.Append(time.Now())
-	b.Epoch.Append(epoch)
-	b.EpochStartDateTime.Append(epochStartTime)
-	b.StateID.Append(extra.GetStateId())
-	b.PositionInQueue.Append(uint32(extra.GetPositionInQueue().GetValue())) //nolint:gosec // bounded by uint32 column
+}
+
+func (b *canonicalBeaconStatePendingPartialWithdrawalBatch) appendPayload(event *xatu.DecoratedEvent) {
+	payload := event.GetEthV1BeaconStatePendingPartialWithdrawal()
+
 	b.ValidatorIndex.Append(uint32(payload.GetValidatorIndex().GetValue())) //nolint:gosec // bounded by uint32 column
 	b.Amount.Append(proto.UInt128{Low: payload.GetAmount().GetValue()})
 	b.WithdrawableEpoch.Append(payload.GetWithdrawableEpoch().GetValue())
-	b.appendMetadata(event)
-	b.rows++
+}
 
-	return nil
+func (b *canonicalBeaconStatePendingPartialWithdrawalBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
+	extra := event.GetMeta().GetClient().GetEthV1BeaconStatePendingPartialWithdrawal()
+	epoch := extra.GetEpoch()
+
+	b.Epoch.Append(uint32(epoch.GetNumber().GetValue())) //nolint:gosec // bounded by uint32 column
+
+	if start := epoch.GetStartDateTime(); start != nil {
+		b.EpochStartDateTime.Append(start.AsTime())
+	} else {
+		b.EpochStartDateTime.Append(time.Time{})
+	}
+
+	b.StateID.Append(extra.GetStateId())
+	b.PositionInQueue.Append(uint32(extra.GetPositionInQueue().GetValue())) //nolint:gosec // bounded by uint32 column
 }

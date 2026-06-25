@@ -38,11 +38,29 @@ func (b *canonicalBeaconSyncCommitteeRewardBatch) FlattenTo(event *xatu.Decorate
 		return fmt.Errorf("nil eth_v1_beacon_sync_committee_reward payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime()
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconSyncCommitteeRewardBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV1BeaconSyncCommitteeReward()
+
+	if payload.GetValidatorIndex() == nil {
+		return fmt.Errorf("nil ValidatorIndex: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetReward() == nil {
+		return fmt.Errorf("nil Reward: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }
@@ -55,17 +73,8 @@ func (b *canonicalBeaconSyncCommitteeRewardBatch) appendRuntime() {
 func (b *canonicalBeaconSyncCommitteeRewardBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetEthV1BeaconSyncCommitteeReward()
 
-	if validatorIndex := payload.GetValidatorIndex(); validatorIndex != nil {
-		b.ValidatorIndex.Append(uint32(validatorIndex.GetValue()))
-	} else {
-		b.ValidatorIndex.Append(0)
-	}
-
-	if reward := payload.GetReward(); reward != nil {
-		b.Reward.Append(reward.GetValue())
-	} else {
-		b.Reward.Append(0)
-	}
+	b.ValidatorIndex.Append(uint32(payload.GetValidatorIndex().GetValue()))
+	b.Reward.Append(payload.GetReward().GetValue())
 }
 
 func (b *canonicalBeaconSyncCommitteeRewardBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

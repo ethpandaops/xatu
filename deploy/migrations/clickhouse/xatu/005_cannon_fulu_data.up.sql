@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS canonical_beacon_attestation_reward_local ON CLUSTER 
     `head` Int64 COMMENT 'The reward for correctly attesting to the head in gwei' CODEC(ZSTD(1)),
     `target` Int64 COMMENT 'The reward for correctly attesting to the target in gwei' CODEC(ZSTD(1)),
     `source` Int64 COMMENT 'The reward for correctly attesting to the source in gwei' CODEC(ZSTD(1)),
-    `inclusion_delay` UInt64 COMMENT 'The reward for inclusion delay in gwei' CODEC(ZSTD(1)),
+    `inclusion_delay` Nullable(UInt64) COMMENT 'The reward for inclusion delay in gwei' CODEC(ZSTD(1)),
     `inactivity` Int64 COMMENT 'The inactivity penalty in gwei' CODEC(ZSTD(1)),
     `meta_network_name` LowCardinality(String) COMMENT 'Ethereum network name'
 )

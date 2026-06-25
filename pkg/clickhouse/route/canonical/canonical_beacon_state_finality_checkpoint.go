@@ -39,49 +39,83 @@ func (b *canonicalBeaconStateFinalityCheckpointBatch) FlattenTo(event *xatu.Deco
 		return fmt.Errorf("nil payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
+	b.appendRuntime(event)
+	b.appendMetadata(event)
+	b.appendPayload(event)
+	b.appendAdditionalData(event)
+	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconStateFinalityCheckpointBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV1BeaconStateFinalityCheckpoint()
+
 	extra := event.GetMeta().GetClient().GetEthV1BeaconStateFinalityCheckpoint()
 	if extra == nil || extra.GetEpoch() == nil || extra.GetEpoch().GetNumber() == nil {
 		return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
 	}
 
-	epoch := uint32(extra.GetEpoch().GetNumber().GetValue()) //nolint:gosec // bounded by uint32 column
-
-	var epochStartTime time.Time
-	if start := extra.GetEpoch().GetStartDateTime(); start != nil {
-		epochStartTime = start.AsTime()
+	if payload.GetPreviousJustified() == nil {
+		return fmt.Errorf("nil PreviousJustified: %w", route.ErrInvalidEvent)
 	}
 
-	b.UpdatedDateTime.Append(time.Now())
-	b.Epoch.Append(epoch)
-	b.EpochStartDateTime.Append(epochStartTime)
-	b.StateID.Append(extra.GetStateId())
-
-	if cp := payload.GetPreviousJustified(); cp != nil {
-		b.PreviousJustifiedEpoch.Append(uint32(cp.GetEpoch())) //nolint:gosec // bounded by uint32 column
-		b.PreviousJustifiedRoot.Append([]byte(cp.GetRoot()))
-	} else {
-		b.PreviousJustifiedEpoch.Append(0)
-		b.PreviousJustifiedRoot.Append([]byte(""))
+	if payload.GetPreviousJustified().GetRoot() == "" {
+		return fmt.Errorf("nil PreviousJustifiedRoot: %w", route.ErrInvalidEvent)
 	}
 
-	if cp := payload.GetCurrentJustified(); cp != nil {
-		b.CurrentJustifiedEpoch.Append(uint32(cp.GetEpoch())) //nolint:gosec // bounded by uint32 column
-		b.CurrentJustifiedRoot.Append([]byte(cp.GetRoot()))
-	} else {
-		b.CurrentJustifiedEpoch.Append(0)
-		b.CurrentJustifiedRoot.Append([]byte(""))
+	if payload.GetCurrentJustified() == nil {
+		return fmt.Errorf("nil CurrentJustified: %w", route.ErrInvalidEvent)
 	}
 
-	if cp := payload.GetFinalized(); cp != nil {
-		b.FinalizedEpoch.Append(uint32(cp.GetEpoch())) //nolint:gosec // bounded by uint32 column
-		b.FinalizedRoot.Append([]byte(cp.GetRoot()))
-	} else {
-		b.FinalizedEpoch.Append(0)
-		b.FinalizedRoot.Append([]byte(""))
+	if payload.GetCurrentJustified().GetRoot() == "" {
+		return fmt.Errorf("nil CurrentJustifiedRoot: %w", route.ErrInvalidEvent)
 	}
 
-	b.appendMetadata(event)
-	b.rows++
+	if payload.GetFinalized() == nil {
+		return fmt.Errorf("nil Finalized: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetFinalized().GetRoot() == "" {
+		return fmt.Errorf("nil FinalizedRoot: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
+}
+
+func (b *canonicalBeaconStateFinalityCheckpointBatch) appendRuntime(_ *xatu.DecoratedEvent) {
+	b.UpdatedDateTime.Append(time.Now())
+}
+
+func (b *canonicalBeaconStateFinalityCheckpointBatch) appendPayload(event *xatu.DecoratedEvent) {
+	payload := event.GetEthV1BeaconStateFinalityCheckpoint()
+	previous := payload.GetPreviousJustified()
+	current := payload.GetCurrentJustified()
+	finalized := payload.GetFinalized()
+
+	b.PreviousJustifiedEpoch.Append(uint32(previous.GetEpoch())) //nolint:gosec // bounded by uint32 column
+	b.PreviousJustifiedRoot.Append([]byte(previous.GetRoot()))
+	b.CurrentJustifiedEpoch.Append(uint32(current.GetEpoch())) //nolint:gosec // bounded by uint32 column
+	b.CurrentJustifiedRoot.Append([]byte(current.GetRoot()))
+	b.FinalizedEpoch.Append(uint32(finalized.GetEpoch())) //nolint:gosec // bounded by uint32 column
+	b.FinalizedRoot.Append([]byte(finalized.GetRoot()))
+}
+
+func (b *canonicalBeaconStateFinalityCheckpointBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
+	extra := event.GetMeta().GetClient().GetEthV1BeaconStateFinalityCheckpoint()
+	epoch := extra.GetEpoch()
+
+	b.Epoch.Append(uint32(epoch.GetNumber().GetValue())) //nolint:gosec // bounded by uint32 column
+
+	if start := epoch.GetStartDateTime(); start != nil {
+		b.EpochStartDateTime.Append(start.AsTime())
+	} else {
+		b.EpochStartDateTime.Append(time.Time{})
+	}
+
+	b.StateID.Append(extra.GetStateId())
 }

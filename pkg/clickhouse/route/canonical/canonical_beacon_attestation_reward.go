@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -50,11 +51,46 @@ func (b *canonicalBeaconAttestationRewardBatch) FlattenTo(event *xatu.DecoratedE
 		return fmt.Errorf("nil eth_v1_beacon_attestation_reward payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconAttestationRewardBatch) validate(event *xatu.DecoratedEvent) error {
+	reward := event.GetEthV1BeaconAttestationReward()
+
+	if reward.GetValidatorIndex() == nil {
+		return fmt.Errorf("nil ValidatorIndex: %w", route.ErrInvalidEvent)
+	}
+
+	if reward.GetHead() == nil {
+		return fmt.Errorf("nil Head: %w", route.ErrInvalidEvent)
+	}
+
+	if reward.GetTarget() == nil {
+		return fmt.Errorf("nil Target: %w", route.ErrInvalidEvent)
+	}
+
+	if reward.GetSource() == nil {
+		return fmt.Errorf("nil Source: %w", route.ErrInvalidEvent)
+	}
+
+	if reward.GetInactivity() == nil {
+		return fmt.Errorf("nil Inactivity: %w", route.ErrInvalidEvent)
+	}
+
+	additional := event.GetMeta().GetClient().GetEthV1BeaconAttestationReward()
+	if additional == nil || additional.GetEpoch() == nil || additional.GetEpoch().GetNumber() == nil {
+		return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }
@@ -67,67 +103,29 @@ func (b *canonicalBeaconAttestationRewardBatch) appendRuntime(_ *xatu.DecoratedE
 func (b *canonicalBeaconAttestationRewardBatch) appendPayload(event *xatu.DecoratedEvent) {
 	reward := event.GetEthV1BeaconAttestationReward()
 
-	if validatorIndex := reward.GetValidatorIndex(); validatorIndex != nil {
-		b.ValidatorIndex.Append(uint32(validatorIndex.GetValue()))
-	} else {
-		b.ValidatorIndex.Append(0)
-	}
-
-	if head := reward.GetHead(); head != nil {
-		b.Head.Append(head.GetValue())
-	} else {
-		b.Head.Append(0)
-	}
-
-	if target := reward.GetTarget(); target != nil {
-		b.Target.Append(target.GetValue())
-	} else {
-		b.Target.Append(0)
-	}
-
-	if source := reward.GetSource(); source != nil {
-		b.Source.Append(source.GetValue())
-	} else {
-		b.Source.Append(0)
-	}
+	b.ValidatorIndex.Append(uint32(reward.GetValidatorIndex().GetValue()))
+	b.Head.Append(reward.GetHead().GetValue())
+	b.Target.Append(reward.GetTarget().GetValue())
+	b.Source.Append(reward.GetSource().GetValue())
 
 	if inclusionDelay := reward.GetInclusionDelay(); inclusionDelay != nil {
-		b.InclusionDelay.Append(inclusionDelay.GetValue())
+		b.InclusionDelay.Append(proto.NewNullable[uint64](inclusionDelay.GetValue()))
 	} else {
-		b.InclusionDelay.Append(0)
+		b.InclusionDelay.Append(proto.Nullable[uint64]{})
 	}
 
-	if inactivity := reward.GetInactivity(); inactivity != nil {
-		b.Inactivity.Append(inactivity.GetValue())
-	} else {
-		b.Inactivity.Append(0)
-	}
+	b.Inactivity.Append(reward.GetInactivity().GetValue())
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconAttestationRewardBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
-	additional := event.GetMeta().GetClient().GetEthV1BeaconAttestationReward()
-	if additional == nil {
-		b.Epoch.Append(0)
-		b.EpochStartDateTime.Append(time.Time{})
+	epochData := event.GetMeta().GetClient().GetEthV1BeaconAttestationReward().GetEpoch()
 
-		return
-	}
+	b.Epoch.Append(uint32(epochData.GetNumber().GetValue()))
 
-	if epochData := additional.GetEpoch(); epochData != nil {
-		if epochNumber := epochData.GetNumber(); epochNumber != nil {
-			b.Epoch.Append(uint32(epochNumber.GetValue()))
-		} else {
-			b.Epoch.Append(0)
-		}
-
-		if startDateTime := epochData.GetStartDateTime(); startDateTime != nil {
-			b.EpochStartDateTime.Append(startDateTime.AsTime())
-		} else {
-			b.EpochStartDateTime.Append(time.Time{})
-		}
+	if startDateTime := epochData.GetStartDateTime(); startDateTime != nil {
+		b.EpochStartDateTime.Append(startDateTime.AsTime())
 	} else {
-		b.Epoch.Append(0)
 		b.EpochStartDateTime.Append(time.Time{})
 	}
 }

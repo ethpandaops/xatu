@@ -34,10 +34,25 @@ func (b *canonicalBeaconBlockExecutionRequestConsolidationBatch) FlattenTo(event
 		return nil
 	}
 
-	consolidation := event.GetEthV2BeaconBlockExecutionRequestConsolidation()
-	if consolidation == nil {
+	if event.GetEthV2BeaconBlockExecutionRequestConsolidation() == nil {
 		return fmt.Errorf("nil eth_v2_beacon_block_execution_request_consolidation payload: %w", route.ErrInvalidEvent)
 	}
+
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
+	b.appendRuntime(event)
+	b.appendMetadata(event)
+	b.appendPayload(event)
+	b.appendAdditionalData(event)
+	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockExecutionRequestConsolidationBatch) validate(event *xatu.DecoratedEvent) error {
+	consolidation := event.GetEthV2BeaconBlockExecutionRequestConsolidation()
 
 	if consolidation.GetSourceAddress() == nil {
 		return fmt.Errorf("nil SourceAddress: %w", route.ErrInvalidEvent)
@@ -51,11 +66,10 @@ func (b *canonicalBeaconBlockExecutionRequestConsolidationBatch) FlattenTo(event
 		return fmt.Errorf("nil TargetPubkey: %w", route.ErrInvalidEvent)
 	}
 
-	b.appendRuntime(event)
-	b.appendMetadata(event)
-	b.appendPayload(event)
-	b.appendAdditionalData(event)
-	b.rows++
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockExecutionRequestConsolidation()
+	if additional == nil || additional.GetPositionInBlock() == nil {
+		return fmt.Errorf("nil PositionInBlock: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }
@@ -74,18 +88,6 @@ func (b *canonicalBeaconBlockExecutionRequestConsolidationBatch) appendPayload(e
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconBlockExecutionRequestConsolidationBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
 	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockExecutionRequestConsolidation()
-	if additional == nil {
-		b.Slot.Append(0)
-		b.SlotStartDateTime.Append(time.Time{})
-		b.Epoch.Append(0)
-		b.EpochStartDateTime.Append(time.Time{})
-		b.BlockVersion.Append("")
-		b.BlockRoot.Append(nil)
-		b.PositionInBlock.Append(0)
-
-		return
-	}
-
 	appendBlockIdentifier(additional.GetBlock(),
 		&b.Slot, &b.SlotStartDateTime, &b.Epoch, &b.EpochStartDateTime, &b.BlockVersion, &b.BlockRoot)
 

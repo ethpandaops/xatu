@@ -39,48 +39,65 @@ func (b *canonicalBeaconStatePendingConsolidationBatch) FlattenTo(event *xatu.De
 		return fmt.Errorf("nil payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
+	b.appendRuntime(event)
+	b.appendMetadata(event)
+	b.appendPayload(event)
+	b.appendAdditionalData(event)
+	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconStatePendingConsolidationBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV1BeaconStatePendingConsolidation()
+
+	if payload.GetSourceIndex() == nil {
+		return fmt.Errorf("nil SourceIndex: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetTargetIndex() == nil {
+		return fmt.Errorf("nil TargetIndex: %w", route.ErrInvalidEvent)
+	}
+
 	extra := event.GetMeta().GetClient().GetEthV1BeaconStatePendingConsolidation()
 	if extra == nil || extra.GetEpoch() == nil || extra.GetEpoch().GetNumber() == nil {
 		return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
 	}
 
-	var (
-		epoch          uint32
-		epochStartTime time.Time
-	)
-
-	if number := extra.GetEpoch().GetNumber(); number != nil {
-		epoch = uint32(number.GetValue()) //nolint:gosec // bounded by uint32 column
+	if extra.GetPositionInQueue() == nil {
+		return fmt.Errorf("nil PositionInQueue: %w", route.ErrInvalidEvent)
 	}
-
-	if start := extra.GetEpoch().GetStartDateTime(); start != nil {
-		epochStartTime = start.AsTime()
-	}
-
-	var positionInQueue uint32
-	if pos := extra.GetPositionInQueue(); pos != nil {
-		positionInQueue = uint32(pos.GetValue()) //nolint:gosec // bounded by uint32 column
-	}
-
-	var sourceIndex uint32
-	if src := payload.GetSourceIndex(); src != nil {
-		sourceIndex = uint32(src.GetValue()) //nolint:gosec // bounded by uint32 column
-	}
-
-	var targetIndex uint32
-	if tgt := payload.GetTargetIndex(); tgt != nil {
-		targetIndex = uint32(tgt.GetValue()) //nolint:gosec // bounded by uint32 column
-	}
-
-	b.UpdatedDateTime.Append(time.Now())
-	b.Epoch.Append(epoch)
-	b.EpochStartDateTime.Append(epochStartTime)
-	b.StateID.Append(extra.GetStateId())
-	b.PositionInQueue.Append(positionInQueue)
-	b.SourceIndex.Append(sourceIndex)
-	b.TargetIndex.Append(targetIndex)
-	b.appendMetadata(event)
-	b.rows++
 
 	return nil
+}
+
+func (b *canonicalBeaconStatePendingConsolidationBatch) appendRuntime(_ *xatu.DecoratedEvent) {
+	b.UpdatedDateTime.Append(time.Now())
+}
+
+func (b *canonicalBeaconStatePendingConsolidationBatch) appendPayload(event *xatu.DecoratedEvent) {
+	payload := event.GetEthV1BeaconStatePendingConsolidation()
+
+	b.SourceIndex.Append(uint32(payload.GetSourceIndex().GetValue())) //nolint:gosec // bounded by uint32 column
+	b.TargetIndex.Append(uint32(payload.GetTargetIndex().GetValue())) //nolint:gosec // bounded by uint32 column
+}
+
+func (b *canonicalBeaconStatePendingConsolidationBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
+	extra := event.GetMeta().GetClient().GetEthV1BeaconStatePendingConsolidation()
+	epoch := extra.GetEpoch()
+
+	b.Epoch.Append(uint32(epoch.GetNumber().GetValue())) //nolint:gosec // bounded by uint32 column
+
+	if start := epoch.GetStartDateTime(); start != nil {
+		b.EpochStartDateTime.Append(start.AsTime())
+	} else {
+		b.EpochStartDateTime.Append(time.Time{})
+	}
+
+	b.StateID.Append(extra.GetStateId())
+	b.PositionInQueue.Append(uint32(extra.GetPositionInQueue().GetValue())) //nolint:gosec // bounded by uint32 column
 }

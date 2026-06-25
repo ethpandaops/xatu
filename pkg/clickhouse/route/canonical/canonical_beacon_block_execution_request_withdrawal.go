@@ -67,6 +67,11 @@ func (b *canonicalBeaconBlockExecutionRequestWithdrawalBatch) validate(event *xa
 		return fmt.Errorf("nil Amount: %w", route.ErrInvalidEvent)
 	}
 
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockExecutionRequestWithdrawal()
+	if additional == nil || additional.GetPositionInBlock() == nil {
+		return fmt.Errorf("nil PositionInBlock: %w", route.ErrInvalidEvent)
+	}
+
 	return nil
 }
 
@@ -85,24 +90,8 @@ func (b *canonicalBeaconBlockExecutionRequestWithdrawalBatch) appendPayload(even
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconBlockExecutionRequestWithdrawalBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
 	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockExecutionRequestWithdrawal()
-	if additional == nil {
-		b.Slot.Append(0)
-		b.SlotStartDateTime.Append(time.Time{})
-		b.Epoch.Append(0)
-		b.EpochStartDateTime.Append(time.Time{})
-		b.BlockVersion.Append("")
-		b.BlockRoot.Append(nil)
-		b.PositionInBlock.Append(0)
-
-		return
-	}
-
 	appendBlockIdentifier(additional.GetBlock(),
 		&b.Slot, &b.SlotStartDateTime, &b.Epoch, &b.EpochStartDateTime, &b.BlockVersion, &b.BlockRoot)
 
-	if position := additional.GetPositionInBlock(); position != nil {
-		b.PositionInBlock.Append(uint32(position.GetValue()))
-	} else {
-		b.PositionInBlock.Append(0)
-	}
+	b.PositionInBlock.Append(uint32(additional.GetPositionInBlock().GetValue()))
 }

@@ -75,6 +75,11 @@ func (b *canonicalBeaconBlockExecutionRequestDepositBatch) validate(event *xatu.
 		return fmt.Errorf("nil Index: %w", route.ErrInvalidEvent)
 	}
 
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockExecutionRequestDeposit()
+	if additional == nil || additional.GetPositionInBlock() == nil {
+		return fmt.Errorf("nil PositionInBlock: %w", route.ErrInvalidEvent)
+	}
+
 	return nil
 }
 
@@ -95,18 +100,6 @@ func (b *canonicalBeaconBlockExecutionRequestDepositBatch) appendPayload(event *
 //nolint:gosec // G115: proto uint64 position is bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconBlockExecutionRequestDepositBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
 	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockExecutionRequestDeposit()
-	if additional == nil {
-		b.Slot.Append(0)
-		b.SlotStartDateTime.Append(time.Time{})
-		b.Epoch.Append(0)
-		b.EpochStartDateTime.Append(time.Time{})
-		b.BlockVersion.Append("")
-		b.BlockRoot.Append(nil)
-		b.PositionInBlock.Append(0)
-
-		return
-	}
-
 	appendBlockIdentifier(additional.GetBlock(),
 		&b.Slot, &b.SlotStartDateTime, &b.Epoch, &b.EpochStartDateTime, &b.BlockVersion, &b.BlockRoot)
 

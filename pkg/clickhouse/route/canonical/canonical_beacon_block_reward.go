@@ -38,11 +38,45 @@ func (b *canonicalBeaconBlockRewardBatch) FlattenTo(event *xatu.DecoratedEvent) 
 		return fmt.Errorf("nil eth_v1_beacon_block_reward payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime()
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockRewardBatch) validate(event *xatu.DecoratedEvent) error {
+	reward := event.GetEthV1BeaconBlockReward()
+
+	if reward.GetProposerIndex() == nil {
+		return fmt.Errorf("nil ProposerIndex: %w", route.ErrInvalidEvent)
+	}
+
+	if reward.GetTotal() == nil {
+		return fmt.Errorf("nil Total: %w", route.ErrInvalidEvent)
+	}
+
+	if reward.GetAttestations() == nil {
+		return fmt.Errorf("nil Attestations: %w", route.ErrInvalidEvent)
+	}
+
+	if reward.GetSyncAggregate() == nil {
+		return fmt.Errorf("nil SyncAggregate: %w", route.ErrInvalidEvent)
+	}
+
+	if reward.GetProposerSlashings() == nil {
+		return fmt.Errorf("nil ProposerSlashings: %w", route.ErrInvalidEvent)
+	}
+
+	if reward.GetAttesterSlashings() == nil {
+		return fmt.Errorf("nil AttesterSlashings: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }
@@ -55,12 +89,7 @@ func (b *canonicalBeaconBlockRewardBatch) appendRuntime() {
 func (b *canonicalBeaconBlockRewardBatch) appendPayload(event *xatu.DecoratedEvent) {
 	reward := event.GetEthV1BeaconBlockReward()
 
-	if proposerIndex := reward.GetProposerIndex(); proposerIndex != nil {
-		b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
-	} else {
-		b.ProposerIndex.Append(0)
-	}
-
+	b.ProposerIndex.Append(uint32(reward.GetProposerIndex().GetValue()))
 	b.Total.Append(reward.GetTotal().GetValue())
 	b.Attestations.Append(reward.GetAttestations().GetValue())
 	b.SyncAggregate.Append(reward.GetSyncAggregate().GetValue())

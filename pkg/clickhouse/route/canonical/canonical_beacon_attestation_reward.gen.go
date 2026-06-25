@@ -18,14 +18,16 @@ type canonicalBeaconAttestationRewardBatch struct {
 	Head               proto.ColInt64
 	Target             proto.ColInt64
 	Source             proto.ColInt64
-	InclusionDelay     proto.ColUInt64
+	InclusionDelay     *proto.ColNullable[uint64]
 	Inactivity         proto.ColInt64
 	MetaNetworkName    proto.ColStr
 	rows               int
 }
 
 func newcanonicalBeaconAttestationRewardBatch() *canonicalBeaconAttestationRewardBatch {
-	return &canonicalBeaconAttestationRewardBatch{}
+	return &canonicalBeaconAttestationRewardBatch{
+		InclusionDelay: new(proto.ColUInt64).Nullable(),
+	}
 }
 
 func (b *canonicalBeaconAttestationRewardBatch) Rows() int {
@@ -50,7 +52,7 @@ func (b *canonicalBeaconAttestationRewardBatch) Input() proto.Input {
 		{Name: "head", Data: &b.Head},
 		{Name: "target", Data: &b.Target},
 		{Name: "source", Data: &b.Source},
-		{Name: "inclusion_delay", Data: &b.InclusionDelay},
+		{Name: "inclusion_delay", Data: b.InclusionDelay},
 		{Name: "inactivity", Data: &b.Inactivity},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
 	}
@@ -83,7 +85,11 @@ func (b *canonicalBeaconAttestationRewardBatch) Snapshot() []map[string]any {
 		row["head"] = b.Head.Row(i)
 		row["target"] = b.Target.Row(i)
 		row["source"] = b.Source.Row(i)
-		row["inclusion_delay"] = b.InclusionDelay.Row(i)
+		if v := b.InclusionDelay.Row(i); v.Set {
+			row["inclusion_delay"] = v.Value
+		} else {
+			row["inclusion_delay"] = nil
+		}
 		row["inactivity"] = b.Inactivity.Row(i)
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
 		out[i] = row

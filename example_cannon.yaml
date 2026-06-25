@@ -75,6 +75,24 @@ derivers:
       enabled: true
       iterator:
         backfill: { enabled: false, toEpoch: 0 }
+    # ── Electra execution requests (extracted from the beacon block) ──
+    executionRequestDeposit:       { enabled: true }
+    executionRequestWithdrawal:    { enabled: true }
+    executionRequestConsolidation: { enabled: true }
+    # ── Rewards (beacon API) ── all default enabled; require a beacon node that
+    # serves the rewards endpoints (archive / reconstruct-historic-states).
+    blockReward:           { enabled: true }   # ~1 row/block, negligible storage
+    syncCommitteeReward:   { enabled: true }   # 512 rows/slot (~11 GB/yr mainnet)
+    # attestationReward is per-active-validator-per-epoch: ~199M rows/day,
+    # ~127 GB/yr on mainnet. Disable here if you don't need it.
+    attestationReward:     { enabled: true }
+    # ── Beacon state metadata ──
+    randao:                { enabled: false }
+    finalityCheckpoint:    { enabled: false }
+    # ── Electra beacon-state queues ──
+    beaconStatePendingDeposit:           { enabled: false }
+    beaconStatePendingPartialWithdrawal: { enabled: false }
+    beaconStatePendingConsolidation:     { enabled: false }
 
   # ── Execution layer — canonical_execution_* datasets via cryo ──
   # maxRangeSize is tuned from benchmarking at block 20M: throughput rises with

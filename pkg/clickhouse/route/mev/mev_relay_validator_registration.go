@@ -54,14 +54,21 @@ func (b *mevRelayValidatorRegistrationBatch) FlattenTo(event *xatu.DecoratedEven
 func (b *mevRelayValidatorRegistrationBatch) validate(event *xatu.DecoratedEvent) error {
 	payload := event.GetMevRelayValidatorRegistration()
 
-	if msg := payload.GetMessage(); msg != nil {
-		if msg.GetTimestamp() == nil {
-			return fmt.Errorf("nil Timestamp: %w", route.ErrInvalidEvent)
-		}
+	msg := payload.GetMessage()
+	if msg == nil {
+		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
+	}
 
-		if msg.GetGasLimit() == nil {
-			return fmt.Errorf("nil GasLimit: %w", route.ErrInvalidEvent)
-		}
+	if msg.GetTimestamp() == nil {
+		return fmt.Errorf("nil Timestamp: %w", route.ErrInvalidEvent)
+	}
+
+	if msg.GetGasLimit() == nil {
+		return fmt.Errorf("nil GasLimit: %w", route.ErrInvalidEvent)
+	}
+
+	if msg.GetFeeRecipient() == nil {
+		return fmt.Errorf("nil FeeRecipient: %w", route.ErrInvalidEvent)
 	}
 
 	if client := event.GetMeta().GetClient(); client != nil {
@@ -110,32 +117,10 @@ func (b *mevRelayValidatorRegistrationBatch) appendRuntime(event *xatu.Decorated
 }
 
 func (b *mevRelayValidatorRegistrationBatch) appendPayload(event *xatu.DecoratedEvent) {
-	payload := event.GetMevRelayValidatorRegistration()
-
-	msg := payload.GetMessage()
-	if msg == nil {
-		b.appendZeroPayload()
-
-		return
-	}
-
-	if ts := msg.GetTimestamp(); ts != nil {
-		b.Timestamp.Append(int64(ts.GetValue())) //nolint:gosec // proto uint64 narrowed to int64 target field
-	} else {
-		b.Timestamp.Append(0)
-	}
-
-	if gasLimit := msg.GetGasLimit(); gasLimit != nil {
-		b.GasLimit.Append(gasLimit.GetValue())
-	} else {
-		b.GasLimit.Append(0)
-	}
-
-	if feeRecipient := msg.GetFeeRecipient(); feeRecipient != nil {
-		b.FeeRecipient.Append(feeRecipient.GetValue())
-	} else {
-		b.FeeRecipient.Append("")
-	}
+	msg := event.GetMevRelayValidatorRegistration().GetMessage()
+	b.Timestamp.Append(int64(msg.GetTimestamp().GetValue())) //nolint:gosec // G115: proto uint64 narrowed to int64 target column
+	b.GasLimit.Append(msg.GetGasLimit().GetValue())
+	b.FeeRecipient.Append(msg.GetFeeRecipient().GetValue())
 }
 
 func (b *mevRelayValidatorRegistrationBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
@@ -237,12 +222,6 @@ func (b *mevRelayValidatorRegistrationBatch) appendAdditionalData(event *xatu.De
 		b.WallclockEpoch.Append(0)
 		b.WallclockEpochStartDateTime.Append(time.Time{})
 	}
-}
-
-func (b *mevRelayValidatorRegistrationBatch) appendZeroPayload() {
-	b.Timestamp.Append(0)
-	b.GasLimit.Append(0)
-	b.FeeRecipient.Append("")
 }
 
 func (b *mevRelayValidatorRegistrationBatch) appendZeroAdditionalData() {

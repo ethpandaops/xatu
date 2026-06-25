@@ -25,9 +25,16 @@ func TestSnapshot_mev_relay_validator_registration(t *testing.T) {
 			},
 		}),
 		Data: &xatu.DecoratedEvent_MevRelayValidatorRegistration{
-			MevRelayValidatorRegistration: &mevrelay.ValidatorRegistration{},
+			MevRelayValidatorRegistration: &mevrelay.ValidatorRegistration{
+				Message: &mevrelay.ValidatorRegistrationMessage{
+					FeeRecipient: wrapperspb.String("0xfee"),
+					GasLimit:     wrapperspb.UInt64(30000000),
+					Timestamp:    wrapperspb.UInt64(1705312800),
+				},
+			},
 		},
 	}, 1, map[string]any{
 		"meta_client_name": "test-client",
+		"fee_recipient":    "0xfee",
 	})
 }

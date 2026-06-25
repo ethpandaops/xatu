@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ClickHouse/ch-go/proto"
-
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -68,12 +66,32 @@ func (b *mevRelayProposerPayloadDeliveredBatch) validate(event *xatu.DecoratedEv
 		return fmt.Errorf("nil BlockNumber: %w", route.ErrInvalidEvent)
 	}
 
+	if payload.GetBlockHash() == nil {
+		return fmt.Errorf("nil BlockHash: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetProposerPubkey() == nil {
+		return fmt.Errorf("nil ProposerPubkey: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetBuilderPubkey() == nil {
+		return fmt.Errorf("nil BuilderPubkey: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetProposerFeeRecipient() == nil {
+		return fmt.Errorf("nil ProposerFeeRecipient: %w", route.ErrInvalidEvent)
+	}
+
 	if payload.GetGasLimit() == nil {
 		return fmt.Errorf("nil GasLimit: %w", route.ErrInvalidEvent)
 	}
 
 	if payload.GetGasUsed() == nil {
 		return fmt.Errorf("nil GasUsed: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetValue() == nil {
+		return fmt.Errorf("nil Value: %w", route.ErrInvalidEvent)
 	}
 
 	if payload.GetNumTx() == nil {
@@ -117,70 +135,23 @@ func (b *mevRelayProposerPayloadDeliveredBatch) appendRuntime(event *xatu.Decora
 
 func (b *mevRelayProposerPayloadDeliveredBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	payload := event.GetMevRelayPayloadDelivered()
-	if slot := payload.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // proto uint64 narrowed to uint32 target field
-	} else {
-		b.Slot.Append(0)
+
+	parsedValue, err := route.ParseUInt256(payload.GetValue().GetValue())
+	if err != nil {
+		return fmt.Errorf("parsing value: %w", err)
 	}
 
-	if blockNumber := payload.GetBlockNumber(); blockNumber != nil {
-		b.BlockNumber.Append(blockNumber.GetValue())
-	} else {
-		b.BlockNumber.Append(0)
-	}
-
-	if blockHash := payload.GetBlockHash(); blockHash != nil {
-		b.BlockHash.Append([]byte(blockHash.GetValue()))
-	} else {
-		b.BlockHash.Append(nil)
-	}
-
-	if proposerPubkey := payload.GetProposerPubkey(); proposerPubkey != nil {
-		b.ProposerPubkey.Append(proposerPubkey.GetValue())
-	} else {
-		b.ProposerPubkey.Append("")
-	}
-
-	if builderPubkey := payload.GetBuilderPubkey(); builderPubkey != nil {
-		b.BuilderPubkey.Append(builderPubkey.GetValue())
-	} else {
-		b.BuilderPubkey.Append("")
-	}
-
-	if proposerFeeRecipient := payload.GetProposerFeeRecipient(); proposerFeeRecipient != nil {
-		b.ProposerFeeRecipient.Append([]byte(proposerFeeRecipient.GetValue()))
-	} else {
-		b.ProposerFeeRecipient.Append(nil)
-	}
-
-	if gasLimit := payload.GetGasLimit(); gasLimit != nil {
-		b.GasLimit.Append(gasLimit.GetValue())
-	} else {
-		b.GasLimit.Append(0)
-	}
-
-	if gasUsed := payload.GetGasUsed(); gasUsed != nil {
-		b.GasUsed.Append(gasUsed.GetValue())
-	} else {
-		b.GasUsed.Append(0)
-	}
-
-	if value := payload.GetValue(); value != nil {
-		parsedValue, err := route.ParseUInt256(value.GetValue())
-		if err != nil {
-			return fmt.Errorf("parsing value: %w", err)
-		}
-
-		b.Value.Append(parsedValue)
-	} else {
-		b.Value.Append(proto.UInt256{})
-	}
-
-	if numTx := payload.GetNumTx(); numTx != nil {
-		b.NumTx.Append(uint32(numTx.GetValue())) //nolint:gosec // proto uint64 narrowed to uint32 target field
-	} else {
-		b.NumTx.Append(0)
-	}
+	//nolint:gosec // G115: proto uint64 values narrowed to uint32 target columns
+	b.Slot.Append(uint32(payload.GetSlot().GetValue()))
+	b.BlockNumber.Append(payload.GetBlockNumber().GetValue())
+	b.BlockHash.Append([]byte(payload.GetBlockHash().GetValue()))
+	b.ProposerPubkey.Append(payload.GetProposerPubkey().GetValue())
+	b.BuilderPubkey.Append(payload.GetBuilderPubkey().GetValue())
+	b.ProposerFeeRecipient.Append([]byte(payload.GetProposerFeeRecipient().GetValue()))
+	b.GasLimit.Append(payload.GetGasLimit().GetValue())
+	b.GasUsed.Append(payload.GetGasUsed().GetValue())
+	b.Value.Append(parsedValue)
+	b.NumTx.Append(uint32(payload.GetNumTx().GetValue())) //nolint:gosec // G115
 
 	return nil
 }

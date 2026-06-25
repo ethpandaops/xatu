@@ -29,6 +29,8 @@ func TestSnapshot_mev_relay_bid_trace(t *testing.T) {
 		Data: &xatu.DecoratedEvent_MevRelayBidTraceBuilderBlockSubmission{
 			MevRelayBidTraceBuilderBlockSubmission: &mevrelay.BidTrace{
 				Slot:                 wrapperspb.UInt64(100),
+				ParentHash:           wrapperspb.String("0xparent"),
+				BlockHash:            wrapperspb.String("0xblock"),
 				BlockNumber:          wrapperspb.UInt64(1000),
 				BuilderPubkey:        wrapperspb.String("0xbuilder"),
 				ProposerPubkey:       wrapperspb.String("0xproposer"),

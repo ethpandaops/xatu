@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ClickHouse/ch-go/proto"
-
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -64,8 +62,24 @@ func (b *mevRelayBidTraceBatch) validate(event *xatu.DecoratedEvent) error {
 		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
 	}
 
-	if payload.GetBlockNumber() == nil {
-		return fmt.Errorf("nil BlockNumber: %w", route.ErrInvalidEvent)
+	if payload.GetParentHash() == nil {
+		return fmt.Errorf("nil ParentHash: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetBlockHash() == nil {
+		return fmt.Errorf("nil BlockHash: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetBuilderPubkey() == nil {
+		return fmt.Errorf("nil BuilderPubkey: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetProposerPubkey() == nil {
+		return fmt.Errorf("nil ProposerPubkey: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetProposerFeeRecipient() == nil {
+		return fmt.Errorf("nil ProposerFeeRecipient: %w", route.ErrInvalidEvent)
 	}
 
 	if payload.GetGasLimit() == nil {
@@ -76,8 +90,16 @@ func (b *mevRelayBidTraceBatch) validate(event *xatu.DecoratedEvent) error {
 		return fmt.Errorf("nil GasUsed: %w", route.ErrInvalidEvent)
 	}
 
+	if payload.GetValue() == nil {
+		return fmt.Errorf("nil Value: %w", route.ErrInvalidEvent)
+	}
+
 	if payload.GetNumTx() == nil {
 		return fmt.Errorf("nil NumTx: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetBlockNumber() == nil {
+		return fmt.Errorf("nil BlockNumber: %w", route.ErrInvalidEvent)
 	}
 
 	if payload.GetTimestamp() == nil {
@@ -129,94 +151,27 @@ func (b *mevRelayBidTraceBatch) appendRuntime(event *xatu.DecoratedEvent) {
 
 func (b *mevRelayBidTraceBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	payload := event.GetMevRelayBidTraceBuilderBlockSubmission()
-	if slot := payload.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // proto uint64 narrowed to uint32 target field
-	} else {
-		b.Slot.Append(0)
+
+	parsedValue, err := route.ParseUInt256(payload.GetValue().GetValue())
+	if err != nil {
+		return fmt.Errorf("parsing value: %w", err)
 	}
 
-	if parentHash := payload.GetParentHash(); parentHash != nil {
-		b.ParentHash.Append([]byte(parentHash.GetValue()))
-	} else {
-		b.ParentHash.Append(nil)
-	}
-
-	if blockNumber := payload.GetBlockNumber(); blockNumber != nil {
-		b.BlockNumber.Append(blockNumber.GetValue())
-	} else {
-		b.BlockNumber.Append(0)
-	}
-
-	if blockHash := payload.GetBlockHash(); blockHash != nil {
-		b.BlockHash.Append([]byte(blockHash.GetValue()))
-	} else {
-		b.BlockHash.Append(nil)
-	}
-
-	if builderPubkey := payload.GetBuilderPubkey(); builderPubkey != nil {
-		b.BuilderPubkey.Append(builderPubkey.GetValue())
-	} else {
-		b.BuilderPubkey.Append("")
-	}
-
-	if proposerPubkey := payload.GetProposerPubkey(); proposerPubkey != nil {
-		b.ProposerPubkey.Append(proposerPubkey.GetValue())
-	} else {
-		b.ProposerPubkey.Append("")
-	}
-
-	if proposerFeeRecipient := payload.GetProposerFeeRecipient(); proposerFeeRecipient != nil {
-		b.ProposerFeeRecipient.Append([]byte(proposerFeeRecipient.GetValue()))
-	} else {
-		b.ProposerFeeRecipient.Append(nil)
-	}
-
-	if gasLimit := payload.GetGasLimit(); gasLimit != nil {
-		b.GasLimit.Append(gasLimit.GetValue())
-	} else {
-		b.GasLimit.Append(0)
-	}
-
-	if gasUsed := payload.GetGasUsed(); gasUsed != nil {
-		b.GasUsed.Append(gasUsed.GetValue())
-	} else {
-		b.GasUsed.Append(0)
-	}
-
-	if value := payload.GetValue(); value != nil {
-		parsedValue, err := route.ParseUInt256(value.GetValue())
-		if err != nil {
-			return fmt.Errorf("parsing value: %w", err)
-		}
-
-		b.Value.Append(parsedValue)
-	} else {
-		b.Value.Append(proto.UInt256{})
-	}
-
-	if numTx := payload.GetNumTx(); numTx != nil {
-		b.NumTx.Append(uint32(numTx.GetValue())) //nolint:gosec // proto uint64 narrowed to uint32 target field
-	} else {
-		b.NumTx.Append(0)
-	}
-
-	if timestamp := payload.GetTimestamp(); timestamp != nil {
-		b.Timestamp.Append(timestamp.GetValue())
-	} else {
-		b.Timestamp.Append(0)
-	}
-
-	if timestampMs := payload.GetTimestampMs(); timestampMs != nil {
-		b.TimestampMs.Append(timestampMs.GetValue())
-	} else {
-		b.TimestampMs.Append(0)
-	}
-
-	if optimistic := payload.GetOptimisticSubmission(); optimistic != nil {
-		b.OptimisticSubmission.Append(optimistic.GetValue())
-	} else {
-		b.OptimisticSubmission.Append(false)
-	}
+	//nolint:gosec // G115: proto uint64 values narrowed to uint32 target columns
+	b.Slot.Append(uint32(payload.GetSlot().GetValue()))
+	b.ParentHash.Append([]byte(payload.GetParentHash().GetValue()))
+	b.BlockNumber.Append(payload.GetBlockNumber().GetValue())
+	b.BlockHash.Append([]byte(payload.GetBlockHash().GetValue()))
+	b.BuilderPubkey.Append(payload.GetBuilderPubkey().GetValue())
+	b.ProposerPubkey.Append(payload.GetProposerPubkey().GetValue())
+	b.ProposerFeeRecipient.Append([]byte(payload.GetProposerFeeRecipient().GetValue()))
+	b.GasLimit.Append(payload.GetGasLimit().GetValue())
+	b.GasUsed.Append(payload.GetGasUsed().GetValue())
+	b.Value.Append(parsedValue)
+	b.NumTx.Append(uint32(payload.GetNumTx().GetValue())) //nolint:gosec // G115
+	b.Timestamp.Append(payload.GetTimestamp().GetValue())
+	b.TimestampMs.Append(payload.GetTimestampMs().GetValue())
+	b.OptimisticSubmission.Append(payload.GetOptimisticSubmission().GetValue())
 
 	return nil
 }

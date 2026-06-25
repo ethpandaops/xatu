@@ -79,13 +79,7 @@ func (b *beaconApiEthV1EventsFinalizedCheckpointBatch) appendPayload(event *xatu
 	checkpointV2 := event.GetEthV1EventsFinalizedCheckpointV2()
 	b.Block.Append([]byte(checkpointV2.GetBlock()))
 	b.State.Append([]byte(checkpointV2.GetState()))
-
-	if epoch := checkpointV2.GetEpoch(); epoch != nil {
-		b.Epoch.Append(uint32(epoch.GetValue())) //nolint:gosec // epoch fits uint32
-	} else {
-		b.Epoch.Append(0)
-	}
-
+	b.Epoch.Append(uint32(checkpointV2.GetEpoch().GetValue())) //nolint:gosec // epoch fits uint32
 	b.ExecutionOptimistic.Append(false)
 }
 

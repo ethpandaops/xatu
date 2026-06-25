@@ -27,8 +27,10 @@ func TestSnapshot_beacon_api_eth_v1_validator_attestation_data(t *testing.T) {
 		}),
 		Data: &xatu.DecoratedEvent_EthV1ValidatorAttestationData{
 			EthV1ValidatorAttestationData: &ethv1.AttestationDataV2{
-				Slot:  wrapperspb.UInt64(100),
-				Index: wrapperspb.UInt64(8),
+				Slot:   wrapperspb.UInt64(100),
+				Index:  wrapperspb.UInt64(8),
+				Source: &ethv1.CheckpointV2{Epoch: wrapperspb.UInt64(2)},
+				Target: &ethv1.CheckpointV2{Epoch: wrapperspb.UInt64(3)},
 			},
 		},
 	}, 1, map[string]any{

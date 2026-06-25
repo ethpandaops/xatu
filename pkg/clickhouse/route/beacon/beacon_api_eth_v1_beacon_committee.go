@@ -71,6 +71,10 @@ func (b *beaconApiEthV1BeaconCommitteeBatch) validate(event *xatu.DecoratedEvent
 		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
 	}
 
+	if payload.GetIndex() == nil {
+		return fmt.Errorf("nil Index: %w", route.ErrInvalidEvent)
+	}
+
 	return nil
 }
 
@@ -86,17 +90,8 @@ func (b *beaconApiEthV1BeaconCommitteeBatch) appendRuntime(event *xatu.Decorated
 
 func (b *beaconApiEthV1BeaconCommitteeBatch) appendPayload(event *xatu.DecoratedEvent) {
 	committee := event.GetEthV1BeaconCommittee()
-	if slot := committee.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-	} else {
-		b.Slot.Append(0)
-	}
-
-	if committeeIndex := committee.GetIndex(); committeeIndex != nil {
-		b.CommitteeIndex.Append(strconv.FormatUint(committeeIndex.GetValue(), 10))
-	} else {
-		b.CommitteeIndex.Append("")
-	}
+	b.Slot.Append(uint32(committee.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
+	b.CommitteeIndex.Append(strconv.FormatUint(committee.GetIndex().GetValue(), 10))
 
 	validators := committee.GetValidators()
 	if len(validators) > 0 {

@@ -87,24 +87,8 @@ func (b *beaconApiEthV1EventsVoluntaryExitBatch) appendPayload(event *xatu.Decor
 	b.Signature.Append(voluntaryExitV2.GetSignature())
 
 	message := voluntaryExitV2.GetMessage()
-	if message == nil {
-		b.ValidatorIndex.Append(0)
-		b.Epoch.Append(0)
-
-		return
-	}
-
-	if validatorIndex := message.GetValidatorIndex(); validatorIndex != nil {
-		b.ValidatorIndex.Append(uint32(validatorIndex.GetValue())) //nolint:gosec // validator index fits uint32
-	} else {
-		b.ValidatorIndex.Append(0)
-	}
-
-	if epoch := message.GetEpoch(); epoch != nil {
-		b.Epoch.Append(uint32(epoch.GetValue())) //nolint:gosec // epoch fits uint32
-	} else {
-		b.Epoch.Append(0)
-	}
+	b.ValidatorIndex.Append(uint32(message.GetValidatorIndex().GetValue())) //nolint:gosec // validator index fits uint32
+	b.Epoch.Append(uint32(message.GetEpoch().GetValue()))                   //nolint:gosec // epoch fits uint32
 }
 
 func (b *beaconApiEthV1EventsVoluntaryExitBatch) appendAdditionalData(

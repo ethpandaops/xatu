@@ -75,12 +75,7 @@ func (b *beaconApiEthV1EventsBlockBatch) appendRuntime(event *xatu.DecoratedEven
 
 func (b *beaconApiEthV1EventsBlockBatch) appendPayload(event *xatu.DecoratedEvent) {
 	blockV2 := event.GetEthV1EventsBlockV2()
-	if slot := blockV2.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-	} else {
-		b.Slot.Append(0)
-	}
-
+	b.Slot.Append(uint32(blockV2.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 	b.Block.Append([]byte(blockV2.GetBlock()))
 	b.ExecutionOptimistic.Append(blockV2.GetExecutionOptimistic())
 }

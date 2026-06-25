@@ -66,16 +66,18 @@ func (b *beaconApiEthV1EventsAttestationBatch) validate(event *xatu.DecoratedEve
 		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
 	}
 
-	if source := data.GetSource(); source != nil {
-		if source.GetEpoch() == nil {
-			return fmt.Errorf("nil SourceEpoch: %w", route.ErrInvalidEvent)
-		}
+	if data.GetIndex() == nil {
+		return fmt.Errorf("nil CommitteeIndex: %w", route.ErrInvalidEvent)
 	}
 
-	if target := data.GetTarget(); target != nil {
-		if target.GetEpoch() == nil {
-			return fmt.Errorf("nil TargetEpoch: %w", route.ErrInvalidEvent)
-		}
+	source := data.GetSource()
+	if source == nil || source.GetEpoch() == nil {
+		return fmt.Errorf("nil SourceEpoch: %w", route.ErrInvalidEvent)
+	}
+
+	target := data.GetTarget()
+	if target == nil || target.GetEpoch() == nil {
+		return fmt.Errorf("nil TargetEpoch: %w", route.ErrInvalidEvent)
 	}
 
 	return nil
@@ -96,57 +98,17 @@ func (b *beaconApiEthV1EventsAttestationBatch) appendPayload(event *xatu.Decorat
 	b.AggregationBits.Append(attestationV2.GetAggregationBits())
 
 	data := attestationV2.GetData()
-	if data == nil {
-		b.Slot.Append(0)
-		b.CommitteeIndex.Append("")
-		b.BeaconBlockRoot.Append(nil)
-		b.SourceEpoch.Append(0)
-		b.SourceRoot.Append(nil)
-		b.TargetEpoch.Append(0)
-		b.TargetRoot.Append(nil)
-
-		return
-	}
-
-	if slot := data.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-	} else {
-		b.Slot.Append(0)
-	}
-
-	if committeeIndex := data.GetIndex(); committeeIndex != nil {
-		b.CommitteeIndex.Append(strconv.FormatUint(committeeIndex.GetValue(), 10))
-	} else {
-		b.CommitteeIndex.Append("")
-	}
-
+	b.Slot.Append(uint32(data.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
+	b.CommitteeIndex.Append(strconv.FormatUint(data.GetIndex().GetValue(), 10))
 	b.BeaconBlockRoot.Append([]byte(data.GetBeaconBlockRoot()))
 
-	if source := data.GetSource(); source != nil {
-		if sourceEpoch := source.GetEpoch(); sourceEpoch != nil {
-			b.SourceEpoch.Append(uint32(sourceEpoch.GetValue())) //nolint:gosec // epoch fits uint32
-		} else {
-			b.SourceEpoch.Append(0)
-		}
+	source := data.GetSource()
+	b.SourceEpoch.Append(uint32(source.GetEpoch().GetValue())) //nolint:gosec // epoch fits uint32
+	b.SourceRoot.Append([]byte(source.GetRoot()))
 
-		b.SourceRoot.Append([]byte(source.GetRoot()))
-	} else {
-		b.SourceEpoch.Append(0)
-		b.SourceRoot.Append(nil)
-	}
-
-	if target := data.GetTarget(); target != nil {
-		if targetEpoch := target.GetEpoch(); targetEpoch != nil {
-			b.TargetEpoch.Append(uint32(targetEpoch.GetValue())) //nolint:gosec // epoch fits uint32
-		} else {
-			b.TargetEpoch.Append(0)
-		}
-
-		b.TargetRoot.Append([]byte(target.GetRoot()))
-	} else {
-		b.TargetEpoch.Append(0)
-		b.TargetRoot.Append(nil)
-	}
+	target := data.GetTarget()
+	b.TargetEpoch.Append(uint32(target.GetEpoch().GetValue())) //nolint:gosec // epoch fits uint32
+	b.TargetRoot.Append([]byte(target.GetRoot()))
 }
 
 func (b *beaconApiEthV1EventsAttestationBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

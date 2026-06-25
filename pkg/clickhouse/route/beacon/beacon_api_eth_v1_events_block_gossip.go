@@ -75,12 +75,7 @@ func (b *beaconApiEthV1EventsBlockGossipBatch) appendRuntime(event *xatu.Decorat
 
 func (b *beaconApiEthV1EventsBlockGossipBatch) appendPayload(event *xatu.DecoratedEvent) {
 	gossip := event.GetEthV1EventsBlockGossip()
-	if slot := gossip.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-	} else {
-		b.Slot.Append(0)
-	}
-
+	b.Slot.Append(uint32(gossip.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 	b.Block.Append([]byte(gossip.GetBlock()))
 }
 

@@ -97,21 +97,10 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 	eventBlock *ethv2.EventBlockV2,
 ) error {
 	if phase0Block := eventBlock.GetPhase0Block(); phase0Block != nil {
-		if slot := phase0Block.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
-
+		b.Slot.Append(uint32(phase0Block.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 		b.ParentRoot.Append([]byte(phase0Block.GetParentRoot()))
 		b.StateRoot.Append([]byte(phase0Block.GetStateRoot()))
-
-		if pi := phase0Block.GetProposerIndex(); pi != nil {
-			b.ProposerIndex.Append(uint32(pi.GetValue())) //nolint:gosec // proposer index fits uint32
-		} else {
-			b.ProposerIndex.Append(0)
-		}
-
+		b.ProposerIndex.Append(uint32(phase0Block.GetProposerIndex().GetValue())) //nolint:gosec // proposer index fits uint32
 		b.appendEth1Data(phase0Block.GetBody().GetEth1Data())
 		b.appendNoExecutionPayload()
 
@@ -119,21 +108,10 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 	}
 
 	if altairBlock := eventBlock.GetAltairBlock(); altairBlock != nil {
-		if slot := altairBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
-
+		b.Slot.Append(uint32(altairBlock.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 		b.ParentRoot.Append([]byte(altairBlock.GetParentRoot()))
 		b.StateRoot.Append([]byte(altairBlock.GetStateRoot()))
-
-		if pi := altairBlock.GetProposerIndex(); pi != nil {
-			b.ProposerIndex.Append(uint32(pi.GetValue())) //nolint:gosec // proposer index fits uint32
-		} else {
-			b.ProposerIndex.Append(0)
-		}
-
+		b.ProposerIndex.Append(uint32(altairBlock.GetProposerIndex().GetValue())) //nolint:gosec // proposer index fits uint32
 		b.appendEth1Data(altairBlock.GetBody().GetEth1Data())
 		b.appendNoExecutionPayload()
 
@@ -141,20 +119,10 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 	}
 
 	if bellatrixBlock := eventBlock.GetBellatrixBlock(); bellatrixBlock != nil {
-		if slot := bellatrixBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
-
+		b.Slot.Append(uint32(bellatrixBlock.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 		b.ParentRoot.Append([]byte(bellatrixBlock.GetParentRoot()))
 		b.StateRoot.Append([]byte(bellatrixBlock.GetStateRoot()))
-
-		if pi := bellatrixBlock.GetProposerIndex(); pi != nil {
-			b.ProposerIndex.Append(uint32(pi.GetValue())) //nolint:gosec // proposer index fits uint32
-		} else {
-			b.ProposerIndex.Append(0)
-		}
+		b.ProposerIndex.Append(uint32(bellatrixBlock.GetProposerIndex().GetValue())) //nolint:gosec // proposer index fits uint32
 
 		body := bellatrixBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
@@ -163,20 +131,10 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 	}
 
 	if capellaBlock := eventBlock.GetCapellaBlock(); capellaBlock != nil {
-		if slot := capellaBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
-
+		b.Slot.Append(uint32(capellaBlock.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 		b.ParentRoot.Append([]byte(capellaBlock.GetParentRoot()))
 		b.StateRoot.Append([]byte(capellaBlock.GetStateRoot()))
-
-		if pi := capellaBlock.GetProposerIndex(); pi != nil {
-			b.ProposerIndex.Append(uint32(pi.GetValue())) //nolint:gosec // proposer index fits uint32
-		} else {
-			b.ProposerIndex.Append(0)
-		}
+		b.ProposerIndex.Append(uint32(capellaBlock.GetProposerIndex().GetValue())) //nolint:gosec // proposer index fits uint32
 
 		body := capellaBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
@@ -185,20 +143,10 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 	}
 
 	if denebBlock := eventBlock.GetDenebBlock(); denebBlock != nil {
-		if slot := denebBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
-
+		b.Slot.Append(uint32(denebBlock.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 		b.ParentRoot.Append([]byte(denebBlock.GetParentRoot()))
 		b.StateRoot.Append([]byte(denebBlock.GetStateRoot()))
-
-		if pi := denebBlock.GetProposerIndex(); pi != nil {
-			b.ProposerIndex.Append(uint32(pi.GetValue())) //nolint:gosec // proposer index fits uint32
-		} else {
-			b.ProposerIndex.Append(0)
-		}
+		b.ProposerIndex.Append(uint32(denebBlock.GetProposerIndex().GetValue())) //nolint:gosec // proposer index fits uint32
 
 		body := denebBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
@@ -207,20 +155,10 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 	}
 
 	if electraBlock := eventBlock.GetElectraBlock(); electraBlock != nil {
-		if slot := electraBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
-
+		b.Slot.Append(uint32(electraBlock.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 		b.ParentRoot.Append([]byte(electraBlock.GetParentRoot()))
 		b.StateRoot.Append([]byte(electraBlock.GetStateRoot()))
-
-		if pi := electraBlock.GetProposerIndex(); pi != nil {
-			b.ProposerIndex.Append(uint32(pi.GetValue())) //nolint:gosec // proposer index fits uint32
-		} else {
-			b.ProposerIndex.Append(0)
-		}
+		b.ProposerIndex.Append(uint32(electraBlock.GetProposerIndex().GetValue())) //nolint:gosec // proposer index fits uint32
 
 		body := electraBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
@@ -229,20 +167,10 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 	}
 
 	if fuluBlock := eventBlock.GetFuluBlock(); fuluBlock != nil {
-		if slot := fuluBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
-
+		b.Slot.Append(uint32(fuluBlock.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 		b.ParentRoot.Append([]byte(fuluBlock.GetParentRoot()))
 		b.StateRoot.Append([]byte(fuluBlock.GetStateRoot()))
-
-		if pi := fuluBlock.GetProposerIndex(); pi != nil {
-			b.ProposerIndex.Append(uint32(pi.GetValue())) //nolint:gosec // proposer index fits uint32
-		} else {
-			b.ProposerIndex.Append(0)
-		}
+		b.ProposerIndex.Append(uint32(fuluBlock.GetProposerIndex().GetValue())) //nolint:gosec // proposer index fits uint32
 
 		body := fuluBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
@@ -250,15 +178,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 		return b.appendExecutionPayloadElectra(body.GetExecutionPayload())
 	}
 
-	// Unknown block type: append zero values.
-	b.Slot.Append(0)
-	b.ParentRoot.Append(nil)
-	b.StateRoot.Append(nil)
-	b.ProposerIndex.Append(0)
-	b.appendEth1Data(nil)
-	b.appendNoExecutionPayload()
-
-	return nil
+	return fmt.Errorf("unknown block version: %w", route.ErrInvalidEvent)
 }
 
 func (b *beaconApiEthV2BeaconBlockBatch) appendEth1Data(eth1Data *ethv1.Eth1Data) {

@@ -68,10 +68,17 @@ func (b *beaconApiEthV1EventsContributionAndProofBatch) validate(
 		return fmt.Errorf("nil AggregatorIndex: %w", route.ErrInvalidEvent)
 	}
 
-	if contribution := message.GetContribution(); contribution != nil {
-		if contribution.GetSlot() == nil {
-			return fmt.Errorf("nil ContributionSlot: %w", route.ErrInvalidEvent)
-		}
+	contribution := message.GetContribution()
+	if contribution == nil {
+		return fmt.Errorf("nil Contribution: %w", route.ErrInvalidEvent)
+	}
+
+	if contribution.GetSlot() == nil {
+		return fmt.Errorf("nil ContributionSlot: %w", route.ErrInvalidEvent)
+	}
+
+	if contribution.GetSubcommitteeIndex() == nil {
+		return fmt.Errorf("nil ContributionSubcommitteeIndex: %w", route.ErrInvalidEvent)
 	}
 
 	return nil
@@ -92,51 +99,13 @@ func (b *beaconApiEthV1EventsContributionAndProofBatch) appendPayload(event *xat
 	b.Signature.Append(eventContributionV2.GetSignature())
 
 	message := eventContributionV2.GetMessage()
-	if message == nil {
-		b.AggregatorIndex.Append(0)
-		b.SelectionProof.Append("")
-		b.ContributionSlot.Append(0)
-		b.ContributionBeaconBlockRoot.Append(nil)
-		b.ContributionSubcommitteeIndex.Append("")
-		b.ContributionAggregationBits.Append("")
-		b.ContributionSignature.Append("")
-
-		return
-	}
-
-	if aggregatorIndex := message.GetAggregatorIndex(); aggregatorIndex != nil {
-		b.AggregatorIndex.Append(uint32(aggregatorIndex.GetValue())) //nolint:gosec // aggregator index fits uint32
-	} else {
-		b.AggregatorIndex.Append(0)
-	}
-
+	b.AggregatorIndex.Append(uint32(message.GetAggregatorIndex().GetValue())) //nolint:gosec // aggregator index fits uint32
 	b.SelectionProof.Append(message.GetSelectionProof())
 
 	contribution := message.GetContribution()
-	if contribution == nil {
-		b.ContributionSlot.Append(0)
-		b.ContributionBeaconBlockRoot.Append(nil)
-		b.ContributionSubcommitteeIndex.Append("")
-		b.ContributionAggregationBits.Append("")
-		b.ContributionSignature.Append("")
-
-		return
-	}
-
-	if slot := contribution.GetSlot(); slot != nil {
-		b.ContributionSlot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-	} else {
-		b.ContributionSlot.Append(0)
-	}
-
+	b.ContributionSlot.Append(uint32(contribution.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 	b.ContributionBeaconBlockRoot.Append([]byte(contribution.GetBeaconBlockRoot()))
-
-	if subcommitteeIndex := contribution.GetSubcommitteeIndex(); subcommitteeIndex != nil {
-		b.ContributionSubcommitteeIndex.Append(strconv.FormatUint(subcommitteeIndex.GetValue(), 10))
-	} else {
-		b.ContributionSubcommitteeIndex.Append("")
-	}
-
+	b.ContributionSubcommitteeIndex.Append(strconv.FormatUint(contribution.GetSubcommitteeIndex().GetValue(), 10))
 	b.ContributionAggregationBits.Append(contribution.GetAggregationBits())
 	b.ContributionSignature.Append(contribution.GetSignature())
 }

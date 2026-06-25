@@ -26,6 +26,10 @@ func TestSnapshot_beacon_api_eth_v1_events_contribution_and_proof(t *testing.T) 
 			EthV1EventsContributionAndProofV2: &ethv1.EventContributionAndProofV2{
 				Message: &ethv1.ContributionAndProofV2{
 					AggregatorIndex: wrapperspb.UInt64(99),
+					Contribution: &ethv1.SyncCommitteeContributionV2{
+						Slot:              wrapperspb.UInt64(100),
+						SubcommitteeIndex: wrapperspb.UInt64(3),
+					},
 				},
 			},
 		},

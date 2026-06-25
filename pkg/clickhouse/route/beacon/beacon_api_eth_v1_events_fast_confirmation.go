@@ -97,12 +97,7 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) appendRuntime(event *xatu.De
 
 func (b *beaconApiEthV1EventsFastConfirmationBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetEthV1EventsFastConfirmation()
-	if slot := payload.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-	} else {
-		b.Slot.Append(0)
-	}
-
+	b.Slot.Append(uint32(payload.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 	b.Block.Append([]byte(payload.GetBlock()))
 }
 

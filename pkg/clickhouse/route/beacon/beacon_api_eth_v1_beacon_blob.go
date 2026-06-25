@@ -81,27 +81,11 @@ func (b *beaconApiEthV1BeaconBlobBatch) appendRuntime(event *xatu.DecoratedEvent
 
 func (b *beaconApiEthV1BeaconBlobBatch) appendPayload(event *xatu.DecoratedEvent) {
 	blob := event.GetEthV1BeaconBlob()
-	if slot := blob.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-	} else {
-		b.Slot.Append(0)
-	}
-
+	b.Slot.Append(uint32(blob.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 	b.BlockRoot.Append([]byte(blob.GetBlockRoot()))
 	b.BlockParentRoot.Append([]byte(blob.GetBlockParentRoot()))
-
-	if proposerIndex := blob.GetProposerIndex(); proposerIndex != nil {
-		b.ProposerIndex.Append(uint32(proposerIndex.GetValue())) //nolint:gosec // proposer index fits uint32
-	} else {
-		b.ProposerIndex.Append(0)
-	}
-
-	if index := blob.GetIndex(); index != nil {
-		b.BlobIndex.Append(index.GetValue())
-	} else {
-		b.BlobIndex.Append(0)
-	}
-
+	b.ProposerIndex.Append(uint32(blob.GetProposerIndex().GetValue())) //nolint:gosec // proposer index fits uint32
+	b.BlobIndex.Append(blob.GetIndex().GetValue())
 	b.KzgCommitment.Append([]byte(blob.GetKzgCommitment()))
 	b.VersionedHash.Append([]byte(blob.GetVersionedHash()))
 }

@@ -91,18 +91,8 @@ func (b *beaconApiEthV1ProposerDutyBatch) appendRuntime(event *xatu.DecoratedEve
 
 func (b *beaconApiEthV1ProposerDutyBatch) appendPayload(event *xatu.DecoratedEvent) {
 	duty := event.GetEthV1ProposerDuty()
-	if slot := duty.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-	} else {
-		b.Slot.Append(0)
-	}
-
-	if validatorIndex := duty.GetValidatorIndex(); validatorIndex != nil {
-		b.ProposerValidatorIndex.Append(uint32(validatorIndex.GetValue())) //nolint:gosec // validator index fits uint32
-	} else {
-		b.ProposerValidatorIndex.Append(0)
-	}
-
+	b.Slot.Append(uint32(duty.GetSlot().GetValue()))                             //nolint:gosec // slot fits uint32
+	b.ProposerValidatorIndex.Append(uint32(duty.GetValidatorIndex().GetValue())) //nolint:gosec // validator index fits uint32
 	b.ProposerPubkey.Append(duty.GetPubkey())
 }
 

@@ -109,84 +109,50 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendPayloadFromEventBlockV2(
 	eventBlock *ethv2.EventBlockV2,
 ) error {
 	if phase0Block := eventBlock.GetPhase0Block(); phase0Block != nil {
-		if slot := phase0Block.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
-
+		b.Slot.Append(uint32(phase0Block.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 		b.appendNoExecutionPayload()
 
 		return nil
 	}
 
 	if altairBlock := eventBlock.GetAltairBlock(); altairBlock != nil {
-		if slot := altairBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
-
+		b.Slot.Append(uint32(altairBlock.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 		b.appendNoExecutionPayload()
 
 		return nil
 	}
 
 	if bellatrixBlock := eventBlock.GetBellatrixBlock(); bellatrixBlock != nil {
-		if slot := bellatrixBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
+		b.Slot.Append(uint32(bellatrixBlock.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 
 		return b.appendExecutionPayloadV2(bellatrixBlock.GetBody().GetExecutionPayload())
 	}
 
 	if capellaBlock := eventBlock.GetCapellaBlock(); capellaBlock != nil {
-		if slot := capellaBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
+		b.Slot.Append(uint32(capellaBlock.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 
 		return b.appendExecutionPayloadCapellaV2(capellaBlock.GetBody().GetExecutionPayload())
 	}
 
 	if denebBlock := eventBlock.GetDenebBlock(); denebBlock != nil {
-		if slot := denebBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
+		b.Slot.Append(uint32(denebBlock.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 
 		return b.appendExecutionPayloadDeneb(denebBlock.GetBody().GetExecutionPayload())
 	}
 
 	if electraBlock := eventBlock.GetElectraBlock(); electraBlock != nil {
-		if slot := electraBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
+		b.Slot.Append(uint32(electraBlock.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 
 		return b.appendExecutionPayloadElectra(electraBlock.GetBody().GetExecutionPayload())
 	}
 
 	if fuluBlock := eventBlock.GetFuluBlock(); fuluBlock != nil {
-		if slot := fuluBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-		} else {
-			b.Slot.Append(0)
-		}
+		b.Slot.Append(uint32(fuluBlock.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 
 		return b.appendExecutionPayloadElectra(fuluBlock.GetBody().GetExecutionPayload())
 	}
 
-	// Unknown block type.
-	b.Slot.Append(0)
-	b.appendNoExecutionPayload()
-
-	return nil
+	return fmt.Errorf("unknown block version: %w", route.ErrInvalidEvent)
 }
 
 func (b *beaconApiEthV3ValidatorBlockBatch) appendNoExecutionPayload() {

@@ -79,18 +79,8 @@ func (b *beaconApiEthV1EventsChainReorgBatch) appendRuntime(event *xatu.Decorate
 
 func (b *beaconApiEthV1EventsChainReorgBatch) appendPayload(event *xatu.DecoratedEvent) {
 	chainReorgV2 := event.GetEthV1EventsChainReorgV2()
-	if slot := chainReorgV2.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-	} else {
-		b.Slot.Append(0)
-	}
-
-	if depth := chainReorgV2.GetDepth(); depth != nil {
-		b.Depth.Append(uint16(depth.GetValue())) //nolint:gosec // depth fits uint16
-	} else {
-		b.Depth.Append(0)
-	}
-
+	b.Slot.Append(uint32(chainReorgV2.GetSlot().GetValue()))   //nolint:gosec // slot fits uint32
+	b.Depth.Append(uint16(chainReorgV2.GetDepth().GetValue())) //nolint:gosec // depth fits uint16
 	b.OldHeadBlock.Append([]byte(chainReorgV2.GetOldHeadBlock()))
 	b.NewHeadBlock.Append([]byte(chainReorgV2.GetNewHeadBlock()))
 	b.OldHeadState.Append([]byte(chainReorgV2.GetOldHeadState()))

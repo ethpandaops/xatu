@@ -85,25 +85,10 @@ func (b *beaconApiEthV1EventsDataColumnSidecarBatch) appendRuntime(event *xatu.D
 
 func (b *beaconApiEthV1EventsDataColumnSidecarBatch) appendPayload(event *xatu.DecoratedEvent) {
 	sidecar := event.GetEthV1EventsDataColumnSidecar()
-	if slot := sidecar.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
-	} else {
-		b.Slot.Append(0)
-	}
-
+	b.Slot.Append(uint32(sidecar.GetSlot().GetValue())) //nolint:gosec // slot fits uint32
 	b.BlockRoot.Append([]byte(sidecar.GetBlockRoot()))
-
-	if index := sidecar.GetIndex(); index != nil {
-		b.ColumnIndex.Append(index.GetValue())
-	} else {
-		b.ColumnIndex.Append(0)
-	}
-
-	if kzgCommitmentsCount := sidecar.GetKzgCommitmentsCount(); kzgCommitmentsCount != nil {
-		b.KzgCommitmentsCount.Append(kzgCommitmentsCount.GetValue())
-	} else {
-		b.KzgCommitmentsCount.Append(0)
-	}
+	b.ColumnIndex.Append(sidecar.GetIndex().GetValue())
+	b.KzgCommitmentsCount.Append(sidecar.GetKzgCommitmentsCount().GetValue())
 }
 
 func (b *beaconApiEthV1EventsDataColumnSidecarBatch) appendAdditionalData(

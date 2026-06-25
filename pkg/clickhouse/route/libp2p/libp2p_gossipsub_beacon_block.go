@@ -106,12 +106,7 @@ func (b *libp2pGossipsubBeaconBlockBatch) appendRuntime(event *xatu.DecoratedEve
 func (b *libp2pGossipsubBeaconBlockBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetLibp2PTraceGossipsubBeaconBlock()
 	b.Block.Append([]byte(wrappedStringValue(payload.GetBlock())))
-
-	if proposerIndex := payload.GetProposerIndex(); proposerIndex != nil {
-		b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
-	} else {
-		b.ProposerIndex.Append(0)
-	}
+	b.ProposerIndex.Append(uint32(payload.GetProposerIndex().GetValue()))
 }
 
 func (b *libp2pGossipsubBeaconBlockBatch) appendClientAdditionalData(

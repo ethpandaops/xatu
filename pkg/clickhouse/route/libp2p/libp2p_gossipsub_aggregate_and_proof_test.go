@@ -41,7 +41,18 @@ func TestSnapshot_libp2p_gossipsub_aggregate_and_proof(t *testing.T) {
 			},
 		}),
 		Data: &xatu.DecoratedEvent_Libp2PTraceGossipsubAggregateAndProof{
-			Libp2PTraceGossipsubAggregateAndProof: &ethv1.SignedAggregateAttestationAndProofV2{},
+			Libp2PTraceGossipsubAggregateAndProof: &ethv1.SignedAggregateAttestationAndProofV2{
+				Message: &ethv1.AggregateAttestationAndProofV2{
+					Aggregate: &ethv1.AttestationV2{
+						Data: &ethv1.AttestationDataV2{
+							Slot:   wrapperspb.UInt64(100),
+							Index:  wrapperspb.UInt64(3),
+							Source: &ethv1.CheckpointV2{Epoch: wrapperspb.UInt64(9), Root: "0xsource"},
+							Target: &ethv1.CheckpointV2{Epoch: wrapperspb.UInt64(10), Root: "0xtarget"},
+						},
+					},
+				},
+			},
 		},
 	}, 1, map[string]any{
 		"peer_id_unique_key": expectedPeerIDKey,

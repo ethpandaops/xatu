@@ -43,7 +43,9 @@ func TestSnapshot_libp2p_gossipsub_beacon_attestation(t *testing.T) {
 		Data: &xatu.DecoratedEvent_Libp2PTraceGossipsubBeaconAttestation{
 			Libp2PTraceGossipsubBeaconAttestation: &ethv1.Attestation{
 				Data: &ethv1.AttestationData{
-					Slot: 100,
+					Slot:   100,
+					Source: &ethv1.Checkpoint{Epoch: 9, Root: "0xsource"},
+					Target: &ethv1.Checkpoint{Epoch: 10, Root: "0xtarget"},
 				},
 			},
 		},

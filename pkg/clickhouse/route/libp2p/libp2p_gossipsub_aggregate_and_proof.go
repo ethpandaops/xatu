@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
+	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -84,6 +85,33 @@ func (b *libp2pGossipsubAggregateAndProofBatch) validate(event *xatu.DecoratedEv
 		return fmt.Errorf("nil Propagation.SlotStartDiff: %w", route.ErrInvalidEvent)
 	}
 
+	return validateAggregateAndProofPayload(event.GetLibp2PTraceGossipsubAggregateAndProof())
+}
+
+func validateAggregateAndProofPayload(payload *v1.SignedAggregateAttestationAndProofV2) error {
+	msg := payload.GetMessage()
+	if msg == nil {
+		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
+	}
+
+	aggregate := msg.GetAggregate()
+	if aggregate == nil {
+		return fmt.Errorf("nil Aggregate: %w", route.ErrInvalidEvent)
+	}
+
+	data := aggregate.GetData()
+	if data == nil {
+		return fmt.Errorf("nil Data: %w", route.ErrInvalidEvent)
+	}
+
+	if data.GetSource() == nil || data.GetSource().GetEpoch() == nil {
+		return fmt.Errorf("nil Data.Source.Epoch: %w", route.ErrInvalidEvent)
+	}
+
+	if data.GetTarget() == nil || data.GetTarget().GetEpoch() == nil {
+		return fmt.Errorf("nil Data.Target.Epoch: %w", route.ErrInvalidEvent)
+	}
+
 	return nil
 }
 
@@ -101,76 +129,26 @@ func (b *libp2pGossipsubAggregateAndProofBatch) appendRuntime(event *xatu.Decora
 func (b *libp2pGossipsubAggregateAndProofBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetLibp2PTraceGossipsubAggregateAndProof()
 
-	msg := payload.GetMessage()
-	if msg == nil {
-		b.AggregationBits.Append("")
-		b.BeaconBlockRoot.Append(nil)
-		b.CommitteeIndex.Append("")
-		b.SourceEpoch.Append(0)
-		b.SourceRoot.Append(nil)
-		b.TargetEpoch.Append(0)
-		b.TargetRoot.Append(nil)
-
-		return
-	}
-
-	aggregate := msg.GetAggregate()
-	if aggregate == nil {
-		b.AggregationBits.Append("")
-		b.BeaconBlockRoot.Append(nil)
-		b.CommitteeIndex.Append("")
-		b.SourceEpoch.Append(0)
-		b.SourceRoot.Append(nil)
-		b.TargetEpoch.Append(0)
-		b.TargetRoot.Append(nil)
-
-		return
-	}
-
+	aggregate := payload.GetMessage().GetAggregate()
 	b.AggregationBits.Append(aggregate.GetAggregationBits())
 
-	if data := aggregate.GetData(); data != nil {
-		if idx := data.GetIndex(); idx != nil {
-			b.CommitteeIndex.Append(strconv.FormatUint(idx.GetValue(), 10))
-		} else {
-			b.CommitteeIndex.Append("")
-		}
+	data := aggregate.GetData()
 
-		b.BeaconBlockRoot.Append([]byte(data.GetBeaconBlockRoot()))
-
-		if source := data.GetSource(); source != nil {
-			if epoch := source.GetEpoch(); epoch != nil {
-				b.SourceEpoch.Append(uint32(epoch.GetValue()))
-			} else {
-				b.SourceEpoch.Append(0)
-			}
-
-			b.SourceRoot.Append([]byte(source.GetRoot()))
-		} else {
-			b.SourceEpoch.Append(0)
-			b.SourceRoot.Append(nil)
-		}
-
-		if target := data.GetTarget(); target != nil {
-			if epoch := target.GetEpoch(); epoch != nil {
-				b.TargetEpoch.Append(uint32(epoch.GetValue()))
-			} else {
-				b.TargetEpoch.Append(0)
-			}
-
-			b.TargetRoot.Append([]byte(target.GetRoot()))
-		} else {
-			b.TargetEpoch.Append(0)
-			b.TargetRoot.Append(nil)
-		}
+	if idx := data.GetIndex(); idx != nil {
+		b.CommitteeIndex.Append(strconv.FormatUint(idx.GetValue(), 10))
 	} else {
-		b.BeaconBlockRoot.Append(nil)
 		b.CommitteeIndex.Append("")
-		b.SourceEpoch.Append(0)
-		b.SourceRoot.Append(nil)
-		b.TargetEpoch.Append(0)
-		b.TargetRoot.Append(nil)
 	}
+
+	b.BeaconBlockRoot.Append([]byte(data.GetBeaconBlockRoot()))
+
+	source := data.GetSource()
+	b.SourceEpoch.Append(uint32(source.GetEpoch().GetValue()))
+	b.SourceRoot.Append([]byte(source.GetRoot()))
+
+	target := data.GetTarget()
+	b.TargetEpoch.Append(uint32(target.GetEpoch().GetValue()))
+	b.TargetRoot.Append([]byte(target.GetRoot()))
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema

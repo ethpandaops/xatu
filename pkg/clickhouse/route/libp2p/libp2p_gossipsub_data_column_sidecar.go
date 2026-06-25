@@ -113,27 +113,12 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) appendRuntime(event *xatu.Decora
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse column schema
 func (b *libp2pGossipsubDataColumnSidecarBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetLibp2PTraceGossipsubDataColumnSidecar()
-	if idx := payload.GetIndex(); idx != nil {
-		b.ColumnIndex.Append(idx.GetValue())
-	} else {
-		b.ColumnIndex.Append(0)
-	}
-
-	if proposerIndex := payload.GetProposerIndex(); proposerIndex != nil {
-		b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
-	} else {
-		b.ProposerIndex.Append(0)
-	}
-
+	b.ColumnIndex.Append(payload.GetIndex().GetValue())
+	b.ProposerIndex.Append(uint32(payload.GetProposerIndex().GetValue()))
 	b.StateRoot.Append([]byte(wrappedStringValue(payload.GetStateRoot())))
 	b.ParentRoot.Append([]byte(wrappedStringValue(payload.GetParentRoot())))
 	b.BeaconBlockRoot.Append([]byte(wrappedStringValue(payload.GetBlockRoot())))
-
-	if kzg := payload.GetKzgCommitmentsCount(); kzg != nil {
-		b.KzgCommitmentsCount.Append(kzg.GetValue())
-	} else {
-		b.KzgCommitmentsCount.Append(0)
-	}
+	b.KzgCommitmentsCount.Append(payload.GetKzgCommitmentsCount().GetValue())
 }
 
 func (b *libp2pGossipsubDataColumnSidecarBatch) appendClientAdditionalData(

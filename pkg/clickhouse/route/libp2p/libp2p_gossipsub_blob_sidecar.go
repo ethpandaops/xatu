@@ -109,18 +109,8 @@ func (b *libp2pGossipsubBlobSidecarBatch) appendRuntime(event *xatu.DecoratedEve
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse column schema
 func (b *libp2pGossipsubBlobSidecarBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetLibp2PTraceGossipsubBlobSidecar()
-	if idx := payload.GetIndex(); idx != nil {
-		b.BlobIndex.Append(uint32(idx.GetValue()))
-	} else {
-		b.BlobIndex.Append(0)
-	}
-
-	if proposerIndex := payload.GetProposerIndex(); proposerIndex != nil {
-		b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
-	} else {
-		b.ProposerIndex.Append(0)
-	}
-
+	b.BlobIndex.Append(uint32(payload.GetIndex().GetValue()))
+	b.ProposerIndex.Append(uint32(payload.GetProposerIndex().GetValue()))
 	b.StateRoot.Append([]byte(wrappedStringValue(payload.GetStateRoot())))
 	b.ParentRoot.Append([]byte(wrappedStringValue(payload.GetParentRoot())))
 	b.BeaconBlockRoot.Append([]byte(wrappedStringValue(payload.GetBlockRoot())))

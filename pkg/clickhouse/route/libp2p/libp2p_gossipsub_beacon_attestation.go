@@ -86,6 +86,21 @@ func (b *libp2pGossipsubBeaconAttestationBatch) validate(event *xatu.DecoratedEv
 		return fmt.Errorf("nil Propagation.SlotStartDiff: %w", route.ErrInvalidEvent)
 	}
 
+	payload := event.GetLibp2PTraceGossipsubBeaconAttestation()
+
+	data := payload.GetData()
+	if data == nil {
+		return fmt.Errorf("nil Data: %w", route.ErrInvalidEvent)
+	}
+
+	if data.GetSource() == nil {
+		return fmt.Errorf("nil Data.Source: %w", route.ErrInvalidEvent)
+	}
+
+	if data.GetTarget() == nil {
+		return fmt.Errorf("nil Data.Target: %w", route.ErrInvalidEvent)
+	}
+
 	return nil
 }
 
@@ -104,38 +119,23 @@ func (b *libp2pGossipsubBeaconAttestationBatch) appendPayload(event *xatu.Decora
 	payload := event.GetLibp2PTraceGossipsubBeaconAttestation()
 	b.AggregationBits.Append(payload.GetAggregationBits())
 
-	if data := payload.GetData(); data != nil {
-		if idx := data.GetIndex(); idx != 0 {
-			b.CommitteeIndex.Append(strconv.FormatUint(idx, 10))
-		} else {
-			b.CommitteeIndex.Append("")
-		}
+	data := payload.GetData()
 
-		b.BeaconBlockRoot.Append([]byte(data.GetBeaconBlockRoot()))
-
-		if source := data.GetSource(); source != nil {
-			b.SourceEpoch.Append(uint32(source.GetEpoch()))
-			b.SourceRoot.Append([]byte(source.GetRoot()))
-		} else {
-			b.SourceEpoch.Append(0)
-			b.SourceRoot.Append(nil)
-		}
-
-		if target := data.GetTarget(); target != nil {
-			b.TargetEpoch.Append(uint32(target.GetEpoch()))
-			b.TargetRoot.Append([]byte(target.GetRoot()))
-		} else {
-			b.TargetEpoch.Append(0)
-			b.TargetRoot.Append(nil)
-		}
+	if idx := data.GetIndex(); idx != 0 {
+		b.CommitteeIndex.Append(strconv.FormatUint(idx, 10))
 	} else {
 		b.CommitteeIndex.Append("")
-		b.BeaconBlockRoot.Append(nil)
-		b.SourceEpoch.Append(0)
-		b.SourceRoot.Append(nil)
-		b.TargetEpoch.Append(0)
-		b.TargetRoot.Append(nil)
 	}
+
+	b.BeaconBlockRoot.Append([]byte(data.GetBeaconBlockRoot()))
+
+	source := data.GetSource()
+	b.SourceEpoch.Append(uint32(source.GetEpoch()))
+	b.SourceRoot.Append([]byte(source.GetRoot()))
+
+	target := data.GetTarget()
+	b.TargetEpoch.Append(uint32(target.GetEpoch()))
+	b.TargetRoot.Append([]byte(target.GetRoot()))
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse column schema

@@ -102,12 +102,8 @@ func (b *nodeRecordConsensusBatch) appendPayload(
 		b.PeerIDUniqueKey.Append(chProto.Nullable[int64]{})
 	}
 
-	// Timestamp.
-	if ts := consensus.GetTimestamp(); ts != nil {
-		b.Timestamp.Append(ts.GetValue())
-	} else {
-		b.Timestamp.Append(0)
-	}
+	// Timestamp (required, guaranteed non-nil by validate).
+	b.Timestamp.Append(consensus.GetTimestamp().GetValue())
 
 	// Name and parsed implementation/version.
 	name := nodeStringValue(consensus.GetName())
@@ -134,19 +130,13 @@ func (b *nodeRecordConsensusBatch) appendPayload(
 
 	b.FinalizedRoot.Append(nodeStringValue(consensus.GetFinalizedRoot()))
 
-	if finalizedEpoch := consensus.GetFinalizedEpoch(); finalizedEpoch != nil {
-		b.FinalizedEpoch.Append(finalizedEpoch.GetValue())
-	} else {
-		b.FinalizedEpoch.Append(0)
-	}
+	// FinalizedEpoch (required, guaranteed non-nil by validate).
+	b.FinalizedEpoch.Append(consensus.GetFinalizedEpoch().GetValue())
 
 	b.HeadRoot.Append(nodeStringValue(consensus.GetHeadRoot()))
 
-	if headSlot := consensus.GetHeadSlot(); headSlot != nil {
-		b.HeadSlot.Append(headSlot.GetValue())
-	} else {
-		b.HeadSlot.Append(0)
-	}
+	// HeadSlot (required, guaranteed non-nil by validate).
+	b.HeadSlot.Append(consensus.GetHeadSlot().GetValue())
 
 	// Cgc is Nullable[string].
 	cgc := nodeStringValue(consensus.GetCgc())

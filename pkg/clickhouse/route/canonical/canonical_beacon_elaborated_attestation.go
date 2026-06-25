@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -34,10 +35,43 @@ func (b *canonicalBeaconElaboratedAttestationBatch) FlattenTo(event *xatu.Decora
 		return nil
 	}
 
+	if event.GetEthV2BeaconBlockElaboratedAttestation() == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_elaborated_attestation payload: %w", route.ErrInvalidEvent)
+	}
+
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendRow(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconElaboratedAttestationBatch) validate(event *xatu.DecoratedEvent) error {
+	data := event.GetEthV2BeaconBlockElaboratedAttestation().GetData()
+	if data == nil {
+		return fmt.Errorf("nil Data: %w", route.ErrInvalidEvent)
+	}
+
+	if data.GetSlot() == nil {
+		return fmt.Errorf("nil Data.Slot: %w", route.ErrInvalidEvent)
+	}
+
+	if data.GetIndex() == nil {
+		return fmt.Errorf("nil Data.Index: %w", route.ErrInvalidEvent)
+	}
+
+	if data.GetSource() == nil || data.GetSource().GetEpoch() == nil {
+		return fmt.Errorf("nil Data.Source: %w", route.ErrInvalidEvent)
+	}
+
+	if data.GetTarget() == nil || data.GetTarget().GetEpoch() == nil {
+		return fmt.Errorf("nil Data.Target: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }
@@ -53,72 +87,23 @@ func (b *canonicalBeaconElaboratedAttestationBatch) appendRuntime(_ *xatu.Decora
 func (b *canonicalBeaconElaboratedAttestationBatch) appendRow(event *xatu.DecoratedEvent) {
 	attestation := event.GetEthV2BeaconBlockElaboratedAttestation()
 
-	// Payload fields.
-	if attestation != nil {
-		b.Validators.Append(wrappedUint64SliceToUint32(attestation.GetValidatorIndexes()))
+	// Payload fields. Required fields are guaranteed non-nil by validate().
+	b.Validators.Append(wrappedUint64SliceToUint32(attestation.GetValidatorIndexes()))
 
-		if data := attestation.GetData(); data != nil {
-			b.BeaconBlockRoot.Append([]byte(data.GetBeaconBlockRoot()))
+	data := attestation.GetData()
+	b.BeaconBlockRoot.Append([]byte(data.GetBeaconBlockRoot()))
+	b.CommitteeIndex.Append(strconv.FormatUint(data.GetIndex().GetValue(), 10))
 
-			if index := data.GetIndex(); index != nil {
-				b.CommitteeIndex.Append(strconv.FormatUint(index.GetValue(), 10))
-			} else {
-				b.CommitteeIndex.Append("")
-			}
+	source := data.GetSource()
+	b.SourceEpoch.Append(uint32(source.GetEpoch().GetValue()))
+	b.SourceRoot.Append([]byte(source.GetRoot()))
 
-			if source := data.GetSource(); source != nil {
-				if epoch := source.GetEpoch(); epoch != nil {
-					b.SourceEpoch.Append(uint32(epoch.GetValue()))
-				} else {
-					b.SourceEpoch.Append(0)
-				}
-
-				b.SourceRoot.Append([]byte(source.GetRoot()))
-			} else {
-				b.SourceEpoch.Append(0)
-				b.SourceRoot.Append(nil)
-			}
-
-			if target := data.GetTarget(); target != nil {
-				if epoch := target.GetEpoch(); epoch != nil {
-					b.TargetEpoch.Append(uint32(epoch.GetValue()))
-				} else {
-					b.TargetEpoch.Append(0)
-				}
-
-				b.TargetRoot.Append([]byte(target.GetRoot()))
-			} else {
-				b.TargetEpoch.Append(0)
-				b.TargetRoot.Append(nil)
-			}
-		} else {
-			b.BeaconBlockRoot.Append(nil)
-			b.CommitteeIndex.Append("")
-			b.SourceEpoch.Append(0)
-			b.SourceRoot.Append(nil)
-			b.TargetEpoch.Append(0)
-			b.TargetRoot.Append(nil)
-		}
-	} else {
-		b.Validators.Append([]uint32{})
-		b.BeaconBlockRoot.Append(nil)
-		b.CommitteeIndex.Append("")
-		b.SourceEpoch.Append(0)
-		b.SourceRoot.Append(nil)
-		b.TargetEpoch.Append(0)
-		b.TargetRoot.Append(nil)
-	}
+	target := data.GetTarget()
+	b.TargetEpoch.Append(uint32(target.GetEpoch().GetValue()))
+	b.TargetRoot.Append([]byte(target.GetRoot()))
 
 	// Slot from payload (matching Vector: .slot = .data.data.slot).
-	if attestation != nil && attestation.GetData() != nil {
-		if slot := attestation.GetData().GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue()))
-		} else {
-			b.Slot.Append(0)
-		}
-	} else {
-		b.Slot.Append(0)
-	}
+	b.Slot.Append(uint32(data.GetSlot().GetValue()))
 
 	// Additional data fields.
 	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockElaboratedAttestation()

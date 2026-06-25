@@ -26,6 +26,12 @@ func TestSnapshot_canonical_beacon_elaborated_attestation(t *testing.T) {
 		}),
 		Data: &xatu.DecoratedEvent_EthV2BeaconBlockElaboratedAttestation{
 			EthV2BeaconBlockElaboratedAttestation: &ethv1.ElaboratedAttestation{
+				Data: &ethv1.AttestationDataV2{
+					Slot:   wrapperspb.UInt64(100),
+					Index:  wrapperspb.UInt64(3),
+					Source: &ethv1.CheckpointV2{Epoch: wrapperspb.UInt64(4)},
+					Target: &ethv1.CheckpointV2{Epoch: wrapperspb.UInt64(5)},
+				},
 				ValidatorIndexes: []*wrapperspb.UInt64Value{
 					wrapperspb.UInt64(11),
 					wrapperspb.UInt64(22),

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
@@ -88,19 +89,10 @@ func (b *canonicalBeaconBlockBatch) appendPayload(event *xatu.DecoratedEvent) er
 	return b.appendPayloadFromEventBlockV2(eventBlock)
 }
 
-//nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *ethv2.EventBlockV2) error {
 	if phase0Block := eventBlock.GetPhase0Block(); phase0Block != nil {
-		if slot := phase0Block.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue()))
-		} else {
-			b.Slot.Append(0)
-		}
-
-		if proposerIndex := phase0Block.GetProposerIndex(); proposerIndex != nil {
-			b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
-		} else {
-			b.ProposerIndex.Append(0)
+		if err := b.appendSlotProposer(phase0Block.GetSlot(), phase0Block.GetProposerIndex()); err != nil {
+			return err
 		}
 
 		b.ParentRoot.Append([]byte(phase0Block.GetParentRoot()))
@@ -112,16 +104,8 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 	}
 
 	if altairBlock := eventBlock.GetAltairBlock(); altairBlock != nil {
-		if slot := altairBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue()))
-		} else {
-			b.Slot.Append(0)
-		}
-
-		if proposerIndex := altairBlock.GetProposerIndex(); proposerIndex != nil {
-			b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
-		} else {
-			b.ProposerIndex.Append(0)
+		if err := b.appendSlotProposer(altairBlock.GetSlot(), altairBlock.GetProposerIndex()); err != nil {
+			return err
 		}
 
 		b.ParentRoot.Append([]byte(altairBlock.GetParentRoot()))
@@ -133,16 +117,8 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 	}
 
 	if bellatrixBlock := eventBlock.GetBellatrixBlock(); bellatrixBlock != nil {
-		if slot := bellatrixBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue()))
-		} else {
-			b.Slot.Append(0)
-		}
-
-		if proposerIndex := bellatrixBlock.GetProposerIndex(); proposerIndex != nil {
-			b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
-		} else {
-			b.ProposerIndex.Append(0)
+		if err := b.appendSlotProposer(bellatrixBlock.GetSlot(), bellatrixBlock.GetProposerIndex()); err != nil {
+			return err
 		}
 
 		b.ParentRoot.Append([]byte(bellatrixBlock.GetParentRoot()))
@@ -155,16 +131,8 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 	}
 
 	if capellaBlock := eventBlock.GetCapellaBlock(); capellaBlock != nil {
-		if slot := capellaBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue()))
-		} else {
-			b.Slot.Append(0)
-		}
-
-		if proposerIndex := capellaBlock.GetProposerIndex(); proposerIndex != nil {
-			b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
-		} else {
-			b.ProposerIndex.Append(0)
+		if err := b.appendSlotProposer(capellaBlock.GetSlot(), capellaBlock.GetProposerIndex()); err != nil {
+			return err
 		}
 
 		b.ParentRoot.Append([]byte(capellaBlock.GetParentRoot()))
@@ -177,16 +145,8 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 	}
 
 	if denebBlock := eventBlock.GetDenebBlock(); denebBlock != nil {
-		if slot := denebBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue()))
-		} else {
-			b.Slot.Append(0)
-		}
-
-		if proposerIndex := denebBlock.GetProposerIndex(); proposerIndex != nil {
-			b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
-		} else {
-			b.ProposerIndex.Append(0)
+		if err := b.appendSlotProposer(denebBlock.GetSlot(), denebBlock.GetProposerIndex()); err != nil {
+			return err
 		}
 
 		b.ParentRoot.Append([]byte(denebBlock.GetParentRoot()))
@@ -199,16 +159,8 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 	}
 
 	if electraBlock := eventBlock.GetElectraBlock(); electraBlock != nil {
-		if slot := electraBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue()))
-		} else {
-			b.Slot.Append(0)
-		}
-
-		if proposerIndex := electraBlock.GetProposerIndex(); proposerIndex != nil {
-			b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
-		} else {
-			b.ProposerIndex.Append(0)
+		if err := b.appendSlotProposer(electraBlock.GetSlot(), electraBlock.GetProposerIndex()); err != nil {
+			return err
 		}
 
 		b.ParentRoot.Append([]byte(electraBlock.GetParentRoot()))
@@ -221,16 +173,8 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 	}
 
 	if fuluBlock := eventBlock.GetFuluBlock(); fuluBlock != nil {
-		if slot := fuluBlock.GetSlot(); slot != nil {
-			b.Slot.Append(uint32(slot.GetValue()))
-		} else {
-			b.Slot.Append(0)
-		}
-
-		if proposerIndex := fuluBlock.GetProposerIndex(); proposerIndex != nil {
-			b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
-		} else {
-			b.ProposerIndex.Append(0)
+		if err := b.appendSlotProposer(fuluBlock.GetSlot(), fuluBlock.GetProposerIndex()); err != nil {
+			return err
 		}
 
 		b.ParentRoot.Append([]byte(fuluBlock.GetParentRoot()))
@@ -242,14 +186,25 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 		return b.appendExecutionPayloadElectra(body.GetExecutionPayload())
 	}
 
-	// Unknown block version - append zeros.
-	b.Slot.Append(0)
-	b.ProposerIndex.Append(0)
-	b.ParentRoot.Append(nil)
-	b.StateRoot.Append(nil)
-	b.Eth1DataBlockHash.Append(nil)
-	b.Eth1DataDepositRoot.Append(nil)
-	b.appendNullExecutionPayload()
+	return fmt.Errorf("unknown beacon block version: %w", route.ErrInvalidEvent)
+}
+
+// appendSlotProposer appends the required slot and proposer_index, returning
+// route.ErrInvalidEvent when either wrapper is absent rather than fabricating a
+// zero value (slot 0 and validator index 0 are both real values).
+//
+//nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
+func (b *canonicalBeaconBlockBatch) appendSlotProposer(slot, proposerIndex *wrapperspb.UInt64Value) error {
+	if slot == nil {
+		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
+	}
+
+	if proposerIndex == nil {
+		return fmt.Errorf("nil ProposerIndex: %w", route.ErrInvalidEvent)
+	}
+
+	b.Slot.Append(uint32(slot.GetValue()))
+	b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
 
 	return nil
 }

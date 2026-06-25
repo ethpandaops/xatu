@@ -81,12 +81,7 @@ func (b *canonicalBeaconProposerDutyBatch) appendRuntime(_ *xatu.DecoratedEvent)
 func (b *canonicalBeaconProposerDutyBatch) appendPayload(event *xatu.DecoratedEvent) {
 	duty := event.GetEthV1ProposerDuty()
 	b.ProposerPubkey.Append(duty.GetPubkey())
-
-	if validatorIndex := duty.GetValidatorIndex(); validatorIndex != nil {
-		b.ProposerValidatorIndex.Append(uint32(validatorIndex.GetValue()))
-	} else {
-		b.ProposerValidatorIndex.Append(0)
-	}
+	b.ProposerValidatorIndex.Append(uint32(duty.GetValidatorIndex().GetValue()))
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema

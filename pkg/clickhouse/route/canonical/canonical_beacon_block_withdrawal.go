@@ -82,34 +82,15 @@ func (b *canonicalBeaconBlockWithdrawalBatch) appendRuntime(_ *xatu.DecoratedEve
 func (b *canonicalBeaconBlockWithdrawalBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	withdrawal := event.GetEthV2BeaconBlockWithdrawal()
 	b.WithdrawalAddress.Append([]byte(withdrawal.GetAddress()))
+	b.WithdrawalIndex.Append(uint32(withdrawal.GetIndex().GetValue()))
+	b.WithdrawalValidatorIndex.Append(uint32(withdrawal.GetValidatorIndex().GetValue()))
 
-	if index := withdrawal.GetIndex(); index != nil {
-		b.WithdrawalIndex.Append(uint32(index.GetValue()))
-	} else {
-		b.WithdrawalIndex.Append(0)
+	parsedAmount, err := route.ParseUInt128(strconv.FormatUint(withdrawal.GetAmount().GetValue(), 10))
+	if err != nil {
+		return fmt.Errorf("parsing withdrawal_amount: %w", err)
 	}
 
-	if validatorIndex := withdrawal.GetValidatorIndex(); validatorIndex != nil {
-		b.WithdrawalValidatorIndex.Append(uint32(validatorIndex.GetValue()))
-	} else {
-		b.WithdrawalValidatorIndex.Append(0)
-	}
-
-	if amount := withdrawal.GetAmount(); amount != nil {
-		parsedAmount, err := route.ParseUInt128(strconv.FormatUint(amount.GetValue(), 10))
-		if err != nil {
-			return fmt.Errorf("parsing withdrawal_amount: %w", err)
-		}
-
-		b.WithdrawalAmount.Append(parsedAmount)
-	} else {
-		zeroAmount, err := route.ParseUInt128("0")
-		if err != nil {
-			return fmt.Errorf("parsing withdrawal_amount: %w", err)
-		}
-
-		b.WithdrawalAmount.Append(zeroAmount)
-	}
+	b.WithdrawalAmount.Append(parsedAmount)
 
 	return nil
 }

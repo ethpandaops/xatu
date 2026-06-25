@@ -39,6 +39,10 @@ func (b *canonicalBeaconBlockProposerSlashingBatch) FlattenTo(event *xatu.Decora
 		return fmt.Errorf("nil eth_v2_beacon_block_proposer_slashing payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -46,6 +50,16 @@ func (b *canonicalBeaconBlockProposerSlashingBatch) FlattenTo(event *xatu.Decora
 	b.rows++
 
 	return nil
+}
+
+func (b *canonicalBeaconBlockProposerSlashingBatch) validate(event *xatu.DecoratedEvent) error {
+	slashing := event.GetEthV2BeaconBlockProposerSlashing()
+
+	if err := validateSignedHeader("SignedHeader_1", slashing.GetSignedHeader_1()); err != nil {
+		return err
+	}
+
+	return validateSignedHeader("SignedHeader_2", slashing.GetSignedHeader_2())
 }
 
 func (b *canonicalBeaconBlockProposerSlashingBatch) appendRuntime(_ *xatu.DecoratedEvent) {
@@ -58,90 +72,52 @@ func (b *canonicalBeaconBlockProposerSlashingBatch) appendPayload(event *xatu.De
 	b.appendSignedHeader2(slashing.GetSignedHeader_2())
 }
 
+//nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconBlockProposerSlashingBatch) appendSignedHeader1(header *ethv1.SignedBeaconBlockHeaderV2) {
-	if header == nil {
-		b.appendNullSignedHeader1()
-
-		return
-	}
-
 	b.SignedHeader1Signature.Append(header.GetSignature())
 
-	if msg := header.GetMessage(); msg != nil {
-		if slot := msg.GetSlot(); slot != nil {
-			b.SignedHeader1MessageSlot.Append(uint32(slot.GetValue())) //nolint:gosec // G115
-		} else {
-			b.SignedHeader1MessageSlot.Append(0)
-		}
-
-		if proposerIndex := msg.GetProposerIndex(); proposerIndex != nil {
-			b.SignedHeader1MessageProposerIndex.Append(uint32(proposerIndex.GetValue())) //nolint:gosec // G115
-		} else {
-			b.SignedHeader1MessageProposerIndex.Append(0)
-		}
-
-		b.SignedHeader1MessageBodyRoot.Append([]byte(msg.GetBodyRoot()))
-		b.SignedHeader1MessageParentRoot.Append([]byte(msg.GetParentRoot()))
-		b.SignedHeader1MessageStateRoot.Append([]byte(msg.GetStateRoot()))
-	} else {
-		b.SignedHeader1MessageSlot.Append(0)
-		b.SignedHeader1MessageProposerIndex.Append(0)
-		b.SignedHeader1MessageBodyRoot.Append(nil)
-		b.SignedHeader1MessageParentRoot.Append(nil)
-		b.SignedHeader1MessageStateRoot.Append(nil)
-	}
+	msg := header.GetMessage()
+	b.SignedHeader1MessageSlot.Append(uint32(msg.GetSlot().GetValue()))
+	b.SignedHeader1MessageProposerIndex.Append(uint32(msg.GetProposerIndex().GetValue()))
+	b.SignedHeader1MessageBodyRoot.Append([]byte(msg.GetBodyRoot()))
+	b.SignedHeader1MessageParentRoot.Append([]byte(msg.GetParentRoot()))
+	b.SignedHeader1MessageStateRoot.Append([]byte(msg.GetStateRoot()))
 }
 
-func (b *canonicalBeaconBlockProposerSlashingBatch) appendNullSignedHeader1() {
-	b.SignedHeader1Signature.Append("")
-	b.SignedHeader1MessageSlot.Append(0)
-	b.SignedHeader1MessageProposerIndex.Append(0)
-	b.SignedHeader1MessageBodyRoot.Append(nil)
-	b.SignedHeader1MessageParentRoot.Append(nil)
-	b.SignedHeader1MessageStateRoot.Append(nil)
-}
-
+//nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconBlockProposerSlashingBatch) appendSignedHeader2(header *ethv1.SignedBeaconBlockHeaderV2) {
-	if header == nil {
-		b.appendNullSignedHeader2()
-
-		return
-	}
-
 	b.SignedHeader2Signature.Append(header.GetSignature())
 
-	if msg := header.GetMessage(); msg != nil {
-		if slot := msg.GetSlot(); slot != nil {
-			b.SignedHeader2MessageSlot.Append(uint32(slot.GetValue())) //nolint:gosec // G115
-		} else {
-			b.SignedHeader2MessageSlot.Append(0)
-		}
-
-		if proposerIndex := msg.GetProposerIndex(); proposerIndex != nil {
-			b.SignedHeader2MessageProposerIndex.Append(uint32(proposerIndex.GetValue())) //nolint:gosec // G115
-		} else {
-			b.SignedHeader2MessageProposerIndex.Append(0)
-		}
-
-		b.SignedHeader2MessageBodyRoot.Append([]byte(msg.GetBodyRoot()))
-		b.SignedHeader2MessageParentRoot.Append([]byte(msg.GetParentRoot()))
-		b.SignedHeader2MessageStateRoot.Append([]byte(msg.GetStateRoot()))
-	} else {
-		b.SignedHeader2MessageSlot.Append(0)
-		b.SignedHeader2MessageProposerIndex.Append(0)
-		b.SignedHeader2MessageBodyRoot.Append(nil)
-		b.SignedHeader2MessageParentRoot.Append(nil)
-		b.SignedHeader2MessageStateRoot.Append(nil)
-	}
+	msg := header.GetMessage()
+	b.SignedHeader2MessageSlot.Append(uint32(msg.GetSlot().GetValue()))
+	b.SignedHeader2MessageProposerIndex.Append(uint32(msg.GetProposerIndex().GetValue()))
+	b.SignedHeader2MessageBodyRoot.Append([]byte(msg.GetBodyRoot()))
+	b.SignedHeader2MessageParentRoot.Append([]byte(msg.GetParentRoot()))
+	b.SignedHeader2MessageStateRoot.Append([]byte(msg.GetStateRoot()))
 }
 
-func (b *canonicalBeaconBlockProposerSlashingBatch) appendNullSignedHeader2() {
-	b.SignedHeader2Signature.Append("")
-	b.SignedHeader2MessageSlot.Append(0)
-	b.SignedHeader2MessageProposerIndex.Append(0)
-	b.SignedHeader2MessageBodyRoot.Append(nil)
-	b.SignedHeader2MessageParentRoot.Append(nil)
-	b.SignedHeader2MessageStateRoot.Append(nil)
+// validateSignedHeader returns route.ErrInvalidEvent when a required field of a
+// signed block header is absent, so the slashing is dropped rather than written
+// with fabricated zero slot/proposer_index values.
+func validateSignedHeader(name string, header *ethv1.SignedBeaconBlockHeaderV2) error {
+	if header == nil {
+		return fmt.Errorf("nil %s: %w", name, route.ErrInvalidEvent)
+	}
+
+	msg := header.GetMessage()
+	if msg == nil {
+		return fmt.Errorf("nil %s.Message: %w", name, route.ErrInvalidEvent)
+	}
+
+	if msg.GetSlot() == nil {
+		return fmt.Errorf("nil %s.Message.Slot: %w", name, route.ErrInvalidEvent)
+	}
+
+	if msg.GetProposerIndex() == nil {
+		return fmt.Errorf("nil %s.Message.ProposerIndex: %w", name, route.ErrInvalidEvent)
+	}
+
+	return nil
 }
 
 func (b *canonicalBeaconBlockProposerSlashingBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

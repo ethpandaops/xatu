@@ -38,11 +38,32 @@ func (b *canonicalBeaconBlockVoluntaryExitBatch) FlattenTo(event *xatu.Decorated
 		return fmt.Errorf("nil eth_v2_beacon_block_voluntary_exit payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockVoluntaryExitBatch) validate(event *xatu.DecoratedEvent) error {
+	msg := event.GetEthV2BeaconBlockVoluntaryExit().GetMessage()
+	if msg == nil {
+		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
+	}
+
+	if msg.GetEpoch() == nil {
+		return fmt.Errorf("nil Message.Epoch: %w", route.ErrInvalidEvent)
+	}
+
+	if msg.GetValidatorIndex() == nil {
+		return fmt.Errorf("nil Message.ValidatorIndex: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }
@@ -56,22 +77,9 @@ func (b *canonicalBeaconBlockVoluntaryExitBatch) appendPayload(event *xatu.Decor
 	exit := event.GetEthV2BeaconBlockVoluntaryExit()
 	b.VoluntaryExitSignature.Append(exit.GetSignature())
 
-	if msg := exit.GetMessage(); msg != nil {
-		if epoch := msg.GetEpoch(); epoch != nil {
-			b.VoluntaryExitMessageEpoch.Append(uint32(epoch.GetValue()))
-		} else {
-			b.VoluntaryExitMessageEpoch.Append(0)
-		}
-
-		if validatorIndex := msg.GetValidatorIndex(); validatorIndex != nil {
-			b.VoluntaryExitMessageValidatorIndex.Append(uint32(validatorIndex.GetValue()))
-		} else {
-			b.VoluntaryExitMessageValidatorIndex.Append(0)
-		}
-	} else {
-		b.VoluntaryExitMessageEpoch.Append(0)
-		b.VoluntaryExitMessageValidatorIndex.Append(0)
-	}
+	msg := exit.GetMessage()
+	b.VoluntaryExitMessageEpoch.Append(uint32(msg.GetEpoch().GetValue()))
+	b.VoluntaryExitMessageValidatorIndex.Append(uint32(msg.GetValidatorIndex().GetValue()))
 }
 
 func (b *canonicalBeaconBlockVoluntaryExitBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

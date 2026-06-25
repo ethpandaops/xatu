@@ -42,6 +42,10 @@ func (b *canonicalBeaconBlockAttesterSlashingBatch) FlattenTo(event *xatu.Decora
 		return fmt.Errorf("nil eth_v2_beacon_block_attester_slashing payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
@@ -49,6 +53,16 @@ func (b *canonicalBeaconBlockAttesterSlashingBatch) FlattenTo(event *xatu.Decora
 	b.rows++
 
 	return nil
+}
+
+func (b *canonicalBeaconBlockAttesterSlashingBatch) validate(event *xatu.DecoratedEvent) error {
+	slashing := event.GetEthV2BeaconBlockAttesterSlashing()
+
+	if err := validateIndexedAttestation("Attestation_1", slashing.GetAttestation_1()); err != nil {
+		return err
+	}
+
+	return validateIndexedAttestation("Attestation_2", slashing.GetAttestation_2())
 }
 
 func (b *canonicalBeaconBlockAttesterSlashingBatch) appendRuntime(_ *xatu.DecoratedEvent) {
@@ -63,150 +77,40 @@ func (b *canonicalBeaconBlockAttesterSlashingBatch) appendPayload(event *xatu.De
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconBlockAttesterSlashingBatch) appendIndexedAttestation1(att *ethv1.IndexedAttestationV2) {
-	if att == nil {
-		b.appendNullIndexedAttestation1()
-
-		return
-	}
-
 	b.Attestation1AttestingIndices.Append(wrappedUint64SliceToUint32(att.GetAttestingIndices()))
 	b.Attestation1Signature.Append(att.GetSignature())
 
-	if data := att.GetData(); data != nil {
-		b.Attestation1DataBeaconBlockRoot.Append([]byte(data.GetBeaconBlockRoot()))
+	data := att.GetData()
+	b.Attestation1DataBeaconBlockRoot.Append([]byte(data.GetBeaconBlockRoot()))
+	b.Attestation1DataSlot.Append(uint32(data.GetSlot().GetValue()))
+	b.Attestation1DataIndex.Append(uint32(data.GetIndex().GetValue()))
 
-		if slot := data.GetSlot(); slot != nil {
-			b.Attestation1DataSlot.Append(uint32(slot.GetValue()))
-		} else {
-			b.Attestation1DataSlot.Append(0)
-		}
+	source := data.GetSource()
+	b.Attestation1DataSourceEpoch.Append(uint32(source.GetEpoch().GetValue()))
+	b.Attestation1DataSourceRoot.Append([]byte(source.GetRoot()))
 
-		if index := data.GetIndex(); index != nil {
-			b.Attestation1DataIndex.Append(uint32(index.GetValue()))
-		} else {
-			b.Attestation1DataIndex.Append(0)
-		}
-
-		if source := data.GetSource(); source != nil {
-			if epoch := source.GetEpoch(); epoch != nil {
-				b.Attestation1DataSourceEpoch.Append(uint32(epoch.GetValue()))
-			} else {
-				b.Attestation1DataSourceEpoch.Append(0)
-			}
-
-			b.Attestation1DataSourceRoot.Append([]byte(source.GetRoot()))
-		} else {
-			b.Attestation1DataSourceEpoch.Append(0)
-			b.Attestation1DataSourceRoot.Append(nil)
-		}
-
-		if target := data.GetTarget(); target != nil {
-			if epoch := target.GetEpoch(); epoch != nil {
-				b.Attestation1DataTargetEpoch.Append(uint32(epoch.GetValue()))
-			} else {
-				b.Attestation1DataTargetEpoch.Append(0)
-			}
-
-			b.Attestation1DataTargetRoot.Append([]byte(target.GetRoot()))
-		} else {
-			b.Attestation1DataTargetEpoch.Append(0)
-			b.Attestation1DataTargetRoot.Append(nil)
-		}
-	} else {
-		b.Attestation1DataBeaconBlockRoot.Append(nil)
-		b.Attestation1DataSlot.Append(0)
-		b.Attestation1DataIndex.Append(0)
-		b.Attestation1DataSourceEpoch.Append(0)
-		b.Attestation1DataSourceRoot.Append(nil)
-		b.Attestation1DataTargetEpoch.Append(0)
-		b.Attestation1DataTargetRoot.Append(nil)
-	}
-}
-
-func (b *canonicalBeaconBlockAttesterSlashingBatch) appendNullIndexedAttestation1() {
-	b.Attestation1AttestingIndices.Append([]uint32{})
-	b.Attestation1Signature.Append("")
-	b.Attestation1DataBeaconBlockRoot.Append(nil)
-	b.Attestation1DataSlot.Append(0)
-	b.Attestation1DataIndex.Append(0)
-	b.Attestation1DataSourceEpoch.Append(0)
-	b.Attestation1DataSourceRoot.Append(nil)
-	b.Attestation1DataTargetEpoch.Append(0)
-	b.Attestation1DataTargetRoot.Append(nil)
+	target := data.GetTarget()
+	b.Attestation1DataTargetEpoch.Append(uint32(target.GetEpoch().GetValue()))
+	b.Attestation1DataTargetRoot.Append([]byte(target.GetRoot()))
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconBlockAttesterSlashingBatch) appendIndexedAttestation2(att *ethv1.IndexedAttestationV2) {
-	if att == nil {
-		b.appendNullIndexedAttestation2()
-
-		return
-	}
-
 	b.Attestation2AttestingIndices.Append(wrappedUint64SliceToUint32(att.GetAttestingIndices()))
 	b.Attestation2Signature.Append(att.GetSignature())
 
-	if data := att.GetData(); data != nil {
-		b.Attestation2DataBeaconBlockRoot.Append([]byte(data.GetBeaconBlockRoot()))
+	data := att.GetData()
+	b.Attestation2DataBeaconBlockRoot.Append([]byte(data.GetBeaconBlockRoot()))
+	b.Attestation2DataSlot.Append(uint32(data.GetSlot().GetValue()))
+	b.Attestation2DataIndex.Append(uint32(data.GetIndex().GetValue()))
 
-		if slot := data.GetSlot(); slot != nil {
-			b.Attestation2DataSlot.Append(uint32(slot.GetValue()))
-		} else {
-			b.Attestation2DataSlot.Append(0)
-		}
+	source := data.GetSource()
+	b.Attestation2DataSourceEpoch.Append(uint32(source.GetEpoch().GetValue()))
+	b.Attestation2DataSourceRoot.Append([]byte(source.GetRoot()))
 
-		if index := data.GetIndex(); index != nil {
-			b.Attestation2DataIndex.Append(uint32(index.GetValue()))
-		} else {
-			b.Attestation2DataIndex.Append(0)
-		}
-
-		if source := data.GetSource(); source != nil {
-			if epoch := source.GetEpoch(); epoch != nil {
-				b.Attestation2DataSourceEpoch.Append(uint32(epoch.GetValue()))
-			} else {
-				b.Attestation2DataSourceEpoch.Append(0)
-			}
-
-			b.Attestation2DataSourceRoot.Append([]byte(source.GetRoot()))
-		} else {
-			b.Attestation2DataSourceEpoch.Append(0)
-			b.Attestation2DataSourceRoot.Append(nil)
-		}
-
-		if target := data.GetTarget(); target != nil {
-			if epoch := target.GetEpoch(); epoch != nil {
-				b.Attestation2DataTargetEpoch.Append(uint32(epoch.GetValue()))
-			} else {
-				b.Attestation2DataTargetEpoch.Append(0)
-			}
-
-			b.Attestation2DataTargetRoot.Append([]byte(target.GetRoot()))
-		} else {
-			b.Attestation2DataTargetEpoch.Append(0)
-			b.Attestation2DataTargetRoot.Append(nil)
-		}
-	} else {
-		b.Attestation2DataBeaconBlockRoot.Append(nil)
-		b.Attestation2DataSlot.Append(0)
-		b.Attestation2DataIndex.Append(0)
-		b.Attestation2DataSourceEpoch.Append(0)
-		b.Attestation2DataSourceRoot.Append(nil)
-		b.Attestation2DataTargetEpoch.Append(0)
-		b.Attestation2DataTargetRoot.Append(nil)
-	}
-}
-
-func (b *canonicalBeaconBlockAttesterSlashingBatch) appendNullIndexedAttestation2() {
-	b.Attestation2AttestingIndices.Append([]uint32{})
-	b.Attestation2Signature.Append("")
-	b.Attestation2DataBeaconBlockRoot.Append(nil)
-	b.Attestation2DataSlot.Append(0)
-	b.Attestation2DataIndex.Append(0)
-	b.Attestation2DataSourceEpoch.Append(0)
-	b.Attestation2DataSourceRoot.Append(nil)
-	b.Attestation2DataTargetEpoch.Append(0)
-	b.Attestation2DataTargetRoot.Append(nil)
+	target := data.GetTarget()
+	b.Attestation2DataTargetEpoch.Append(uint32(target.GetEpoch().GetValue()))
+	b.Attestation2DataTargetRoot.Append([]byte(target.GetRoot()))
 }
 
 func (b *canonicalBeaconBlockAttesterSlashingBatch) appendAdditionalData(event *xatu.DecoratedEvent) {
@@ -224,6 +128,40 @@ func (b *canonicalBeaconBlockAttesterSlashingBatch) appendAdditionalData(event *
 
 	appendBlockIdentifier(additional.GetBlock(),
 		&b.Slot, &b.SlotStartDateTime, &b.Epoch, &b.EpochStartDateTime, &b.BlockVersion, &b.BlockRoot)
+}
+
+// validateIndexedAttestation returns route.ErrInvalidEvent when a required field
+// of an indexed attestation is absent, so the slashing is dropped rather than
+// written with fabricated zero slot/index/epoch values.
+func validateIndexedAttestation(name string, att *ethv1.IndexedAttestationV2) error {
+	if att == nil {
+		return fmt.Errorf("nil %s: %w", name, route.ErrInvalidEvent)
+	}
+
+	data := att.GetData()
+	if data == nil {
+		return fmt.Errorf("nil %s.Data: %w", name, route.ErrInvalidEvent)
+	}
+
+	if data.GetSlot() == nil {
+		return fmt.Errorf("nil %s.Data.Slot: %w", name, route.ErrInvalidEvent)
+	}
+
+	if data.GetIndex() == nil {
+		return fmt.Errorf("nil %s.Data.Index: %w", name, route.ErrInvalidEvent)
+	}
+
+	source := data.GetSource()
+	if source == nil || source.GetEpoch() == nil {
+		return fmt.Errorf("nil %s.Data.Source: %w", name, route.ErrInvalidEvent)
+	}
+
+	target := data.GetTarget()
+	if target == nil || target.GetEpoch() == nil {
+		return fmt.Errorf("nil %s.Data.Target: %w", name, route.ErrInvalidEvent)
+	}
+
+	return nil
 }
 
 // wrappedUint64SliceToUint32 converts a slice of wrapperspb.UInt64Value to []uint32.

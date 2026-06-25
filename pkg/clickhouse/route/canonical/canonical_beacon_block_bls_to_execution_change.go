@@ -38,11 +38,28 @@ func (b *canonicalBeaconBlockBlsToExecutionChangeBatch) FlattenTo(event *xatu.De
 		return fmt.Errorf("nil eth_v2_beacon_block_bls_to_execution_change payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockBlsToExecutionChangeBatch) validate(event *xatu.DecoratedEvent) error {
+	msg := event.GetEthV2BeaconBlockBlsToExecutionChange().GetMessage()
+	if msg == nil {
+		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
+	}
+
+	if msg.GetValidatorIndex() == nil {
+		return fmt.Errorf("nil Message.ValidatorIndex: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }
@@ -56,20 +73,10 @@ func (b *canonicalBeaconBlockBlsToExecutionChangeBatch) appendPayload(event *xat
 	change := event.GetEthV2BeaconBlockBlsToExecutionChange()
 	b.ExchangingSignature.Append(change.GetSignature())
 
-	if msg := change.GetMessage(); msg != nil {
-		if validatorIndex := msg.GetValidatorIndex(); validatorIndex != nil {
-			b.ExchangingMessageValidatorIndex.Append(uint32(validatorIndex.GetValue()))
-		} else {
-			b.ExchangingMessageValidatorIndex.Append(0)
-		}
-
-		b.ExchangingMessageFromBlsPubkey.Append(msg.GetFromBlsPubkey())
-		b.ExchangingMessageToExecutionAddress.Append([]byte(msg.GetToExecutionAddress()))
-	} else {
-		b.ExchangingMessageValidatorIndex.Append(0)
-		b.ExchangingMessageFromBlsPubkey.Append("")
-		b.ExchangingMessageToExecutionAddress.Append(nil)
-	}
+	msg := change.GetMessage()
+	b.ExchangingMessageValidatorIndex.Append(uint32(msg.GetValidatorIndex().GetValue()))
+	b.ExchangingMessageFromBlsPubkey.Append(msg.GetFromBlsPubkey())
+	b.ExchangingMessageToExecutionAddress.Append([]byte(msg.GetToExecutionAddress()))
 }
 
 func (b *canonicalBeaconBlockBlsToExecutionChangeBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

@@ -73,17 +73,17 @@ func (b *canonicalBeaconValidatorsPubkeysBatch) FlattenTo(event *xatu.DecoratedE
 			continue
 		}
 
+		data := validator.GetData()
+		if data == nil || data.GetPubkey() == nil {
+			continue
+		}
+
 		b.UpdatedDateTime.Append(now)
 		b.Epoch.Append(epoch)
 		b.EpochStartDateTime.Append(epochStartTime)
 
 		b.Index.Append(uint32(validator.GetIndex().GetValue()))
-
-		if data := validator.GetData(); data != nil && data.GetPubkey() != nil {
-			b.Pubkey.Append(data.GetPubkey().GetValue())
-		} else {
-			b.Pubkey.Append("")
-		}
+		b.Pubkey.Append(data.GetPubkey().GetValue())
 
 		b.appendMetadata(event)
 		b.rows++

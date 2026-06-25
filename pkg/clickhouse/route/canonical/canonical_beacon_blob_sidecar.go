@@ -75,26 +75,16 @@ func (b *canonicalBeaconBlobSidecarBatch) appendRuntime(_ *xatu.DecoratedEvent) 
 	b.UpdatedDateTime.Append(time.Now())
 }
 
+//nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
 func (b *canonicalBeaconBlobSidecarBatch) appendPayload(event *xatu.DecoratedEvent) {
 	blob := event.GetEthV1BeaconBlockBlobSidecar()
 
 	b.BlockRoot.Append([]byte(blob.GetBlockRoot()))
 	b.BlockParentRoot.Append([]byte(blob.GetBlockParentRoot()))
-
-	if proposerIndex := blob.GetProposerIndex(); proposerIndex != nil {
-		b.ProposerIndex.Append(uint32(proposerIndex.GetValue())) //nolint:gosec // G115
-	} else {
-		b.ProposerIndex.Append(0)
-	}
-
+	b.ProposerIndex.Append(uint32(blob.GetProposerIndex().GetValue()))
 	b.KzgCommitment.Append([]byte(blob.GetKzgCommitment()))
 	b.KzgProof.Append([]byte(blob.GetKzgProof()))
-
-	if index := blob.GetIndex(); index != nil {
-		b.BlobIndex.Append(index.GetValue())
-	} else {
-		b.BlobIndex.Append(0)
-	}
+	b.BlobIndex.Append(blob.GetIndex().GetValue())
 }
 
 func (b *canonicalBeaconBlobSidecarBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

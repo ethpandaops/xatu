@@ -73,17 +73,17 @@ func (b *canonicalBeaconValidatorsWithdrawalCredentialsBatch) FlattenTo(event *x
 			continue
 		}
 
+		data := validator.GetData()
+		if data == nil || data.GetWithdrawalCredentials() == nil {
+			continue
+		}
+
 		b.UpdatedDateTime.Append(now)
 		b.Epoch.Append(epoch)
 		b.EpochStartDateTime.Append(epochStartTime)
 
 		b.Index.Append(uint32(validator.GetIndex().GetValue()))
-
-		if data := validator.GetData(); data != nil && data.GetWithdrawalCredentials() != nil {
-			b.WithdrawalCredentials.Append(data.GetWithdrawalCredentials().GetValue())
-		} else {
-			b.WithdrawalCredentials.Append("")
-		}
+		b.WithdrawalCredentials.Append(data.GetWithdrawalCredentials().GetValue())
 
 		b.appendMetadata(event)
 		b.rows++

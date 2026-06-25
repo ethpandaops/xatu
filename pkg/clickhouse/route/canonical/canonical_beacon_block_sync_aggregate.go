@@ -80,12 +80,7 @@ func (b *canonicalBeaconBlockSyncAggregateBatch) appendPayload(event *xatu.Decor
 	b.SyncCommitteeSignature.Append(aggregate.GetSyncCommitteeSignature())
 	b.ValidatorsParticipated.Append(syncAggregateWrappedUint32Slice(aggregate.GetValidatorsParticipated()))
 	b.ValidatorsMissed.Append(syncAggregateWrappedUint32Slice(aggregate.GetValidatorsMissed()))
-
-	if participationCount := aggregate.GetParticipationCount(); participationCount != nil {
-		b.ParticipationCount.Append(uint16(participationCount.GetValue()))
-	} else {
-		b.ParticipationCount.Append(0)
-	}
+	b.ParticipationCount.Append(uint16(aggregate.GetParticipationCount().GetValue()))
 }
 
 func (b *canonicalBeaconBlockSyncAggregateBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

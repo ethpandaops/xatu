@@ -3,6 +3,8 @@ package canonical
 import (
 	"testing"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/testfixture"
 	ethv2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -25,7 +27,11 @@ func TestSnapshot_canonical_beacon_block_bls_to_execution_change(t *testing.T) {
 			},
 		}),
 		Data: &xatu.DecoratedEvent_EthV2BeaconBlockBlsToExecutionChange{
-			EthV2BeaconBlockBlsToExecutionChange: &ethv2.SignedBLSToExecutionChangeV2{},
+			EthV2BeaconBlockBlsToExecutionChange: &ethv2.SignedBLSToExecutionChangeV2{
+				Message: &ethv2.BLSToExecutionChangeV2{
+					ValidatorIndex: wrapperspb.UInt64(42),
+				},
+			},
 		},
 	}, 1, map[string]any{
 		"meta_network_name": "mainnet",

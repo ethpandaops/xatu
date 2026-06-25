@@ -3,6 +3,8 @@ package canonical
 import (
 	"testing"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/testfixture"
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -25,7 +27,12 @@ func TestSnapshot_canonical_beacon_block_voluntary_exit(t *testing.T) {
 			},
 		}),
 		Data: &xatu.DecoratedEvent_EthV2BeaconBlockVoluntaryExit{
-			EthV2BeaconBlockVoluntaryExit: &ethv1.SignedVoluntaryExitV2{},
+			EthV2BeaconBlockVoluntaryExit: &ethv1.SignedVoluntaryExitV2{
+				Message: &ethv1.VoluntaryExitV2{
+					Epoch:          wrapperspb.UInt64(100),
+					ValidatorIndex: wrapperspb.UInt64(42),
+				},
+			},
 		},
 	}, 1, map[string]any{
 		"meta_network_name": "mainnet",

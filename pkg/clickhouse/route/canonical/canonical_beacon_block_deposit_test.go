@@ -3,6 +3,8 @@ package canonical
 import (
 	"testing"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/testfixture"
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -25,7 +27,12 @@ func TestSnapshot_canonical_beacon_block_deposit(t *testing.T) {
 			},
 		}),
 		Data: &xatu.DecoratedEvent_EthV2BeaconBlockDeposit{
-			EthV2BeaconBlockDeposit: &ethv1.DepositV2{},
+			EthV2BeaconBlockDeposit: &ethv1.DepositV2{
+				Data: &ethv1.DepositV2_Data{
+					Pubkey: "0xpubkey",
+					Amount: wrapperspb.UInt64(32000000000),
+				},
+			},
 		},
 	}, 1, map[string]any{
 		"meta_network_name": "mainnet",

@@ -141,24 +141,9 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) appendPayload(event *xat
 	}
 
 	b.BlobHashes.Append(tx.GetBlobHashes())
-
-	if nonce := tx.GetNonce(); nonce != nil {
-		b.Nonce.Append(nonce.GetValue())
-	} else {
-		b.Nonce.Append(0)
-	}
-
-	if gas := tx.GetGas(); gas != nil {
-		b.Gas.Append(gas.GetValue())
-	} else {
-		b.Gas.Append(0)
-	}
-
-	if txType := tx.GetType(); txType != nil {
-		b.Type.Append(uint8(txType.GetValue())) //nolint:gosec // G115
-	} else {
-		b.Type.Append(0)
-	}
+	b.Nonce.Append(tx.GetNonce().GetValue())
+	b.Gas.Append(tx.GetGas().GetValue())
+	b.Type.Append(uint8(tx.GetType().GetValue())) //nolint:gosec // G115
 
 	if blobGas := tx.GetBlobGas(); blobGas != nil {
 		b.BlobGas.Append(proto.NewNullable[uint64](blobGas.GetValue()))

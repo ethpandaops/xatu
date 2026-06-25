@@ -39,6 +39,10 @@ func (b *canonicalBeaconBlockDepositBatch) FlattenTo(event *xatu.DecoratedEvent)
 		return fmt.Errorf("nil eth_v2_beacon_block_deposit payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -52,6 +56,19 @@ func (b *canonicalBeaconBlockDepositBatch) FlattenTo(event *xatu.DecoratedEvent)
 	return nil
 }
 
+func (b *canonicalBeaconBlockDepositBatch) validate(event *xatu.DecoratedEvent) error {
+	data := event.GetEthV2BeaconBlockDeposit().GetData()
+	if data == nil {
+		return fmt.Errorf("nil Data: %w", route.ErrInvalidEvent)
+	}
+
+	if data.GetAmount() == nil {
+		return fmt.Errorf("nil Data.Amount: %w", route.ErrInvalidEvent)
+	}
+
+	return nil
+}
+
 func (b *canonicalBeaconBlockDepositBatch) appendRuntime(_ *xatu.DecoratedEvent) {
 	b.UpdatedDateTime.Append(time.Now())
 }
@@ -60,37 +77,17 @@ func (b *canonicalBeaconBlockDepositBatch) appendPayload(event *xatu.DecoratedEv
 	deposit := event.GetEthV2BeaconBlockDeposit()
 	b.DepositProof.Append(deposit.GetProof())
 
-	if data := deposit.GetData(); data != nil {
-		b.DepositDataPubkey.Append(data.GetPubkey())
-		b.DepositDataWithdrawalCredentials.Append([]byte(data.GetWithdrawalCredentials()))
-		b.DepositDataSignature.Append(data.GetSignature())
+	data := deposit.GetData()
+	b.DepositDataPubkey.Append(data.GetPubkey())
+	b.DepositDataWithdrawalCredentials.Append([]byte(data.GetWithdrawalCredentials()))
+	b.DepositDataSignature.Append(data.GetSignature())
 
-		if amount := data.GetAmount(); amount != nil {
-			parsedAmount, err := route.ParseUInt128(strconv.FormatUint(amount.GetValue(), 10))
-			if err != nil {
-				return fmt.Errorf("parsing deposit_data_amount: %w", err)
-			}
-
-			b.DepositDataAmount.Append(parsedAmount)
-		} else {
-			zeroAmount, err := route.ParseUInt128("0")
-			if err != nil {
-				return fmt.Errorf("parsing deposit_data_amount: %w", err)
-			}
-
-			b.DepositDataAmount.Append(zeroAmount)
-		}
-	} else {
-		zeroAmount, err := route.ParseUInt128("0")
-		if err != nil {
-			return fmt.Errorf("parsing deposit_data_amount: %w", err)
-		}
-
-		b.DepositDataPubkey.Append("")
-		b.DepositDataWithdrawalCredentials.Append(nil)
-		b.DepositDataSignature.Append("")
-		b.DepositDataAmount.Append(zeroAmount)
+	parsedAmount, err := route.ParseUInt128(strconv.FormatUint(data.GetAmount().GetValue(), 10))
+	if err != nil {
+		return fmt.Errorf("parsing deposit_data_amount: %w", err)
 	}
+
+	b.DepositDataAmount.Append(parsedAmount)
 
 	return nil
 }

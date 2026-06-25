@@ -51,11 +51,29 @@ func (b *canonicalBeaconCommitteeBatch) FlattenTo(event *xatu.DecoratedEvent) er
 		return fmt.Errorf("nil eth_v1_beacon_committee payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconCommitteeBatch) validate(event *xatu.DecoratedEvent) error {
+	committee := event.GetEthV1BeaconCommittee()
+
+	if committee.GetSlot() == nil {
+		return fmt.Errorf("nil Slot: %w", route.ErrInvalidEvent)
+	}
+
+	if committee.GetIndex() == nil {
+		return fmt.Errorf("nil Index: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }
@@ -66,19 +84,8 @@ func (b *canonicalBeaconCommitteeBatch) appendRuntime(_ *xatu.DecoratedEvent) {
 
 func (b *canonicalBeaconCommitteeBatch) appendPayload(event *xatu.DecoratedEvent) {
 	committee := event.GetEthV1BeaconCommittee()
-
-	if slot := committee.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // G115
-	} else {
-		b.Slot.Append(0)
-	}
-
-	if index := committee.GetIndex(); index != nil {
-		b.CommitteeIndex.Append(strconv.FormatUint(index.GetValue(), 10))
-	} else {
-		b.CommitteeIndex.Append("")
-	}
-
+	b.Slot.Append(uint32(committee.GetSlot().GetValue())) //nolint:gosec // G115
+	b.CommitteeIndex.Append(strconv.FormatUint(committee.GetIndex().GetValue(), 10))
 	b.Validators.Append(wrappedUint64SliceToUint32(committee.GetValidators()))
 }
 

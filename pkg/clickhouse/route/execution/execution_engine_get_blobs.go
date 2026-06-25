@@ -90,17 +90,8 @@ func (b *executionEngineGetBlobsBatch) appendPayload(event *xatu.DecoratedEvent)
 		b.RequestedDateTime.Append(time.Time{})
 	}
 
-	if durationMs := payload.GetDurationMs(); durationMs != nil {
-		b.DurationMs.Append(durationMs.GetValue())
-	} else {
-		b.DurationMs.Append(0)
-	}
-
-	if requestedCount := payload.GetRequestedCount(); requestedCount != nil {
-		b.RequestedCount.Append(requestedCount.GetValue())
-	} else {
-		b.RequestedCount.Append(0)
-	}
+	b.DurationMs.Append(payload.GetDurationMs().GetValue())
+	b.RequestedCount.Append(payload.GetRequestedCount().GetValue())
 
 	strs := payload.GetVersionedHashes()
 
@@ -111,11 +102,7 @@ func (b *executionEngineGetBlobsBatch) appendPayload(event *xatu.DecoratedEvent)
 
 	b.VersionedHashes.Append(vhBytes)
 
-	if returnedCount := payload.GetReturnedCount(); returnedCount != nil {
-		b.ReturnedCount.Append(returnedCount.GetValue())
-	} else {
-		b.ReturnedCount.Append(0)
-	}
+	b.ReturnedCount.Append(payload.GetReturnedCount().GetValue())
 
 	indexes := payload.GetReturnedBlobIndexes()
 	if len(indexes) > 0 {

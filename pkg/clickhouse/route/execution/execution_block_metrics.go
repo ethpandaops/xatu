@@ -81,27 +81,10 @@ func (b *executionBlockMetricsBatch) appendRuntime(event *xatu.DecoratedEvent) {
 func (b *executionBlockMetricsBatch) appendPayload(event *xatu.DecoratedEvent) {
 	payload := event.GetExecutionBlockMetrics()
 	b.Source.Append(payload.GetSource())
-
-	if blockNumber := payload.GetBlockNumber(); blockNumber != nil {
-		b.BlockNumber.Append(blockNumber.GetValue())
-	} else {
-		b.BlockNumber.Append(0)
-	}
-
+	b.BlockNumber.Append(payload.GetBlockNumber().GetValue())
 	b.BlockHash.Append([]byte(payload.GetBlockHash()))
-
-	if gasUsed := payload.GetGasUsed(); gasUsed != nil {
-		b.GasUsed.Append(gasUsed.GetValue())
-	} else {
-		b.GasUsed.Append(0)
-	}
-
-	if txCount := payload.GetTxCount(); txCount != nil {
-		b.TxCount.Append(txCount.GetValue())
-	} else {
-		b.TxCount.Append(0)
-	}
-
+	b.GasUsed.Append(payload.GetGasUsed().GetValue())
+	b.TxCount.Append(payload.GetTxCount().GetValue())
 	b.appendPayloadTiming(payload)
 	b.appendPayloadStateIO(payload)
 	b.appendPayloadCaches(payload)

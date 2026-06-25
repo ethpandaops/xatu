@@ -93,26 +93,11 @@ func (b *consensusEngineApiGetBlobsBatch) appendPayload(event *xatu.DecoratedEve
 		b.RequestedDateTime.Append(time.Time{})
 	}
 
-	if durationMs := payload.GetDurationMs(); durationMs != nil {
-		b.DurationMs.Append(durationMs.GetValue())
-	} else {
-		b.DurationMs.Append(0)
-	}
-
-	if slot := payload.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot values fit uint32
-	} else {
-		b.Slot.Append(0)
-	}
-
+	b.DurationMs.Append(payload.GetDurationMs().GetValue())
+	b.Slot.Append(uint32(payload.GetSlot().GetValue())) //nolint:gosec // slot values fit uint32
 	b.BlockRoot.Append([]byte(payload.GetBlockRoot()))
 	b.ParentBlockRoot.Append([]byte(payload.GetParentBlockRoot()))
-
-	if requestedCount := payload.GetRequestedCount(); requestedCount != nil {
-		b.RequestedCount.Append(requestedCount.GetValue())
-	} else {
-		b.RequestedCount.Append(0)
-	}
+	b.RequestedCount.Append(payload.GetRequestedCount().GetValue())
 
 	hashes := payload.GetVersionedHashes()
 
@@ -123,12 +108,7 @@ func (b *consensusEngineApiGetBlobsBatch) appendPayload(event *xatu.DecoratedEve
 
 	b.VersionedHashes.Append(hashBytes)
 
-	if returnedCount := payload.GetReturnedCount(); returnedCount != nil {
-		b.ReturnedCount.Append(returnedCount.GetValue())
-	} else {
-		b.ReturnedCount.Append(0)
-	}
-
+	b.ReturnedCount.Append(payload.GetReturnedCount().GetValue())
 	b.Status.Append(payload.GetStatus())
 
 	if errMsg := payload.GetErrorMessage(); errMsg != "" {

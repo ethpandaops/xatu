@@ -109,60 +109,18 @@ func (b *consensusEngineApiNewPayloadBatch) appendPayload(event *xatu.DecoratedE
 		b.RequestedDateTime.Append(time.Time{})
 	}
 
-	if durationMs := payload.GetDurationMs(); durationMs != nil {
-		b.DurationMs.Append(durationMs.GetValue())
-	} else {
-		b.DurationMs.Append(0)
-	}
-
-	if slot := payload.GetSlot(); slot != nil {
-		b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot values fit uint32
-	} else {
-		b.Slot.Append(0)
-	}
-
+	b.DurationMs.Append(payload.GetDurationMs().GetValue())
+	b.Slot.Append(uint32(payload.GetSlot().GetValue())) //nolint:gosec // slot values fit uint32
 	b.BlockRoot.Append([]byte(payload.GetBlockRoot()))
 	b.ParentBlockRoot.Append([]byte(payload.GetParentBlockRoot()))
-
-	if proposerIndex := payload.GetProposerIndex(); proposerIndex != nil {
-		b.ProposerIndex.Append(uint32(proposerIndex.GetValue())) //nolint:gosec // proposer index fits uint32
-	} else {
-		b.ProposerIndex.Append(0)
-	}
-
-	if blockNumber := payload.GetBlockNumber(); blockNumber != nil {
-		b.BlockNumber.Append(blockNumber.GetValue())
-	} else {
-		b.BlockNumber.Append(0)
-	}
-
+	b.ProposerIndex.Append(uint32(payload.GetProposerIndex().GetValue())) //nolint:gosec // proposer index fits uint32
+	b.BlockNumber.Append(payload.GetBlockNumber().GetValue())
 	b.BlockHash.Append([]byte(payload.GetBlockHash()))
 	b.ParentHash.Append([]byte(payload.GetParentHash()))
-
-	if gasUsed := payload.GetGasUsed(); gasUsed != nil {
-		b.GasUsed.Append(gasUsed.GetValue())
-	} else {
-		b.GasUsed.Append(0)
-	}
-
-	if gasLimit := payload.GetGasLimit(); gasLimit != nil {
-		b.GasLimit.Append(gasLimit.GetValue())
-	} else {
-		b.GasLimit.Append(0)
-	}
-
-	if txCount := payload.GetTxCount(); txCount != nil {
-		b.TxCount.Append(txCount.GetValue())
-	} else {
-		b.TxCount.Append(0)
-	}
-
-	if blobCount := payload.GetBlobCount(); blobCount != nil {
-		b.BlobCount.Append(blobCount.GetValue())
-	} else {
-		b.BlobCount.Append(0)
-	}
-
+	b.GasUsed.Append(payload.GetGasUsed().GetValue())
+	b.GasLimit.Append(payload.GetGasLimit().GetValue())
+	b.TxCount.Append(payload.GetTxCount().GetValue())
+	b.BlobCount.Append(payload.GetBlobCount().GetValue())
 	b.Status.Append(payload.GetStatus())
 
 	if lvh := payload.GetLatestValidHash(); lvh != "" {

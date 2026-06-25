@@ -45,13 +45,41 @@ func (b *{{.BatchName}}) FlattenTo(
 	// TODO: Implement this method to flatten the event into columnar batch columns.
 	// The generated .gen.go file contains the available column fields for this table.
 	//
+	// DATA-CORRECTNESS RULES (do not deviate):
+	//   - For a REQUIRED field (one where 0, "", or a zero-hash is itself a valid
+	//     value: validator/proposer index, slot, epoch, amount, reward, position,
+	//     gas, nonce, block_hash, pubkeys, etc.), nil-check the wrapper in
+	//     validate() and return route.ErrInvalidEvent when it is absent. Then in
+	//     appendPayload append the value DIRECTLY with NO else-zero fallback.
+	//     A silent else-zero fabricates data indistinguishable from a real value.
+	//   - For a GENUINELY-OPTIONAL field (sometimes absent by protocol), make the
+	//     column Nullable(T) in the migration / *proto.ColNullable[T] in the gen,
+	//     and append proto.NewNullable / proto.Nullable{} (writing NULL when absent).
+	//   - proto3 SCALAR fields (plain uint64/string, not wrapperspb) cannot be
+	//     nil-checked; only wrapper fields can. Do not synthesize a scalar nil-check.
+	//
 	// Typical structure:
+	//   if err := b.validate(event); err != nil {
+	//       return err
+	//   }
 	//   b.appendRuntime(event)
 	//   b.appendMetadata(event)
-	//   b.appendPayload(event)
+	//   if err := b.appendPayload(event); err != nil {
+	//       return err
+	//   }
 	//   b.rows++
 	//   return nil
 	return fmt.Errorf("{{.TypeName}}: FlattenTo not implemented")
+}
+
+// validate returns route.ErrInvalidEvent when a required field is absent, so the
+// event is dropped rather than written with fabricated zero values.
+func (b *{{.BatchName}}) validate(event *xatu.DecoratedEvent) error {
+	// TODO: nil-check each required wrapper field on the payload and return
+	// fmt.Errorf("nil <field>: %w", route.ErrInvalidEvent) when absent.
+	_ = event
+
+	return nil
 }
 `))
 

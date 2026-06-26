@@ -75,7 +75,95 @@ func (b *canonicalBeaconBlockBatch) validate(event *xatu.DecoratedEvent) error {
 		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
 	}
 
+	parentRoot, stateRoot, eth1Data, ok := canonicalBeaconBlockIdentityFields(payload)
+	if !ok {
+		return fmt.Errorf("unknown block version: %w", route.ErrInvalidEvent)
+	}
+
+	if parentRoot == "" {
+		return fmt.Errorf("empty ParentRoot: %w", route.ErrInvalidEvent)
+	}
+
+	if stateRoot == "" {
+		return fmt.Errorf("empty StateRoot: %w", route.ErrInvalidEvent)
+	}
+
+	if eth1Data == nil {
+		return fmt.Errorf("nil Eth1Data: %w", route.ErrInvalidEvent)
+	}
+
+	if eth1Data.GetBlockHash() == "" {
+		return fmt.Errorf("empty Eth1DataBlockHash: %w", route.ErrInvalidEvent)
+	}
+
+	if eth1Data.GetDepositRoot() == "" {
+		return fmt.Errorf("empty Eth1DataDepositRoot: %w", route.ErrInvalidEvent)
+	}
+
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockV2()
+	if additional == nil {
+		return fmt.Errorf("nil additional EthV2BeaconBlockV2 data: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetVersion() == "" {
+		return fmt.Errorf("empty BlockVersion: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetBlockRoot() == "" {
+		return fmt.Errorf("empty BlockRoot: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetSlot().GetStartDateTime() == nil {
+		return fmt.Errorf("nil SlotStartDateTime: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetEpoch().GetStartDateTime() == nil {
+		return fmt.Errorf("nil EpochStartDateTime: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("empty meta_network_name: %w", route.ErrInvalidEvent)
+	}
+
 	return nil
+}
+
+// canonicalBeaconBlockIdentityFields extracts the spec-required block identity
+// fields (parent_root, state_root, eth1_data) from whichever fork variant the
+// block message carries. ok is false when no known fork variant is set.
+func canonicalBeaconBlockIdentityFields(eventBlock *ethv2.EventBlockV2) (parentRoot, stateRoot string, eth1Data *ethv1.Eth1Data, ok bool) {
+	switch {
+	case eventBlock.GetPhase0Block() != nil:
+		blk := eventBlock.GetPhase0Block()
+
+		return blk.GetParentRoot(), blk.GetStateRoot(), blk.GetBody().GetEth1Data(), true
+	case eventBlock.GetAltairBlock() != nil:
+		blk := eventBlock.GetAltairBlock()
+
+		return blk.GetParentRoot(), blk.GetStateRoot(), blk.GetBody().GetEth1Data(), true
+	case eventBlock.GetBellatrixBlock() != nil:
+		blk := eventBlock.GetBellatrixBlock()
+
+		return blk.GetParentRoot(), blk.GetStateRoot(), blk.GetBody().GetEth1Data(), true
+	case eventBlock.GetCapellaBlock() != nil:
+		blk := eventBlock.GetCapellaBlock()
+
+		return blk.GetParentRoot(), blk.GetStateRoot(), blk.GetBody().GetEth1Data(), true
+	case eventBlock.GetDenebBlock() != nil:
+		blk := eventBlock.GetDenebBlock()
+
+		return blk.GetParentRoot(), blk.GetStateRoot(), blk.GetBody().GetEth1Data(), true
+	case eventBlock.GetElectraBlock() != nil:
+		blk := eventBlock.GetElectraBlock()
+
+		return blk.GetParentRoot(), blk.GetStateRoot(), blk.GetBody().GetEth1Data(), true
+	case eventBlock.GetFuluBlock() != nil:
+		blk := eventBlock.GetFuluBlock()
+
+		return blk.GetParentRoot(), blk.GetStateRoot(), blk.GetBody().GetEth1Data(), true
+	default:
+		return "", "", nil, false
+	}
 }
 
 func (b *canonicalBeaconBlockBatch) appendRuntime(_ *xatu.DecoratedEvent) {

@@ -71,6 +71,19 @@ func (b *canonicalBeaconBlockExecutionRequestConsolidationBatch) validate(event 
 		return fmt.Errorf("nil PositionInBlock: %w", route.ErrInvalidEvent)
 	}
 
+	block := additional.GetBlock()
+	if block.GetRoot() == "" {
+		return fmt.Errorf("empty BlockRoot: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetVersion() == "" {
+		return fmt.Errorf("empty BlockVersion: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("empty meta_network_name: %w", route.ErrInvalidEvent)
+	}
+
 	return nil
 }
 

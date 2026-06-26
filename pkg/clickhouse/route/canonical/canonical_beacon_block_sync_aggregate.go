@@ -60,6 +60,44 @@ func (b *canonicalBeaconBlockSyncAggregateBatch) validate(event *xatu.DecoratedE
 		return fmt.Errorf("nil ParticipationCount: %w", route.ErrInvalidEvent)
 	}
 
+	if payload.GetSyncCommitteeBits() == "" {
+		return fmt.Errorf("empty SyncCommitteeBits: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetSyncCommitteeSignature() == "" {
+		return fmt.Errorf("empty SyncCommitteeSignature: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("empty meta network name: %w", route.ErrInvalidEvent)
+	}
+
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockSyncAggregate()
+	if additional == nil {
+		return fmt.Errorf("nil EthV2BeaconBlockSyncAggregate additional data: %w", route.ErrInvalidEvent)
+	}
+
+	block := additional.GetBlock()
+	if block == nil {
+		return fmt.Errorf("nil block identifier: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetVersion() == "" {
+		return fmt.Errorf("empty block version: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetRoot() == "" {
+		return fmt.Errorf("empty block root: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetSlot().GetStartDateTime() == nil {
+		return fmt.Errorf("nil slot start date time: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetEpoch().GetStartDateTime() == nil {
+		return fmt.Errorf("nil epoch start date time: %w", route.ErrInvalidEvent)
+	}
+
 	return nil
 }
 

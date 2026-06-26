@@ -20,16 +20,21 @@ func TestSnapshot_canonical_beacon_blob_sidecar(t *testing.T) {
 		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
 			AdditionalData: &xatu.ClientMeta_EthV1BeaconBlobSidecar{
 				EthV1BeaconBlobSidecar: &xatu.ClientMeta_AdditionalEthV1BeaconBlobSidecarData{
-					Slot:  testfixture.SlotEpochAdditional(),
-					Epoch: testfixture.EpochAdditional(),
+					Slot:          testfixture.SlotEpochAdditional(),
+					Epoch:         testfixture.EpochAdditional(),
+					VersionedHash: "0x0100000000000000000000000000000000000000000000000000000000000001",
 				},
 			},
 		}),
 		Data: &xatu.DecoratedEvent_EthV1BeaconBlockBlobSidecar{
 			EthV1BeaconBlockBlobSidecar: &ethv1.BlobSidecar{
-				Slot:          wrapperspb.UInt64(100),
-				ProposerIndex: wrapperspb.UInt64(5),
-				Index:         wrapperspb.UInt64(0),
+				Slot:            wrapperspb.UInt64(100),
+				ProposerIndex:   wrapperspb.UInt64(5),
+				Index:           wrapperspb.UInt64(0),
+				BlockRoot:       "0x1111111111111111111111111111111111111111111111111111111111111111",
+				BlockParentRoot: "0x2222222222222222222222222222222222222222222222222222222222222222",
+				KzgCommitment:   "0x" + "33" + "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+				KzgProof:        "0x" + "44" + "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 			},
 		},
 	}, 1, map[string]any{

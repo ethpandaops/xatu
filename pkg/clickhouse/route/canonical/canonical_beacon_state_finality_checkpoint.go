@@ -60,6 +60,18 @@ func (b *canonicalBeaconStateFinalityCheckpointBatch) validate(event *xatu.Decor
 		return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
 	}
 
+	if extra.GetEpoch().GetStartDateTime() == nil {
+		return fmt.Errorf("nil EpochStartDateTime: %w", route.ErrInvalidEvent)
+	}
+
+	if extra.GetStateId() == "" {
+		return fmt.Errorf("nil StateID: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("nil MetaNetworkName: %w", route.ErrInvalidEvent)
+	}
+
 	if payload.GetPreviousJustified() == nil {
 		return fmt.Errorf("nil PreviousJustified: %w", route.ErrInvalidEvent)
 	}

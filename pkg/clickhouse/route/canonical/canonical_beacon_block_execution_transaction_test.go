@@ -21,19 +21,24 @@ func TestSnapshot_canonical_beacon_block_execution_transaction(t *testing.T) {
 			AdditionalData: &xatu.ClientMeta_EthV2BeaconBlockExecutionTransaction{
 				EthV2BeaconBlockExecutionTransaction: &xatu.ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData{
 					Block: &xatu.BlockIdentifier{
-						Epoch: testfixture.EpochAdditional(),
+						Slot:    testfixture.SlotEpochAdditional(),
+						Epoch:   testfixture.EpochAdditional(),
+						Version: "deneb",
+						Root:    "0x1111111111111111111111111111111111111111111111111111111111111111",
 					},
+					Size: "150",
 				},
 			},
 		}),
 		Data: &xatu.DecoratedEvent_EthV2BeaconBlockExecutionTransaction{
 			EthV2BeaconBlockExecutionTransaction: &ethv1.Transaction{
-				Hash:  "0xtxhash",
-				From:  "0xfrom",
-				To:    "0xto",
-				Nonce: wrapperspb.UInt64(1),
-				Gas:   wrapperspb.UInt64(21000),
-				Type:  wrapperspb.UInt32(2),
+				Hash:     "0xtxhash",
+				From:     "0xfrom",
+				To:       "0xto",
+				Nonce:    wrapperspb.UInt64(1),
+				Gas:      wrapperspb.UInt64(21000),
+				Type:     wrapperspb.UInt32(2),
+				GasPrice: "1000000000",
 			},
 		},
 	}, 1, map[string]any{

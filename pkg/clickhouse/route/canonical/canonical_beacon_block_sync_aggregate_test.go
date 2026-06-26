@@ -16,13 +16,27 @@ func TestSnapshot_canonical_beacon_block_sync_aggregate(t *testing.T) {
 			DateTime: testfixture.TS(),
 			Id:       "cbsa-1",
 		},
-		Meta: testfixture.BaseMeta(),
+		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
+			AdditionalData: &xatu.ClientMeta_EthV2BeaconBlockSyncAggregate{
+				EthV2BeaconBlockSyncAggregate: &xatu.ClientMeta_AdditionalEthV2BeaconBlockSyncAggregateData{
+					Block: &xatu.BlockIdentifier{
+						Version: "deneb",
+						Root:    "0xdeadbeef000000000000000000000000000000000000000000000000deadbeef",
+						Slot:    testfixture.SlotEpochAdditional(),
+						Epoch:   testfixture.EpochAdditional(),
+					},
+				},
+			},
+		}),
 		Data: &xatu.DecoratedEvent_EthV2BeaconBlockSyncAggregate{
 			EthV2BeaconBlockSyncAggregate: &xatu.SyncAggregateData{
-				ParticipationCount: wrapperspb.UInt64(128),
+				ParticipationCount:     wrapperspb.UInt64(128),
+				SyncCommitteeBits:      "0xffffffffffffffffffffffffffffffff",
+				SyncCommitteeSignature: "0xb0b0b0b0",
 			},
 		},
 	}, 1, map[string]any{
 		"meta_network_name": "mainnet",
+		"block_version":     "deneb",
 	})
 }

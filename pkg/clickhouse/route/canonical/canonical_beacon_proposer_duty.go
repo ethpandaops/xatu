@@ -70,6 +70,27 @@ func (b *canonicalBeaconProposerDutyBatch) validate(event *xatu.DecoratedEvent) 
 		return fmt.Errorf("nil ValidatorIndex: %w", route.ErrInvalidEvent)
 	}
 
+	if payload.GetPubkey() == "" {
+		return fmt.Errorf("empty Pubkey: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("empty meta network name: %w", route.ErrInvalidEvent)
+	}
+
+	additional := event.GetMeta().GetClient().GetEthV1ProposerDuty()
+	if additional == nil {
+		return fmt.Errorf("nil eth_v1_proposer_duty additional data: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetSlot().GetStartDateTime() == nil {
+		return fmt.Errorf("nil slot start date time: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetEpoch().GetStartDateTime() == nil {
+		return fmt.Errorf("nil epoch start date time: %w", route.ErrInvalidEvent)
+	}
+
 	return nil
 }
 

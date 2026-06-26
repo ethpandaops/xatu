@@ -92,6 +92,14 @@ func (b *canonicalBeaconAttestationRewardBatch) validate(event *xatu.DecoratedEv
 		return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
 	}
 
+	if additional.GetEpoch().GetStartDateTime() == nil {
+		return fmt.Errorf("nil Epoch.StartDateTime: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("empty meta_network_name: %w", route.ErrInvalidEvent)
+	}
+
 	return nil
 }
 

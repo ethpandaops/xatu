@@ -21,7 +21,9 @@ func TestSnapshot_canonical_beacon_block_execution_request_consolidation(t *test
 			AdditionalData: &xatu.ClientMeta_EthV2BeaconBlockExecutionRequestConsolidation{
 				EthV2BeaconBlockExecutionRequestConsolidation: &xatu.ClientMeta_AdditionalEthV2BeaconBlockExecutionRequestConsolidationData{
 					Block: &xatu.BlockIdentifier{
-						Epoch: testfixture.EpochAdditional(),
+						Epoch:   testfixture.EpochAdditional(),
+						Version: "electra",
+						Root:    "0x1111111111111111111111111111111111111111111111111111111111111111",
 					},
 					PositionInBlock: wrapperspb.UInt64(2),
 				},

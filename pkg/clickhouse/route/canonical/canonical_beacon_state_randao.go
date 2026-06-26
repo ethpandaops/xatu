@@ -77,9 +77,22 @@ func (b *canonicalBeaconStateRandaoBatch) FlattenTo(event *xatu.DecoratedEvent) 
 }
 
 func (b *canonicalBeaconStateRandaoBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV1BeaconStateRandao()
+	if payload.GetRandao() == "" {
+		return fmt.Errorf("empty Randao: %w", route.ErrInvalidEvent)
+	}
+
 	extra := event.GetMeta().GetClient().GetEthV1BeaconStateRandao()
 	if extra == nil || extra.GetEpoch() == nil || extra.GetEpoch().GetNumber() == nil {
 		return fmt.Errorf("nil Epoch: %w", route.ErrInvalidEvent)
+	}
+
+	if extra.GetEpoch().GetStartDateTime() == nil {
+		return fmt.Errorf("nil EpochStartDateTime: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("empty MetaNetworkName: %w", route.ErrInvalidEvent)
 	}
 
 	return nil

@@ -67,77 +67,50 @@ func (b *canonicalBeaconValidatorsBatch) FlattenTo(event *xatu.DecoratedEvent) e
 	now := time.Now()
 
 	for _, validator := range event.GetEthV1Validators().GetValidators() {
+		// Canonical validator rows are gap-sensitive: halt rather than skip or
+		// zero-fill a validator whose required fields are absent.
 		if validator == nil {
-			continue
+			return fmt.Errorf("nil validator entry: %w", route.ErrInvalidEvent)
 		}
 
 		if validator.GetIndex() == nil {
-			continue
+			return fmt.Errorf("nil validator Index: %w", route.ErrInvalidEvent)
+		}
+
+		if validator.GetStatus() == nil {
+			return fmt.Errorf("nil validator Status: %w", route.ErrInvalidEvent)
+		}
+
+		data := validator.GetData()
+		if data == nil {
+			return fmt.Errorf("nil validator Data: %w", route.ErrInvalidEvent)
+		}
+
+		if data.GetSlashed() == nil {
+			return fmt.Errorf("nil validator Slashed: %w", route.ErrInvalidEvent)
 		}
 
 		b.UpdatedDateTime.Append(now)
 		b.Epoch.Append(epoch)
 		b.EpochStartDateTime.Append(epochStartTime)
 
-		b.Index.Append(uint32(validator.GetIndex().GetValue())) //nolint:gosec // bounded by uint32 column
+		//nolint:gosec // G115: validator index bounded by uint32 column
+		b.Index.Append(uint32(validator.GetIndex().GetValue()))
 
-		if balance := validator.GetBalance(); balance != nil && balance.GetValue() != 0 {
-			b.Balance.Append(chProto.NewNullable[uint64](balance.GetValue()))
-		} else {
-			b.Balance.Append(chProto.Nullable[uint64]{})
-		}
-
-		if status := validator.GetStatus(); status != nil {
-			b.Status.Append(status.GetValue())
-		} else {
-			b.Status.Append("")
-		}
-
-		data := validator.GetData()
-		if data != nil {
-			if data.GetEffectiveBalance() != nil && data.GetEffectiveBalance().GetValue() != 0 {
-				b.EffectiveBalance.Append(chProto.NewNullable[uint64](data.GetEffectiveBalance().GetValue()))
-			} else {
-				b.EffectiveBalance.Append(chProto.Nullable[uint64]{})
-			}
-
-			if data.GetSlashed() != nil {
-				b.Slashed.Append(data.GetSlashed().GetValue())
-			} else {
-				b.Slashed.Append(false)
-			}
-
-			if val, ok := setOptionalEpoch(data.GetActivationEpoch()); ok {
-				b.ActivationEpoch.Append(chProto.NewNullable[uint64](val))
-			} else {
-				b.ActivationEpoch.Append(chProto.Nullable[uint64]{})
-			}
-
-			if val, ok := setOptionalEpoch(data.GetActivationEligibilityEpoch()); ok {
-				b.ActivationEligibilityEpoch.Append(chProto.NewNullable[uint64](val))
-			} else {
-				b.ActivationEligibilityEpoch.Append(chProto.Nullable[uint64]{})
-			}
-
-			if val, ok := setOptionalEpoch(data.GetExitEpoch()); ok {
-				b.ExitEpoch.Append(chProto.NewNullable[uint64](val))
-			} else {
-				b.ExitEpoch.Append(chProto.Nullable[uint64]{})
-			}
-
-			if val, ok := setOptionalEpoch(data.GetWithdrawableEpoch()); ok {
-				b.WithdrawableEpoch.Append(chProto.NewNullable[uint64](val))
-			} else {
-				b.WithdrawableEpoch.Append(chProto.Nullable[uint64]{})
-			}
-		} else {
-			b.EffectiveBalance.Append(chProto.Nullable[uint64]{})
-			b.Slashed.Append(false)
-			b.ActivationEpoch.Append(chProto.Nullable[uint64]{})
-			b.ActivationEligibilityEpoch.Append(chProto.Nullable[uint64]{})
-			b.ExitEpoch.Append(chProto.Nullable[uint64]{})
-			b.WithdrawableEpoch.Append(chProto.Nullable[uint64]{})
-		}
+		// Store the exact value the beacon API returns, always as a set value
+		// (never NULL). Balance 0 (an exited validator), a genesis epoch 0, and
+		// the FAR_FUTURE_EPOCH sentinel (2^64-1) carried by a validator that is
+		// not yet activated / not exiting / not withdrawable are all meaningful
+		// values the API reports verbatim — the old setOptionalEpoch logic
+		// discarded them to NULL, conflating real data with absence.
+		b.Balance.Append(chProto.NewNullable[uint64](validator.GetBalance().GetValue()))
+		b.Status.Append(validator.GetStatus().GetValue())
+		b.EffectiveBalance.Append(chProto.NewNullable[uint64](data.GetEffectiveBalance().GetValue()))
+		b.Slashed.Append(data.GetSlashed().GetValue())
+		b.ActivationEpoch.Append(chProto.NewNullable[uint64](data.GetActivationEpoch().GetValue()))
+		b.ActivationEligibilityEpoch.Append(chProto.NewNullable[uint64](data.GetActivationEligibilityEpoch().GetValue()))
+		b.ExitEpoch.Append(chProto.NewNullable[uint64](data.GetExitEpoch().GetValue()))
+		b.WithdrawableEpoch.Append(chProto.NewNullable[uint64](data.GetWithdrawableEpoch().GetValue()))
 
 		b.appendMetadata(event)
 		b.rows++

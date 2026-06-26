@@ -65,25 +65,26 @@ func (b *canonicalBeaconValidatorsWithdrawalCredentialsBatch) FlattenTo(event *x
 	now := time.Now()
 
 	for _, validator := range event.GetEthV1Validators().GetValidators() {
+		// Canonical data is gap-sensitive: halt rather than skip or empty-fill.
 		if validator == nil {
-			continue
+			return fmt.Errorf("nil validator entry: %w", route.ErrInvalidEvent)
 		}
 
 		if validator.GetIndex() == nil {
-			continue
+			return fmt.Errorf("nil validator Index: %w", route.ErrInvalidEvent)
+		}
+
+		if validator.GetData().GetWithdrawalCredentials().GetValue() == "" {
+			return fmt.Errorf("empty validator WithdrawalCredentials: %w", route.ErrInvalidEvent)
 		}
 
 		b.UpdatedDateTime.Append(now)
 		b.Epoch.Append(epoch)
 		b.EpochStartDateTime.Append(epochStartTime)
 
+		//nolint:gosec // G115: validator index bounded by uint32 column
 		b.Index.Append(uint32(validator.GetIndex().GetValue()))
-
-		if data := validator.GetData(); data != nil && data.GetWithdrawalCredentials() != nil {
-			b.WithdrawalCredentials.Append(data.GetWithdrawalCredentials().GetValue())
-		} else {
-			b.WithdrawalCredentials.Append("")
-		}
+		b.WithdrawalCredentials.Append(validator.GetData().GetWithdrawalCredentials().GetValue())
 
 		b.appendMetadata(event)
 		b.rows++

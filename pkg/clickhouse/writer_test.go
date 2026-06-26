@@ -3,6 +3,7 @@ package clickhouse
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"sync"
 	"sync/atomic"
@@ -527,6 +528,52 @@ func (s *stubBatch) Rows() int { return s.rows }
 func (s *stubBatch) Input() proto.Input { return proto.Input{} }
 
 func (s *stubBatch) Reset() { s.rows = 0 }
+
+// invalidEventBatch always reports an event as invalid (route.ErrInvalidEvent).
+type invalidEventBatch struct{}
+
+func (b *invalidEventBatch) FlattenTo(_ *xatu.DecoratedEvent) error {
+	return fmt.Errorf("bad event: %w", route.ErrInvalidEvent)
+}
+func (b *invalidEventBatch) Rows() int          { return 0 }
+func (b *invalidEventBatch) Input() proto.Input { return proto.Input{} }
+func (b *invalidEventBatch) Reset()             {}
+
+func newInvalidEventTableWriter(table string) *chTableWriter {
+	return &chTableWriter{
+		log:        logrus.New().WithField("component", "test"),
+		table:      table,
+		baseTable:  table,
+		metrics:    sharedTestMetrics(),
+		logSampler: telemetry.NewLogSampler(time.Minute),
+		newBatch:   func() route.ColumnarBatch { return &invalidEventBatch{} },
+	}
+}
+
+func TestFlushCanonicalInvalidEventHaltsNonCanonicalDrops(t *testing.T) {
+	ev := &xatu.DecoratedEvent{
+		Event: &xatu.Event{Name: xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_V2},
+	}
+
+	// Canonical: a dropped row is a permanent gap, so an invalid event must
+	// HALT (return an error) and must NOT land in the drop list.
+	tw := newInvalidEventTableWriter("canonical_beacon_block")
+	invalid, err := tw.flush(context.Background(), []*xatu.DecoratedEvent{ev})
+	require.Error(t, err)
+	assert.Empty(t, invalid, "canonical invalid event must not be dropped")
+
+	var iee *invalidEventError
+	assert.True(t, errors.As(err, &iee), "canonical halt should wrap invalidEventError")
+	assert.False(t, IsPermanentWriteError(err),
+		"canonical halt must be non-permanent so it retries/NAKs rather than dropping")
+
+	// Non-canonical (live/sentry): point-in-time data that cannot be re-fetched
+	// is DROPPED — no error, event lands in the invalid (drop) list.
+	tw2 := newInvalidEventTableWriter("beacon_api_eth_v1_events_head")
+	invalid2, err2 := tw2.flush(context.Background(), []*xatu.DecoratedEvent{ev})
+	require.NoError(t, err2, "non-canonical invalid event must drop, not halt")
+	assert.Len(t, invalid2, 1, "non-canonical invalid event should be in the drop list")
+}
 
 func TestTableConfigMergeSkipFlattenErrors(t *testing.T) {
 	t.Run("default inherits from defaults", func(t *testing.T) {

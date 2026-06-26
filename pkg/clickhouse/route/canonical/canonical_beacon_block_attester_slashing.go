@@ -42,11 +42,82 @@ func (b *canonicalBeaconBlockAttesterSlashingBatch) FlattenTo(event *xatu.Decora
 		return fmt.Errorf("nil eth_v2_beacon_block_attester_slashing payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockAttesterSlashingBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV2BeaconBlockAttesterSlashing()
+
+	if err := b.validateIndexedAttestation(payload.GetAttestation_1(), "attestation_1"); err != nil {
+		return err
+	}
+
+	if err := b.validateIndexedAttestation(payload.GetAttestation_2(), "attestation_2"); err != nil {
+		return err
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("empty meta_network_name: %w", route.ErrInvalidEvent)
+	}
+
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockAttesterSlashing()
+	if additional == nil {
+		return fmt.Errorf("nil additional eth_v2_beacon_block_attester_slashing: %w", route.ErrInvalidEvent)
+	}
+
+	block := additional.GetBlock()
+	if block == nil {
+		return fmt.Errorf("nil block identifier: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetRoot() == "" {
+		return fmt.Errorf("empty block_root: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetVersion() == "" {
+		return fmt.Errorf("empty block_version: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetSlot().GetStartDateTime() == nil {
+		return fmt.Errorf("nil slot_start_date_time: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetEpoch().GetStartDateTime() == nil {
+		return fmt.Errorf("nil epoch_start_date_time: %w", route.ErrInvalidEvent)
+	}
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockAttesterSlashingBatch) validateIndexedAttestation(
+	att *ethv1.IndexedAttestationV2,
+	label string,
+) error {
+	if att == nil {
+		return fmt.Errorf("nil %s: %w", label, route.ErrInvalidEvent)
+	}
+
+	if att.GetSignature() == "" {
+		return fmt.Errorf("empty %s_signature: %w", label, route.ErrInvalidEvent)
+	}
+
+	if att.GetData() == nil {
+		return fmt.Errorf("nil %s_data: %w", label, route.ErrInvalidEvent)
+	}
+
+	if att.GetData().GetBeaconBlockRoot() == "" {
+		return fmt.Errorf("empty %s_data_beacon_block_root: %w", label, route.ErrInvalidEvent)
+	}
 
 	return nil
 }

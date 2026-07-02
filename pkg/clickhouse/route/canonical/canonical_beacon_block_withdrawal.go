@@ -111,6 +111,8 @@ func (b *canonicalBeaconBlockWithdrawalBatch) appendPayload(event *xatu.Decorate
 		b.WithdrawalAmount.Append(zeroAmount)
 	}
 
+	b.WithdrawalType.Append(withdrawal.GetWithdrawalType())
+
 	return nil
 }
 

@@ -599,8 +599,8 @@ func (m *ProposerPreferences) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.GasLimit != nil {
-		size, err := (*wrapperspb.UInt64Value)(m.GasLimit).MarshalToSizedBufferVT(dAtA[:i])
+	if m.TargetGasLimit != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.TargetGasLimit).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1006,8 +1006,8 @@ func (m *ProposerPreferences) SizeVT() (n int) {
 		l = (*wrapperspb.StringValue)(m.FeeRecipient).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.GasLimit != nil {
-		l = (*wrapperspb.UInt64Value)(m.GasLimit).SizeVT()
+	if m.TargetGasLimit != nil {
+		l = (*wrapperspb.UInt64Value)(m.TargetGasLimit).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -2719,7 +2719,7 @@ func (m *ProposerPreferences) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field GasLimit", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field TargetGasLimit", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -2746,10 +2746,10 @@ func (m *ProposerPreferences) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.GasLimit == nil {
-				m.GasLimit = &wrapperspb1.UInt64Value{}
+			if m.TargetGasLimit == nil {
+				m.TargetGasLimit = &wrapperspb1.UInt64Value{}
 			}
-			if err := (*wrapperspb.UInt64Value)(m.GasLimit).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*wrapperspb.UInt64Value)(m.TargetGasLimit).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

@@ -30,7 +30,7 @@ require (
 	github.com/ethpandaops/beacon v0.69.1-0.20260514032911-81b9ef3395fd
 	github.com/ethpandaops/ethcore v0.0.0-20260514003726-f67d7a6e9f91
 	github.com/ethpandaops/ethwallclock v0.4.0
-	github.com/ethpandaops/go-eth2-client v0.1.3-0.20260513062559-5fb497ba414f
+	github.com/ethpandaops/go-eth2-client v0.1.5
 	github.com/failsafe-go/failsafe-go v0.9.6
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6
@@ -94,7 +94,7 @@ require (
 	github.com/parquet-go/bitpack v1.0.0 // indirect
 	github.com/parquet-go/jsonlite v1.0.0 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
-	github.com/pk910/hashtree-bindings v0.1.0 // indirect
+	github.com/pk910/hashtree-bindings v0.2.2 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/tinylib/msgp v1.6.1 // indirect
 	github.com/twpayne/go-geom v1.6.1 // indirect
@@ -271,7 +271,7 @@ require (
 	github.com/pion/transport/v3 v3.0.7 // indirect
 	github.com/pion/turn/v4 v4.0.2 // indirect
 	github.com/pion/webrtc/v4 v4.1.2 // indirect
-	github.com/pk910/dynamic-ssz v1.3.2-0.20260505131440-111bcb265c8f // indirect
+	github.com/pk910/dynamic-ssz v1.3.2 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect

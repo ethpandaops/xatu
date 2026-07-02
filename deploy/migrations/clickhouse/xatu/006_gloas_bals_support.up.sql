@@ -52,6 +52,9 @@ CREATE TABLE IF NOT EXISTS canonical_beacon_block_access_list_local ON CLUSTER '
     meta_network_id Int32 CODEC(DoubleDelta, ZSTD(1)),
     meta_network_name LowCardinality(String) CODEC(ZSTD(1)),
     meta_consensus_version LowCardinality(String) CODEC(ZSTD(1)),
+    meta_consensus_version_major LowCardinality(String) CODEC(ZSTD(1)),
+    meta_consensus_version_minor LowCardinality(String) CODEC(ZSTD(1)),
+    meta_consensus_version_patch LowCardinality(String) CODEC(ZSTD(1)),
     meta_consensus_implementation LowCardinality(String) CODEC(ZSTD(1)),
     meta_labels Map(String, String) CODEC(ZSTD(1))
 ) ENGINE = ReplicatedReplacingMergeTree(updated_date_time)

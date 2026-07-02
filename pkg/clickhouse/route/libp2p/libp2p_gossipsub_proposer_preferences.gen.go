@@ -27,7 +27,7 @@ type libp2pGossipsubProposerPreferencesBatch struct {
 	PropagationSlotStartDiff                  proto.ColUInt32
 	ValidatorIndex                            proto.ColUInt32
 	FeeRecipient                              route.SafeColFixedStr
-	GasLimit                                  proto.ColUInt64
+	TargetGasLimit                            proto.ColUInt64
 	PeerIDUniqueKey                           proto.ColInt64
 	MessageID                                 proto.ColStr
 	MessageSize                               proto.ColUInt32
@@ -125,7 +125,7 @@ func (b *libp2pGossipsubProposerPreferencesBatch) Input() proto.Input {
 		{Name: "propagation_slot_start_diff", Data: &b.PropagationSlotStartDiff},
 		{Name: "validator_index", Data: &b.ValidatorIndex},
 		{Name: "fee_recipient", Data: &b.FeeRecipient},
-		{Name: "gas_limit", Data: &b.GasLimit},
+		{Name: "target_gas_limit", Data: &b.TargetGasLimit},
 		{Name: "peer_id_unique_key", Data: &b.PeerIDUniqueKey},
 		{Name: "message_id", Data: &b.MessageID},
 		{Name: "message_size", Data: &b.MessageSize},
@@ -167,7 +167,7 @@ func (b *libp2pGossipsubProposerPreferencesBatch) Reset() {
 	b.PropagationSlotStartDiff.Reset()
 	b.ValidatorIndex.Reset()
 	b.FeeRecipient.Reset()
-	b.GasLimit.Reset()
+	b.TargetGasLimit.Reset()
 	b.PeerIDUniqueKey.Reset()
 	b.MessageID.Reset()
 	b.MessageSize.Reset()
@@ -214,7 +214,7 @@ func (b *libp2pGossipsubProposerPreferencesBatch) Snapshot() []map[string]any {
 		row["propagation_slot_start_diff"] = b.PropagationSlotStartDiff.Row(i)
 		row["validator_index"] = b.ValidatorIndex.Row(i)
 		row["fee_recipient"] = string(b.FeeRecipient.Row(i))
-		row["gas_limit"] = b.GasLimit.Row(i)
+		row["target_gas_limit"] = b.TargetGasLimit.Row(i)
 		row["peer_id_unique_key"] = b.PeerIDUniqueKey.Row(i)
 		row["message_id"] = b.MessageID.Row(i)
 		row["message_size"] = b.MessageSize.Row(i)

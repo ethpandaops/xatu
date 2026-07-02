@@ -73,5 +73,5 @@ message ProposerPreferences {
     google.protobuf.UInt64Value slot = 1 [json_name = "slot"];
     google.protobuf.UInt64Value validator_index = 2 [json_name = "validator_index"];
     google.protobuf.StringValue fee_recipient = 3 [json_name = "fee_recipient"];
-    google.protobuf.UInt64Value gas_limit = 4 [json_name = "gas_limit"];
+    google.protobuf.UInt64Value target_gas_limit = 4 [json_name = "target_gas_limit"];
 }

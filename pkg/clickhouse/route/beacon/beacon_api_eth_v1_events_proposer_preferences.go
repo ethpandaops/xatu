@@ -72,10 +72,10 @@ func (b *beaconApiEthV1EventsProposerPreferencesBatch) appendPayload(event *xatu
 
 	b.FeeRecipient.Append([]byte(prefs.GetFeeRecipient()))
 
-	if gasLimit := prefs.GetGasLimit(); gasLimit != nil {
-		b.GasLimit.Append(gasLimit.GetValue())
+	if gasLimit := prefs.GetTargetGasLimit(); gasLimit != nil {
+		b.TargetGasLimit.Append(gasLimit.GetValue())
 	} else {
-		b.GasLimit.Append(0)
+		b.TargetGasLimit.Append(0)
 	}
 }
 

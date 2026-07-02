@@ -196,7 +196,7 @@ func TestEPBSHandlerIntegration(t *testing.T) {
 				require.NotNil(t, data)
 				assert.Equal(t, uint64(321), data.GetSlot().GetValue())
 				assert.Equal(t, uint64(99), data.GetValidatorIndex().GetValue())
-				assert.Equal(t, uint64(45_000_000), data.GetGasLimit().GetValue())
+				assert.Equal(t, uint64(45_000_000), data.GetTargetGasLimit().GetValue())
 
 				return nil
 			}).

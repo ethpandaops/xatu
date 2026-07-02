@@ -3,7 +3,10 @@ package beacon
 import (
 	"testing"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/testfixture"
+	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -12,16 +15,71 @@ func TestSnapshot_beacon_api_eth_v1_events_execution_payload_bid(t *testing.T) {
 		t.Skip("no event names registered for beacon_api_eth_v1_events_execution_payload_bid")
 	}
 
+	const (
+		colParentBlockHash        = "parent_block_hash"
+		colParentBlockRoot        = "parent_block_root"
+		colValue                  = "value"
+		colExecutionPayment       = "execution_payment"
+		colFeeRecipient           = "fee_recipient"
+		colGasLimit               = "gas_limit"
+		colBlobKzgCommitmentCount = "blob_kzg_commitment_count"
+
+		feeRecipient = "0x8943545177806ed17b9f23f0a21ee5948ecaa776"
+	)
+
+	var (
+		blockHash       = repeatHex("2b", 32)
+		parentBlockHash = repeatHex("3c", 32)
+		parentBlockRoot = repeatHex("4d", 32)
+	)
+
 	testfixture.AssertSnapshot(t, newbeaconApiEthV1EventsExecutionPayloadBidBatch(), &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     beaconApiEthV1EventsExecutionPayloadBidEventNames[0],
 			DateTime: testfixture.TS(),
 			Id:       testfixture.SnapshotID,
 		},
-		Meta: testfixture.BaseMeta(),
-		// TODO(epbs): Add event-specific Data field and MetaWithAdditional for richer assertions.
+		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
+			AdditionalData: &xatu.ClientMeta_EthV1EventsExecutionPayloadBid{
+				EthV1EventsExecutionPayloadBid: &xatu.ClientMeta_AdditionalEthV1EventsExecutionPayloadBidData{
+					Slot:        testfixture.SlotEpochAdditional(),
+					Epoch:       testfixture.EpochAdditional(),
+					Propagation: testfixture.PropagationAdditional(),
+				},
+			},
+		}),
+		Data: &xatu.DecoratedEvent_EthV1EventsExecutionPayloadBid{
+			EthV1EventsExecutionPayloadBid: &ethv1.SignedExecutionPayloadBid{
+				Message: &ethv1.ExecutionPayloadBid{
+					ParentBlockHash:  parentBlockHash,
+					ParentBlockRoot:  parentBlockRoot,
+					BlockHash:        blockHash,
+					PrevRandao:       repeatHex("9f", 32),
+					FeeRecipient:     feeRecipient,
+					GasLimit:         wrapperspb.UInt64(60000000),
+					BuilderIndex:     wrapperspb.UInt64(2),
+					Slot:             wrapperspb.UInt64(48752),
+					Value:            wrapperspb.UInt64(1250000),
+					ExecutionPayment: wrapperspb.UInt64(1000000),
+					BlobKzgCommitments: []string{
+						repeatHex("a0", 48),
+						repeatHex("a1", 48),
+						repeatHex("a2", 48),
+					},
+				},
+				Signature: repeatHex("51", 96),
+			},
+		},
 	}, 1, map[string]any{
 		testfixture.MetaClientNameKey: testfixture.MetaClientName,
-		// TODO(epbs): Add payload-specific column assertions.
+		colBuilderIndex:               uint64(2),
+		colExecBlockHash:              blockHash,
+		colParentBlockHash:            parentBlockHash,
+		colParentBlockRoot:            parentBlockRoot,
+		colValue:                      uint64(1250000),
+		colExecutionPayment:           uint64(1000000),
+		colFeeRecipient:               feeRecipient,
+		colGasLimit:                   uint64(60000000),
+		colBlobKzgCommitmentCount:     uint32(3),
 	})
 }

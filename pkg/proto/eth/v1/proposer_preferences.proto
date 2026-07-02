@@ -25,7 +25,7 @@ message ProposerPreferences {
 
   string fee_recipient = 3 [ json_name = "fee_recipient" ];
 
-  google.protobuf.UInt64Value gas_limit = 4 [ json_name = "gas_limit" ];
+  google.protobuf.UInt64Value target_gas_limit = 4 [ json_name = "target_gas_limit" ];
 
   string dependent_root = 5 [ json_name = "dependent_root" ];
 }

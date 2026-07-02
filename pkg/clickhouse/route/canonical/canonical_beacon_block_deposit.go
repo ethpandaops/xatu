@@ -39,6 +39,10 @@ func (b *canonicalBeaconBlockDepositBatch) FlattenTo(event *xatu.DecoratedEvent)
 		return fmt.Errorf("nil eth_v2_beacon_block_deposit payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 
@@ -48,6 +52,67 @@ func (b *canonicalBeaconBlockDepositBatch) FlattenTo(event *xatu.DecoratedEvent)
 
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockDepositBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV2BeaconBlockDeposit()
+
+	if len(payload.GetProof()) == 0 {
+		return fmt.Errorf("empty deposit_proof: %w", route.ErrInvalidEvent)
+	}
+
+	data := payload.GetData()
+	if data == nil {
+		return fmt.Errorf("nil deposit_data: %w", route.ErrInvalidEvent)
+	}
+
+	if data.GetPubkey() == "" {
+		return fmt.Errorf("empty deposit_data_pubkey: %w", route.ErrInvalidEvent)
+	}
+
+	if data.GetWithdrawalCredentials() == "" {
+		return fmt.Errorf("empty deposit_data_withdrawal_credentials: %w", route.ErrInvalidEvent)
+	}
+
+	if data.GetSignature() == "" {
+		return fmt.Errorf("empty deposit_data_signature: %w", route.ErrInvalidEvent)
+	}
+
+	if data.GetAmount() == nil {
+		return fmt.Errorf("nil deposit_data_amount: %w", route.ErrInvalidEvent)
+	}
+
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockDeposit()
+	if additional == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_deposit additional data: %w", route.ErrInvalidEvent)
+	}
+
+	block := additional.GetBlock()
+	if block == nil {
+		return fmt.Errorf("nil block identifier: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetVersion() == "" {
+		return fmt.Errorf("empty block_version: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetRoot() == "" {
+		return fmt.Errorf("empty block_root: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetSlot().GetStartDateTime() == nil {
+		return fmt.Errorf("nil slot_start_date_time: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetEpoch().GetStartDateTime() == nil {
+		return fmt.Errorf("nil epoch_start_date_time: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("empty meta_network_name: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

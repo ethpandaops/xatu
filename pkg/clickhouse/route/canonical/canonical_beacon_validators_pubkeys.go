@@ -65,25 +65,26 @@ func (b *canonicalBeaconValidatorsPubkeysBatch) FlattenTo(event *xatu.DecoratedE
 	now := time.Now()
 
 	for _, validator := range event.GetEthV1Validators().GetValidators() {
+		// Canonical data is gap-sensitive: halt rather than skip or empty-fill.
 		if validator == nil {
-			continue
+			return fmt.Errorf("nil validator entry: %w", route.ErrInvalidEvent)
 		}
 
 		if validator.GetIndex() == nil {
-			continue
+			return fmt.Errorf("nil validator Index: %w", route.ErrInvalidEvent)
+		}
+
+		if validator.GetData().GetPubkey().GetValue() == "" {
+			return fmt.Errorf("empty validator Pubkey: %w", route.ErrInvalidEvent)
 		}
 
 		b.UpdatedDateTime.Append(now)
 		b.Epoch.Append(epoch)
 		b.EpochStartDateTime.Append(epochStartTime)
 
+		//nolint:gosec // G115: validator index bounded by uint32 column
 		b.Index.Append(uint32(validator.GetIndex().GetValue()))
-
-		if data := validator.GetData(); data != nil && data.GetPubkey() != nil {
-			b.Pubkey.Append(data.GetPubkey().GetValue())
-		} else {
-			b.Pubkey.Append("")
-		}
+		b.Pubkey.Append(validator.GetData().GetPubkey().GetValue())
 
 		b.appendMetadata(event)
 		b.rows++

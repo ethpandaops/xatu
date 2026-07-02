@@ -61,6 +61,18 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) FlattenTo(event *xatu.De
 func (b *canonicalBeaconBlockExecutionTransactionBatch) validate(event *xatu.DecoratedEvent) error {
 	payload := event.GetEthV2BeaconBlockExecutionTransaction()
 
+	if payload.GetHash() == "" {
+		return fmt.Errorf("empty hash: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetFrom() == "" {
+		return fmt.Errorf("empty from: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetGasPrice() == "" {
+		return fmt.Errorf("empty gas_price: %w", route.ErrInvalidEvent)
+	}
+
 	if payload.GetNonce() == nil {
 		return fmt.Errorf("nil Nonce: %w", route.ErrInvalidEvent)
 	}
@@ -71,6 +83,40 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) validate(event *xatu.Dec
 
 	if payload.GetType() == nil {
 		return fmt.Errorf("nil Type: %w", route.ErrInvalidEvent)
+	}
+
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockExecutionTransaction()
+	if additional == nil {
+		return fmt.Errorf("nil eth_v2_beacon_block_execution_transaction additional data: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetSize() == "" {
+		return fmt.Errorf("empty size: %w", route.ErrInvalidEvent)
+	}
+
+	block := additional.GetBlock()
+	if block == nil {
+		return fmt.Errorf("nil block identifier: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetVersion() == "" {
+		return fmt.Errorf("empty block_version: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetRoot() == "" {
+		return fmt.Errorf("empty block_root: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetSlot().GetStartDateTime() == nil {
+		return fmt.Errorf("nil slot_start_date_time: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetEpoch().GetStartDateTime() == nil {
+		return fmt.Errorf("nil epoch_start_date_time: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("empty meta_network_name: %w", route.ErrInvalidEvent)
 	}
 
 	return nil

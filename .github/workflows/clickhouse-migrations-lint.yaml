@@ -1,0 +1,49 @@
+name: ClickHouse Migrations Lint
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/migrations/clickhouse/**'
+      - '.github/workflows/clickhouse-migrations-lint.yaml'
+  workflow_dispatch:
+    branches: [ '**' ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # ClickHouse image used for the syntax check; matches docker-compose's CHVER default.
+  CHVER: latest
+
+jobs:
+  # Enforce the database-agnostic rules (no CREATE DATABASE, no db-qualified
+  # identifiers, Distributed() uses currentDatabase()). Pure bash, no dependencies.
+  database-agnostic:
+    name: database-agnostic lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Lint migrations are database-agnostic
+        run: ./deploy/migrations/clickhouse/lint.sh deploy/migrations/clickhouse
+
+  # Validate every migration parses with the real ClickHouse parser. Runs in
+  # parallel with the lint job (no `needs`).
+  syntax:
+    name: clickhouse syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Validate migrations parse (clickhouse format)
+        run: |
+          docker run --rm \
+            -e GITHUB_ACTIONS=true \
+            -v "$PWD":/work -w /work \
+            --entrypoint /bin/bash \
+            "clickhouse/clickhouse-server:${CHVER:-latest}" \
+            deploy/migrations/clickhouse/check-syntax.sh deploy/migrations/clickhouse

@@ -556,7 +556,7 @@ func TestNewSignedProposerPreferencesFromGloas_Populated(t *testing.T) {
 			ProposalSlot:   phase0.Slot(1234),
 			ValidatorIndex: phase0.ValidatorIndex(56),
 			FeeRecipient:   feeRecipient,
-			GasLimit:       30_000_000,
+			TargetGasLimit: 30_000_000,
 		},
 		Signature: phase0.BLSSignature{0xfe, 0xed},
 	}
@@ -587,8 +587,8 @@ func TestNewSignedProposerPreferencesFromGloas_Populated(t *testing.T) {
 		t.Errorf("fee_recipient mismatch: got %q want %q", msg.GetFeeRecipient(), feeRecipient.String())
 	}
 
-	if v := msg.GetGasLimit().GetValue(); v != 30_000_000 {
-		t.Errorf("gas_limit: got %d want 30000000", v)
+	if v := msg.GetTargetGasLimit().GetValue(); v != 30_000_000 {
+		t.Errorf("target_gas_limit: got %d want 30000000", v)
 	}
 
 	if got.GetSignature() != prefs.Signature.String() {

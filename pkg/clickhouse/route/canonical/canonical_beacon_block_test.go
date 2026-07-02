@@ -6,6 +6,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/testfixture"
+	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	ethv2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -34,6 +35,14 @@ func TestSnapshot_canonical_beacon_block(t *testing.T) {
 					DenebBlock: &ethv2.BeaconBlockDeneb{
 						Slot:          wrapperspb.UInt64(100),
 						ProposerIndex: wrapperspb.UInt64(42),
+						ParentRoot:    "0xparentroot",
+						StateRoot:     "0xstateroot",
+						Body: &ethv2.BeaconBlockBodyDeneb{
+							Eth1Data: &ethv1.Eth1Data{
+								BlockHash:   "0xeth1blockhash",
+								DepositRoot: "0xeth1depositroot",
+							},
+						},
 					},
 				},
 			},

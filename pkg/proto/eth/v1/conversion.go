@@ -364,6 +364,61 @@ func NewElectraExecutionRequestsFromElectra(data *electra.ExecutionRequests) *El
 	return requests
 }
 
+// NewGloasExecutionRequestsFromGloas converts the SDK's Gloas (EIP-8282)
+// execution requests — the Electra request types plus builder deposits and
+// builder exits — into our proto representation.
+func NewGloasExecutionRequestsFromGloas(data *gloas.ExecutionRequests) *ElectraExecutionRequests {
+	requests := &ElectraExecutionRequests{}
+
+	if data == nil {
+		return requests
+	}
+
+	for _, consolidation := range data.Consolidations {
+		requests.Consolidations = append(requests.Consolidations, &ElectraExecutionRequestConsolidation{
+			SourceAddress: &wrapperspb.StringValue{Value: consolidation.SourceAddress.String()},
+			SourcePubkey:  &wrapperspb.StringValue{Value: consolidation.SourcePubkey.String()},
+			TargetPubkey:  &wrapperspb.StringValue{Value: consolidation.TargetPubkey.String()},
+		})
+	}
+
+	for _, deposit := range data.Deposits {
+		requests.Deposits = append(requests.Deposits, &ElectraExecutionRequestDeposit{
+			Pubkey:                &wrapperspb.StringValue{Value: deposit.Pubkey.String()},
+			WithdrawalCredentials: &wrapperspb.StringValue{Value: fmt.Sprintf("%#x", deposit.WithdrawalCredentials)},
+			Amount:                &wrapperspb.UInt64Value{Value: uint64(deposit.Amount)},
+			Signature:             &wrapperspb.StringValue{Value: deposit.Signature.String()},
+			Index:                 &wrapperspb.UInt64Value{Value: deposit.Index},
+		})
+	}
+
+	for _, withdrawal := range data.Withdrawals {
+		requests.Withdrawals = append(requests.Withdrawals, &ElectraExecutionRequestWithdrawal{
+			SourceAddress:   &wrapperspb.StringValue{Value: withdrawal.SourceAddress.String()},
+			ValidatorPubkey: &wrapperspb.StringValue{Value: withdrawal.ValidatorPubkey.String()},
+			Amount:          &wrapperspb.UInt64Value{Value: uint64(withdrawal.Amount)},
+		})
+	}
+
+	for _, deposit := range data.BuilderDeposits {
+		requests.BuilderDeposits = append(requests.BuilderDeposits, &GloasBuilderDepositRequest{
+			Pubkey:                &wrapperspb.StringValue{Value: deposit.Pubkey.String()},
+			WithdrawalCredentials: &wrapperspb.StringValue{Value: fmt.Sprintf("%#x", deposit.WithdrawalCredentials)},
+			Amount:                &wrapperspb.UInt64Value{Value: uint64(deposit.Amount)},
+			Signature:             &wrapperspb.StringValue{Value: deposit.Signature.String()},
+		})
+	}
+
+	for _, exit := range data.BuilderExits {
+		requests.BuilderExits = append(requests.BuilderExits, &GloasBuilderExitRequest{
+			SourceAddress: &wrapperspb.StringValue{Value: exit.SourceAddress.String()},
+			Pubkey:        &wrapperspb.StringValue{Value: exit.Pubkey.String()},
+		})
+	}
+
+	return requests
+}
+
 // NewBlockAccessListFromGloas decodes a raw RLP-encoded block access list
 // (EIP-7928) into the structured proto representation.
 func NewBlockAccessListFromGloas(rawBAL gloas.BlockAccessList) *BlockAccessList {
@@ -548,7 +603,7 @@ func NewSignedProposerPreferencesFromGloas(prefs *gloas.SignedProposerPreference
 			ProposalSlot:   &wrapperspb.UInt64Value{Value: uint64(msg.ProposalSlot)},
 			ValidatorIndex: &wrapperspb.UInt64Value{Value: uint64(msg.ValidatorIndex)},
 			FeeRecipient:   msg.FeeRecipient.String(),
-			GasLimit:       &wrapperspb.UInt64Value{Value: msg.GasLimit},
+			TargetGasLimit: &wrapperspb.UInt64Value{Value: msg.TargetGasLimit},
 			DependentRoot:  msg.DependentRoot.String(),
 		},
 		Signature: prefs.Signature.String(),

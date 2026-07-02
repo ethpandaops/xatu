@@ -19,15 +19,27 @@ func TestSnapshot_canonical_beacon_block_bls_to_execution_change(t *testing.T) {
 			AdditionalData: &xatu.ClientMeta_EthV2BeaconBlockBlsToExecutionChange{
 				EthV2BeaconBlockBlsToExecutionChange: &xatu.ClientMeta_AdditionalEthV2BeaconBlockBLSToExecutionChangeData{
 					Block: &xatu.BlockIdentifier{
-						Epoch: testfixture.EpochAdditional(),
+						Slot:    testfixture.SlotEpochAdditional(),
+						Epoch:   testfixture.EpochAdditional(),
+						Version: "capella",
+						Root:    "0x0101010101010101010101010101010101010101010101010101010101010101",
 					},
 				},
 			},
 		}),
 		Data: &xatu.DecoratedEvent_EthV2BeaconBlockBlsToExecutionChange{
-			EthV2BeaconBlockBlsToExecutionChange: &ethv2.SignedBLSToExecutionChangeV2{},
+			EthV2BeaconBlockBlsToExecutionChange: &ethv2.SignedBLSToExecutionChangeV2{
+				Message: &ethv2.BLSToExecutionChangeV2{
+					FromBlsPubkey:      "0xb02020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020",
+					ToExecutionAddress: "0x0303030303030303030303030303030303030303",
+				},
+				Signature: "0xc04040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040",
+			},
 		},
 	}, 1, map[string]any{
 		"meta_network_name": "mainnet",
+		"block_version":     "capella",
+		"block_root":        "0x0101010101010101010101010101010101010101010101010101010101010101",
+		"exchanging_message_to_execution_address": "0x0303030303030303030303030303030303030303",
 	})
 }

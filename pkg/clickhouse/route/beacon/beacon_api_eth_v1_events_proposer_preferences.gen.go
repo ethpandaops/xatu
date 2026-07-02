@@ -22,7 +22,7 @@ type beaconApiEthV1EventsProposerPreferencesBatch struct {
 	EpochStartDateTime                        proto.ColDateTime
 	ValidatorIndex                            proto.ColUInt32
 	FeeRecipient                              route.SafeColFixedStr
-	GasLimit                                  proto.ColUInt64
+	TargetGasLimit                            proto.ColUInt64
 	MetaClientName                            proto.ColStr
 	MetaClientID                              proto.ColStr
 	MetaClientVersion                         proto.ColStr
@@ -132,7 +132,7 @@ func (b *beaconApiEthV1EventsProposerPreferencesBatch) Input() proto.Input {
 		{Name: "epoch_start_date_time", Data: &b.EpochStartDateTime},
 		{Name: "validator_index", Data: &b.ValidatorIndex},
 		{Name: "fee_recipient", Data: &b.FeeRecipient},
-		{Name: "gas_limit", Data: &b.GasLimit},
+		{Name: "target_gas_limit", Data: &b.TargetGasLimit},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
 		{Name: "meta_client_id", Data: &b.MetaClientID},
 		{Name: "meta_client_version", Data: &b.MetaClientVersion},
@@ -168,7 +168,7 @@ func (b *beaconApiEthV1EventsProposerPreferencesBatch) Reset() {
 	b.EpochStartDateTime.Reset()
 	b.ValidatorIndex.Reset()
 	b.FeeRecipient.Reset()
-	b.GasLimit.Reset()
+	b.TargetGasLimit.Reset()
 	b.MetaClientName.Reset()
 	b.MetaClientID.Reset()
 	b.MetaClientVersion.Reset()
@@ -209,7 +209,7 @@ func (b *beaconApiEthV1EventsProposerPreferencesBatch) Snapshot() []map[string]a
 		row["epoch_start_date_time"] = b.EpochStartDateTime.Row(i).Unix()
 		row["validator_index"] = b.ValidatorIndex.Row(i)
 		row["fee_recipient"] = string(b.FeeRecipient.Row(i))
-		row["gas_limit"] = b.GasLimit.Row(i)
+		row["target_gas_limit"] = b.TargetGasLimit.Row(i)
 		row["meta_client_name"] = b.MetaClientName.Row(i)
 		row["meta_client_id"] = b.MetaClientID.Row(i)
 		row["meta_client_version"] = b.MetaClientVersion.Row(i)

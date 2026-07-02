@@ -74,10 +74,10 @@ func (b *libp2pGossipsubProposerPreferencesBatch) appendPayload(event *xatu.Deco
 
 	b.FeeRecipient.Append([]byte(wrappedStringValue(payload.GetFeeRecipient())))
 
-	if gasLimit := payload.GetGasLimit(); gasLimit != nil {
-		b.GasLimit.Append(gasLimit.GetValue())
+	if gasLimit := payload.GetTargetGasLimit(); gasLimit != nil {
+		b.TargetGasLimit.Append(gasLimit.GetValue())
 	} else {
-		b.GasLimit.Append(0)
+		b.TargetGasLimit.Append(0)
 	}
 }
 

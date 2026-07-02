@@ -42,20 +42,9 @@ cat <<EOT >> /etc/clickhouse-server/config.d/users.xml
 EOT
 
 
-PASSWORD=${CLICKHOUSE_PASSWORD}
+# This script configures users and the cluster topology only. Migration state is
+# owned by golang-migrate: each set (xatu/observoor/admin) tracks its own
+# `schema_migrations_<set>` table in its target database, and target databases
+# are created by the `xatu-clickhouse-db-init` service before migrations run.
 
-clickhouse client --user default --password ${PASSWORD} -n <<-EOSQL
-CREATE TABLE default.schema_migrations_local ON CLUSTER '{cluster}'
-(
-    "version" Int64,
-    "dirty" UInt8,
-    "sequence" UInt64
-) Engine = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
-ORDER BY sequence
-SETTINGS index_granularity = 81921;
-
-CREATE TABLE schema_migrations on cluster '{cluster}' AS schema_migrations_local
-ENGINE = Distributed('{cluster}', default, schema_migrations_local, rand());
-EOSQL
-
-echo "ClickHouse schema initialized"
+echo "ClickHouse node initialized"

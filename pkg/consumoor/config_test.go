@@ -152,8 +152,9 @@ func TestTableConfigForMergesInsertSettings(t *testing.T) {
 	assert.Equal(
 		t,
 		map[string]any{
-			"insert_quorum":         3,
-			"insert_quorum_timeout": 30000,
+			"insert_quorum":             3,
+			"insert_quorum_timeout":     30000,
+			distributedForegroundInsert: 1,
 		},
 		got.InsertSettings,
 	)
@@ -240,12 +241,14 @@ func TestKafkaConfigValidateSessionTimeout(t *testing.T) {
 	})
 }
 
+const distributedForegroundInsert = "distributed_foreground_insert"
+
 func TestTableConfigForAppliesCanonicalDefaults(t *testing.T) {
 	t.Run("adds auto quorum for canonical tables when unset", func(t *testing.T) {
 		cfg := &clickhouse.Config{}
 
 		got := cfg.TableConfigFor("canonical_beacon_block")
-		assert.Equal(t, map[string]any{"insert_quorum": "auto"}, got.InsertSettings)
+		assert.Equal(t, map[string]any{"insert_quorum": "auto", distributedForegroundInsert: 1}, got.InsertSettings)
 	})
 
 	t.Run("does not add quorum for non-canonical tables", func(t *testing.T) {
@@ -267,7 +270,7 @@ func TestTableConfigForAppliesCanonicalDefaults(t *testing.T) {
 		}
 
 		got := cfg.TableConfigFor("canonical_beacon_block")
-		assert.Equal(t, map[string]any{"insert_quorum": 3}, got.InsertSettings)
+		assert.Equal(t, map[string]any{"insert_quorum": 3, distributedForegroundInsert: 1}, got.InsertSettings)
 	})
 
 	t.Run("preserves explicit default quorum", func(t *testing.T) {
@@ -280,6 +283,6 @@ func TestTableConfigForAppliesCanonicalDefaults(t *testing.T) {
 		}
 
 		got := cfg.TableConfigFor("canonical_beacon_block")
-		assert.Equal(t, map[string]any{"insert_quorum": 2}, got.InsertSettings)
+		assert.Equal(t, map[string]any{"insert_quorum": 2, distributedForegroundInsert: 1}, got.InsertSettings)
 	})
 }

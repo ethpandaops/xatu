@@ -6,13 +6,12 @@ package v1
 
 import (
 	fmt "fmt"
-	io "io"
-	sync "sync"
-
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
 	wrapperspb "github.com/planetscale/vtprotobuf/types/known/wrapperspb"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
+	io "io"
+	sync "sync"
 )
 
 const (
@@ -52,6 +51,30 @@ func (m *ElectraExecutionRequests) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.BuilderExits) > 0 {
+		for iNdEx := len(m.BuilderExits) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.BuilderExits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x2a
+		}
+	}
+	if len(m.BuilderDeposits) > 0 {
+		for iNdEx := len(m.BuilderDeposits) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.BuilderDeposits[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x22
+		}
+	}
 	if len(m.Consolidations) > 0 {
 		for iNdEx := len(m.Consolidations) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.Consolidations[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
@@ -87,6 +110,132 @@ func (m *ElectraExecutionRequests) MarshalToSizedBufferVT(dAtA []byte) (int, err
 			i--
 			dAtA[i] = 0xa
 		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GloasBuilderDepositRequest) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GloasBuilderDepositRequest) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *GloasBuilderDepositRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Signature != nil {
+		size, err := (*wrapperspb.StringValue)(m.Signature).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.Amount != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.Amount).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.WithdrawalCredentials != nil {
+		size, err := (*wrapperspb.StringValue)(m.WithdrawalCredentials).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Pubkey != nil {
+		size, err := (*wrapperspb.StringValue)(m.Pubkey).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GloasBuilderExitRequest) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GloasBuilderExitRequest) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *GloasBuilderExitRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Pubkey != nil {
+		size, err := (*wrapperspb.StringValue)(m.Pubkey).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.SourceAddress != nil {
+		size, err := (*wrapperspb.StringValue)(m.SourceAddress).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -320,10 +469,20 @@ func (m *ElectraExecutionRequests) ResetVT() {
 			mm.ResetVT()
 		}
 		f2 := m.Consolidations[:0]
+		for _, mm := range m.BuilderDeposits {
+			mm.ResetVT()
+		}
+		f3 := m.BuilderDeposits[:0]
+		for _, mm := range m.BuilderExits {
+			mm.ResetVT()
+		}
+		f4 := m.BuilderExits[:0]
 		m.Reset()
 		m.Deposits = f0
 		m.Withdrawals = f1
 		m.Consolidations = f2
+		m.BuilderDeposits = f3
+		m.BuilderExits = f4
 	}
 }
 func (m *ElectraExecutionRequests) ReturnToVTPool() {
@@ -334,6 +493,48 @@ func (m *ElectraExecutionRequests) ReturnToVTPool() {
 }
 func ElectraExecutionRequestsFromVTPool() *ElectraExecutionRequests {
 	return vtprotoPool_ElectraExecutionRequests.Get().(*ElectraExecutionRequests)
+}
+
+var vtprotoPool_GloasBuilderDepositRequest = sync.Pool{
+	New: func() interface{} {
+		return &GloasBuilderDepositRequest{}
+	},
+}
+
+func (m *GloasBuilderDepositRequest) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *GloasBuilderDepositRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_GloasBuilderDepositRequest.Put(m)
+	}
+}
+func GloasBuilderDepositRequestFromVTPool() *GloasBuilderDepositRequest {
+	return vtprotoPool_GloasBuilderDepositRequest.Get().(*GloasBuilderDepositRequest)
+}
+
+var vtprotoPool_GloasBuilderExitRequest = sync.Pool{
+	New: func() interface{} {
+		return &GloasBuilderExitRequest{}
+	},
+}
+
+func (m *GloasBuilderExitRequest) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *GloasBuilderExitRequest) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_GloasBuilderExitRequest.Put(m)
+	}
+}
+func GloasBuilderExitRequestFromVTPool() *GloasBuilderExitRequest {
+	return vtprotoPool_GloasBuilderExitRequest.Get().(*GloasBuilderExitRequest)
 }
 
 var vtprotoPool_ElectraExecutionRequestDeposit = sync.Pool{
@@ -421,6 +622,62 @@ func (m *ElectraExecutionRequests) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if len(m.BuilderDeposits) > 0 {
+		for _, e := range m.BuilderDeposits {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if len(m.BuilderExits) > 0 {
+		for _, e := range m.BuilderExits {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *GloasBuilderDepositRequest) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Pubkey != nil {
+		l = (*wrapperspb.StringValue)(m.Pubkey).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.WithdrawalCredentials != nil {
+		l = (*wrapperspb.StringValue)(m.WithdrawalCredentials).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Amount != nil {
+		l = (*wrapperspb.UInt64Value)(m.Amount).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Signature != nil {
+		l = (*wrapperspb.StringValue)(m.Signature).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *GloasBuilderExitRequest) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SourceAddress != nil {
+		l = (*wrapperspb.StringValue)(m.SourceAddress).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Pubkey != nil {
+		l = (*wrapperspb.StringValue)(m.Pubkey).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -649,6 +906,406 @@ func (m *ElectraExecutionRequests) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			if err := m.Consolidations[len(m.Consolidations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BuilderDeposits", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if len(m.BuilderDeposits) == cap(m.BuilderDeposits) {
+				m.BuilderDeposits = append(m.BuilderDeposits, &GloasBuilderDepositRequest{})
+			} else {
+				m.BuilderDeposits = m.BuilderDeposits[:len(m.BuilderDeposits)+1]
+				if m.BuilderDeposits[len(m.BuilderDeposits)-1] == nil {
+					m.BuilderDeposits[len(m.BuilderDeposits)-1] = &GloasBuilderDepositRequest{}
+				}
+			}
+			if err := m.BuilderDeposits[len(m.BuilderDeposits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BuilderExits", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if len(m.BuilderExits) == cap(m.BuilderExits) {
+				m.BuilderExits = append(m.BuilderExits, &GloasBuilderExitRequest{})
+			} else {
+				m.BuilderExits = m.BuilderExits[:len(m.BuilderExits)+1]
+				if m.BuilderExits[len(m.BuilderExits)-1] == nil {
+					m.BuilderExits[len(m.BuilderExits)-1] = &GloasBuilderExitRequest{}
+				}
+			}
+			if err := m.BuilderExits[len(m.BuilderExits)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GloasBuilderDepositRequest) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GloasBuilderDepositRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GloasBuilderDepositRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pubkey", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pubkey == nil {
+				m.Pubkey = &wrapperspb1.StringValue{}
+			}
+			if err := (*wrapperspb.StringValue)(m.Pubkey).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WithdrawalCredentials", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.WithdrawalCredentials == nil {
+				m.WithdrawalCredentials = &wrapperspb1.StringValue{}
+			}
+			if err := (*wrapperspb.StringValue)(m.WithdrawalCredentials).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Amount == nil {
+				m.Amount = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.Amount).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Signature", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Signature == nil {
+				m.Signature = &wrapperspb1.StringValue{}
+			}
+			if err := (*wrapperspb.StringValue)(m.Signature).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GloasBuilderExitRequest) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GloasBuilderExitRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GloasBuilderExitRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceAddress", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SourceAddress == nil {
+				m.SourceAddress = &wrapperspb1.StringValue{}
+			}
+			if err := (*wrapperspb.StringValue)(m.SourceAddress).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pubkey", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pubkey == nil {
+				m.Pubkey = &wrapperspb1.StringValue{}
+			}
+			if err := (*wrapperspb.StringValue)(m.Pubkey).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

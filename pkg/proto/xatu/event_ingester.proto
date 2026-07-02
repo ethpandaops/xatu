@@ -26,6 +26,8 @@ import "pkg/proto/eth/v1/execution_payload_envelope.proto";
 import "pkg/proto/eth/v1/execution_payload_available.proto";
 import "pkg/proto/eth/v1/proposer_preferences.proto";
 import "pkg/proto/eth/v1/beacon_synthetic.proto";
+import "pkg/proto/eth/v1/execution_requests.proto";
+import "pkg/proto/eth/v1/checkpoint.proto";
 
 import "pkg/proto/mevrelay/bids.proto";
 import "pkg/proto/mevrelay/relay.proto";
@@ -154,6 +156,109 @@ message SyncAggregateData {
   // ParticipationCount is the number of validators that participated (0-512).
   google.protobuf.UInt64Value participation_count = 5
       [ json_name = "participation_count" ];
+}
+
+// BlockRewardData contains the proposer reward breakdown for a single block,
+// derived from the beacon API /eth/v1/beacon/rewards/blocks/{block_id} endpoint.
+message BlockRewardData {
+  // ProposerIndex is the validator index of the block proposer.
+  google.protobuf.UInt64Value proposer_index = 1 [ json_name = "proposer_index" ];
+  // Total is the total block reward in gwei (attestations + sync aggregate +
+  // proposer slashings + attester slashings).
+  google.protobuf.UInt64Value total = 2 [ json_name = "total" ];
+  // Attestations is the reward from including attestations in gwei.
+  google.protobuf.UInt64Value attestations = 3 [ json_name = "attestations" ];
+  // SyncAggregate is the reward from including the sync aggregate in gwei.
+  google.protobuf.UInt64Value sync_aggregate = 4 [ json_name = "sync_aggregate" ];
+  // ProposerSlashings is the reward from including proposer slashings in gwei.
+  google.protobuf.UInt64Value proposer_slashings = 5 [ json_name = "proposer_slashings" ];
+  // AttesterSlashings is the reward from including attester slashings in gwei.
+  google.protobuf.UInt64Value attester_slashings = 6 [ json_name = "attester_slashings" ];
+}
+
+// AttestationRewardData contains the per-validator attestation reward components
+// for a single epoch, derived from the beacon API
+// /eth/v1/beacon/rewards/attestations/{epoch} endpoint.
+message AttestationRewardData {
+  // ValidatorIndex is the validator index the reward applies to.
+  google.protobuf.UInt64Value validator_index = 1 [ json_name = "validator_index" ];
+  // Head is the reward for correctly attesting to the head in gwei.
+  google.protobuf.Int64Value head = 2 [ json_name = "head" ];
+  // Target is the reward for correctly attesting to the target in gwei.
+  google.protobuf.Int64Value target = 3 [ json_name = "target" ];
+  // Source is the reward for correctly attesting to the source in gwei.
+  google.protobuf.Int64Value source = 4 [ json_name = "source" ];
+  // InclusionDelay is the reward for inclusion delay in gwei.
+  google.protobuf.UInt64Value inclusion_delay = 5 [ json_name = "inclusion_delay" ];
+  // Inactivity is the inactivity penalty in gwei.
+  google.protobuf.Int64Value inactivity = 6 [ json_name = "inactivity" ];
+}
+
+// SyncCommitteeRewardData contains a single sync committee member's reward for a
+// block, derived from the beacon API
+// /eth/v1/beacon/rewards/sync_committee/{block_id} endpoint.
+message SyncCommitteeRewardData {
+  // ValidatorIndex is the validator index the reward applies to.
+  google.protobuf.UInt64Value validator_index = 1 [ json_name = "validator_index" ];
+  // Reward is the sync committee reward in gwei (can be negative as a penalty).
+  google.protobuf.Int64Value reward = 2 [ json_name = "reward" ];
+}
+
+// RandaoData contains the RANDAO mix for an epoch, derived from the beacon API
+// /eth/v1/beacon/states/{state_id}/randao endpoint.
+message RandaoData {
+  // Randao is the RANDAO mix (hex encoded with 0x prefix).
+  string randao = 1 [ json_name = "randao" ];
+}
+
+// FinalityCheckpointData contains the finality checkpoints for a state, derived
+// from the beacon API /eth/v1/beacon/states/{state_id}/finality_checkpoints
+// endpoint.
+message FinalityCheckpointData {
+  // PreviousJustified is the previous justified checkpoint.
+  xatu.eth.v1.Checkpoint previous_justified = 1 [ json_name = "previous_justified" ];
+  // CurrentJustified is the current justified checkpoint.
+  xatu.eth.v1.Checkpoint current_justified = 2 [ json_name = "current_justified" ];
+  // Finalized is the finalized checkpoint.
+  xatu.eth.v1.Checkpoint finalized = 3 [ json_name = "finalized" ];
+}
+
+// PendingDepositData contains a single entry from the Electra pending deposits
+// queue, derived from the beacon API
+// /eth/v1/beacon/states/{state_id}/pending_deposits endpoint.
+message PendingDepositData {
+  // Pubkey is the public key of the validator (hex encoded with 0x prefix).
+  string pubkey = 1 [ json_name = "pubkey" ];
+  // WithdrawalCredentials are the withdrawal credentials (hex encoded with 0x prefix).
+  string withdrawal_credentials = 2 [ json_name = "withdrawal_credentials" ];
+  // Amount is the deposit amount in gwei.
+  google.protobuf.UInt64Value amount = 3 [ json_name = "amount" ];
+  // Signature is the deposit signature (hex encoded with 0x prefix).
+  string signature = 4 [ json_name = "signature" ];
+  // Slot is the slot at which the deposit was queued.
+  google.protobuf.UInt64Value slot = 5 [ json_name = "slot" ];
+}
+
+// PendingPartialWithdrawalData contains a single entry from the Electra pending
+// partial withdrawals queue, derived from the beacon API
+// /eth/v1/beacon/states/{state_id}/pending_partial_withdrawals endpoint.
+message PendingPartialWithdrawalData {
+  // ValidatorIndex is the validator index the withdrawal applies to.
+  google.protobuf.UInt64Value validator_index = 1 [ json_name = "validator_index" ];
+  // Amount is the partial withdrawal amount in gwei.
+  google.protobuf.UInt64Value amount = 2 [ json_name = "amount" ];
+  // WithdrawableEpoch is the epoch at which the withdrawal becomes withdrawable.
+  google.protobuf.UInt64Value withdrawable_epoch = 3 [ json_name = "withdrawable_epoch" ];
+}
+
+// PendingConsolidationData contains a single entry from the Electra pending
+// consolidations queue, derived from the beacon API
+// /eth/v1/beacon/states/{state_id}/pending_consolidations endpoint.
+message PendingConsolidationData {
+  // SourceIndex is the validator index of the consolidation source.
+  google.protobuf.UInt64Value source_index = 1 [ json_name = "source_index" ];
+  // TargetIndex is the validator index of the consolidation target.
+  google.protobuf.UInt64Value target_index = 2 [ json_name = "target_index" ];
 }
 
 message BlockIdentifier {
@@ -748,6 +853,136 @@ message ClientMeta {
         [ json_name = "sync_committee_period" ];
   }
 
+  // AdditionalEthV2BeaconBlockExecutionRequestDepositData contains additional
+  // data on EIP-6110 execution request deposits derived from beacon blocks.
+  message AdditionalEthV2BeaconBlockExecutionRequestDepositData {
+    // Block contains the information about the block that we are deriving the
+    // execution request deposit from.
+    BlockIdentifier block = 1;
+
+    // PositionInBlock is the index of the deposit within the block's execution
+    // requests.
+    google.protobuf.UInt64Value position_in_block = 2
+        [ json_name = "position_in_block" ];
+  }
+
+  // AdditionalEthV2BeaconBlockExecutionRequestWithdrawalData contains additional
+  // data on EIP-7002 execution request withdrawals derived from beacon blocks.
+  message AdditionalEthV2BeaconBlockExecutionRequestWithdrawalData {
+    // Block contains the information about the block that we are deriving the
+    // execution request withdrawal from.
+    BlockIdentifier block = 1;
+
+    // PositionInBlock is the index of the withdrawal within the block's
+    // execution requests.
+    google.protobuf.UInt64Value position_in_block = 2
+        [ json_name = "position_in_block" ];
+  }
+
+  // AdditionalEthV2BeaconBlockExecutionRequestConsolidationData contains
+  // additional data on EIP-7251 execution request consolidations derived from
+  // beacon blocks.
+  message AdditionalEthV2BeaconBlockExecutionRequestConsolidationData {
+    // Block contains the information about the block that we are deriving the
+    // execution request consolidation from.
+    BlockIdentifier block = 1;
+
+    // PositionInBlock is the index of the consolidation within the block's
+    // execution requests.
+    google.protobuf.UInt64Value position_in_block = 2
+        [ json_name = "position_in_block" ];
+  }
+
+  // AdditionalEthV1BeaconBlockRewardData contains additional data about the
+  // block reward derived from a beacon block.
+  message AdditionalEthV1BeaconBlockRewardData {
+    // Block contains the block identifier information.
+    BlockIdentifier block = 1;
+  }
+
+  // AdditionalEthV1BeaconAttestationRewardData contains additional data about the
+  // attestation rewards for an epoch.
+  message AdditionalEthV1BeaconAttestationRewardData {
+    // Epoch contains the epoch information for the attestation rewards.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the attestation rewards were requested against.
+    string state_id = 2 [ json_name = "state_id" ];
+  }
+
+  // AdditionalEthV1BeaconSyncCommitteeRewardData contains additional data about
+  // the sync committee rewards derived from a beacon block.
+  message AdditionalEthV1BeaconSyncCommitteeRewardData {
+    // Block contains the block identifier information.
+    BlockIdentifier block = 1;
+  }
+
+  // AdditionalEthV1BeaconStateRandaoData contains additional data about the
+  // RANDAO mix for an epoch.
+  message AdditionalEthV1BeaconStateRandaoData {
+    // Epoch contains the epoch information for the RANDAO mix.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the RANDAO mix was requested against.
+    string state_id = 2 [ json_name = "state_id" ];
+  }
+
+  // AdditionalEthV1BeaconStateFinalityCheckpointData contains additional data
+  // about the finality checkpoints for an epoch.
+  message AdditionalEthV1BeaconStateFinalityCheckpointData {
+    // Epoch contains the epoch information for the finality checkpoints.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the finality checkpoints were requested against.
+    string state_id = 2 [ json_name = "state_id" ];
+  }
+
+  // AdditionalEthV1BeaconStatePendingDepositData contains additional data about
+  // an Electra pending deposit queue entry for an epoch.
+  message AdditionalEthV1BeaconStatePendingDepositData {
+    // Epoch contains the epoch information for the pending deposit.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the pending deposit was requested against.
+    string state_id = 2 [ json_name = "state_id" ];
+
+    // PositionInQueue is the index of the deposit within the pending deposits
+    // queue.
+    google.protobuf.UInt64Value position_in_queue = 3
+        [ json_name = "position_in_queue" ];
+  }
+
+  // AdditionalEthV1BeaconStatePendingPartialWithdrawalData contains additional
+  // data about an Electra pending partial withdrawal queue entry for an epoch.
+  message AdditionalEthV1BeaconStatePendingPartialWithdrawalData {
+    // Epoch contains the epoch information for the pending partial withdrawal.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the pending partial withdrawal was requested
+    // against.
+    string state_id = 2 [ json_name = "state_id" ];
+
+    // PositionInQueue is the index of the withdrawal within the pending partial
+    // withdrawals queue.
+    google.protobuf.UInt64Value position_in_queue = 3
+        [ json_name = "position_in_queue" ];
+  }
+
+  // AdditionalEthV1BeaconStatePendingConsolidationData contains additional data
+  // about an Electra pending consolidation queue entry for an epoch.
+  message AdditionalEthV1BeaconStatePendingConsolidationData {
+    // Epoch contains the epoch information for the pending consolidation.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the pending consolidation was requested against.
+    string state_id = 2 [ json_name = "state_id" ];
+
+    // PositionInQueue is the index of the consolidation within the pending
+    // consolidations queue.
+    google.protobuf.UInt64Value position_in_queue = 3
+        [ json_name = "position_in_queue" ];
+  }
+
   message AdditionalMempoolTransactionData {
     // Hash is the transaction hash.
     string hash = 1 [ json_name = "hash" ];
@@ -1307,12 +1542,26 @@ message ClientMeta {
 
   // AdditionalLibP2PTraceJoinData: Holds additional data for a join event in LibP2P tracing.
   message AdditionalLibP2PTraceJoinData {
+    // metadata.peer_id is deprecated for join events. Join is a local-host
+    // action with no remote peer; the field was misleadingly named "peer_id"
+    // when it always referred to the local host. Use local_peer_id instead.
     xatu.libp2p.TraceEventMetadata metadata = 1;
+    // LocalPeerId is the libp2p peer.ID of the local host that joined the
+    // topic. Replaces metadata.peer_id, which is kept for backward
+    // compatibility with older sentries.
+    string local_peer_id = 2 [ json_name = "local_peer_id" ];
   }
 
   // AdditionalLibP2PTraceLeaveData: Holds additional data for a leave event in LibP2P tracing.
   message AdditionalLibP2PTraceLeaveData {
+    // metadata.peer_id is deprecated for leave events. Leave is a local-host
+    // action with no remote peer; the field was misleadingly named "peer_id"
+    // when it always referred to the local host. Use local_peer_id instead.
     xatu.libp2p.TraceEventMetadata metadata = 1;
+    // LocalPeerId is the libp2p peer.ID of the local host that left the
+    // topic. Replaces metadata.peer_id, which is kept for backward
+    // compatibility with older sentries.
+    string local_peer_id = 2 [ json_name = "local_peer_id" ];
   }
 
   // AdditionalLibP2PTraceGraftData: Holds additional data for a graft event in LibP2P tracing.
@@ -1958,36 +2207,58 @@ message ClientMeta {
     // AdditionalEthV1EventsFastConfirmationData contains additional data about
     // the eth v1 fast confirmation event.
     AdditionalEthV1EventsFastConfirmationData eth_v1_events_fast_confirmation = 95 [ json_name = "BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION" ];
+    // AdditionalEthV2BeaconBlockExecutionRequestDepositData contains additional data on EIP-6110 execution request deposits derived from beacon blocks.
+    AdditionalEthV2BeaconBlockExecutionRequestDepositData eth_v2_beacon_block_execution_request_deposit = 96 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT" ];
+    // AdditionalEthV2BeaconBlockExecutionRequestWithdrawalData contains additional data on EIP-7002 execution request withdrawals derived from beacon blocks.
+    AdditionalEthV2BeaconBlockExecutionRequestWithdrawalData eth_v2_beacon_block_execution_request_withdrawal = 97 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_WITHDRAWAL" ];
+    // AdditionalEthV2BeaconBlockExecutionRequestConsolidationData contains additional data on EIP-7251 execution request consolidations derived from beacon blocks.
+    AdditionalEthV2BeaconBlockExecutionRequestConsolidationData eth_v2_beacon_block_execution_request_consolidation = 98 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_CONSOLIDATION" ];
+    // AdditionalEthV1BeaconBlockRewardData contains additional data about the block reward.
+    AdditionalEthV1BeaconBlockRewardData eth_v1_beacon_block_reward = 99 [ json_name = "BEACON_API_ETH_V1_BEACON_BLOCK_REWARD" ];
+    // AdditionalEthV1BeaconAttestationRewardData contains additional data about the attestation rewards.
+    AdditionalEthV1BeaconAttestationRewardData eth_v1_beacon_attestation_reward = 100 [ json_name = "BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD" ];
+    // AdditionalEthV1BeaconSyncCommitteeRewardData contains additional data about the sync committee rewards.
+    AdditionalEthV1BeaconSyncCommitteeRewardData eth_v1_beacon_sync_committee_reward = 101 [ json_name = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD" ];
+    // AdditionalEthV1BeaconStateRandaoData contains additional data about the RANDAO mix.
+    AdditionalEthV1BeaconStateRandaoData eth_v1_beacon_state_randao = 102 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_RANDAO" ];
+    // AdditionalEthV1BeaconStateFinalityCheckpointData contains additional data about the finality checkpoints.
+    AdditionalEthV1BeaconStateFinalityCheckpointData eth_v1_beacon_state_finality_checkpoint = 103 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_FINALITY_CHECKPOINT" ];
+    // AdditionalEthV1BeaconStatePendingDepositData contains additional data about an Electra pending deposit queue entry.
+    AdditionalEthV1BeaconStatePendingDepositData eth_v1_beacon_state_pending_deposit = 104 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT" ];
+    // AdditionalEthV1BeaconStatePendingPartialWithdrawalData contains additional data about an Electra pending partial withdrawal queue entry.
+    AdditionalEthV1BeaconStatePendingPartialWithdrawalData eth_v1_beacon_state_pending_partial_withdrawal = 105 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL" ];
+    // AdditionalEthV1BeaconStatePendingConsolidationData contains additional data about an Electra pending consolidation queue entry.
+    AdditionalEthV1BeaconStatePendingConsolidationData eth_v1_beacon_state_pending_consolidation = 106 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION" ];
 
     // AdditionalEthV2BeaconBlockAccessListData contains additional data on
     // block access list entries derived from beacon blocks.
-    AdditionalEthV2BeaconBlockAccessListData eth_v2_beacon_block_access_list = 96 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
+    AdditionalEthV2BeaconBlockAccessListData eth_v2_beacon_block_access_list = 107 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
 
     // EIP-7732 ePBS: Sentry SSE additional data
-    AdditionalEthV1EventsExecutionPayloadData eth_v1_events_execution_payload = 97 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
-    AdditionalEthV1EventsPayloadAttestationData eth_v1_events_payload_attestation = 98 [ json_name = "BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION" ];
-    AdditionalEthV1EventsExecutionPayloadBidData eth_v1_events_execution_payload_bid = 99 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID" ];
-    AdditionalEthV1EventsProposerPreferencesData eth_v1_events_proposer_preferences = 100 [ json_name = "BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES" ];
+    AdditionalEthV1EventsExecutionPayloadData eth_v1_events_execution_payload = 108 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
+    AdditionalEthV1EventsPayloadAttestationData eth_v1_events_payload_attestation = 109 [ json_name = "BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION" ];
+    AdditionalEthV1EventsExecutionPayloadBidData eth_v1_events_execution_payload_bid = 110 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID" ];
+    AdditionalEthV1EventsProposerPreferencesData eth_v1_events_proposer_preferences = 111 [ json_name = "BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES" ];
 
     // EIP-7732 ePBS: Cannon additional data
-    AdditionalEthV2BeaconBlockPayloadAttestationData eth_v2_beacon_block_payload_attestation = 101 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION" ];
-    AdditionalEthV2BeaconBlockExecutionPayloadBidData eth_v2_beacon_block_execution_payload_bid = 102 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID" ];
+    AdditionalEthV2BeaconBlockPayloadAttestationData eth_v2_beacon_block_payload_attestation = 112 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION" ];
+    AdditionalEthV2BeaconBlockExecutionPayloadBidData eth_v2_beacon_block_execution_payload_bid = 113 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID" ];
 
     // EIP-7732 ePBS: LibP2P gossip additional data
-    AdditionalLibP2PTraceGossipSubExecutionPayloadEnvelopeData libp2p_trace_gossipsub_execution_payload_envelope = 103 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE" ];
-    AdditionalLibP2PTraceGossipSubExecutionPayloadBidData libp2p_trace_gossipsub_execution_payload_bid = 104 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID" ];
-    AdditionalLibP2PTraceGossipSubPayloadAttestationMessageData libp2p_trace_gossipsub_payload_attestation_message = 105 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE" ];
-    AdditionalLibP2PTraceGossipSubProposerPreferencesData libp2p_trace_gossipsub_proposer_preferences = 106 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES" ];
+    AdditionalLibP2PTraceGossipSubExecutionPayloadEnvelopeData libp2p_trace_gossipsub_execution_payload_envelope = 114 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE" ];
+    AdditionalLibP2PTraceGossipSubExecutionPayloadBidData libp2p_trace_gossipsub_execution_payload_bid = 115 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID" ];
+    AdditionalLibP2PTraceGossipSubPayloadAttestationMessageData libp2p_trace_gossipsub_payload_attestation_message = 116 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE" ];
+    AdditionalLibP2PTraceGossipSubProposerPreferencesData libp2p_trace_gossipsub_proposer_preferences = 117 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES" ];
 
     // EIP-7732 ePBS: Sentry SSE additional data (gossip + available variants)
-    AdditionalEthV1EventsExecutionPayloadGossipData eth_v1_events_execution_payload_gossip = 107 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP" ];
-    AdditionalEthV1EventsExecutionPayloadAvailableData eth_v1_events_execution_payload_available = 108 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE" ];
+    AdditionalEthV1EventsExecutionPayloadGossipData eth_v1_events_execution_payload_gossip = 118 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP" ];
+    AdditionalEthV1EventsExecutionPayloadAvailableData eth_v1_events_execution_payload_available = 119 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE" ];
 
     // EIP-7732 ePBS: Synthesized observability events from beacon-node internals
     // (TYSM-instrumented). No beacon API equivalent today.
-    AdditionalBeaconSyntheticPayloadStatusResolvedData beacon_synthetic_payload_status_resolved = 109 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED" ];
-    AdditionalBeaconSyntheticBuilderPendingPaymentSettlementData beacon_synthetic_builder_pending_payment_settlement = 110 [ json_name = "BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT" ];
-    AdditionalBeaconSyntheticPayloadAttestationProcessedData beacon_synthetic_payload_attestation_processed = 111 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED" ];
+    AdditionalBeaconSyntheticPayloadStatusResolvedData beacon_synthetic_payload_status_resolved = 120 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED" ];
+    AdditionalBeaconSyntheticBuilderPendingPaymentSettlementData beacon_synthetic_builder_pending_payment_settlement = 121 [ json_name = "BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT" ];
+    AdditionalBeaconSyntheticPayloadAttestationProcessedData beacon_synthetic_payload_attestation_processed = 122 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2210,33 +2481,60 @@ message Event {
     BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION = 89;
     EXECUTION_STATE_SIZE_DELTA = 90;
     EXECUTION_MPT_DEPTH = 91;
+    EXECUTION_CANONICAL_BLOCK = 92;
+    EXECUTION_CANONICAL_TRANSACTION = 93;
+    EXECUTION_CANONICAL_LOGS = 94;
+    EXECUTION_CANONICAL_TRACES = 95;
+    EXECUTION_CANONICAL_NATIVE_TRANSFERS = 96;
+    EXECUTION_CANONICAL_ERC20_TRANSFERS = 97;
+    EXECUTION_CANONICAL_ERC721_TRANSFERS = 98;
+    EXECUTION_CANONICAL_CONTRACTS = 99;
+    EXECUTION_CANONICAL_BALANCE_DIFFS = 100;
+    EXECUTION_CANONICAL_STORAGE_DIFFS = 101;
+    EXECUTION_CANONICAL_NONCE_DIFFS = 102;
+    EXECUTION_CANONICAL_BALANCE_READS = 103;
+    EXECUTION_CANONICAL_STORAGE_READS = 104;
+    EXECUTION_CANONICAL_NONCE_READS = 105;
+    EXECUTION_CANONICAL_FOUR_BYTE_COUNTS = 106;
+    EXECUTION_CANONICAL_ADDRESS_APPEARANCES = 107;
+    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT = 108;
+    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_WITHDRAWAL = 109;
+    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_CONSOLIDATION = 110;
+    BEACON_API_ETH_V1_BEACON_BLOCK_REWARD = 111;
+    BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD = 112;
+    BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD = 113;
+    BEACON_API_ETH_V1_BEACON_STATE_RANDAO = 114;
+    BEACON_API_ETH_V1_BEACON_STATE_FINALITY_CHECKPOINT = 115;
+    BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT = 116;
+    BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL = 117;
+    BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION = 118;
 
     // EIP-7732 ePBS: Sentry SSE events
-    BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION = 92;
-    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID = 93;
-    BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES = 94;
-    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP = 101;
-    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE = 102;
+    BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION = 119;
+    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID = 120;
+    BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES = 121;
+    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP = 122;
+    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE = 123;
 
     // EIP-7732 ePBS: Cannon derived events
-    BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION = 95;
-    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID = 96;
+    BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION = 124;
+    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID = 125;
 
     // EIP-7732 ePBS: P2P gossip events
-    LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE = 97;
-    LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID = 98;
-    LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE = 99;
-    LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES = 100;
+    LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE = 126;
+    LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID = 127;
+    LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE = 128;
+    LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES = 129;
 
     // EIP-7732 ePBS: Synthesized observability events from beacon-node internals
     // (TYSM-instrumented). No beacon API equivalent today. Captured by every
     // beacon node, not just proposers — multi-witness signal.
-    BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED = 103;
-    BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT = 104;
-    BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED = 105;
+    BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED = 130;
+    BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT = 131;
+    BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED = 132;
 
-    BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST = 108;
-    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD = 109;
+    BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST = 133;
+    BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD = 134;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -2432,6 +2730,241 @@ message ExecutionMPTDepth {
   map<uint32, uint64> storage_deleted_nodes = 19 [ json_name = "storage_deleted_nodes" ];
   // StorageDeletedBytes is a map of trie depth to bytes deleted at that depth in storage tries.
   map<uint32, uint64> storage_deleted_bytes = 20 [ json_name = "storage_deleted_bytes" ];
+}
+
+// ExecutionCanonicalBlock is a batch (chunk) of canonical execution-layer
+// blocks derived by EL cannon from the cryo `blocks` dataset. A single
+// DecoratedEvent carries many rows; the clickhouse route flattens them to one
+// row per block in canonical_execution_block.
+message ExecutionCanonicalBlock {
+  repeated ExecutionBlock blocks = 1 [ json_name = "blocks" ];
+}
+
+message ExecutionBlock {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  string block_hash = 2 [ json_name = "block_hash" ];
+  google.protobuf.Timestamp block_date_time = 3
+      [ json_name = "block_date_time" ];
+  google.protobuf.StringValue author = 4 [ json_name = "author" ];
+  google.protobuf.UInt64Value gas_used = 5 [ json_name = "gas_used" ];
+  google.protobuf.UInt64Value gas_limit = 6 [ json_name = "gas_limit" ];
+  google.protobuf.StringValue extra_data = 7 [ json_name = "extra_data" ];
+  google.protobuf.StringValue extra_data_string = 8
+      [ json_name = "extra_data_string" ];
+  google.protobuf.UInt64Value base_fee_per_gas = 9
+      [ json_name = "base_fee_per_gas" ];
+}
+
+// ExecutionCanonicalTransaction is a batch (chunk) of canonical execution-layer
+// transactions derived by EL cannon from the cryo `transactions` dataset.
+message ExecutionCanonicalTransaction {
+  repeated ExecutionTransaction transactions = 1 [ json_name = "transactions" ];
+}
+
+message ExecutionTransaction {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint64 nonce = 4 [ json_name = "nonce" ];
+  string from_address = 5 [ json_name = "from_address" ];
+  google.protobuf.StringValue to_address = 6 [ json_name = "to_address" ];
+  // value is the transfer value as a base-10 decimal string (UInt256).
+  string value = 7 [ json_name = "value" ];
+  google.protobuf.StringValue input = 8 [ json_name = "input" ];
+  uint64 gas_limit = 9 [ json_name = "gas_limit" ];
+  uint64 gas_used = 10 [ json_name = "gas_used" ];
+  uint64 gas_price = 11 [ json_name = "gas_price" ];
+  uint32 transaction_type = 12 [ json_name = "transaction_type" ];
+  uint64 max_priority_fee_per_gas = 13 [ json_name = "max_priority_fee_per_gas" ];
+  uint64 max_fee_per_gas = 14 [ json_name = "max_fee_per_gas" ];
+  bool success = 15 [ json_name = "success" ];
+  uint32 n_input_bytes = 16 [ json_name = "n_input_bytes" ];
+  uint32 n_input_zero_bytes = 17 [ json_name = "n_input_zero_bytes" ];
+  uint32 n_input_nonzero_bytes = 18 [ json_name = "n_input_nonzero_bytes" ];
+}
+
+// EL cannon canonical execution datasets (cryo). Each ExecutionCanonical<X> is
+// a chunk; the row message carries internal_index — a 1-based ordinal within
+// (block_number, transaction_hash), stamped in cryo's parquet row order because
+// ClickHouse does not preserve insert ordering across a cluster. UInt256/UInt128
+// values travel as decimal/hex strings and are parsed in the clickhouse route.
+
+message ExecutionCanonicalLogs { repeated ExecutionLog logs = 1 [ json_name = "logs" ]; }
+message ExecutionLog {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  uint32 log_index = 5 [ json_name = "log_index" ];
+  string address = 6 [ json_name = "address" ];
+  string topic0 = 7 [ json_name = "topic0" ];
+  google.protobuf.StringValue topic1 = 8 [ json_name = "topic1" ];
+  google.protobuf.StringValue topic2 = 9 [ json_name = "topic2" ];
+  google.protobuf.StringValue topic3 = 10 [ json_name = "topic3" ];
+  google.protobuf.StringValue data = 11 [ json_name = "data" ];
+}
+
+message ExecutionCanonicalTraces { repeated ExecutionTrace traces = 1 [ json_name = "traces" ]; }
+message ExecutionTrace {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string action_from = 5 [ json_name = "action_from" ];
+  google.protobuf.StringValue action_to = 6 [ json_name = "action_to" ];
+  string action_value = 7 [ json_name = "action_value" ];
+  uint64 action_gas = 8 [ json_name = "action_gas" ];
+  google.protobuf.StringValue action_input = 9 [ json_name = "action_input" ];
+  string action_call_type = 10 [ json_name = "action_call_type" ];
+  google.protobuf.StringValue action_init = 11 [ json_name = "action_init" ];
+  string action_reward_type = 12 [ json_name = "action_reward_type" ];
+  string action_type = 13 [ json_name = "action_type" ];
+  uint64 result_gas_used = 14 [ json_name = "result_gas_used" ];
+  google.protobuf.StringValue result_output = 15 [ json_name = "result_output" ];
+  google.protobuf.StringValue result_code = 16 [ json_name = "result_code" ];
+  google.protobuf.StringValue result_address = 17 [ json_name = "result_address" ];
+  google.protobuf.StringValue trace_address = 18 [ json_name = "trace_address" ];
+  uint32 subtraces = 19 [ json_name = "subtraces" ];
+  google.protobuf.StringValue error = 20 [ json_name = "error" ];
+}
+
+message ExecutionCanonicalNativeTransfers { repeated ExecutionNativeTransfer native_transfers = 1 [ json_name = "native_transfers" ]; }
+message ExecutionNativeTransfer {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  uint64 transfer_index = 5 [ json_name = "transfer_index" ];
+  string from_address = 6 [ json_name = "from_address" ];
+  string to_address = 7 [ json_name = "to_address" ];
+  string value = 8 [ json_name = "value" ];
+}
+
+message ExecutionCanonicalErc20Transfers { repeated ExecutionErc20Transfer erc20_transfers = 1 [ json_name = "erc20_transfers" ]; }
+message ExecutionErc20Transfer {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  uint64 log_index = 5 [ json_name = "log_index" ];
+  string erc20 = 6 [ json_name = "erc20" ];
+  string from_address = 7 [ json_name = "from_address" ];
+  string to_address = 8 [ json_name = "to_address" ];
+  string value = 9 [ json_name = "value" ];
+}
+
+message ExecutionCanonicalErc721Transfers { repeated ExecutionErc721Transfer erc721_transfers = 1 [ json_name = "erc721_transfers" ]; }
+message ExecutionErc721Transfer {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  uint64 log_index = 5 [ json_name = "log_index" ];
+  string erc721 = 6 [ json_name = "erc721" ];
+  string from_address = 7 [ json_name = "from_address" ];
+  string to_address = 8 [ json_name = "to_address" ];
+  string token = 9 [ json_name = "token" ];
+}
+
+message ExecutionCanonicalContracts { repeated ExecutionContract contracts = 1 [ json_name = "contracts" ]; }
+message ExecutionContract {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  string transaction_hash = 2 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 3 [ json_name = "internal_index" ];
+  uint32 create_index = 4 [ json_name = "create_index" ];
+  string contract_address = 5 [ json_name = "contract_address" ];
+  string deployer = 6 [ json_name = "deployer" ];
+  string factory = 7 [ json_name = "factory" ];
+  string init_code = 8 [ json_name = "init_code" ];
+  google.protobuf.StringValue code = 9 [ json_name = "code" ];
+  string init_code_hash = 10 [ json_name = "init_code_hash" ];
+  uint32 n_init_code_bytes = 11 [ json_name = "n_init_code_bytes" ];
+  uint32 n_code_bytes = 12 [ json_name = "n_code_bytes" ];
+  string code_hash = 13 [ json_name = "code_hash" ];
+}
+
+message ExecutionCanonicalBalanceDiffs { repeated ExecutionBalanceDiff balance_diffs = 1 [ json_name = "balance_diffs" ]; }
+message ExecutionBalanceDiff {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string address = 5 [ json_name = "address" ];
+  string from_value = 6 [ json_name = "from_value" ];
+  string to_value = 7 [ json_name = "to_value" ];
+}
+
+message ExecutionCanonicalStorageDiffs { repeated ExecutionStorageDiff storage_diffs = 1 [ json_name = "storage_diffs" ]; }
+message ExecutionStorageDiff {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string address = 5 [ json_name = "address" ];
+  string slot = 6 [ json_name = "slot" ];
+  string from_value = 7 [ json_name = "from_value" ];
+  string to_value = 8 [ json_name = "to_value" ];
+}
+
+message ExecutionCanonicalNonceDiffs { repeated ExecutionNonceDiff nonce_diffs = 1 [ json_name = "nonce_diffs" ]; }
+message ExecutionNonceDiff {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string address = 5 [ json_name = "address" ];
+  uint64 from_value = 6 [ json_name = "from_value" ];
+  uint64 to_value = 7 [ json_name = "to_value" ];
+}
+
+message ExecutionCanonicalBalanceReads { repeated ExecutionBalanceRead balance_reads = 1 [ json_name = "balance_reads" ]; }
+message ExecutionBalanceRead {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string address = 5 [ json_name = "address" ];
+  string balance = 6 [ json_name = "balance" ];
+}
+
+message ExecutionCanonicalStorageReads { repeated ExecutionStorageRead storage_reads = 1 [ json_name = "storage_reads" ]; }
+message ExecutionStorageRead {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string contract_address = 5 [ json_name = "contract_address" ];
+  string slot = 6 [ json_name = "slot" ];
+  string value = 7 [ json_name = "value" ];
+}
+
+message ExecutionCanonicalNonceReads { repeated ExecutionNonceRead nonce_reads = 1 [ json_name = "nonce_reads" ]; }
+message ExecutionNonceRead {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 4 [ json_name = "internal_index" ];
+  string address = 5 [ json_name = "address" ];
+  uint64 nonce = 6 [ json_name = "nonce" ];
+}
+
+message ExecutionCanonicalFourByteCounts { repeated ExecutionFourByteCount four_byte_counts = 1 [ json_name = "four_byte_counts" ]; }
+message ExecutionFourByteCount {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  uint64 transaction_index = 2 [ json_name = "transaction_index" ];
+  string transaction_hash = 3 [ json_name = "transaction_hash" ];
+  string signature = 4 [ json_name = "signature" ];
+  uint64 size = 5 [ json_name = "size" ];
+  uint64 count = 6 [ json_name = "count" ];
+}
+
+message ExecutionCanonicalAddressAppearances { repeated ExecutionAddressAppearance address_appearances = 1 [ json_name = "address_appearances" ]; }
+message ExecutionAddressAppearance {
+  uint64 block_number = 1 [ json_name = "block_number" ];
+  string transaction_hash = 2 [ json_name = "transaction_hash" ];
+  uint32 internal_index = 3 [ json_name = "internal_index" ];
+  string address = 4 [ json_name = "address" ];
+  string relationship = 5 [ json_name = "relationship" ];
 }
 
 // DecoratedEvent is an event that has been decorated with additional
@@ -2641,48 +3174,102 @@ message DecoratedEvent {
         [ json_name = "EXECUTION_STATE_SIZE_DELTA" ];
     ExecutionMPTDepth execution_mpt_depth = 212
         [ json_name = "EXECUTION_MPT_DEPTH" ];
+    ExecutionCanonicalBlock execution_canonical_block = 213
+        [ json_name = "EXECUTION_CANONICAL_BLOCK" ];
+    ExecutionCanonicalTransaction execution_canonical_transaction = 214
+        [ json_name = "EXECUTION_CANONICAL_TRANSACTION" ];
+    ExecutionCanonicalLogs execution_canonical_logs = 215
+        [ json_name = "EXECUTION_CANONICAL_LOGS" ];
+    ExecutionCanonicalTraces execution_canonical_traces = 216
+        [ json_name = "EXECUTION_CANONICAL_TRACES" ];
+    ExecutionCanonicalNativeTransfers execution_canonical_native_transfers = 217
+        [ json_name = "EXECUTION_CANONICAL_NATIVE_TRANSFERS" ];
+    ExecutionCanonicalErc20Transfers execution_canonical_erc20_transfers = 218
+        [ json_name = "EXECUTION_CANONICAL_ERC20_TRANSFERS" ];
+    ExecutionCanonicalErc721Transfers execution_canonical_erc721_transfers = 219
+        [ json_name = "EXECUTION_CANONICAL_ERC721_TRANSFERS" ];
+    ExecutionCanonicalContracts execution_canonical_contracts = 220
+        [ json_name = "EXECUTION_CANONICAL_CONTRACTS" ];
+    ExecutionCanonicalBalanceDiffs execution_canonical_balance_diffs = 221
+        [ json_name = "EXECUTION_CANONICAL_BALANCE_DIFFS" ];
+    ExecutionCanonicalStorageDiffs execution_canonical_storage_diffs = 222
+        [ json_name = "EXECUTION_CANONICAL_STORAGE_DIFFS" ];
+    ExecutionCanonicalNonceDiffs execution_canonical_nonce_diffs = 223
+        [ json_name = "EXECUTION_CANONICAL_NONCE_DIFFS" ];
+    ExecutionCanonicalBalanceReads execution_canonical_balance_reads = 224
+        [ json_name = "EXECUTION_CANONICAL_BALANCE_READS" ];
+    ExecutionCanonicalStorageReads execution_canonical_storage_reads = 225
+        [ json_name = "EXECUTION_CANONICAL_STORAGE_READS" ];
+    ExecutionCanonicalNonceReads execution_canonical_nonce_reads = 226
+        [ json_name = "EXECUTION_CANONICAL_NONCE_READS" ];
+    ExecutionCanonicalFourByteCounts execution_canonical_four_byte_counts = 227
+        [ json_name = "EXECUTION_CANONICAL_FOUR_BYTE_COUNTS" ];
+    ExecutionCanonicalAddressAppearances execution_canonical_address_appearances = 228
+        [ json_name = "EXECUTION_CANONICAL_ADDRESS_APPEARANCES" ];
+    xatu.eth.v1.ElectraExecutionRequestDeposit eth_v2_beacon_block_execution_request_deposit = 229
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT" ];
+    xatu.eth.v1.ElectraExecutionRequestWithdrawal eth_v2_beacon_block_execution_request_withdrawal = 230
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_WITHDRAWAL" ];
+    xatu.eth.v1.ElectraExecutionRequestConsolidation eth_v2_beacon_block_execution_request_consolidation = 231
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_CONSOLIDATION" ];
+    BlockRewardData eth_v1_beacon_block_reward = 232
+        [ json_name = "BEACON_API_ETH_V1_BEACON_BLOCK_REWARD" ];
+    AttestationRewardData eth_v1_beacon_attestation_reward = 233
+        [ json_name = "BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD" ];
+    SyncCommitteeRewardData eth_v1_beacon_sync_committee_reward = 234
+        [ json_name = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD" ];
+    RandaoData eth_v1_beacon_state_randao = 235
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_RANDAO" ];
+    FinalityCheckpointData eth_v1_beacon_state_finality_checkpoint = 236
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_FINALITY_CHECKPOINT" ];
+    PendingDepositData eth_v1_beacon_state_pending_deposit = 237
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT" ];
+    PendingPartialWithdrawalData eth_v1_beacon_state_pending_partial_withdrawal = 238
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL" ];
+    PendingConsolidationData eth_v1_beacon_state_pending_consolidation = 239
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION" ];
 
     // EIP-7732 ePBS: Sentry SSE events
-    xatu.eth.v1.PayloadAttestationMessage eth_v1_events_payload_attestation = 213
+    xatu.eth.v1.PayloadAttestationMessage eth_v1_events_payload_attestation = 240
         [ json_name = "BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION" ];
-    xatu.eth.v1.SignedExecutionPayloadBid eth_v1_events_execution_payload_bid = 214
+    xatu.eth.v1.SignedExecutionPayloadBid eth_v1_events_execution_payload_bid = 241
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID" ];
-    xatu.eth.v1.SignedProposerPreferences eth_v1_events_proposer_preferences = 215
+    xatu.eth.v1.SignedProposerPreferences eth_v1_events_proposer_preferences = 242
         [ json_name = "BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES" ];
 
     // EIP-7732 ePBS: Cannon derived events
-    xatu.eth.v1.PayloadAttestation eth_v2_beacon_block_payload_attestation = 216
+    xatu.eth.v1.PayloadAttestation eth_v2_beacon_block_payload_attestation = 243
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION" ];
-    xatu.eth.v1.SignedExecutionPayloadBid eth_v2_beacon_block_execution_payload_bid = 217
+    xatu.eth.v1.SignedExecutionPayloadBid eth_v2_beacon_block_execution_payload_bid = 244
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID" ];
 
     // EIP-7732 ePBS: P2P gossip events (use gossipsub summary types)
-    xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope libp2p_trace_gossipsub_execution_payload_envelope = 218
+    xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope libp2p_trace_gossipsub_execution_payload_envelope = 245
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE" ];
-    xatu.libp2p.gossipsub.eth.ExecutionPayloadBid libp2p_trace_gossipsub_execution_payload_bid = 219
+    xatu.libp2p.gossipsub.eth.ExecutionPayloadBid libp2p_trace_gossipsub_execution_payload_bid = 246
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID" ];
-    xatu.libp2p.gossipsub.eth.PayloadAttestationMessage libp2p_trace_gossipsub_payload_attestation_message = 220
+    xatu.libp2p.gossipsub.eth.PayloadAttestationMessage libp2p_trace_gossipsub_payload_attestation_message = 247
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE" ];
-    xatu.libp2p.gossipsub.eth.ProposerPreferences libp2p_trace_gossipsub_proposer_preferences = 221
+    xatu.libp2p.gossipsub.eth.ProposerPreferences libp2p_trace_gossipsub_proposer_preferences = 248
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES" ];
 
     // EIP-7732 ePBS: Sentry SSE events (gossip + available variants)
-    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload_gossip = 222
+    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload_gossip = 249
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP" ];
-    xatu.eth.v1.ExecutionPayloadAvailable eth_v1_events_execution_payload_available = 223
+    xatu.eth.v1.ExecutionPayloadAvailable eth_v1_events_execution_payload_available = 250
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE" ];
 
     // EIP-7732 ePBS: Synthesized observability events (TYSM-instrumented)
-    xatu.eth.v1.PayloadStatusResolved beacon_synthetic_payload_status_resolved = 224
+    xatu.eth.v1.PayloadStatusResolved beacon_synthetic_payload_status_resolved = 251
         [ json_name = "BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED" ];
-    xatu.eth.v1.BuilderPendingPaymentSettlement beacon_synthetic_builder_pending_payment_settlement = 225
+    xatu.eth.v1.BuilderPendingPaymentSettlement beacon_synthetic_builder_pending_payment_settlement = 252
         [ json_name = "BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT" ];
-    xatu.eth.v1.PayloadAttestationProcessed beacon_synthetic_payload_attestation_processed = 226
+    xatu.eth.v1.PayloadAttestationProcessed beacon_synthetic_payload_attestation_processed = 253
         [ json_name = "BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED" ];
 
-    xatu.eth.v1.BlockAccessListChange eth_v2_beacon_block_access_list = 229
+    xatu.eth.v1.BlockAccessListChange eth_v2_beacon_block_access_list = 254
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
-    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload = 230
+    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload = 255
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
   };
 }

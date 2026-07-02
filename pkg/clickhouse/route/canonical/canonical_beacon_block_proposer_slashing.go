@@ -39,11 +39,59 @@ func (b *canonicalBeaconBlockProposerSlashingBatch) FlattenTo(event *xatu.Decora
 		return fmt.Errorf("nil eth_v2_beacon_block_proposer_slashing payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockProposerSlashingBatch) validate(event *xatu.DecoratedEvent) error {
+	slashing := event.GetEthV2BeaconBlockProposerSlashing()
+
+	if err := validateProposerSlashingHeader(slashing.GetSignedHeader_1(), "signed_header_1"); err != nil {
+		return err
+	}
+
+	if err := validateProposerSlashingHeader(slashing.GetSignedHeader_2(), "signed_header_2"); err != nil {
+		return err
+	}
+
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockProposerSlashing()
+	if additional == nil {
+		return fmt.Errorf("nil additional data: %w", route.ErrInvalidEvent)
+	}
+
+	block := additional.GetBlock()
+	if block == nil {
+		return fmt.Errorf("nil block identifier: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetRoot() == "" {
+		return fmt.Errorf("empty block_root: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetVersion() == "" {
+		return fmt.Errorf("empty block_version: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetSlot().GetStartDateTime() == nil {
+		return fmt.Errorf("nil slot_start_date_time: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetEpoch().GetStartDateTime() == nil {
+		return fmt.Errorf("nil epoch_start_date_time: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("empty meta_network_name: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }
@@ -159,4 +207,33 @@ func (b *canonicalBeaconBlockProposerSlashingBatch) appendAdditionalData(event *
 
 	appendBlockIdentifier(additional.GetBlock(),
 		&b.Slot, &b.SlotStartDateTime, &b.Epoch, &b.EpochStartDateTime, &b.BlockVersion, &b.BlockRoot)
+}
+
+func validateProposerSlashingHeader(header *ethv1.SignedBeaconBlockHeaderV2, name string) error {
+	if header == nil {
+		return fmt.Errorf("nil %s: %w", name, route.ErrInvalidEvent)
+	}
+
+	if header.GetSignature() == "" {
+		return fmt.Errorf("empty %s_signature: %w", name, route.ErrInvalidEvent)
+	}
+
+	msg := header.GetMessage()
+	if msg == nil {
+		return fmt.Errorf("nil %s_message: %w", name, route.ErrInvalidEvent)
+	}
+
+	if msg.GetBodyRoot() == "" {
+		return fmt.Errorf("empty %s_message_body_root: %w", name, route.ErrInvalidEvent)
+	}
+
+	if msg.GetParentRoot() == "" {
+		return fmt.Errorf("empty %s_message_parent_root: %w", name, route.ErrInvalidEvent)
+	}
+
+	if msg.GetStateRoot() == "" {
+		return fmt.Errorf("empty %s_message_state_root: %w", name, route.ErrInvalidEvent)
+	}
+
+	return nil
 }

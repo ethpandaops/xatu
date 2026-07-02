@@ -464,7 +464,7 @@ func mockGloasBlock() *gloas.BeaconBlock {
 				},
 			},
 			PayloadAttestations: []*gloas.PayloadAttestation{},
-			ParentExecutionRequests: &electra.ExecutionRequests{
+			ParentExecutionRequests: &gloas.ExecutionRequests{
 				Deposits:       []*electra.DepositRequest{},
 				Withdrawals:    []*electra.WithdrawalRequest{},
 				Consolidations: []*electra.ConsolidationRequest{},
@@ -533,7 +533,7 @@ func TestNewEventBlockFromGloas(t *testing.T) {
 					Signature: phase0.BLSSignature{},
 				},
 			},
-			ParentExecutionRequests: &electra.ExecutionRequests{},
+			ParentExecutionRequests: &gloas.ExecutionRequests{},
 		},
 	}
 

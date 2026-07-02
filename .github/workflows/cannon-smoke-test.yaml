@@ -49,7 +49,12 @@ jobs:
         context: .
         load: true
         tags: ethpandaops/xatu:local
-        cache-from: type=gha
+        # Pull the cryo-builder layer from the release pipeline's registry
+        # buildcache so a cold PR branch reuses the prebuilt cryo instead of
+        # recompiling it (~10 min). Read-only: PRs keep writing only gha cache.
+        cache-from: |
+          type=gha
+          type=registry,ref=ethpandaops/xatu:cryo-buildcache
         cache-to: type=gha,mode=max
     - name: Fetch finalized epoch from beacon node
       id: beacon
@@ -162,7 +167,7 @@ jobs:
         # the target CH and fails fatal if the schema isn't applied. So
         # block until xatu-clickhouse-migrator has exited successfully.
         echo "Waiting for xatu-clickhouse-migrator to apply the schema..."
-        for i in $(seq 1 60); do
+        for i in $(seq 1 120); do
           status=$(docker inspect --format='{{.State.Status}}' xatu-clickhouse-migrator 2>/dev/null || echo "missing")
           exit_code=$(docker inspect --format='{{.State.ExitCode}}' xatu-clickhouse-migrator 2>/dev/null || echo "")
           if [ "$status" = "exited" ] && [ "$exit_code" = "0" ]; then
@@ -174,12 +179,12 @@ jobs:
             docker logs xatu-clickhouse-migrator 2>&1 | tail -100
             exit 1
           fi
-          if [ "$i" -eq 60 ]; then
-            echo "::error::xatu-clickhouse-migrator did not finish within 120s (status=$status)"
+          if [ "$i" -eq 120 ]; then
+            echo "::error::xatu-clickhouse-migrator did not finish within 240s (status=$status)"
             docker logs xatu-clickhouse-migrator 2>&1 | tail -100
             exit 1
           fi
-          echo "  migrator status=$status (attempt $i/60)..."
+          echo "  migrator status=$status (attempt $i/120)..."
           sleep 2
         done
 
@@ -232,38 +237,52 @@ jobs:
         labels:
           ethpandaops: rocks
 
-        # Only enable derivers for event types we're testing
+        # Derivers are grouped by layer (consensus/execution). Consensus
+        # derivers default to enabled:true, so every deriver this test does NOT
+        # assert must be explicitly disabled. Execution (cryo) derivers default
+        # to enabled:false and are omitted entirely — this test is consensus-only,
+        # so no ethereum.execution / EL RPC is required.
         derivers:
-          attesterSlashing:
-            enabled: false
-          blsToExecutionChange:
-            enabled: false
-          deposit:
-            enabled: false
-          withdrawal:
-            enabled: true
-          executionTransaction:
-            enabled: true
-          proposerSlashing:
-            enabled: false
-          voluntaryExit:
-            enabled: false
-          beaconBlock:
-            enabled: true
-          beaconBlobSidecar:
-            enabled: true
-          proposerDuty:
-            enabled: true
-          beaconCommittee:
-            enabled: true
+          consensus:
+            withdrawal:
+              enabled: true
+            executionTransaction:
+              enabled: true
+            beaconBlock:
+              enabled: true
+            beaconBlobSidecar:
+              enabled: true
+            proposerDuty:
+              enabled: true
+            beaconCommittee:
+              enabled: true
+            attesterSlashing:
+              enabled: false
+            proposerSlashing:
+              enabled: false
+            blsToExecutionChange:
+              enabled: false
+            deposit:
+              enabled: false
+            voluntaryExit:
+              enabled: false
+            elaboratedAttestation:
+              enabled: false
+            beaconValidators:
+              enabled: false
+            beaconSyncCommittee:
+              enabled: false
+            beaconBlockSyncAggregate:
+              enabled: false
 
         ntpServer: time.google.com
 
         ethereum:
-          beaconNodeAddress: "https://mainnet-archive-lb-bn.utility.production.platform.ethpandaops.io"
-          beaconNodeHeaders:
-            Authorization: "AUTH_HEADER"
           overrideNetworkName: "$NETWORK_NAME"
+          beacon:
+            address: "https://mainnet-archive-lb-bn.utility.production.platform.ethpandaops.io"
+            headers:
+              Authorization: "AUTH_HEADER"
         coordinator:
           address: xatu-server:8080
 

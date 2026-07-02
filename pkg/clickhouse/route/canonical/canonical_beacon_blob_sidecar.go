@@ -68,6 +68,59 @@ func (b *canonicalBeaconBlobSidecarBatch) validate(event *xatu.DecoratedEvent) e
 		return fmt.Errorf("nil Index: %w", route.ErrInvalidEvent)
 	}
 
+	if payload.GetBlockRoot() == "" {
+		return fmt.Errorf("empty BlockRoot: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetBlockParentRoot() == "" {
+		return fmt.Errorf("empty BlockParentRoot: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetKzgCommitment() == "" {
+		return fmt.Errorf("empty KzgCommitment: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetKzgProof() == "" {
+		return fmt.Errorf("empty KzgProof: %w", route.ErrInvalidEvent)
+	}
+
+	additional := event.GetMeta().GetClient().GetEthV1BeaconBlobSidecar()
+	if additional == nil {
+		return fmt.Errorf("nil EthV1BeaconBlobSidecar additional data: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetSlot() == nil {
+		return fmt.Errorf("nil additional Slot: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetSlot().GetNumber() == nil {
+		return fmt.Errorf("nil additional Slot Number: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetSlot().GetStartDateTime() == nil {
+		return fmt.Errorf("nil additional Slot StartDateTime: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetEpoch() == nil {
+		return fmt.Errorf("nil additional Epoch: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetEpoch().GetNumber() == nil {
+		return fmt.Errorf("nil additional Epoch Number: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetEpoch().GetStartDateTime() == nil {
+		return fmt.Errorf("nil additional Epoch StartDateTime: %w", route.ErrInvalidEvent)
+	}
+
+	if additional.GetVersionedHash() == "" {
+		return fmt.Errorf("empty VersionedHash: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("empty meta network name: %w", route.ErrInvalidEvent)
+	}
+
 	return nil
 }
 

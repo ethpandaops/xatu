@@ -6,7 +6,6 @@ import (
 	"net"
 
 	"github.com/ClickHouse/ch-go/proto"
-
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -20,7 +19,7 @@ type libp2pLeaveBatch struct {
 	TopicForkDigestValue                      proto.ColStr
 	TopicName                                 proto.ColStr
 	TopicEncoding                             proto.ColStr
-	PeerIDUniqueKey                           proto.ColInt64
+	LocalPeerIDUniqueKey                      proto.ColInt64
 	MetaClientName                            proto.ColStr
 	MetaClientVersion                         proto.ColStr
 	MetaClientImplementation                  proto.ColStr
@@ -96,7 +95,7 @@ func (b *libp2pLeaveBatch) Input() proto.Input {
 		{Name: "topic_fork_digest_value", Data: &b.TopicForkDigestValue},
 		{Name: "topic_name", Data: &b.TopicName},
 		{Name: "topic_encoding", Data: &b.TopicEncoding},
-		{Name: "peer_id_unique_key", Data: &b.PeerIDUniqueKey},
+		{Name: "local_peer_id_unique_key", Data: &b.LocalPeerIDUniqueKey},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
 		{Name: "meta_client_version", Data: &b.MetaClientVersion},
 		{Name: "meta_client_implementation", Data: &b.MetaClientImplementation},
@@ -121,7 +120,7 @@ func (b *libp2pLeaveBatch) Reset() {
 	b.TopicForkDigestValue.Reset()
 	b.TopicName.Reset()
 	b.TopicEncoding.Reset()
-	b.PeerIDUniqueKey.Reset()
+	b.LocalPeerIDUniqueKey.Reset()
 	b.MetaClientName.Reset()
 	b.MetaClientVersion.Reset()
 	b.MetaClientImplementation.Reset()
@@ -151,7 +150,7 @@ func (b *libp2pLeaveBatch) Snapshot() []map[string]any {
 		row["topic_fork_digest_value"] = b.TopicForkDigestValue.Row(i)
 		row["topic_name"] = b.TopicName.Row(i)
 		row["topic_encoding"] = b.TopicEncoding.Row(i)
-		row["peer_id_unique_key"] = b.PeerIDUniqueKey.Row(i)
+		row["local_peer_id_unique_key"] = b.LocalPeerIDUniqueKey.Row(i)
 		row["meta_client_name"] = b.MetaClientName.Row(i)
 		row["meta_client_version"] = b.MetaClientVersion.Row(i)
 		row["meta_client_implementation"] = b.MetaClientImplementation.Row(i)

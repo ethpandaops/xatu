@@ -9,6 +9,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/cryo"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	chSink "github.com/ethpandaops/xatu/pkg/output/clickhouse"
@@ -49,6 +50,9 @@ type Config struct {
 	// Derivers configures the cannon with event derivers
 	Derivers deriver.Config `yaml:"derivers"`
 
+	// Cryo configures the cryo runner used by the execution-layer derivers.
+	Cryo cryo.Config `yaml:"cryo"`
+
 	// Coordinator configuration
 	Coordinator coordinator.Config `yaml:"coordinator"`
 
@@ -73,6 +77,33 @@ func (c *Config) Validate() error {
 
 	if err := c.Derivers.Validate(); err != nil {
 		return fmt.Errorf("invalid derivers config: %w", err)
+	}
+
+	// Execution (EL) derivers collect via cryo from an execution node. When any
+	// are enabled, that node address and a valid cryo config are required.
+	if c.Derivers.Execution.AnyEnabled() {
+		if c.Ethereum.Execution.Address == "" {
+			return errors.New("ethereum.execution.address is required when any execution deriver is enabled")
+		}
+
+		if err := c.Cryo.Validate(); err != nil {
+			return fmt.Errorf("invalid cryo config: %w", err)
+		}
+	}
+
+	// The xatu-server output path is no longer supported by cannon: both CL and
+	// EL derivers write directly to clickhouse. Fail fast if a xatu-server output
+	// is configured rather than routing through a path we no longer support
+	// (the EL canonical_execution_* events have no xatu-server ingester handlers
+	// at all, and CL data is expected to land in clickhouse directly too).
+	for i := range c.Outputs {
+		out := &c.Outputs[i]
+		if out.SinkType == output.SinkTypeXatu {
+			return fmt.Errorf(
+				"the xatu-server output (type %q) is no longer supported by cannon: output %q must use a clickhouse output instead",
+				output.SinkTypeXatu, out.Name,
+			)
+		}
 	}
 
 	if err := c.Coordinator.Validate(); err != nil {
@@ -164,13 +195,17 @@ func (c *Config) ApplyOverrides(o *Override, log observability.ContextualLogger)
 	if o.BeaconNodeURL.Enabled {
 		log.Info("Overriding beacon node URL")
 
-		c.Ethereum.BeaconNodeAddress = o.BeaconNodeURL.Value
+		c.Ethereum.Beacon.Address = o.BeaconNodeURL.Value
 	}
 
 	if o.BeaconNodeAuthorizationHeader.Enabled {
 		log.Info("Overriding beacon node authorization header")
 
-		c.Ethereum.BeaconNodeHeaders["Authorization"] = o.BeaconNodeAuthorizationHeader.Value
+		if c.Ethereum.Beacon.Headers == nil {
+			c.Ethereum.Beacon.Headers = map[string]string{}
+		}
+
+		c.Ethereum.Beacon.Headers["Authorization"] = o.BeaconNodeAuthorizationHeader.Value
 	}
 
 	if o.XatuCoordinatorAuth.Enabled {

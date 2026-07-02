@@ -45,6 +45,22 @@ type flattenError struct {
 func (e *flattenError) Error() string { return fmt.Sprintf("flatten failed: %v", e.cause) }
 func (e *flattenError) Unwrap() error { return e.cause }
 
+// invalidEventError wraps a route.ErrInvalidEvent for a CANONICAL table.
+// Unlike flattenError it is deliberately NOT classified permanent: canonical
+// (cannon-backfilled) data is authoritative, so a dropped row is a permanent
+// gap in history. Halting — cannon does not advance its checkpoint, consumoor
+// NAKs for redelivery — forces a retry against complete upstream data rather
+// than silently dropping. Non-canonical (live/sentry) invalid events are still
+// dropped (they are point-in-time and cannot be re-fetched).
+type invalidEventError struct {
+	cause error
+}
+
+func (e *invalidEventError) Error() string {
+	return fmt.Sprintf("invalid canonical event: %v", e.cause)
+}
+func (e *invalidEventError) Unwrap() error { return e.cause }
+
 // limiterRejectedError indicates the adaptive concurrency limiter rejected
 // the request. This is not retryable (doWithRetry exits immediately) and not
 // permanent — the table writer simply waits for the next flush cycle.

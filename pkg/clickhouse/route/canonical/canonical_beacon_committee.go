@@ -51,11 +51,29 @@ func (b *canonicalBeaconCommitteeBatch) FlattenTo(event *xatu.DecoratedEvent) er
 		return fmt.Errorf("nil eth_v1_beacon_committee payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconCommitteeBatch) validate(event *xatu.DecoratedEvent) error {
+	committee := event.GetEthV1BeaconCommittee()
+
+	if committee.GetIndex() == nil {
+		return fmt.Errorf("nil Index: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("empty meta network name: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

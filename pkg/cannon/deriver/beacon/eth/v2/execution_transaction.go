@@ -245,18 +245,25 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	if block.Version >= spec.DataVersionDeneb {
 		sidecars, errr := b.beacon.Node().FetchBeaconBlockBlobs(ctx, xatuethv1.SlotAsString(slot))
 		if errr != nil {
-			var apiErr *api.Error
-			if errors.As(errr, &apiErr) {
-				switch apiErr.StatusCode {
-				case 404:
-					b.log.WithError(errr).WithField("slot", slot).WithContext(ctx).Debug("no beacon block blob sidecars found for slot")
-				case 503:
-					return nil, errors.New("beacon node is syncing")
-				default:
+			// From Gloas (EIP-7732) blobs are only obtainable by reconstruction
+			// from data columns, which not all clients serve reliably. Blob size
+			// stats are best-effort there — never block the transaction dataset.
+			if block.Version >= spec.DataVersionGloas {
+				b.log.WithError(errr).WithField("slot", slot).WithContext(ctx).Debug("failed to get blob sidecars for gloas block, continuing without blob stats")
+			} else {
+				var apiErr *api.Error
+				if errors.As(errr, &apiErr) {
+					switch apiErr.StatusCode {
+					case 404:
+						b.log.WithError(errr).WithField("slot", slot).WithContext(ctx).Debug("no beacon block blob sidecars found for slot")
+					case 503:
+						return nil, errors.New("beacon node is syncing")
+					default:
+						return nil, errors.Wrapf(errr, "failed to get beacon block blob sidecars for slot %d", slot)
+					}
+				} else {
 					return nil, errors.Wrapf(errr, "failed to get beacon block blob sidecars for slot %d", slot)
 				}
-			} else {
-				return nil, errors.Wrapf(errr, "failed to get beacon block blob sidecars for slot %d", slot)
 			}
 		}
 

@@ -535,17 +535,19 @@ func (o *xatuClickHouseOutput) rejectMessage(
 	if o.rejectSink == nil {
 		o.metrics.MessagesRejected().WithLabelValues(record.Reason).Inc()
 
-		// Route rejections are intentional — the event type simply isn't
-		// routed to any table. Safe to ack without a DLQ.
-		if record.Reason == rejectReasonRouteRejected {
+		// Route rejections and invalid events are permanent: the event is
+		// either unrouted or unflattenable (malformed / missing required
+		// fields) and will never become storable by being redelivered. Drop
+		// and ack — the MessagesRejected metric keeps them observable — rather
+		// than halting the partition on data we cannot fix.
+		if record.Reason == rejectReasonRouteRejected || record.Reason == rejectReasonInvalidEvent {
 			return nil
 		}
 
-		// For all other reasons (decode errors, permanent write failures,
-		// invalid events) failing the message forces Kafka to redeliver
-		// rather than silently dropping data when no DLQ is configured.
-		// Invalid events may become valid after a rolling deploy where a
-		// newer version adds support for new fields or event subtypes.
+		// Decode and write failures may be recoverable — a newer decoder
+		// version, or a sink/migration that has since caught up, can handle
+		// them — so fail the message to force Kafka redelivery rather than
+		// silently dropping data we might yet store.
 		return fmt.Errorf("no DLQ configured for rejected message (%s): %s", record.Reason, record.Err)
 	}
 

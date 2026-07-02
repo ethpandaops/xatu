@@ -6,15 +6,14 @@ package noderecord
 
 import (
 	fmt "fmt"
-	io "io"
-	sync "sync"
-
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
 	timestamppb "github.com/planetscale/vtprotobuf/types/known/timestamppb"
 	wrapperspb "github.com/planetscale/vtprotobuf/types/known/wrapperspb"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb1 "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb1 "google.golang.org/protobuf/types/known/wrapperspb"
+	io "io"
+	sync "sync"
 )
 
 const (

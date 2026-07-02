@@ -85,7 +85,7 @@ Events with only message ID:
 
 ### Group D: No Sharding Key Events
 Events without sharding keys:
-- `ADD_PEER`, `REMOVE_PEER`, `CONNECTED`, `DISCONNECTED`
+- `CONNECTED`, `DISCONNECTED`
 - `RECV_RPC`, `SEND_RPC`, `DROP_RPC` (parent events only)
 - `HANDLE_METADATA`, `HANDLE_STATUS`
 

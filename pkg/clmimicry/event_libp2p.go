@@ -22,15 +22,17 @@ var libp2pToXatuEventMap = map[string]string{
 	pubsubpb.TraceEvent_REJECT_MESSAGE.String():    xatu.Event_LIBP2P_TRACE_REJECT_MESSAGE.String(),
 	pubsubpb.TraceEvent_DUPLICATE_MESSAGE.String(): xatu.Event_LIBP2P_TRACE_DUPLICATE_MESSAGE.String(),
 	pubsubpb.TraceEvent_DELIVER_MESSAGE.String():   xatu.Event_LIBP2P_TRACE_DELIVER_MESSAGE.String(),
-	pubsubpb.TraceEvent_ADD_PEER.String():          xatu.Event_LIBP2P_TRACE_ADD_PEER.String(),
-	pubsubpb.TraceEvent_REMOVE_PEER.String():       xatu.Event_LIBP2P_TRACE_REMOVE_PEER.String(),
-	pubsubpb.TraceEvent_RECV_RPC.String():          xatu.Event_LIBP2P_TRACE_RECV_RPC.String(),
-	pubsubpb.TraceEvent_SEND_RPC.String():          xatu.Event_LIBP2P_TRACE_SEND_RPC.String(),
-	pubsubpb.TraceEvent_DROP_RPC.String():          xatu.Event_LIBP2P_TRACE_DROP_RPC.String(),
-	pubsubpb.TraceEvent_JOIN.String():              xatu.Event_LIBP2P_TRACE_JOIN.String(),
-	pubsubpb.TraceEvent_LEAVE.String():             xatu.Event_LIBP2P_TRACE_LEAVE.String(),
-	pubsubpb.TraceEvent_GRAFT.String():             xatu.Event_LIBP2P_TRACE_GRAFT.String(),
-	pubsubpb.TraceEvent_PRUNE.String():             xatu.Event_LIBP2P_TRACE_PRUNE.String(),
+	// ADD_PEER / REMOVE_PEER were removed from the gossipsub tracer in go-libp2p-pubsub v0.16
+	// (replaced by per-stream ON_NEW_OUTBOUND_STREAM / ON_CLOSED_OUTBOUND_STREAM events), so they
+	// are no longer mapped here. Peer connect/disconnect remains available via the host notifee
+	// (CONNECTED / DISCONNECTED).
+	pubsubpb.TraceEvent_RECV_RPC.String(): xatu.Event_LIBP2P_TRACE_RECV_RPC.String(),
+	pubsubpb.TraceEvent_SEND_RPC.String(): xatu.Event_LIBP2P_TRACE_SEND_RPC.String(),
+	pubsubpb.TraceEvent_DROP_RPC.String(): xatu.Event_LIBP2P_TRACE_DROP_RPC.String(),
+	pubsubpb.TraceEvent_JOIN.String():     xatu.Event_LIBP2P_TRACE_JOIN.String(),
+	pubsubpb.TraceEvent_LEAVE.String():    xatu.Event_LIBP2P_TRACE_LEAVE.String(),
+	pubsubpb.TraceEvent_GRAFT.String():    xatu.Event_LIBP2P_TRACE_GRAFT.String(),
+	pubsubpb.TraceEvent_PRUNE.String():    xatu.Event_LIBP2P_TRACE_PRUNE.String(),
 }
 
 // handleHermesLibp2pEvent handles libp2p pubsub protocol level events.
@@ -54,21 +56,6 @@ func (p *Processor) handleHermesLibp2pEvent(
 	networkStr := getNetworkID(clientMeta)
 
 	switch xatuEvent {
-	case xatu.Event_LIBP2P_TRACE_ADD_PEER.String():
-		if !p.events.AddPeerEnabled {
-			return nil
-		}
-
-		// Record that we received this event
-		p.metrics.AddEvent(xatuEvent, networkStr)
-
-		// Check if we should process this event based on trace/sharding config.
-		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
-			return nil
-		}
-
-		return p.handleAddPeerEvent(ctx, clientMeta, traceMeta, event)
-
 	case xatu.Event_LIBP2P_TRACE_RECV_RPC.String():
 		// Always process RPC events to extract child events, even if parent is disabled
 		// This allows child events (like IHAVE) to be captured independently
@@ -83,21 +70,6 @@ func (p *Processor) handleHermesLibp2pEvent(
 		// Always process RPC events to extract child events, even if parent is disabled
 		// This allows child events (like IHAVE) to be captured independently
 		return p.handleSendRPCEvent(ctx, clientMeta, traceMeta, event, xatuEvent, networkStr)
-
-	case xatu.Event_LIBP2P_TRACE_REMOVE_PEER.String():
-		if !p.events.RemovePeerEnabled {
-			return nil
-		}
-
-		// Record that we received this event
-		p.metrics.AddEvent(xatuEvent, networkStr)
-
-		// Check if we should process this event based on trace/sharding config.
-		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
-			return nil
-		}
-
-		return p.handleRemovePeerEvent(ctx, clientMeta, traceMeta, event)
 
 	case xatu.Event_LIBP2P_TRACE_JOIN.String():
 		if !p.events.JoinEnabled {
@@ -216,45 +188,6 @@ func (p *Processor) handleHermesLibp2pEvent(
 	return nil
 }
 
-func (p *Processor) handleRemovePeerEvent(
-	ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *TraceEvent,
-) error {
-	data, err := TraceEventToRemovePeer(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to remove peer event")
-	}
-
-	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
-	if !ok {
-		return fmt.Errorf("failed to clone client metadata")
-	}
-
-	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceRemovePeer{
-		Libp2PTraceRemovePeer: &xatu.ClientMeta_AdditionalLibP2PTraceRemovePeerData{
-			Metadata: traceMeta,
-		},
-	}
-
-	decoratedEvent := &xatu.DecoratedEvent{
-		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_TRACE_REMOVE_PEER,
-			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
-			Id:       uuid.New().String(),
-		},
-		Meta: &xatu.Meta{
-			Client: metadata,
-		},
-		Data: &xatu.DecoratedEvent_Libp2PTraceRemovePeer{
-			Libp2PTraceRemovePeer: data,
-		},
-	}
-
-	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
-}
-
 func (p *Processor) handleJoinEvent(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
@@ -273,7 +206,8 @@ func (p *Processor) handleJoinEvent(
 
 	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceJoin{
 		Libp2PTraceJoin: &xatu.ClientMeta_AdditionalLibP2PTraceJoinData{
-			Metadata: traceMeta,
+			Metadata:    traceMeta,
+			LocalPeerId: event.PeerID.String(),
 		},
 	}
 
@@ -312,7 +246,8 @@ func (p *Processor) handleLeaveEvent(
 
 	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceLeave{
 		Libp2PTraceLeave: &xatu.ClientMeta_AdditionalLibP2PTraceLeaveData{
-			Metadata: traceMeta,
+			Metadata:    traceMeta,
+			LocalPeerId: event.PeerID.String(),
 		},
 	}
 
@@ -496,45 +431,6 @@ func (p *Processor) handleSendRPCEvent(
 	}
 
 	return nil
-}
-
-func (p *Processor) handleAddPeerEvent(
-	ctx context.Context,
-	clientMeta *xatu.ClientMeta,
-	traceMeta *libp2p.TraceEventMetadata,
-	event *TraceEvent,
-) error {
-	data, err := TraceEventToAddPeer(event)
-	if err != nil {
-		return errors.Wrapf(err, "failed to convert event to add_peer event")
-	}
-
-	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
-	if !ok {
-		return fmt.Errorf("failed to clone client metadata")
-	}
-
-	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceAddPeer{
-		Libp2PTraceAddPeer: &xatu.ClientMeta_AdditionalLibP2PTraceAddPeerData{
-			Metadata: traceMeta,
-		},
-	}
-
-	decoratedEvent := &xatu.DecoratedEvent{
-		Event: &xatu.Event{
-			Name:     xatu.Event_LIBP2P_TRACE_ADD_PEER,
-			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
-			Id:       uuid.New().String(),
-		},
-		Meta: &xatu.Meta{
-			Client: metadata,
-		},
-		Data: &xatu.DecoratedEvent_Libp2PTraceAddPeer{
-			Libp2PTraceAddPeer: data,
-		},
-	}
-
-	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
 func (p *Processor) handleRecvRPCEvent(

@@ -23,7 +23,7 @@ import (
 var {{.TypeName}}EventNames = []xatu.Event_Name{}
 
 func init() {
-	route, err := route.NewStaticRoute(
+	r, err := route.NewStaticRoute(
 		{{.TypeName}}TableName,
 		{{.TypeName}}EventNames,
 		func() route.ColumnarBatch { return new{{.BatchName}}() },
@@ -34,7 +34,7 @@ func init() {
 		return
 	}
 
-	if err := route.Register(route); err != nil {
+	if err := route.Register(r); err != nil {
 		route.RecordError(err)
 	}
 }

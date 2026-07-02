@@ -38,11 +38,68 @@ func (b *canonicalBeaconBlockBlsToExecutionChangeBatch) FlattenTo(event *xatu.De
 		return fmt.Errorf("nil eth_v2_beacon_block_bls_to_execution_change payload: %w", route.ErrInvalidEvent)
 	}
 
+	if err := b.validate(event); err != nil {
+		return err
+	}
+
 	b.appendRuntime(event)
 	b.appendMetadata(event)
 	b.appendPayload(event)
 	b.appendAdditionalData(event)
 	b.rows++
+
+	return nil
+}
+
+func (b *canonicalBeaconBlockBlsToExecutionChangeBatch) validate(event *xatu.DecoratedEvent) error {
+	payload := event.GetEthV2BeaconBlockBlsToExecutionChange()
+
+	msg := payload.GetMessage()
+	if msg == nil {
+		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
+	}
+
+	if msg.GetFromBlsPubkey() == "" {
+		return fmt.Errorf("empty FromBlsPubkey: %w", route.ErrInvalidEvent)
+	}
+
+	if msg.GetToExecutionAddress() == "" {
+		return fmt.Errorf("empty ToExecutionAddress: %w", route.ErrInvalidEvent)
+	}
+
+	if payload.GetSignature() == "" {
+		return fmt.Errorf("empty Signature: %w", route.ErrInvalidEvent)
+	}
+
+	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockBlsToExecutionChange()
+	if additional == nil {
+		return fmt.Errorf("nil additional EthV2BeaconBlockBlsToExecutionChange: %w", route.ErrInvalidEvent)
+	}
+
+	block := additional.GetBlock()
+	if block == nil {
+		return fmt.Errorf("nil block identifier: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetRoot() == "" {
+		return fmt.Errorf("empty block root: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetVersion() == "" {
+		return fmt.Errorf("empty block version: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetSlot().GetStartDateTime() == nil {
+		return fmt.Errorf("nil slot start date time: %w", route.ErrInvalidEvent)
+	}
+
+	if block.GetEpoch().GetStartDateTime() == nil {
+		return fmt.Errorf("nil epoch start date time: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName() == "" {
+		return fmt.Errorf("empty meta network name: %w", route.ErrInvalidEvent)
+	}
 
 	return nil
 }

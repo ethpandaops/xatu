@@ -357,17 +357,22 @@ func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.Ve
 
 	extra.BlockRoot = fmt.Sprintf("%#x", blockRoot)
 
-	transactions, err := block.ExecutionTransactions()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get execution transactions")
-	}
+	// Gloas (EIP-7732) block bodies carry no transactions — they live in the
+	// execution payload envelope, covered by the execution transaction deriver.
+	// The body-level transaction stats are legitimately zero from Gloas onwards.
+	if block.Version < spec.DataVersionGloas {
+		transactions, err := block.ExecutionTransactions()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get execution transactions")
+		}
 
-	txs := make([][]byte, len(transactions))
-	for i, tx := range transactions {
-		txs[i] = tx
-	}
+		txs := make([][]byte, len(transactions))
+		for i, tx := range transactions {
+			txs[i] = tx
+		}
 
-	addTxData(txs)
+		addTxData(txs)
+	}
 
 	compressedTransactions := snappy.Encode(nil, transactionsBytes)
 	compressedTxSize := len(compressedTransactions)

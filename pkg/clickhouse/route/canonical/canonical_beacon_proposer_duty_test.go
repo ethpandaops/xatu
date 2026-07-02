@@ -30,6 +30,7 @@ func TestSnapshot_canonical_beacon_proposer_duty(t *testing.T) {
 			EthV1ProposerDuty: &ethv1.ProposerDuty{
 				Slot:           wrapperspb.UInt64(100),
 				ValidatorIndex: wrapperspb.UInt64(77),
+				Pubkey:         "0x933ad9491b62059dd065b560d256d8957a8c402cc6e8d8ee7290ae11e8f7329267a8811c397529dac52ae1342ba58c95",
 			},
 		},
 	}, 1, map[string]any{

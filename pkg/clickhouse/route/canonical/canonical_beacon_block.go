@@ -161,6 +161,10 @@ func canonicalBeaconBlockIdentityFields(eventBlock *ethv2.EventBlockV2) (parentR
 		blk := eventBlock.GetFuluBlock()
 
 		return blk.GetParentRoot(), blk.GetStateRoot(), blk.GetBody().GetEth1Data(), true
+	case eventBlock.GetGloasBlock() != nil:
+		blk := eventBlock.GetGloasBlock()
+
+		return blk.GetParentRoot(), blk.GetStateRoot(), blk.GetBody().GetEth1Data(), true
 	default:
 		return "", "", nil, false
 	}

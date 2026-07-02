@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -45,6 +46,14 @@ type chTableWriter struct {
 	insertQueryOK bool
 }
 
+// isCanonical reports whether this writer targets a canonical (cannon-derived,
+// backfilled) table. Canonical data is authoritative and gap-sensitive, so
+// invalid events halt rather than drop. Live/sentry tables are not prefixed
+// canonical_ and drop invalid events instead.
+func (tw *chTableWriter) isCanonical() bool {
+	return strings.HasPrefix(tw.baseTable, "canonical_")
+}
+
 func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEvent) ([]*xatu.DecoratedEvent, error) {
 	if len(events) == 0 {
 		return nil, nil
@@ -80,11 +89,12 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 		if errors.Is(err, route.ErrInvalidEvent) {
 			tw.metrics.WriteErrors().WithLabelValues(tw.table).Inc()
 
-			invalidEvents = append(invalidEvents, event)
+			canonical := tw.isCanonical()
 
 			if ok, suppressed := tw.logSampler.Allow("invalid_event"); ok {
 				entry := tw.log.WithError(err).
-					WithField("event_name", event.GetEvent().GetName().String())
+					WithField("event_name", event.GetEvent().GetName().String()).
+					WithField("canonical", canonical)
 				if meta := event.GetMeta(); meta != nil && meta.GetClient() != nil {
 					entry = entry.WithField("client_name", meta.GetClient().GetName())
 				}
@@ -97,8 +107,26 @@ func (tw *chTableWriter) flush(ctx context.Context, events []*xatu.DecoratedEven
 					entry = entry.WithField("event_json", string(jsonBytes))
 				}
 
-				entry.Warn("Skipping invalid event")
+				if canonical {
+					entry.Error("Halting on invalid canonical event (refusing to advance past a gap)")
+				} else {
+					entry.Warn("Skipping invalid event")
+				}
 			}
+
+			// Canonical (cannon-backfilled) data is authoritative: dropping an
+			// invalid row leaves a permanent gap. Halt so the caller retries
+			// against complete upstream data rather than advancing past it.
+			if canonical {
+				return invalidEvents, &tableWriteError{
+					table: tw.baseTable,
+					cause: &invalidEventError{cause: err},
+				}
+			}
+
+			// Non-canonical (live/sentry) data is point-in-time and cannot be
+			// re-fetched — drop it.
+			invalidEvents = append(invalidEvents, event)
 
 			continue
 		}

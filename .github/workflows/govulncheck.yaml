@@ -22,7 +22,13 @@ jobs:
           go-version-file: 'go.mod'
           check-latest: true
       - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+        # Pinned to v1.3.0: govulncheck v1.4.0 (latest) panics with
+        # "ForEachElement called on type containing *types.TypeParam" when scanning
+        # this codebase's generics under Go 1.26 — a bug in its bundled x/tools
+        # v0.46.0 (golang/go#80055, fixed by CL 786280 but not yet tagged; tracked
+        # in golang/go#80139). v1.3.0 ships the unaffected x/tools v0.44.0. Move
+        # back to @latest once x/vuln releases a version > v1.4.0 with the fix.
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
       - name: Run govulncheck
         run: |
           set +e
@@ -45,16 +51,18 @@ jobs:
           # The two docker vulns are server-side; we only use the client (via
           # testcontainers in codegen, and via go-builder-client transitively).
           #
-          # Stdlib advisories fixed in go1.26.3 — pinned to 1.26.2 to match
-          # goreleaser-cross:v1.26 (no v1.26.3 image yet). Remove these once the
-          # container catches up and go.mod/Dockerfile move to 1.26.3:
-          #   GO-2026-4918  net/http  (x/net portion fixed via v0.53.0 bump)
-          #   GO-2026-4971  net
-          #   GO-2026-4977  net/mail
-          #   GO-2026-4980  html/template
-          #   GO-2026-4982  html/template
-          #   GO-2026-4986  net/mail
-          ALLOWED='GO-2026-4479|GO-2026-4883|GO-2026-4887|GO-2026-4918|GO-2026-4971|GO-2026-4977|GO-2026-4980|GO-2026-4982|GO-2026-4986'
+          # Stdlib advisories — pinned to 1.26.2 to match goreleaser-cross:v1.26
+          # (no v1.26.3+ image yet). Remove these once the container catches up and
+          # go.mod/Dockerfile move past the listed fix version:
+          #   GO-2026-4918  net/http       (fixed in go1.26.3; x/net portion via v0.53.0 bump)
+          #   GO-2026-4971  net            (fixed in go1.26.3)
+          #   GO-2026-4977  net/mail       (fixed in go1.26.3)
+          #   GO-2026-4980  html/template  (fixed in go1.26.3)
+          #   GO-2026-4982  html/template  (fixed in go1.26.3)
+          #   GO-2026-4986  net/mail       (fixed in go1.26.3)
+          #   GO-2026-5037  crypto/x509    (fixed in go1.26.4)
+          #   GO-2026-5039  net/textproto  (fixed in go1.26.4)
+          ALLOWED='GO-2026-4479|GO-2026-4883|GO-2026-4887|GO-2026-4918|GO-2026-4971|GO-2026-4977|GO-2026-4980|GO-2026-4982|GO-2026-4986|GO-2026-5037|GO-2026-5039'
           REPORTED=$(echo "$OUTPUT" | grep -oE 'Vulnerability #[0-9]+: GO-[0-9]+-[0-9]+' | grep -oE 'GO-[0-9]+-[0-9]+' | sort -u)
           UNEXPECTED=$(echo "$REPORTED" | grep -vE "^($ALLOWED)$" || true)
           if [ -z "$UNEXPECTED" ] && [ -n "$REPORTED" ]; then

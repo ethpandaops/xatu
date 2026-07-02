@@ -1,3 +1,14 @@
+# Shared ClickHouse connection + migration matrix config for the db-init and
+# migrator services, kept in one place so the two can't drift.
+x-ch-migrate-env: &ch-migrate-env
+  CLICKHOUSE_HOST: xatu-clickhouse-01
+  CLICKHOUSE_PORT: "9000"
+  CLICKHOUSE_USER: "${CLICKHOUSE_USER:-default}"
+  CLICKHOUSE_PASSWORD: "${CLICKHOUSE_PASSWORD:-}"
+  # Each set directory migrates to a database of the same name; override here to
+  # remap/fan-out a set. The xatu set feeds both `default` and `devnets`.
+  MIGRATE_DB_OVERRIDES: "xatu=default,devnets"
+
 services:
   xatu-clickhouse-01:
     profiles:
@@ -426,6 +437,31 @@ services:
         condition: service_healthy
     networks:
       - xatu-net
+  # Creates the target databases for the migration matrix. Migration sets never
+  # CREATE DATABASE themselves (golang-migrate best practice); databases are
+  # discovered from the set directories (dir name == db name) plus
+  # MIGRATE_DB_OVERRIDES, and created before `migrate` connects.
+  xatu-clickhouse-db-init:
+    profiles:
+      - clickhouse
+      - ""
+    image: "clickhouse/clickhouse-server:${CHVER:-latest}"
+    container_name: xatu-clickhouse-db-init
+    volumes:
+      - ./deploy/migrations/clickhouse:/migrations:ro
+      - ./deploy/local/docker-compose/clickhouse-db-init.sh:/clickhouse-db-init.sh:ro
+    environment: *ch-migrate-env
+    entrypoint: ["/bin/bash", "/clickhouse-db-init.sh"]
+    depends_on:
+      xatu-clickhouse-01:
+        condition: service_healthy
+      xatu-clickhouse-02:
+        condition: service_healthy
+    networks:
+      - xatu-net
+  # Runs the migration matrix. Every directory under deploy/migrations/clickhouse/
+  # is migrated into the database of the same name (new directory == new database),
+  # unless remapped via MIGRATE_DB_OVERRIDES. See clickhouse-migrate.sh.
   xatu-clickhouse-migrator:
     profiles:
       - clickhouse
@@ -433,20 +469,13 @@ services:
     image: migrate/migrate
     container_name: xatu-clickhouse-migrator
     volumes:
-      - ./deploy/migrations/clickhouse:/migrations
-    command:
-      [
-        "-path",
-        "/migrations",
-        "-database",
-        "clickhouse://xatu-clickhouse-01:9000?username=${CLICKHOUSE_USER:-default}&password=${CLICKHOUSE_PASSWORD}&database=default&x-multi-statement=true",
-        "up",
-      ]
+      - ./deploy/migrations/clickhouse:/migrations:ro
+      - ./deploy/local/docker-compose/clickhouse-migrate.sh:/clickhouse-migrate.sh:ro
+    environment: *ch-migrate-env
+    entrypoint: ["/bin/sh", "/clickhouse-migrate.sh"]
     depends_on:
-      xatu-clickhouse-01:
-        condition: service_healthy
-      xatu-clickhouse-02:
-        condition: service_healthy
+      xatu-clickhouse-db-init:
+        condition: service_completed_successfully
     networks:
       - xatu-net
   tempo-init:

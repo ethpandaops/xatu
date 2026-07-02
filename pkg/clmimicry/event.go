@@ -49,8 +49,6 @@ const (
 //   - Blob Sidecars (p2p.GossipBlobSidecarMessage)
 //
 // 2. libp2p pubsub protocol level events:
-//   - "ADD_PEER": When a peer is added to the pubsub system
-//   - "REMOVE_PEER": When a peer is removed from the pubsub system
 //   - "RECV_RPC": When an RPC message is received
 //   - "SEND_RPC": When an RPC message is sent
 //   - "JOIN": When joining a pubsub topic

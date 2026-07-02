@@ -19,13 +19,29 @@ func TestSnapshot_canonical_beacon_block_attester_slashing(t *testing.T) {
 			AdditionalData: &xatu.ClientMeta_EthV2BeaconBlockAttesterSlashing{
 				EthV2BeaconBlockAttesterSlashing: &xatu.ClientMeta_AdditionalEthV2BeaconBlockAttesterSlashingData{
 					Block: &xatu.BlockIdentifier{
-						Epoch: testfixture.EpochAdditional(),
+						Slot:    testfixture.SlotEpochAdditional(),
+						Epoch:   testfixture.EpochAdditional(),
+						Version: "deneb",
+						Root:    "0x1111111111111111111111111111111111111111111111111111111111111111",
 					},
 				},
 			},
 		}),
 		Data: &xatu.DecoratedEvent_EthV2BeaconBlockAttesterSlashing{
-			EthV2BeaconBlockAttesterSlashing: &ethv1.AttesterSlashingV2{},
+			EthV2BeaconBlockAttesterSlashing: &ethv1.AttesterSlashingV2{
+				Attestation_1: &ethv1.IndexedAttestationV2{
+					Signature: "0xaaaa",
+					Data: &ethv1.AttestationDataV2{
+						BeaconBlockRoot: "0x2222222222222222222222222222222222222222222222222222222222222222",
+					},
+				},
+				Attestation_2: &ethv1.IndexedAttestationV2{
+					Signature: "0xbbbb",
+					Data: &ethv1.AttestationDataV2{
+						BeaconBlockRoot: "0x3333333333333333333333333333333333333333333333333333333333333333",
+					},
+				},
+			},
 		},
 	}, 1, map[string]any{
 		"meta_network_name": "mainnet",

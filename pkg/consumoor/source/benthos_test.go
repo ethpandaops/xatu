@@ -386,6 +386,35 @@ func TestWriteBatchRejectSinkFailureMakesMessageRetry(t *testing.T) {
 	assert.Equal(t, []int{0}, failedIndexesFromBatchError(t, msgs, err))
 }
 
+func TestRejectMessageNoDLQDropsInvalidEventsButHaltsRecoverable(t *testing.T) {
+	output := &xatuClickHouseOutput{
+		log:        logrus.New(),
+		metrics:    newTestMetrics(),
+		logSampler: telemetry.NewLogSampler(time.Minute),
+		rejectSink: nil,
+	}
+
+	// Permanently unstorable events (unrouted or unflattenable) are dropped
+	// and acked rather than halting the partition on data we cannot fix.
+	for _, reason := range []string{rejectReasonRouteRejected, rejectReasonInvalidEvent} {
+		err := output.rejectMessage(context.Background(), &rejectedRecord{
+			Reason: reason,
+			Err:    "permanently unstorable",
+		})
+		require.NoError(t, err, "reason %q should drop+ack without a DLQ", reason)
+	}
+
+	// Potentially-recoverable failures still fail the message so Kafka
+	// redelivers rather than silently dropping data we might yet store.
+	for _, reason := range []string{rejectReasonDecode, rejectReasonWritePermanent} {
+		err := output.rejectMessage(context.Background(), &rejectedRecord{
+			Reason: reason,
+			Err:    "recoverable failure",
+		})
+		require.Error(t, err, "reason %q should fail-fast without a DLQ", reason)
+	}
+}
+
 func TestWriteBatchTraceScopeDoesNotInheritBatchSpanWithoutHeader(t *testing.T) {
 	recorder := setupConsumoorTraceTest(t)
 	output := newTraceTestOutput(t)

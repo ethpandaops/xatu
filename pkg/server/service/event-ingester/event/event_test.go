@@ -1,6 +1,7 @@
 package event_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,6 +27,16 @@ func TestEventRouter_AllTypesHaveHandlers(t *testing.T) {
 	for _, eventType := range eventTypes {
 		if reason, skip := skippedEventTypes[eventType]; skip {
 			t.Logf("Skipping event type %s: %s", eventType, reason)
+			continue
+		}
+
+		// EXECUTION_CANONICAL_* (EL cannon) events are written directly to
+		// ClickHouse by cannon and never traverse the server event-ingester (the
+		// xatu-server output is rejected at cannon config validation), so they
+		// intentionally have no server-side handler.
+		if strings.HasPrefix(eventType, "EXECUTION_CANONICAL_") {
+			t.Logf("Skipping event type %s: EL cannon writes directly to clickhouse", eventType)
+
 			continue
 		}
 

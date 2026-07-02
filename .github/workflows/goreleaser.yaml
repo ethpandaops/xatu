@@ -87,3 +87,47 @@ jobs:
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e RELEASE_SUFFIX=${{ env.RELEASE_SUFFIX }} \
             goreleaser/goreleaser-cross:v1.26 release --clean --config .goreleaser.yaml.new
+
+      # The xatu+cryo image is the EL-cannon variant: it bundles the cryo binary
+      # alongside xatu. cryo is built from Rust source (./Dockerfile), so it does
+      # not fit goreleaser's copy-the-prebuilt-binary docker flow — and building
+      # it inside goreleaser would force every PR's test-build to compile cryo.
+      # We build it here, release-only. The cryo ref is pinned in ./Dockerfile
+      # (ARG CRYO_GIT_REF); that layer is cache-stable, so it only recompiles
+      # when the pinned ref changes.
+      #
+      # Cache is a registry image (ethpandaops/xatu:cryo-buildcache), NOT GHA
+      # cache: GHA cache is scoped per git ref, and releases are tag-triggered,
+      # so a v1.18.2 run could not read the v1.18.1 run's cache (only its own
+      # ref + the default branch). Registry cache is ref-agnostic, so every
+      # release reuses the prior cryo-builder layer and skips the ~10 min Rust
+      # compile until CRYO_GIT_REF changes (which invalidates that layer and
+      # recompiles once, then re-warms the cache).
+      #
+      # amd64-only: EL cannon runs on amd64 servers, and compiling cryo for
+      # arm64 under QEMU emulation takes 30-60+ min (it hung a release for
+      # 35+ min). Native amd64 compiles in ~2-3 min. Add linux/arm64 back here
+      # only if cannon ever needs to run on arm64.
+      - name: Derive cryo image version
+        run: |
+          echo "CRYO_GIT_COMMIT=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          # Match goreleaser's {{ .Version }} (tag with a single leading 'v' stripped).
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "CRYO_IMAGE_VERSION=${TAG_NAME#v}" >> "$GITHUB_ENV"
+      - name: Build and push xatu+cryo image
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          sbom: false
+          build-args: |
+            VERSION=${{ env.CRYO_IMAGE_VERSION }}
+            GIT_COMMIT=${{ env.CRYO_GIT_COMMIT }}
+          tags: |
+            ethpandaops/xatu:${{ env.CRYO_IMAGE_VERSION }}-cryo
+            ethpandaops/xatu:${{ env.RELEASE_SUFFIX && format('{0}-cryo-latest', env.RELEASE_SUFFIX) || 'cryo-latest' }}
+          cache-from: type=registry,ref=ethpandaops/xatu:cryo-buildcache
+          cache-to: type=registry,ref=ethpandaops/xatu:cryo-buildcache,mode=max,ignore-error=true

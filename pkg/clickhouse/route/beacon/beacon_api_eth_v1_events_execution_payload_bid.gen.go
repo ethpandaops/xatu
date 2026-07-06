@@ -17,7 +17,7 @@ type beaconApiEthV1EventsExecutionPayloadBidBatch struct {
 	EventDateTime                             proto.ColDateTime64
 	Slot                                      proto.ColUInt32
 	SlotStartDateTime                         proto.ColDateTime
-	PropagationSlotStartDiff                  proto.ColUInt32
+	PropagationSlotStartDiff                  proto.ColInt32
 	Epoch                                     proto.ColUInt32
 	EpochStartDateTime                        proto.ColDateTime
 	BuilderIndex                              proto.ColUInt64

@@ -93,7 +93,6 @@ func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) appendClientAdditionalDat
 		b.WallclockEpoch.Append(0)
 		b.WallclockEpochStartDateTime.Append(time.Time{})
 		b.PropagationSlotStartDiff.Append(0)
-		b.Version.Append(4294967295)
 		b.MessageID.Append("")
 		b.MessageSize.Append(0)
 		b.TopicLayer.Append("")
@@ -116,7 +115,6 @@ func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) appendClientAdditionalDat
 		b.WallclockEpoch.Append(0)
 		b.WallclockEpochStartDateTime.Append(time.Time{})
 		b.PropagationSlotStartDiff.Append(0)
-		b.Version.Append(4294967295)
 		b.MessageID.Append("")
 		b.MessageSize.Append(0)
 		b.TopicLayer.Append("")
@@ -129,8 +127,6 @@ func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) appendClientAdditionalDat
 	}
 
 	// Extract slot/epoch/wallclock/propagation fields.
-	var propagationSlotStartDiff uint32
-
 	setGossipsubSlotEpochFields(additional, func(f gossipsubSlotEpochResult) {
 		b.Slot.Append(f.Slot)
 		b.SlotStartDateTime.Append(time.Unix(f.SlotStartDateTime, 0))
@@ -141,11 +137,7 @@ func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) appendClientAdditionalDat
 		b.WallclockEpoch.Append(f.WallclockEpoch)
 		b.WallclockEpochStartDateTime.Append(time.Unix(f.WallclockEpochStartDateTime, 0))
 		b.PropagationSlotStartDiff.Append(f.PropagationSlotStartDiff)
-		propagationSlotStartDiff = f.PropagationSlotStartDiff
 	})
-
-	// Compute version for ReplacingMergeTree dedup.
-	b.Version.Append(4294967295 - propagationSlotStartDiff)
 
 	// Extract message fields.
 	b.MessageID.Append(wrappedStringValue(additional.GetMessageId()))

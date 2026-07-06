@@ -14,7 +14,6 @@ const libp2pGossipsubExecutionPayloadEnvelopeTableName route.TableName = "libp2p
 
 type libp2pGossipsubExecutionPayloadEnvelopeBatch struct {
 	UpdatedDateTime                           proto.ColDateTime
-	Version                                   proto.ColUInt32
 	EventDateTime                             proto.ColDateTime64
 	Slot                                      proto.ColUInt32
 	SlotStartDateTime                         proto.ColDateTime
@@ -113,7 +112,6 @@ func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) appendMetadata(event *xat
 func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) Input() proto.Input {
 	return proto.Input{
 		{Name: "updated_date_time", Data: &b.UpdatedDateTime},
-		{Name: "version", Data: &b.Version},
 		{Name: "event_date_time", Data: &b.EventDateTime},
 		{Name: "slot", Data: &b.Slot},
 		{Name: "slot_start_date_time", Data: &b.SlotStartDateTime},
@@ -155,7 +153,6 @@ func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) Input() proto.Input {
 
 func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) Reset() {
 	b.UpdatedDateTime.Reset()
-	b.Version.Reset()
 	b.EventDateTime.Reset()
 	b.Slot.Reset()
 	b.SlotStartDateTime.Reset()
@@ -200,9 +197,8 @@ func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) Snapshot() []map[string]a
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 38)
+		row := make(map[string]any, 37)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
-		row["version"] = b.Version.Row(i)
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["slot"] = b.Slot.Row(i)
 		row["slot_start_date_time"] = b.SlotStartDateTime.Row(i).Unix()

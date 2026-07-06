@@ -97,7 +97,11 @@ func (b *beaconApiEthV1EventsProposerPreferencesBatch) appendAdditionalData(
 
 	b.Slot.Append(uint32(additional.Slot)) //nolint:gosec // slot fits uint32
 	b.SlotStartDateTime.Append(time.Unix(additional.SlotStartDateTime, 0))
-	b.PropagationSlotStartDiff.Append(uint32(additional.PropagationSlotStartDiff)) //nolint:gosec // propagation diff fits uint32
-	b.Epoch.Append(uint32(additional.Epoch))                                       //nolint:gosec // epoch fits uint32
+	// Signed: proposer preferences propagate before slot start, so the diff can be
+	// negative. It is carried through the proto as a two's-complement uint64;
+	// reinterpret to int32.
+	//nolint:gosec // intentional two's-complement reinterpret of a signed ms diff
+	b.PropagationSlotStartDiff.Append(int32(int64(additional.PropagationSlotStartDiff)))
+	b.Epoch.Append(uint32(additional.Epoch)) //nolint:gosec // epoch fits uint32
 	b.EpochStartDateTime.Append(time.Unix(additional.EpochStartDateTime, 0))
 }

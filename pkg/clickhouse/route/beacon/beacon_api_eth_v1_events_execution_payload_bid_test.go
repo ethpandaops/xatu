@@ -83,3 +83,47 @@ func TestSnapshot_beacon_api_eth_v1_events_execution_payload_bid(t *testing.T) {
 		colBlobKzgCommitmentCount:     uint32(3),
 	})
 }
+
+// Bids are broadcast before their slot begins, so the propagation delay is
+// negative. It travels through the proto as a two's-complement uint64 and must
+// land as a signed Int32, not a ~4.29e9 underflow.
+func TestSnapshot_beacon_api_eth_v1_events_execution_payload_bid_preSlot(t *testing.T) {
+	if len(beaconApiEthV1EventsExecutionPayloadBidEventNames) == 0 {
+		t.Skip("no event names registered for beacon_api_eth_v1_events_execution_payload_bid")
+	}
+
+	const colPropagationSlotStartDiff = "propagation_slot_start_diff"
+
+	preSlotMs := int64(-400)
+
+	testfixture.AssertSnapshot(t, newbeaconApiEthV1EventsExecutionPayloadBidBatch(), &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     beaconApiEthV1EventsExecutionPayloadBidEventNames[0],
+			DateTime: testfixture.TS(),
+			Id:       testfixture.SnapshotID,
+		},
+		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
+			AdditionalData: &xatu.ClientMeta_EthV1EventsExecutionPayloadBid{
+				EthV1EventsExecutionPayloadBid: &xatu.ClientMeta_AdditionalEthV1EventsExecutionPayloadBidData{
+					Slot:  testfixture.SlotEpochAdditional(),
+					Epoch: testfixture.EpochAdditional(),
+					Propagation: &xatu.PropagationV2{
+						SlotStartDiff: wrapperspb.UInt64(uint64(preSlotMs)),
+					},
+				},
+			},
+		}),
+		Data: &xatu.DecoratedEvent_EthV1EventsExecutionPayloadBid{
+			EthV1EventsExecutionPayloadBid: &ethv1.SignedExecutionPayloadBid{
+				Message: &ethv1.ExecutionPayloadBid{
+					BlockHash:    repeatHex("2b", 32),
+					BuilderIndex: wrapperspb.UInt64(2),
+					Slot:         wrapperspb.UInt64(48752),
+				},
+				Signature: repeatHex("51", 96),
+			},
+		},
+	}, 1, map[string]any{
+		colPropagationSlotStartDiff: int32(preSlotMs),
+	})
+}

@@ -14,7 +14,6 @@ const libp2pGossipsubExecutionPayloadBidTableName route.TableName = "libp2p_goss
 
 type libp2pGossipsubExecutionPayloadBidBatch struct {
 	UpdatedDateTime                           proto.ColDateTime
-	Version                                   proto.ColUInt32
 	EventDateTime                             proto.ColDateTime64
 	Slot                                      proto.ColUInt32
 	SlotStartDateTime                         proto.ColDateTime
@@ -24,7 +23,7 @@ type libp2pGossipsubExecutionPayloadBidBatch struct {
 	WallclockSlotStartDateTime                proto.ColDateTime
 	WallclockEpoch                            proto.ColUInt32
 	WallclockEpochStartDateTime               proto.ColDateTime
-	PropagationSlotStartDiff                  proto.ColUInt32
+	PropagationSlotStartDiff                  proto.ColInt32
 	BuilderIndex                              proto.ColUInt64
 	BlockHash                                 route.SafeColFixedStr
 	ParentBlockHash                           route.SafeColFixedStr
@@ -119,7 +118,6 @@ func (b *libp2pGossipsubExecutionPayloadBidBatch) appendMetadata(event *xatu.Dec
 func (b *libp2pGossipsubExecutionPayloadBidBatch) Input() proto.Input {
 	return proto.Input{
 		{Name: "updated_date_time", Data: &b.UpdatedDateTime},
-		{Name: "version", Data: &b.Version},
 		{Name: "event_date_time", Data: &b.EventDateTime},
 		{Name: "slot", Data: &b.Slot},
 		{Name: "slot_start_date_time", Data: &b.SlotStartDateTime},
@@ -166,7 +164,6 @@ func (b *libp2pGossipsubExecutionPayloadBidBatch) Input() proto.Input {
 
 func (b *libp2pGossipsubExecutionPayloadBidBatch) Reset() {
 	b.UpdatedDateTime.Reset()
-	b.Version.Reset()
 	b.EventDateTime.Reset()
 	b.Slot.Reset()
 	b.SlotStartDateTime.Reset()
@@ -216,9 +213,8 @@ func (b *libp2pGossipsubExecutionPayloadBidBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 43)
+		row := make(map[string]any, 42)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
-		row["version"] = b.Version.Row(i)
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["slot"] = b.Slot.Row(i)
 		row["slot_start_date_time"] = b.SlotStartDateTime.Row(i).Unix()

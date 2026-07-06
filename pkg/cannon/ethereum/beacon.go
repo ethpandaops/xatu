@@ -460,6 +460,26 @@ func (b *BeaconNode) GetExecutionPayloadEnvelope(
 			Block: blockID,
 		})
 		if err != nil {
+			var apiErr *api.Error
+			if errors.As(err, &apiErr) && apiErr.StatusCode == 404 {
+				withheld, werr := b.payloadWithheld(ctx, blockID)
+				if werr != nil {
+					return nil, errors.Wrapf(err,
+						"envelope absent and reveal status undetermined (%s)", werr.Error())
+				}
+
+				if withheld {
+					b.log.WithField("block_id", blockID).
+						Info("Execution payload envelope permanently absent: builder withheld the payload")
+
+					var absent *gloas.SignedExecutionPayloadEnvelope
+
+					b.envelopeCache.Set(blockID, absent, time.Hour)
+
+					return absent, nil
+				}
+			}
+
 			return nil, err
 		}
 
@@ -494,6 +514,91 @@ func (b *BeaconNode) getExecutionPayloadProvider() (client.ExecutionPayloadProvi
 	}
 
 	return nil, errors.New("execution payload provider not available")
+}
+
+// payloadWithheld reports whether the canonical execution payload for the given
+// block was withheld by its builder. Under EIP-7732 the EL head only advances
+// when a payload is revealed, so the next canonical block's bid builds on this
+// block's promised block hash iff this payload was revealed. This separates a
+// permanently-absent envelope (withheld — the beacon API 404s it forever, on
+// every client) from one the node should be able to serve but can't (a data
+// gap worth retrying). Only block data is used, so the answer is available on
+// any node that retains blocks, including during backfill.
+func (b *BeaconNode) payloadWithheld(ctx context.Context, blockID string) (bool, error) {
+	block, err := b.GetBeaconBlock(ctx, blockID)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to get block %s", blockID)
+	}
+
+	if block == nil {
+		return false, errors.Errorf("no canonical block for id %s", blockID)
+	}
+
+	bid, slot, err := gloasBid(block)
+	if err != nil {
+		return false, err
+	}
+
+	sp, err := b.beacon.Spec()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to obtain spec")
+	}
+
+	lookahead := 2 * uint64(sp.SlotsPerEpoch)
+
+	for i := uint64(1); i <= lookahead; i++ {
+		next, err := b.GetBeaconBlock(ctx, fmt.Sprintf("%d", uint64(slot)+i))
+		if err != nil {
+			return false, errors.Wrapf(err, "failed to get block at slot %d", uint64(slot)+i)
+		}
+
+		if next == nil {
+			// Empty slot, keep walking forward.
+			continue
+		}
+
+		nextBid, _, err := gloasBid(next)
+		if err != nil {
+			return false, err
+		}
+
+		return bidPayloadWithheld(bid, nextBid)
+	}
+
+	return false, errors.Errorf("no canonical block within %d slots after slot %d", lookahead, slot)
+}
+
+// gloasBid extracts the execution payload bid and slot from a Gloas block.
+func gloasBid(block *spec.VersionedSignedBeaconBlock) (*gloas.ExecutionPayloadBid, phase0.Slot, error) {
+	if block.Version < spec.DataVersionGloas {
+		return nil, 0, errors.Errorf("block version %s predates gloas", block.Version)
+	}
+
+	if block.Gloas == nil || block.Gloas.Message == nil || block.Gloas.Message.Body == nil ||
+		block.Gloas.Message.Body.SignedExecutionPayloadBid == nil ||
+		block.Gloas.Message.Body.SignedExecutionPayloadBid.Message == nil {
+		return nil, 0, errors.New("gloas block is missing its execution payload bid")
+	}
+
+	return block.Gloas.Message.Body.SignedExecutionPayloadBid.Message, block.Gloas.Message.Slot, nil
+}
+
+// bidPayloadWithheld decides from two consecutive canonical bids whether the
+// earlier block's payload was withheld. The next bid builds on the earlier
+// bid's block hash iff that payload was revealed, and on the earlier bid's
+// parent hash iff it was withheld. Anything else means our view of the chain
+// is inconsistent (e.g. a reorg between fetches), so fail rather than guess.
+func bidPayloadWithheld(bid, nextBid *gloas.ExecutionPayloadBid) (bool, error) {
+	switch nextBid.ParentBlockHash {
+	case bid.BlockHash:
+		return false, nil
+	case bid.ParentBlockHash:
+		return true, nil
+	default:
+		return false, errors.Errorf(
+			"next bid parent block hash %#x matches neither promised block hash %#x nor parent %#x",
+			nextBid.ParentBlockHash, bid.BlockHash, bid.ParentBlockHash)
+	}
 }
 
 func (b *BeaconNode) DeleteValidatorsFromCache(stateID string) {

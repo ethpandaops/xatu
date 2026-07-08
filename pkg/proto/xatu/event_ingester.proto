@@ -22,7 +22,6 @@ import "pkg/proto/eth/v1/sync_committee.proto";
 import "pkg/proto/eth/v1/block_access_list.proto";
 import "pkg/proto/eth/v1/payload_attestation.proto";
 import "pkg/proto/eth/v1/execution_payload_bid.proto";
-import "pkg/proto/eth/v1/execution_payload_envelope.proto";
 import "pkg/proto/eth/v1/execution_payload_available.proto";
 import "pkg/proto/eth/v1/execution_payload_event.proto";
 import "pkg/proto/eth/v1/proposer_preferences.proto";

@@ -27,10 +27,10 @@ require (
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.17.3
-	github.com/ethpandaops/beacon v0.69.1-0.20260708062351-e36edcd54856
+	github.com/ethpandaops/beacon v0.69.1-0.20260708064159-77f719eed8c0
 	github.com/ethpandaops/ethcore v0.0.0-20260514003726-f67d7a6e9f91
 	github.com/ethpandaops/ethwallclock v0.4.0
-	github.com/ethpandaops/go-eth2-client v0.1.6-0.20260708061330-ed85bf5c3bab
+	github.com/ethpandaops/go-eth2-client v0.1.6-0.20260708064136-c504b7edf763
 	github.com/failsafe-go/failsafe-go v0.9.6
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6
@@ -284,7 +284,7 @@ require (
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20240618144021-706c95b2dd15 // indirect
 	github.com/prysmaticlabs/gohashtree v0.0.5-beta // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
-	github.com/quic-go/quic-go v0.59.0 // indirect
+	github.com/quic-go/quic-go v0.59.1 // indirect
 	github.com/quic-go/webtransport-go v0.10.0 // indirect
 	github.com/quipo/dependencysolver v0.0.0-20170801134659-2b009cb4ddcc // indirect
 	github.com/r3labs/sse/v2 v2.10.0 // indirect

@@ -108,7 +108,7 @@ func (p *Pipeline) ProcessAndSend(
 	group *auth.Group,
 	spanPrefix string,
 ) (uint64, error) {
-	filteredEvents, err := p.handler.Events(ctx, events, user, group)
+	filteredEvents, dedupKeys, err := p.handler.Events(ctx, events, user, group)
 	if err != nil {
 		return 0, fmt.Errorf("failed to process events: %w", err)
 	}
@@ -125,6 +125,11 @@ func (p *Pipeline) ProcessAndSend(
 		if err := sink.HandleNewDecoratedEvents(sinkCtx, filteredEvents); err != nil {
 			span.SetStatus(ocodes.Error, err.Error())
 			span.End()
+
+			// The events did not reach a durable sink. Release any dedup marks so a
+			// retry of this batch is not dropped as a duplicate of a write that never
+			// landed.
+			p.handler.ReleaseDedupKeys(ctx, dedupKeys)
 
 			return 0, fmt.Errorf("failed to send events to sink %s: %w", sink.Name(), err)
 		}

@@ -134,6 +134,16 @@ type Event interface {
 	AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta
 }
 
+// DedupKeyer is implemented by events that mark themselves in the shared cache during
+// Filter to drop duplicates. It exposes the key that was marked so the pipeline can
+// release it when the event fails to reach a durable sink, otherwise a retry of the
+// same event would be dropped as a duplicate of a write that never landed.
+type DedupKeyer interface {
+	// DedupKey returns the cache key marked during Filter, or an empty string if the
+	// event did not mark one.
+	DedupKey() string
+}
+
 type EventRouter struct {
 	log           observability.ContextualLogger
 	cache         store.Cache

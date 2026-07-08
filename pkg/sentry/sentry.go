@@ -621,7 +621,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 		// EIP-7732 ePBS SSE handlers. The connected beacon node only emits
 		// these on Gloas+ networks; pre-Gloas the broker simply receives no
 		// events on these topics so the handlers are no-ops.
-		s.beacon.Node().OnExecutionPayload(ctx, func(ctx context.Context, envelope *gloas.SignedExecutionPayloadEnvelope) error {
+		s.beacon.Node().OnExecutionPayload(ctx, func(ctx context.Context, ev *eth2v1.ExecutionPayloadEvent) error {
 			now := time.Now().Add(s.clockDrift)
 
 			meta, err := s.createNewClientMeta(ctx)
@@ -629,7 +629,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 				return err
 			}
 
-			event := v1.NewEventsExecutionPayload(s.log, envelope, now, s.beacon, s.duplicateCache.BeaconETHV1EventsExecutionPayload, meta)
+			event := v1.NewEventsExecutionPayload(s.log, ev, now, s.beacon, s.duplicateCache.BeaconETHV1EventsExecutionPayload, meta)
 
 			ignore, err := event.ShouldIgnore(ctx)
 			if err != nil {
@@ -648,7 +648,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return s.handleNewDecoratedEvent(ctx, decoratedEvent)
 		})
 
-		s.beacon.Node().OnExecutionPayloadGossip(ctx, func(ctx context.Context, envelope *gloas.SignedExecutionPayloadEnvelope) error {
+		s.beacon.Node().OnExecutionPayloadGossip(ctx, func(ctx context.Context, ev *eth2v1.ExecutionPayloadEvent) error {
 			now := time.Now().Add(s.clockDrift)
 
 			meta, err := s.createNewClientMeta(ctx)
@@ -656,7 +656,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 				return err
 			}
 
-			event := v1.NewEventsExecutionPayloadGossip(s.log, envelope, now, s.beacon, s.duplicateCache.BeaconETHV1EventsExecutionPayloadGossip, meta)
+			event := v1.NewEventsExecutionPayloadGossip(s.log, ev, now, s.beacon, s.duplicateCache.BeaconETHV1EventsExecutionPayloadGossip, meta)
 
 			ignore, err := event.ShouldIgnore(ctx)
 			if err != nil {

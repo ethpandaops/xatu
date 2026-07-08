@@ -624,6 +624,24 @@ func NewExecutionPayloadAvailableFromAPIV1(ev *apiv1.ExecutionPayloadAvailableEv
 	}
 }
 
+// NewExecutionPayloadEventFromAPIV1 converts the SDK's flat execution_payload /
+// execution_payload_gossip event (EIP-7732) into our proto representation.
+// ExecutionOptimistic is only meaningful on the execution_payload event; the
+// gossip event leaves it false.
+func NewExecutionPayloadEventFromAPIV1(ev *apiv1.ExecutionPayloadEvent) *ExecutionPayloadEvent {
+	if ev == nil {
+		return nil
+	}
+
+	return &ExecutionPayloadEvent{
+		Slot:                &wrapperspb.UInt64Value{Value: uint64(ev.Slot)},
+		BuilderIndex:        &wrapperspb.UInt64Value{Value: ev.BuilderIndex},
+		BlockHash:           ev.BlockHash.String(),
+		BlockRoot:           ev.BlockRoot.String(),
+		ExecutionOptimistic: ev.ExecutionOptimistic,
+	}
+}
+
 // NewPayloadAttestationsFromGloas converts the SDK's Gloas (EIP-7732) payload
 // attestations into our proto representation. Up to MAX_PAYLOAD_ATTESTATIONS=4
 // entries per block.

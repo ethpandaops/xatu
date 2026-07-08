@@ -16,14 +16,13 @@ func TestSnapshot_beacon_api_eth_v1_events_execution_payload_gossip(t *testing.T
 		t.Skip("no event names registered for beacon_api_eth_v1_events_execution_payload_gossip")
 	}
 
-	// A self-built payload envelope: the proposer reveals its own payload, so
+	// A self-built payload: the proposer reveals its own payload, so
 	// builder_index is the EIP-7732 self-build sentinel (max uint64).
 	const selfBuiltIndex = uint64(math.MaxUint64)
 
 	var (
 		beaconBlockRoot = repeatHex("6a", 32)
 		blockHash       = repeatHex("7b", 32)
-		stateRoot       = repeatHex("8c", 32)
 	)
 
 	testfixture.AssertSnapshot(t, newbeaconApiEthV1EventsExecutionPayloadGossipBatch(), &xatu.DecoratedEvent{
@@ -42,18 +41,11 @@ func TestSnapshot_beacon_api_eth_v1_events_execution_payload_gossip(t *testing.T
 			},
 		}),
 		Data: &xatu.DecoratedEvent_EthV1EventsExecutionPayloadGossip{
-			EthV1EventsExecutionPayloadGossip: &ethv1.SignedExecutionPayloadEnvelope{
-				Message: &ethv1.ExecutionPayloadEnvelope{
-					BuilderIndex:    wrapperspb.UInt64(selfBuiltIndex),
-					BeaconBlockRoot: beaconBlockRoot,
-					Payload: &ethv1.ExecutionPayloadGloas{
-						BlockHash:  blockHash,
-						StateRoot:  stateRoot,
-						GasLimit:   wrapperspb.UInt64(60000000),
-						SlotNumber: wrapperspb.UInt64(48752),
-					},
-				},
-				Signature: repeatHex("52", 96),
+			EthV1EventsExecutionPayloadGossip: &ethv1.ExecutionPayloadEvent{
+				Slot:         wrapperspb.UInt64(48752),
+				BuilderIndex: wrapperspb.UInt64(selfBuiltIndex),
+				BlockHash:    blockHash,
+				BlockRoot:    beaconBlockRoot,
 			},
 		},
 	}, 1, map[string]any{
@@ -61,7 +53,5 @@ func TestSnapshot_beacon_api_eth_v1_events_execution_payload_gossip(t *testing.T
 		colBlockRoot:                  beaconBlockRoot,
 		colBuilderIndex:               selfBuiltIndex,
 		colExecBlockHash:              blockHash,
-		colStateRoot:                  stateRoot,
-		colSlotNumber:                 uint64(48752),
 	})
 }

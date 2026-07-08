@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+// EIP-7732: ePBS execution_payload / execution_payload_gossip SSE events
+// https://github.com/ethereum/beacon-APIs/blob/master/apis/eventstream/index.yaml
+//
+// Both events carry a FLAT summary of a revealed execution payload, not the
+// full SignedExecutionPayloadEnvelope:
+//   execution_payload        - fires on import into the fork-choice store;
+//                              includes execution_optimistic.
+//   execution_payload_gossip - fires on gossip validation; omits
+//                              execution_optimistic.
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
+
+// ExecutionPayloadEvent is the flat summary carried by the execution_payload
+// and execution_payload_gossip SSE events.
+message ExecutionPayloadEvent {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
+
+  google.protobuf.UInt64Value builder_index = 2 [ json_name = "builder_index" ];
+
+  string block_hash = 3 [ json_name = "block_hash" ];
+
+  string block_root = 4 [ json_name = "block_root" ];
+
+  // execution_optimistic is only present on the execution_payload event, not on
+  // execution_payload_gossip.
+  bool execution_optimistic = 5 [ json_name = "execution_optimistic" ];
+}

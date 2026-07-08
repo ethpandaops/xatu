@@ -23,8 +23,6 @@ type beaconApiEthV1EventsExecutionPayloadGossipBatch struct {
 	BlockRoot                                 route.SafeColFixedStr
 	BuilderIndex                              proto.ColUInt64
 	BlockHash                                 route.SafeColFixedStr
-	StateRoot                                 route.SafeColFixedStr
-	SlotNumber                                *proto.ColNullable[uint64]
 	MetaClientName                            proto.ColStr
 	MetaClientID                              proto.ColStr
 	MetaClientVersion                         proto.ColStr
@@ -55,8 +53,6 @@ func newbeaconApiEthV1EventsExecutionPayloadGossipBatch() *beaconApiEthV1EventsE
 		EventDateTime:                       func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
 		BlockRoot:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		BlockHash:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		StateRoot:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
-		SlotNumber:                          new(proto.ColUInt64).Nullable(),
 		MetaClientIP:                        new(proto.ColIPv6).Nullable(),
 		MetaClientGeoLongitude:              new(proto.ColFloat64).Nullable(),
 		MetaClientGeoLatitude:               new(proto.ColFloat64).Nullable(),
@@ -138,8 +134,6 @@ func (b *beaconApiEthV1EventsExecutionPayloadGossipBatch) Input() proto.Input {
 		{Name: "block_root", Data: &b.BlockRoot},
 		{Name: "builder_index", Data: &b.BuilderIndex},
 		{Name: "block_hash", Data: &b.BlockHash},
-		{Name: "state_root", Data: &b.StateRoot},
-		{Name: "slot_number", Data: b.SlotNumber},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
 		{Name: "meta_client_id", Data: &b.MetaClientID},
 		{Name: "meta_client_version", Data: &b.MetaClientVersion},
@@ -176,8 +170,6 @@ func (b *beaconApiEthV1EventsExecutionPayloadGossipBatch) Reset() {
 	b.BlockRoot.Reset()
 	b.BuilderIndex.Reset()
 	b.BlockHash.Reset()
-	b.StateRoot.Reset()
-	b.SlotNumber.Reset()
 	b.MetaClientName.Reset()
 	b.MetaClientID.Reset()
 	b.MetaClientVersion.Reset()
@@ -208,7 +200,7 @@ func (b *beaconApiEthV1EventsExecutionPayloadGossipBatch) Snapshot() []map[strin
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 34)
+		row := make(map[string]any, 32)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["slot"] = b.Slot.Row(i)
@@ -219,12 +211,6 @@ func (b *beaconApiEthV1EventsExecutionPayloadGossipBatch) Snapshot() []map[strin
 		row["block_root"] = string(b.BlockRoot.Row(i))
 		row["builder_index"] = b.BuilderIndex.Row(i)
 		row["block_hash"] = string(b.BlockHash.Row(i))
-		row["state_root"] = string(b.StateRoot.Row(i))
-		if v := b.SlotNumber.Row(i); v.Set {
-			row["slot_number"] = v.Value
-		} else {
-			row["slot_number"] = nil
-		}
 		row["meta_client_name"] = b.MetaClientName.Row(i)
 		row["meta_client_id"] = b.MetaClientID.Row(i)
 		row["meta_client_version"] = b.MetaClientVersion.Row(i)

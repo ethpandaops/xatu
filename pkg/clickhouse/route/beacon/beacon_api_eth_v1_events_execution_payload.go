@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ClickHouse/ch-go/proto"
-
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -62,32 +60,18 @@ func (b *beaconApiEthV1EventsExecutionPayloadBatch) appendRuntime(event *xatu.De
 }
 
 func (b *beaconApiEthV1EventsExecutionPayloadBatch) appendPayload(event *xatu.DecoratedEvent) {
-	envelope := event.GetEthV1EventsExecutionPayload()
+	payload := event.GetEthV1EventsExecutionPayload()
 
-	msg := envelope.GetMessage()
+	b.BlockRoot.Append([]byte(payload.GetBlockRoot()))
+	b.BlockHash.Append([]byte(payload.GetBlockHash()))
 
-	b.BlockRoot.Append([]byte(msg.GetBeaconBlockRoot()))
-
-	if builderIndex := msg.GetBuilderIndex(); builderIndex != nil {
+	if builderIndex := payload.GetBuilderIndex(); builderIndex != nil {
 		b.BuilderIndex.Append(builderIndex.GetValue())
 	} else {
 		b.BuilderIndex.Append(0)
 	}
 
-	if payload := msg.GetPayload(); payload != nil {
-		b.BlockHash.Append([]byte(payload.GetBlockHash()))
-		b.StateRoot.Append([]byte(payload.GetStateRoot()))
-
-		if sn := payload.GetSlotNumber(); sn != nil {
-			b.SlotNumber.Append(proto.NewNullable[uint64](sn.GetValue()))
-		} else {
-			b.SlotNumber.Append(proto.Nullable[uint64]{})
-		}
-	} else {
-		b.BlockHash.Append(nil)
-		b.StateRoot.Append(nil)
-		b.SlotNumber.Append(proto.Nullable[uint64]{})
-	}
+	b.ExecutionOptimistic.Append(payload.GetExecutionOptimistic())
 }
 
 func (b *beaconApiEthV1EventsExecutionPayloadBatch) appendAdditionalData(

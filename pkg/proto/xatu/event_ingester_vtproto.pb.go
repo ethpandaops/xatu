@@ -85721,7 +85721,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					}
 				}
 			} else {
-				v := v1.SignedExecutionPayloadEnvelopeFromVTPool()
+				v := v1.ExecutionPayloadEventFromVTPool()
 				if unmarshal, ok := interface{}(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
@@ -86063,7 +86063,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					}
 				}
 			} else {
-				v := v1.SignedExecutionPayloadEnvelopeFromVTPool()
+				v := v1.ExecutionPayloadEventFromVTPool()
 				if unmarshal, ok := interface{}(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {

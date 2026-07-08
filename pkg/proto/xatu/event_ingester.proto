@@ -22,8 +22,8 @@ import "pkg/proto/eth/v1/sync_committee.proto";
 import "pkg/proto/eth/v1/block_access_list.proto";
 import "pkg/proto/eth/v1/payload_attestation.proto";
 import "pkg/proto/eth/v1/execution_payload_bid.proto";
-import "pkg/proto/eth/v1/execution_payload_envelope.proto";
 import "pkg/proto/eth/v1/execution_payload_available.proto";
+import "pkg/proto/eth/v1/execution_payload_event.proto";
 import "pkg/proto/eth/v1/proposer_preferences.proto";
 import "pkg/proto/eth/v1/beacon_synthetic.proto";
 import "pkg/proto/eth/v1/execution_requests.proto";
@@ -3254,7 +3254,7 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES" ];
 
     // EIP-7732 ePBS: Sentry SSE events (gossip + available variants)
-    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload_gossip = 249
+    xatu.eth.v1.ExecutionPayloadEvent eth_v1_events_execution_payload_gossip = 249
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP" ];
     xatu.eth.v1.ExecutionPayloadAvailable eth_v1_events_execution_payload_available = 250
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_AVAILABLE" ];
@@ -3269,7 +3269,7 @@ message DecoratedEvent {
 
     xatu.eth.v1.BlockAccessListChange eth_v2_beacon_block_access_list = 254
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
-    xatu.eth.v1.SignedExecutionPayloadEnvelope eth_v1_events_execution_payload = 255
+    xatu.eth.v1.ExecutionPayloadEvent eth_v1_events_execution_payload = 255
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
   };
 }

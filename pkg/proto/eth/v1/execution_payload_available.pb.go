@@ -10,8 +10,8 @@
 // The beacon node emits this SSE event once it has verified that the
 // execution payload and blobs for a given beacon block are locally
 // available, i.e. ready for the PTC to vote `payload_present = true`.
-// Distinct from the `execution_payload` SSE topic which carries the full
-// SignedExecutionPayloadEnvelope on import.
+// Distinct from the `execution_payload` SSE topic (a flat payload summary
+// emitted on import; see ExecutionPayloadEvent).
 
 package v1
 

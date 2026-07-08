@@ -89,6 +89,30 @@ var ServerOverrides = []ServerOverride{
 			overrides.MetricsAddr.Value = val
 		},
 	}),
+	createServerOverride(ServerOverrideConfig{
+		FlagName:    "server-event-ingester-meta-network-name-value",
+		EnvName:     "SERVER_EVENT_INGESTER_META_NETWORK_NAME_VALUE",
+		Description: "replaces the meta network name on all ingested events",
+		OverrideFunc: func(val string, overrides *server.Override) {
+			overrides.EventIngesterMetaNetworkName.Value = val
+		},
+	}),
+	createServerOverride(ServerOverrideConfig{
+		FlagName:    "server-event-ingester-meta-network-name-prefix",
+		EnvName:     "SERVER_EVENT_INGESTER_META_NETWORK_NAME_PREFIX",
+		Description: "prepends a prefix to the meta network name on all ingested events",
+		OverrideFunc: func(val string, overrides *server.Override) {
+			overrides.EventIngesterMetaNetworkName.Prefix = val
+		},
+	}),
+	createServerOverride(ServerOverrideConfig{
+		FlagName:    "server-event-ingester-meta-network-name-suffix",
+		EnvName:     "SERVER_EVENT_INGESTER_META_NETWORK_NAME_SUFFIX",
+		Description: "appends a suffix to the meta network name on all ingested events",
+		OverrideFunc: func(val string, overrides *server.Override) {
+			overrides.EventIngesterMetaNetworkName.Suffix = val
+		},
+	}),
 }
 
 // serverCmd represents the server command

@@ -16,4 +16,11 @@ type Override struct {
 		Enabled    bool
 		AuthSecret string
 	}
+	// EventIngesterMetaNetworkName rewrites the client-asserted network name
+	// on every ingested event.
+	EventIngesterMetaNetworkName struct {
+		Value  string
+		Prefix string
+		Suffix string
+	}
 }

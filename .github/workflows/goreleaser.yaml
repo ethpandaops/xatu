@@ -23,11 +23,13 @@ jobs:
           # Strip the 'refs/tags/' prefix
           TAG_NAME=${GITHUB_REF#refs/tags/}
 
-          # Extract suffix from tag name after the last '-' (e.g., 'dencun' from 'v1.0.0-dencun')
-          RELEASE_SUFFIX=${TAG_NAME##*-}
-
-          # Check if the suffix is still a version pattern (e.g., 'v0.0.44'), in which case there's no suffix
-          if [[ $RELEASE_SUFFIX =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          # A release-branch tag is a semver core followed by everything after the
+          # FIRST '-' (e.g. 'glamsterdam-devnet-7' from '0.0.1-glamsterdam-devnet-7',
+          # 'dencun' from 'v1.0.0-dencun'). Anchoring on the semver core keeps
+          # multi-word suffixes intact and leaves plain 'vX.Y.Z' tags unsuffixed.
+          if [[ $TAG_NAME =~ ^v?[0-9]+\.[0-9]+\.[0-9]+-(.+)$ ]]; then
+            RELEASE_SUFFIX="${BASH_REMATCH[1]}"
+          else
             RELEASE_SUFFIX=""
           fi
 
@@ -128,6 +130,6 @@ jobs:
             GIT_COMMIT=${{ env.CRYO_GIT_COMMIT }}
           tags: |
             ethpandaops/xatu:${{ env.CRYO_IMAGE_VERSION }}-cryo
-            ethpandaops/xatu:${{ env.RELEASE_SUFFIX && format('{0}-cryo-latest', env.RELEASE_SUFFIX) || 'cryo-latest' }}
+            ethpandaops/xatu:${{ env.RELEASE_SUFFIX && format('{0}-cryo', env.RELEASE_SUFFIX) || 'cryo-latest' }}
           cache-from: type=registry,ref=ethpandaops/xatu:cryo-buildcache
           cache-to: type=registry,ref=ethpandaops/xatu:cryo-buildcache,mode=max,ignore-error=true

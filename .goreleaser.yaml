@@ -78,7 +78,7 @@ dockers:
     dockerfile: goreleaser-scratch.Dockerfile
     image_templates:
       - "ethpandaops/{{ .ProjectName }}:{{ .Version }}-amd64"
-      - "ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-{{ end }}latest-amd64"
+      - "ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}-amd64"
     build_flag_templates:
       - "--platform=linux/amd64"
       - "--provenance=false"
@@ -93,7 +93,7 @@ dockers:
     dockerfile: goreleaser-scratch.Dockerfile
     image_templates:
       - "ethpandaops/{{ .ProjectName }}:{{ .Version }}-arm64v8"
-      - "ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-{{ end }}latest-arm64v8"
+      - "ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}-arm64v8"
     build_flag_templates:
       - "--platform=linux/arm64/v8"
       - "--provenance=false"
@@ -109,7 +109,7 @@ dockers:
     dockerfile: goreleaser-debian.Dockerfile
     image_templates:
       - "ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-amd64"
-      - "ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-{{ end }}debian-latest-amd64"
+      - "ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}-amd64"
     build_flag_templates:
       - "--platform=linux/amd64"
       - "--provenance=false"
@@ -124,7 +124,7 @@ dockers:
     dockerfile: goreleaser-debian.Dockerfile
     image_templates:
       - "ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-arm64v8"
-      - "ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-{{ end }}debian-latest-arm64v8"
+      - "ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}-arm64v8"
     build_flag_templates:
       - "--platform=linux/arm64/v8"
       - "--provenance=false"
@@ -142,10 +142,10 @@ docker_manifests:
   - name_template: ethpandaops/{{ .ProjectName }}:{{ .Version }}-arm64
     image_templates:
       - ethpandaops/{{ .ProjectName }}:{{ .Version }}-arm64v8
-  - name_template: ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-{{ end }}latest
+  - name_template: ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}
     image_templates:
-      - ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-{{ end }}latest-amd64
-      - ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-{{ end }}latest-arm64v8
+      - ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}-amd64
+      - ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}-arm64v8
 
   ## Debian
   - name_template: ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian
@@ -155,7 +155,7 @@ docker_manifests:
   - name_template: ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-arm64
     image_templates:
       - ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-arm64v8
-  - name_template: ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-{{ end }}debian-latest
+  - name_template: ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}
     image_templates:
-      - ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-{{ end }}debian-latest-amd64
-      - ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-{{ end }}debian-latest-arm64v8
+      - ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}-amd64
+      - ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}-arm64v8

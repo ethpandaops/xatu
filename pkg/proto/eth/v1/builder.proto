@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+// EIP-7732: ePBS Builder type
+// https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/beacon-chain.md#builder
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
+
+// Builder represents an enshrined builder in the beacon state.
+message Builder {
+  string pubkey = 1;
+
+  // uint8 in the spec; proto3 has no uint8, so we use UInt32Value.
+  google.protobuf.UInt32Value version = 2;
+
+  string execution_address = 3 [ json_name = "execution_address" ];
+
+  google.protobuf.UInt64Value balance = 4;
+
+  google.protobuf.UInt64Value deposit_epoch = 5
+      [ json_name = "deposit_epoch" ];
+
+  google.protobuf.UInt64Value withdrawable_epoch = 6
+      [ json_name = "withdrawable_epoch" ];
+}

@@ -119,11 +119,53 @@ func NewBlobSidecarPayload(blob *ethtypes.BlobSidecar, meta *TraceEventPayloadMe
 	}
 }
 
-// NewDataColumnSidecarPayload creates a data column sidecar payload.
+// NewDataColumnSidecarPayload creates a Fulu data column sidecar payload.
 func NewDataColumnSidecarPayload(dataColumn *ethtypes.DataColumnSidecar, meta *TraceEventPayloadMetaData) *TraceEventDataColumnSidecar {
 	return &TraceEventDataColumnSidecar{
 		TraceEventPayloadMetaData: *meta,
 		DataColumnSidecar:         dataColumn,
+	}
+}
+
+// NewDataColumnSidecarGloasPayload creates a Gloas data column sidecar payload (EIP-7732).
+func NewDataColumnSidecarGloasPayload(dataColumn *ethtypes.DataColumnSidecarGloas, meta *TraceEventPayloadMetaData) *TraceEventDataColumnSidecar {
+	return &TraceEventDataColumnSidecar{
+		TraceEventPayloadMetaData: *meta,
+		DataColumnSidecarGloas:    dataColumn,
+	}
+}
+
+// ePBS (EIP-7732) payload builders
+
+// NewExecutionPayloadEnvelopePayload creates a Gloas execution_payload (envelope) gossip payload.
+func NewExecutionPayloadEnvelopePayload(envelope *ethtypes.SignedExecutionPayloadEnvelope, meta *TraceEventPayloadMetaData) *TraceEventExecutionPayloadEnvelope {
+	return &TraceEventExecutionPayloadEnvelope{
+		TraceEventPayloadMetaData: *meta,
+		ExecutionPayloadEnvelope:  envelope,
+	}
+}
+
+// NewExecutionPayloadBidPayload creates a Gloas execution_payload_bid gossip payload.
+func NewExecutionPayloadBidPayload(bid *ethtypes.SignedExecutionPayloadBid, meta *TraceEventPayloadMetaData) *TraceEventExecutionPayloadBid {
+	return &TraceEventExecutionPayloadBid{
+		TraceEventPayloadMetaData: *meta,
+		ExecutionPayloadBid:       bid,
+	}
+}
+
+// NewPayloadAttestationMessagePayload creates a Gloas payload_attestation_message gossip payload.
+func NewPayloadAttestationMessagePayload(msg *ethtypes.PayloadAttestationMessage, meta *TraceEventPayloadMetaData) *TraceEventPayloadAttestationMessage {
+	return &TraceEventPayloadAttestationMessage{
+		TraceEventPayloadMetaData: *meta,
+		PayloadAttestationMessage: msg,
+	}
+}
+
+// NewProposerPreferencesPayload creates a Gloas proposer_preferences gossip payload.
+func NewProposerPreferencesPayload(prefs *ethtypes.SignedProposerPreferences, meta *TraceEventPayloadMetaData) *TraceEventProposerPreferences {
+	return &TraceEventProposerPreferences{
+		TraceEventPayloadMetaData: *meta,
+		ProposerPreferences:       prefs,
 	}
 }
 
@@ -218,5 +260,89 @@ func NewConsensusEngineAPIGetBlobsPayload(
 		ErrorMessage:           errorMessage,
 		MethodVersion:          methodVersion,
 		ExecutionClientVersion: executionClientVersion,
+	}
+}
+
+// Beacon synthetic payload builders (EIP-7732 ePBS, TYSM-instrumented)
+
+// NewBeaconSyntheticPayloadStatusResolvedPayload creates a payload-status-resolved event.
+//
+// The PTC three-state vote breakdown (positive/negative/absent) follows
+// consensus-specs PR #5180. Positive counts are always known; negative and
+// absent counts are nil when the emitting CL hasn't surfaced the
+// Optional[boolean] tracking yet.
+func NewBeaconSyntheticPayloadStatusResolvedPayload(
+	resolvedAt time.Time,
+	slot uint64,
+	blockRoot, blockHash string,
+	status, previousStatus uint32,
+	payloadTimelinessVotesPositive uint64,
+	payloadTimelinessVotesNegative, payloadTimelinessVotesAbsent *uint64,
+	dataAvailableVotesPositive uint64,
+	dataAvailableVotesNegative, dataAvailableVotesAbsent *uint64,
+	ptcSize uint64,
+) *TraceEventBeaconSyntheticPayloadStatusResolved {
+	return &TraceEventBeaconSyntheticPayloadStatusResolved{
+		ResolvedAt:                     resolvedAt,
+		Slot:                           slot,
+		BlockRoot:                      blockRoot,
+		BlockHash:                      blockHash,
+		Status:                         status,
+		PreviousStatus:                 previousStatus,
+		PayloadTimelinessVotesPositive: payloadTimelinessVotesPositive,
+		PayloadTimelinessVotesNegative: payloadTimelinessVotesNegative,
+		PayloadTimelinessVotesAbsent:   payloadTimelinessVotesAbsent,
+		DataAvailableVotesPositive:     dataAvailableVotesPositive,
+		DataAvailableVotesNegative:     dataAvailableVotesNegative,
+		DataAvailableVotesAbsent:       dataAvailableVotesAbsent,
+		PTCSize:                        ptcSize,
+	}
+}
+
+// NewBeaconSyntheticPayloadAttestationProcessedPayload creates a
+// payload-attestation-processed event. Fires after a PTC vote has cleared
+// full gossip validation (signature, validator-in-PTC, block-root seen/valid,
+// slot-current, first-from-this-validator dedup) and been committed for
+// downstream pipeline use.
+func NewBeaconSyntheticPayloadAttestationProcessedPayload(
+	receivedAt, processedAt time.Time,
+	slot uint64,
+	beaconBlockRoot string,
+	validatorIndex uint64,
+	payloadPresent, blobDataAvailable bool,
+	peerID string,
+	processingDurationMs uint64,
+) *TraceEventBeaconSyntheticPayloadAttestationProcessed {
+	return &TraceEventBeaconSyntheticPayloadAttestationProcessed{
+		ReceivedAt:           receivedAt,
+		ProcessedAt:          processedAt,
+		Slot:                 slot,
+		BeaconBlockRoot:      beaconBlockRoot,
+		ValidatorIndex:       validatorIndex,
+		PayloadPresent:       payloadPresent,
+		BlobDataAvailable:    blobDataAvailable,
+		PeerID:               peerID,
+		ProcessingDurationMs: processingDurationMs,
+	}
+}
+
+// NewBeaconSyntheticBuilderPendingPaymentSettlementPayload creates a builder-pending-payment-settlement event.
+func NewBeaconSyntheticBuilderPendingPaymentSettlementPayload(
+	resolvedAt time.Time,
+	epoch uint64,
+	builderIndex uint64,
+	feeRecipient string,
+	amount, weight, quorum uint64,
+	outcome uint32,
+) *TraceEventBeaconSyntheticBuilderPendingPaymentSettlement {
+	return &TraceEventBeaconSyntheticBuilderPendingPaymentSettlement{
+		ResolvedAt:   resolvedAt,
+		Epoch:        epoch,
+		BuilderIndex: builderIndex,
+		FeeRecipient: feeRecipient,
+		Amount:       amount,
+		Weight:       weight,
+		Quorum:       quorum,
+		Outcome:      outcome,
 	}
 }

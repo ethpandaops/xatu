@@ -7,20 +7,30 @@ go 1.26.2
 // Match tysm's tablewriter version requirement
 replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
 
+// Pin go-ethereum to bal-devnet-6 — carries the BAL (EIP-7928) AccountAccess
+// type with StorageChanges/StorageReads + EncodedStorage.ToHash() that
+// pkg/proto/eth/v1/conversion.go depends on. Mainline v1.17.3 shipped a
+// different shape (ConstructionAccountAccess with StorageWrites), and
+// bal-devnet-7 dropped access_list.go / bal_encoding_json.go. Both prysm's
+// glamsterdam-devnet-4-tmp and ethpandaops/{beacon,ethcore} release/gloas
+// only require pseudo-versions of v1.17.3, which lose MVS to mainline, so this
+// replace is needed to force the bal-devnet-6 fork at build time.
+replace github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.17.3-0.20260507223249-73944e329925
+
 require (
 	github.com/ClickHouse/ch-go v0.71.0
 	github.com/IBM/sarama v1.46.2
-	github.com/OffchainLabs/prysm/v7 v7.0.0
+	github.com/OffchainLabs/prysm/v7 v7.1.3-rc.3.0.20260518030851-d6648d3ed7b0
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/beevik/ntp v1.4.3
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
-	github.com/ethereum/go-ethereum v1.17.1
-	github.com/ethpandaops/beacon v0.69.0
-	github.com/ethpandaops/ethcore v0.0.0-20260513090510-be891b9812d8
+	github.com/ethereum/go-ethereum v1.17.3
+	github.com/ethpandaops/beacon v0.69.1-0.20260708064159-77f719eed8c0
+	github.com/ethpandaops/ethcore v0.0.0-20260514003726-f67d7a6e9f91
 	github.com/ethpandaops/ethwallclock v0.4.0
-	github.com/ethpandaops/go-eth2-client v0.1.3-0.20260513062559-5fb497ba414f
+	github.com/ethpandaops/go-eth2-client v0.1.6-0.20260708064136-c504b7edf763
 	github.com/failsafe-go/failsafe-go v0.9.6
 	github.com/ferranbt/fastssz v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.6
@@ -84,7 +94,7 @@ require (
 	github.com/parquet-go/bitpack v1.0.0 // indirect
 	github.com/parquet-go/jsonlite v1.0.0 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
-	github.com/pk910/hashtree-bindings v0.1.0 // indirect
+	github.com/pk910/hashtree-bindings v0.2.2 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/tinylib/msgp v1.6.1 // indirect
 	github.com/twpayne/go-geom v1.6.1 // indirect
@@ -101,7 +111,7 @@ require (
 	github.com/Jeffail/grok v1.1.0 // indirect
 	github.com/Jeffail/shutdown v1.1.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/OffchainLabs/go-bitfield v0.0.0-20251031151322-f427d04d8506 // indirect
+	github.com/OffchainLabs/go-bitfield v0.0.0-20260504143531-5cbb6d0f5f2e
 	github.com/OffchainLabs/prysm/v6 v6.1.1 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect
@@ -120,7 +130,7 @@ require (
 	github.com/containerd/platforms v1.0.0-rc.1 // indirect
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
-	github.com/crate-crypto/go-eth-kzg v1.4.0 // indirect
+	github.com/crate-crypto/go-eth-kzg v1.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/deckarep/golang-set/v2 v2.8.0 // indirect
@@ -261,7 +271,7 @@ require (
 	github.com/pion/transport/v3 v3.0.7 // indirect
 	github.com/pion/turn/v4 v4.0.2 // indirect
 	github.com/pion/webrtc/v4 v4.1.2 // indirect
-	github.com/pk910/dynamic-ssz v1.3.2-0.20260505131440-111bcb265c8f // indirect
+	github.com/pk910/dynamic-ssz v1.3.2 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
@@ -270,11 +280,11 @@ require (
 	github.com/protolambda/bls12-381-util v0.1.0 // indirect
 	github.com/protolambda/zrnt v0.34.1 // indirect
 	github.com/protolambda/ztyp v0.2.2 // indirect
-	github.com/prysmaticlabs/fastssz v0.0.0-20251103153600-259302269bfc // indirect
+	github.com/prysmaticlabs/fastssz v0.0.0-20260421202104-7a6eb71e6e45 // indirect
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20240618144021-706c95b2dd15 // indirect
 	github.com/prysmaticlabs/gohashtree v0.0.5-beta // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
-	github.com/quic-go/quic-go v0.59.0 // indirect
+	github.com/quic-go/quic-go v0.59.1 // indirect
 	github.com/quic-go/webtransport-go v0.10.0 // indirect
 	github.com/quipo/dependencysolver v0.0.0-20170801134659-2b009cb4ddcc // indirect
 	github.com/r3labs/sse/v2 v2.10.0 // indirect

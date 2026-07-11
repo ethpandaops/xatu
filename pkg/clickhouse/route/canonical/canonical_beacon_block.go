@@ -161,6 +161,10 @@ func canonicalBeaconBlockIdentityFields(eventBlock *ethv2.EventBlockV2) (parentR
 		blk := eventBlock.GetFuluBlock()
 
 		return blk.GetParentRoot(), blk.GetStateRoot(), blk.GetBody().GetEth1Data(), true
+	case eventBlock.GetGloasBlock() != nil:
+		blk := eventBlock.GetGloasBlock()
+
+		return blk.GetParentRoot(), blk.GetStateRoot(), blk.GetBody().GetEth1Data(), true
 	default:
 		return "", "", nil, false
 	}
@@ -330,6 +334,34 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 		return b.appendExecutionPayloadElectra(body.GetExecutionPayload())
 	}
 
+	if gloasBlock := eventBlock.GetGloasBlock(); gloasBlock != nil {
+		if slot := gloasBlock.GetSlot(); slot != nil {
+			b.Slot.Append(uint32(slot.GetValue()))
+		} else {
+			b.Slot.Append(0)
+		}
+
+		if proposerIndex := gloasBlock.GetProposerIndex(); proposerIndex != nil {
+			b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
+		} else {
+			b.ProposerIndex.Append(0)
+		}
+
+		b.ParentRoot.Append([]byte(gloasBlock.GetParentRoot()))
+		b.StateRoot.Append([]byte(gloasBlock.GetStateRoot()))
+
+		body := gloasBlock.GetBody()
+		b.appendEth1Data(body.GetEth1Data())
+
+		// Gloas blocks have no inline execution payload — it arrives
+		// via the ExecutionPayloadEnvelope event. EPBS columns are
+		// populated from the bid in the block body.
+		b.appendNullInlinePayloadFields()
+		b.appendEpbsFromBid(body.GetSignedExecutionPayloadBid())
+
+		return nil
+	}
+
 	// Unknown block version - append zeros.
 	b.Slot.Append(0)
 	b.ProposerIndex.Append(0)
@@ -355,16 +387,70 @@ func (b *canonicalBeaconBlockBatch) appendEth1Data(eth1Data *ethv1.Eth1Data) {
 }
 
 func (b *canonicalBeaconBlockBatch) appendNullExecutionPayload() {
+	b.appendNullInlinePayloadFields()
+	b.appendNullEpbsColumns()
+}
+
+// appendNullInlinePayloadFields appends NULL for every column that comes from
+// the (pre-Gloas) inline execution payload. Gloas blocks call this in lieu of
+// `appendNullExecutionPayload` because they populate the EPBS columns from the
+// bid instead.
+func (b *canonicalBeaconBlockBatch) appendNullInlinePayloadFields() {
 	b.ExecutionPayloadBlockHash.Append(proto.Nullable[[]byte]{})
 	b.ExecutionPayloadBlockNumber.Append(proto.Nullable[uint32]{})
 	b.ExecutionPayloadFeeRecipient.Append(proto.Nullable[string]{})
 	b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
 	b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
+	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
+	b.ExecutionPayloadBlockAccessListRoot.Append(proto.Nullable[[]byte]{})
 	b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadGasLimit.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadStateRoot.Append(proto.Nullable[[]byte]{})
 	b.ExecutionPayloadParentHash.Append(proto.Nullable[[]byte]{})
+}
+
+func (b *canonicalBeaconBlockBatch) appendNullEpbsColumns() {
+	b.BuilderIndex.Append(proto.Nullable[uint64]{})
+	b.BidValue.Append(proto.Nullable[uint64]{})
+	b.ExecutionPayment.Append(proto.Nullable[uint64]{})
+	b.PayloadPresent.Append(proto.Nullable[bool]{})
+}
+
+// appendEpbsFromBid populates the four EPBS columns from a Gloas block's
+// SignedExecutionPayloadBid. payload_present cannot be determined at block
+// time (it requires the post-fact PTC vote / envelope arrival), so it stays
+// NULL here — downstream queries can fold it in by joining against the
+// payload_attestation aggregate.
+func (b *canonicalBeaconBlockBatch) appendEpbsFromBid(bid *ethv1.SignedExecutionPayloadBid) {
+	if bid == nil || bid.GetMessage() == nil {
+		b.appendNullEpbsColumns()
+
+		return
+	}
+
+	msg := bid.GetMessage()
+
+	if v := msg.GetBuilderIndex(); v != nil {
+		b.BuilderIndex.Append(proto.NewNullable[uint64](v.GetValue()))
+	} else {
+		b.BuilderIndex.Append(proto.Nullable[uint64]{})
+	}
+
+	if v := msg.GetValue(); v != nil {
+		b.BidValue.Append(proto.NewNullable[uint64](v.GetValue()))
+	} else {
+		b.BidValue.Append(proto.Nullable[uint64]{})
+	}
+
+	if v := msg.GetExecutionPayment(); v != nil {
+		b.ExecutionPayment.Append(proto.NewNullable[uint64](v.GetValue()))
+	} else {
+		b.ExecutionPayment.Append(proto.Nullable[uint64]{})
+	}
+
+	// payload_present is a post-fact determination — left NULL here.
+	b.PayloadPresent.Append(proto.Nullable[bool]{})
 }
 
 //nolint:gosec // G115
@@ -407,6 +493,10 @@ func (b *canonicalBeaconBlockBatch) appendExecutionPayloadV2(payload *ethv1.Exec
 
 	b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
+	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
+	b.ExecutionPayloadBlockAccessListRoot.Append(proto.Nullable[[]byte]{})
+
+	b.appendNullEpbsColumns()
 
 	return nil
 }
@@ -451,6 +541,10 @@ func (b *canonicalBeaconBlockBatch) appendExecutionPayloadCapellaV2(payload *eth
 
 	b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
 	b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
+	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
+	b.ExecutionPayloadBlockAccessListRoot.Append(proto.Nullable[[]byte]{})
+
+	b.appendNullEpbsColumns()
 
 	return nil
 }
@@ -505,6 +599,11 @@ func (b *canonicalBeaconBlockBatch) appendExecutionPayloadDeneb(payload *ethv1.E
 		b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
 	}
 
+	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
+	b.ExecutionPayloadBlockAccessListRoot.Append(proto.Nullable[[]byte]{})
+
+	b.appendNullEpbsColumns()
+
 	return nil
 }
 
@@ -557,6 +656,11 @@ func (b *canonicalBeaconBlockBatch) appendExecutionPayloadElectra(payload *ethv1
 	} else {
 		b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
 	}
+
+	b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
+	b.ExecutionPayloadBlockAccessListRoot.Append(proto.Nullable[[]byte]{})
+
+	b.appendNullEpbsColumns()
 
 	return nil
 }

@@ -53,6 +53,10 @@ func (ec *EventCategorizer) initializeEvents() {
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION, GroupA, true, true, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR, GroupA, true, true, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR, GroupA, true, true, false)
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE, GroupA, true, true, false)
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID, GroupA, true, true, false)
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE, GroupA, true, true, false)
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES, GroupA, true, true, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_MESSAGE, GroupA, true, true, true)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IHAVE, GroupA, true, true, true)
 
@@ -78,6 +82,11 @@ func (ec *EventCategorizer) initializeEvents() {
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_HANDLE_METADATA, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_HANDLE_STATUS, GroupD, false, false, false)
+	// EIP-7732 ePBS: synthesized observability events from beacon-node internals.
+	// No Topic / no MsgID — same sharding profile as engine API / custody probe events.
+	ec.addEvent(xatu.Event_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED, GroupD, false, false, false)
+	ec.addEvent(xatu.Event_BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT, GroupD, false, false, false)
+	ec.addEvent(xatu.Event_BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED, GroupD, false, false, false)
 }
 
 // addEvent is a helper to add event information

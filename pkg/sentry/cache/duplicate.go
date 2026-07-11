@@ -7,23 +7,29 @@ import (
 )
 
 type DuplicateCache struct {
-	BeaconETHV1EventsAttestation          *ttlcache.Cache[string, time.Time]
-	BeaconETHV1EventsBlock                *ttlcache.Cache[string, time.Time]
-	BeaconETHV1EventsBlockGossip          *ttlcache.Cache[string, time.Time]
-	BeaconETHV1EventsFastConfirmation     *ttlcache.Cache[string, time.Time]
-	BeaconETHV1EventsChainReorg           *ttlcache.Cache[string, time.Time]
-	BeaconETHV1EventsFinalizedCheckpoint  *ttlcache.Cache[string, time.Time]
-	BeaconETHV1EventsHead                 *ttlcache.Cache[string, time.Time]
-	BeaconETHV1EventsVoluntaryExit        *ttlcache.Cache[string, time.Time]
-	BeaconETHV1EventsContributionAndProof *ttlcache.Cache[string, time.Time]
-	BeaconETHV2BeaconBlock                *ttlcache.Cache[string, time.Time]
-	BeaconEthV1BeaconCommittee            *ttlcache.Cache[string, time.Time]
-	BeaconEthV1EventsBlobSidecar          *ttlcache.Cache[string, time.Time]
-	BeaconEthV1EventsDataColumnSidecar    *ttlcache.Cache[string, time.Time]
-	BeaconEthV1BeaconBlob                 *ttlcache.Cache[string, time.Time]
-	MempoolTransaction                    *ttlcache.Cache[string, time.Time]
-	ExecutionStateSize                    *ttlcache.Cache[string, time.Time]
-	ConsensusEngineAPINewPayload          *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsAttestation               *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsBlock                     *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsBlockGossip               *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsFastConfirmation          *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsChainReorg                *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsFinalizedCheckpoint       *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsHead                      *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsVoluntaryExit             *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsContributionAndProof      *ttlcache.Cache[string, time.Time]
+	BeaconETHV2BeaconBlock                     *ttlcache.Cache[string, time.Time]
+	BeaconEthV1BeaconCommittee                 *ttlcache.Cache[string, time.Time]
+	BeaconEthV1EventsBlobSidecar               *ttlcache.Cache[string, time.Time]
+	BeaconEthV1EventsDataColumnSidecar         *ttlcache.Cache[string, time.Time]
+	BeaconEthV1BeaconBlob                      *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsExecutionPayload          *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsExecutionPayloadGossip    *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsExecutionPayloadAvailable *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsExecutionPayloadBid       *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsPayloadAttestationMessage *ttlcache.Cache[string, time.Time]
+	BeaconETHV1EventsProposerPreferences       *ttlcache.Cache[string, time.Time]
+	MempoolTransaction                         *ttlcache.Cache[string, time.Time]
+	ExecutionStateSize                         *ttlcache.Cache[string, time.Time]
+	ConsensusEngineAPINewPayload               *ttlcache.Cache[string, time.Time]
 }
 
 const (
@@ -78,6 +84,24 @@ func NewDuplicateCache() *DuplicateCache {
 		BeaconEthV1BeaconBlob: ttlcache.New(
 			ttlcache.WithTTL[string, time.Time](CONSENSUS_TTL),
 		),
+		BeaconETHV1EventsExecutionPayload: ttlcache.New(
+			ttlcache.WithTTL[string, time.Time](CONSENSUS_TTL),
+		),
+		BeaconETHV1EventsExecutionPayloadGossip: ttlcache.New(
+			ttlcache.WithTTL[string, time.Time](CONSENSUS_TTL),
+		),
+		BeaconETHV1EventsExecutionPayloadAvailable: ttlcache.New(
+			ttlcache.WithTTL[string, time.Time](CONSENSUS_TTL),
+		),
+		BeaconETHV1EventsExecutionPayloadBid: ttlcache.New(
+			ttlcache.WithTTL[string, time.Time](CONSENSUS_TTL),
+		),
+		BeaconETHV1EventsPayloadAttestationMessage: ttlcache.New(
+			ttlcache.WithTTL[string, time.Time](CONSENSUS_TTL),
+		),
+		BeaconETHV1EventsProposerPreferences: ttlcache.New(
+			ttlcache.WithTTL[string, time.Time](CONSENSUS_TTL),
+		),
 		MempoolTransaction: ttlcache.New(
 			ttlcache.WithTTL[string, time.Time](EXECUTION_TTL),
 		),
@@ -105,6 +129,12 @@ func (d *DuplicateCache) Start() {
 	go d.BeaconEthV1EventsBlobSidecar.Start()
 	go d.BeaconEthV1EventsDataColumnSidecar.Start()
 	go d.BeaconEthV1BeaconBlob.Start()
+	go d.BeaconETHV1EventsExecutionPayload.Start()
+	go d.BeaconETHV1EventsExecutionPayloadGossip.Start()
+	go d.BeaconETHV1EventsExecutionPayloadAvailable.Start()
+	go d.BeaconETHV1EventsExecutionPayloadBid.Start()
+	go d.BeaconETHV1EventsPayloadAttestationMessage.Start()
+	go d.BeaconETHV1EventsProposerPreferences.Start()
 	go d.MempoolTransaction.Start()
 	go d.ExecutionStateSize.Start()
 	go d.ConsensusEngineAPINewPayload.Start()

@@ -72,7 +72,8 @@ func (b *beaconApiEthV3ValidatorBlockBatch) validate(event *xatu.DecoratedEvent)
 		payload.GetCapellaBlock() == nil &&
 		payload.GetDenebBlock() == nil &&
 		payload.GetElectraBlock() == nil &&
-		payload.GetFuluBlock() == nil {
+		payload.GetFuluBlock() == nil &&
+		payload.GetGloasBlock() == nil {
 		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
 	}
 
@@ -180,6 +181,20 @@ func (b *beaconApiEthV3ValidatorBlockBatch) appendPayloadFromEventBlockV2(
 		}
 
 		return b.appendExecutionPayloadElectra(fuluBlock.GetBody().GetExecutionPayload())
+	}
+
+	if gloasBlock := eventBlock.GetGloasBlock(); gloasBlock != nil {
+		if slot := gloasBlock.GetSlot(); slot != nil {
+			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
+		} else {
+			b.Slot.Append(0)
+		}
+
+		// EIP-7732: Gloas blocks carry a bid instead of an inline execution
+		// payload, so the payload columns are legitimately empty.
+		b.appendNoExecutionPayload()
+
+		return nil
 	}
 
 	// Unknown block type.

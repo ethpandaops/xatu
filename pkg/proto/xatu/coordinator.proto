@@ -224,6 +224,11 @@ enum CannonType {
   BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT = 40;
   BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL = 41;
   BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION = 42;
+  BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST = 43;
+
+  // EIP-7732 ePBS cannon types
+  BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION = 44;
+  BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID = 45;
 }
 
 message BackfillingCheckpointMarker {
@@ -308,6 +313,19 @@ message CannonLocationEthV1BeaconSyncCommittee {
 }
 
 message CannonLocationEthV2BeaconBlockSyncAggregate {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV2BeaconBlockAccessList {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+// EIP-7732 ePBS cannon location types
+message CannonLocationEthV2BeaconBlockPayloadAttestation {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV2BeaconBlockExecutionPayloadBid {
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
 }
 
@@ -475,6 +493,14 @@ message CannonLocation {
         [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL" ];
     CannonLocationEthV1BeaconStatePendingConsolidation eth_v1_beacon_state_pending_consolidation = 45
         [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION" ];
+    CannonLocationEthV2BeaconBlockAccessList eth_v2_beacon_block_access_list = 46
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
+
+    // EIP-7732 ePBS
+    CannonLocationEthV2BeaconBlockPayloadAttestation eth_v2_beacon_block_payload_attestation = 47
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION" ];
+    CannonLocationEthV2BeaconBlockExecutionPayloadBid eth_v2_beacon_block_execution_payload_bid = 48
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID" ];
   }
 }
 

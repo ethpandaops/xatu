@@ -49,8 +49,8 @@ type BeaconBlockDeriver struct {
 func NewBeaconBlockDeriver(log observability.ContextualLogger, config *BeaconBlockDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconBlockDeriver {
 	return &BeaconBlockDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/beacon_block",
-			"type":   BeaconBlockDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/beacon_block",
+			typeLogField:   BeaconBlockDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,
@@ -357,17 +357,22 @@ func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.Ve
 
 	extra.BlockRoot = fmt.Sprintf("%#x", blockRoot)
 
-	transactions, err := block.ExecutionTransactions()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get execution transactions")
-	}
+	// Gloas (EIP-7732) block bodies carry no transactions — they live in the
+	// execution payload envelope, covered by the execution transaction deriver.
+	// The body-level transaction stats are legitimately zero from Gloas onwards.
+	if block.Version < spec.DataVersionGloas {
+		transactions, err := block.ExecutionTransactions()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get execution transactions")
+		}
 
-	txs := make([][]byte, len(transactions))
-	for i, tx := range transactions {
-		txs[i] = tx
-	}
+		txs := make([][]byte, len(transactions))
+		for i, tx := range transactions {
+			txs[i] = tx
+		}
 
-	addTxData(txs)
+		addTxData(txs)
+	}
 
 	compressedTransactions := snappy.Encode(nil, transactionsBytes)
 	compressedTxSize := len(compressedTransactions)
@@ -400,6 +405,8 @@ func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, err
 		return block.Electra.Message, nil
 	case spec.DataVersionFulu:
 		return block.Fulu.Message, nil
+	case spec.DataVersionGloas:
+		return block.Gloas.Message, nil
 	default:
 		return nil, fmt.Errorf("unsupported block version: %s", block.Version)
 	}

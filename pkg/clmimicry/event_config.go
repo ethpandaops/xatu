@@ -34,6 +34,17 @@ type EventConfig struct {
 	GossipSubDataColumnSidecarEnabled bool `yaml:"gossipSubDataColumnSidecarEnabled" default:"true"`
 	EngineAPINewPayloadEnabled        bool `yaml:"engineApiNewPayloadEnabled" default:"false"`
 	EngineAPIGetBlobsEnabled          bool `yaml:"engineApiGetBlobsEnabled" default:"false"`
+
+	// EIP-7732 ePBS gossip topics (Gloas).
+	GossipSubExecutionPayloadEnvelopeEnabled  bool `yaml:"gossipSubExecutionPayloadEnvelopeEnabled" default:"true"`
+	GossipSubExecutionPayloadBidEnabled       bool `yaml:"gossipSubExecutionPayloadBidEnabled" default:"true"`
+	GossipSubPayloadAttestationMessageEnabled bool `yaml:"gossipSubPayloadAttestationMessageEnabled" default:"true"`
+	GossipSubProposerPreferencesEnabled       bool `yaml:"gossipSubProposerPreferencesEnabled" default:"true"`
+
+	// Beacon synthetic events (TYSM-instrumented internals, EIP-7732 ePBS).
+	BeaconSyntheticPayloadStatusResolvedEnabled           bool `yaml:"beaconSyntheticPayloadStatusResolvedEnabled" default:"true"`
+	BeaconSyntheticBuilderPendingPaymentSettlementEnabled bool `yaml:"beaconSyntheticBuilderPendingPaymentSettlementEnabled" default:"true"`
+	BeaconSyntheticPayloadAttestationProcessedEnabled     bool `yaml:"beaconSyntheticPayloadAttestationProcessedEnabled" default:"true"`
 }
 
 // Validate validates the event config.

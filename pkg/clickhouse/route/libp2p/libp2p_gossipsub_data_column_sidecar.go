@@ -60,13 +60,9 @@ func (b *libp2pGossipsubDataColumnSidecarBatch) validate(event *xatu.DecoratedEv
 		return fmt.Errorf("nil ColumnIndex: %w", route.ErrInvalidEvent)
 	}
 
-	if payload.GetProposerIndex() == nil {
-		return fmt.Errorf("nil ProposerIndex: %w", route.ErrInvalidEvent)
-	}
-
-	if payload.GetKzgCommitmentsCount() == nil {
-		return fmt.Errorf("nil KzgCommitmentsCount: %w", route.ErrInvalidEvent)
-	}
+	// ProposerIndex and KzgCommitmentsCount are header-derived and only present
+	// on Fulu sidecars. Gloas sidecars (EIP-7732) drop the signed block header,
+	// so these are legitimately absent there — appendPayload defaults them to 0.
 
 	additional := event.GetMeta().GetClient().GetLibp2PTraceGossipsubDataColumnSidecar()
 	if additional == nil {

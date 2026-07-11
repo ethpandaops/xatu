@@ -266,11 +266,16 @@ func (b *ExecutionRequestWithdrawalDeriver) getExecutionRequestWithdrawals(ctx c
 		return nil, errors.Wrap(err, "failed to obtain execution requests")
 	}
 
-	if requests == nil {
+	if requests == nil || requests.IsEmpty() {
 		return withdrawals, nil
 	}
 
-	for _, withdrawal := range requests.Withdrawals {
+	withdrawalRequests, err := requests.Withdrawals()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain withdrawal requests")
+	}
+
+	for _, withdrawal := range withdrawalRequests {
 		withdrawals = append(withdrawals, &xatuethv1.ElectraExecutionRequestWithdrawal{
 			SourceAddress:   &wrapperspb.StringValue{Value: withdrawal.SourceAddress.String()},
 			ValidatorPubkey: &wrapperspb.StringValue{Value: withdrawal.ValidatorPubkey.String()},

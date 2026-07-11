@@ -12,6 +12,7 @@ import (
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	ehttp "github.com/ethpandaops/go-eth2-client/http"
 	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/pkg/errors"
@@ -45,6 +46,14 @@ type BeaconNode struct {
 	validatorsCache       *ttlcache.Cache[string, map[phase0.ValidatorIndex]*apiv1.Validator]
 	validatorsPreloadChan chan string
 	validatorsPreloadSem  chan struct{}
+
+	// envelopeCache holds Gloas (EIP-7732) ExecutionPayloadEnvelopes keyed by
+	// block root. The envelope is fetched separately from the block — many
+	// derivers consume it per slot, so we cache to avoid duplicate fetches.
+	// A nil value means "envelope known to be absent" (builder withheld payload —
+	// payload_status = EMPTY); we cache the negative answer too.
+	envelopeSfGroup *singleflight.Group
+	envelopeCache   *ttlcache.Cache[string, *gloas.SignedExecutionPayloadEnvelope]
 }
 
 func NewBeaconNode(ctx context.Context, name string, config *Config, log observability.ContextualLogger) (*BeaconNode, error) {
@@ -56,7 +65,6 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 		DisablePrometheusMetrics()
 
 	opts.GoEth2ClientParams = []ehttp.Parameter{
-		// Default JSON until https://github.com/ethpandaops/go-eth2-client/pull/198 is merged.
 		ehttp.WithEnforceJSON(true),
 	}
 
@@ -107,7 +115,12 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 		),
 		validatorsPreloadChan: make(chan string, 2),
 		validatorsPreloadSem:  validatorsSem,
-		metrics:               NewMetrics(namespace, name),
+		envelopeSfGroup:       &singleflight.Group{},
+		envelopeCache: ttlcache.New(
+			ttlcache.WithTTL[string, *gloas.SignedExecutionPayloadEnvelope](config.Beacon.BlockCacheTTL.Duration),
+			ttlcache.WithCapacity[string, *gloas.SignedExecutionPayloadEnvelope](256),
+		),
+		metrics: NewMetrics(namespace, name),
 	}, nil
 }
 
@@ -362,7 +375,7 @@ func (b *BeaconNode) GetValidators(ctx context.Context, identifier string) (map[
 
 		span.AddEvent("Semaphore acquired. Fetching validators from beacon api...")
 
-		client, err := b.getValidatorsClient(ctx)
+		client, err := b.getValidatorsClient()
 		if err != nil {
 			return nil, err
 		}
@@ -406,12 +419,186 @@ func (b *BeaconNode) LazyLoadValidators(stateID string) {
 	b.validatorsPreloadChan <- stateID
 }
 
-func (b *BeaconNode) getValidatorsClient(ctx context.Context) (client.ValidatorsProvider, error) {
+func (b *BeaconNode) getValidatorsClient() (client.ValidatorsProvider, error) {
 	if provider, isProvider := b.beacon.Service().(client.ValidatorsProvider); isProvider {
 		return provider, nil
 	}
 
 	return nil, errors.New("validator states client not found")
+}
+
+// GetExecutionPayloadEnvelope returns the Gloas (EIP-7732) ExecutionPayloadEnvelope
+// for a given block ID (root, slot, "head", etc.). Multiple derivers consume the
+// envelope per slot; the cache + singleflight pattern prevents duplicate fetches.
+//
+// A nil-but-no-error result means the envelope is known to be absent — typically
+// the builder withheld the payload (payload_status = EMPTY). Callers should treat
+// this as a no-op for envelope-sourced data and emit nothing for the slot.
+func (b *BeaconNode) GetExecutionPayloadEnvelope(
+	ctx context.Context,
+	blockID string,
+) (*gloas.SignedExecutionPayloadEnvelope, error) {
+	ctx, span := observability.Tracer().Start(ctx, "ethereum.beacon.GetExecutionPayloadEnvelope",
+		trace.WithAttributes(attribute.String("block_id", blockID)))
+	defer span.End()
+
+	if item := b.envelopeCache.Get(blockID); item != nil {
+		span.SetAttributes(attribute.Bool("cached", true))
+
+		return item.Value(), nil
+	}
+
+	span.SetAttributes(attribute.Bool("cached", false))
+
+	x, err, shared := b.envelopeSfGroup.Do(blockID, func() (any, error) {
+		provider, err := b.getExecutionPayloadProvider()
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := provider.SignedExecutionPayloadEnvelope(ctx, &api.SignedExecutionPayloadEnvelopeOpts{
+			Block: blockID,
+		})
+		if err != nil {
+			var apiErr *api.Error
+			if errors.As(err, &apiErr) && apiErr.StatusCode == 404 {
+				withheld, werr := b.payloadWithheld(ctx, blockID)
+				if werr != nil {
+					return nil, errors.Wrapf(err,
+						"envelope absent and reveal status undetermined (%s)", werr.Error())
+				}
+
+				if withheld {
+					b.log.WithField("block_id", blockID).
+						Info("Execution payload envelope permanently absent: builder withheld the payload")
+
+					var absent *gloas.SignedExecutionPayloadEnvelope
+
+					b.envelopeCache.Set(blockID, absent, time.Hour)
+
+					return absent, nil
+				}
+			}
+
+			return nil, err
+		}
+
+		var envelope *gloas.SignedExecutionPayloadEnvelope
+		if resp != nil && resp.Data != nil {
+			envelope = resp.Data.Gloas
+		}
+
+		b.envelopeCache.Set(blockID, envelope, time.Hour)
+
+		return envelope, nil
+	})
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+
+		return nil, err
+	}
+
+	span.AddEvent("Envelope fetch complete.", trace.WithAttributes(attribute.Bool("shared", shared)))
+
+	envelope, ok := x.(*gloas.SignedExecutionPayloadEnvelope)
+	if !ok {
+		return nil, fmt.Errorf("envelope singleflight returned unexpected type %T", x)
+	}
+
+	return envelope, nil
+}
+
+func (b *BeaconNode) getExecutionPayloadProvider() (client.ExecutionPayloadProvider, error) {
+	if provider, isProvider := b.beacon.Service().(client.ExecutionPayloadProvider); isProvider {
+		return provider, nil
+	}
+
+	return nil, errors.New("execution payload provider not available")
+}
+
+// payloadWithheld reports whether the canonical execution payload for the given
+// block was withheld by its builder. Under EIP-7732 the EL head only advances
+// when a payload is revealed, so the next canonical block's bid builds on this
+// block's promised block hash iff this payload was revealed. This separates a
+// permanently-absent envelope (withheld — the beacon API 404s it forever, on
+// every client) from one the node should be able to serve but can't (a data
+// gap worth retrying). Only block data is used, so the answer is available on
+// any node that retains blocks, including during backfill.
+func (b *BeaconNode) payloadWithheld(ctx context.Context, blockID string) (bool, error) {
+	block, err := b.GetBeaconBlock(ctx, blockID)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to get block %s", blockID)
+	}
+
+	if block == nil {
+		return false, errors.Errorf("no canonical block for id %s", blockID)
+	}
+
+	bid, slot, err := gloasBid(block)
+	if err != nil {
+		return false, err
+	}
+
+	sp, err := b.beacon.Spec()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to obtain spec")
+	}
+
+	lookahead := 2 * uint64(sp.SlotsPerEpoch)
+
+	for i := uint64(1); i <= lookahead; i++ {
+		next, err := b.GetBeaconBlock(ctx, fmt.Sprintf("%d", uint64(slot)+i))
+		if err != nil {
+			return false, errors.Wrapf(err, "failed to get block at slot %d", uint64(slot)+i)
+		}
+
+		if next == nil {
+			// Empty slot, keep walking forward.
+			continue
+		}
+
+		nextBid, _, err := gloasBid(next)
+		if err != nil {
+			return false, err
+		}
+
+		return bidPayloadWithheld(bid, nextBid)
+	}
+
+	return false, errors.Errorf("no canonical block within %d slots after slot %d", lookahead, slot)
+}
+
+// gloasBid extracts the execution payload bid and slot from a Gloas block.
+func gloasBid(block *spec.VersionedSignedBeaconBlock) (*gloas.ExecutionPayloadBid, phase0.Slot, error) {
+	if block.Version < spec.DataVersionGloas {
+		return nil, 0, errors.Errorf("block version %s predates gloas", block.Version)
+	}
+
+	if block.Gloas == nil || block.Gloas.Message == nil || block.Gloas.Message.Body == nil ||
+		block.Gloas.Message.Body.SignedExecutionPayloadBid == nil ||
+		block.Gloas.Message.Body.SignedExecutionPayloadBid.Message == nil {
+		return nil, 0, errors.New("gloas block is missing its execution payload bid")
+	}
+
+	return block.Gloas.Message.Body.SignedExecutionPayloadBid.Message, block.Gloas.Message.Slot, nil
+}
+
+// bidPayloadWithheld decides from two consecutive canonical bids whether the
+// earlier block's payload was withheld. The next bid builds on the earlier
+// bid's block hash iff that payload was revealed, and on the earlier bid's
+// parent hash iff it was withheld. Anything else means our view of the chain
+// is inconsistent (e.g. a reorg between fetches), so fail rather than guess.
+func bidPayloadWithheld(bid, nextBid *gloas.ExecutionPayloadBid) (bool, error) {
+	switch nextBid.ParentBlockHash {
+	case bid.BlockHash:
+		return false, nil
+	case bid.ParentBlockHash:
+		return true, nil
+	default:
+		return false, errors.Errorf(
+			"next bid parent block hash %#x matches neither promised block hash %#x nor parent %#x",
+			nextBid.ParentBlockHash, bid.BlockHash, bid.ParentBlockHash)
+	}
 }
 
 func (b *BeaconNode) DeleteValidatorsFromCache(stateID string) {

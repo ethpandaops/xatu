@@ -45,8 +45,8 @@ type DepositDeriver struct {
 func NewDepositDeriver(log observability.ContextualLogger, config *DepositDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *DepositDeriver {
 	return &DepositDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/deposit",
-			"type":   DepositDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/deposit",
+			typeLogField:   DepositDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

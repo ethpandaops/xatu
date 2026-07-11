@@ -300,6 +300,12 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 		return l.marshalLocationData("EXECUTION_CANONICAL_FOUR_BYTE_COUNTS", msg.GetExecutionCanonicalFourByteCounts())
 	case xatu.CannonType_EXECUTION_CANONICAL_ADDRESS_APPEARANCES:
 		return l.marshalLocationData("EXECUTION_CANONICAL_ADDRESS_APPEARANCES", msg.GetExecutionCanonicalAddressAppearances())
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST:
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST", msg.GetEthV2BeaconBlockAccessList())
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION:
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION", msg.GetEthV2BeaconBlockPayloadAttestation())
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID:
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID", msg.GetEthV2BeaconBlockExecutionPayloadBid())
 	default:
 		return fmt.Errorf("unknown type: %s", msg.Type)
 	}
@@ -787,6 +793,36 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 		}
 
 		msg.Data = &xatu.CannonLocation_ExecutionCanonicalAddressAppearances{ExecutionCanonicalAddressAppearances: data}
+	case "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST
+
+		data := &xatu.CannonLocationEthV2BeaconBlockAccessList{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockAccessList{EthV2BeaconBlockAccessList: data}
+	case "BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION
+
+		data := &xatu.CannonLocationEthV2BeaconBlockPayloadAttestation{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockPayloadAttestation{EthV2BeaconBlockPayloadAttestation: data}
+	case "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_PAYLOAD_BID
+
+		data := &xatu.CannonLocationEthV2BeaconBlockExecutionPayloadBid{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockExecutionPayloadBid{EthV2BeaconBlockExecutionPayloadBid: data}
 	default:
 		return nil, fmt.Errorf("unknown type: %s", l.Type)
 	}

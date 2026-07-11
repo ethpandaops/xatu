@@ -90,9 +90,9 @@ func (e *EventsVoluntaryExit) ShouldIgnore(ctx context.Context) (bool, error) {
 	item, retrieved := e.duplicateCache.GetOrSet(fmt.Sprint(hash), e.now, ttlcache.WithTTL[string, time.Time](ttlcache.DefaultTTL))
 	if retrieved {
 		e.log.WithFields(logrus.Fields{
-			"hash":                  hash,
-			"time_since_first_item": time.Since(item.Value()),
-			"epoch":                 e.event.Message.Epoch,
+			hashLogField:               hash,
+			timeSinceFirstItemLogField: time.Since(item.Value()),
+			epochLogField:              e.event.Message.Epoch,
 		}).WithContext(ctx).Debug("Duplicate voluntary exit event received")
 
 		return true, nil

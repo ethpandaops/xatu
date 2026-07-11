@@ -45,8 +45,8 @@ type VoluntaryExitDeriver struct {
 func NewVoluntaryExitDeriver(log observability.ContextualLogger, config *VoluntaryExitDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *VoluntaryExitDeriver {
 	return &VoluntaryExitDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/voluntary_exit",
-			"type":   VoluntaryExitDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/voluntary_exit",
+			typeLogField:   VoluntaryExitDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

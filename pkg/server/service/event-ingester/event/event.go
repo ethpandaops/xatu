@@ -35,6 +35,7 @@ var (
 	TypeBeaconETHV1EventsFinalizedCheckpointV2  Type = v1.EventsFinalizedCheckpointV2Type
 	TypeBeaconETHV1EventsHead                   Type = v1.EventsHeadType
 	TypeBeaconETHV1EventsHeadV2                 Type = v1.EventsHeadV2Type
+	TypeBeaconETHV1EventsHeadV3                 Type = v1.EventsHeadV3Type
 	TypeBeaconETHV1EventsVoluntaryExit          Type = v1.EventsVoluntaryExitType
 	TypeBeaconETHV1EventsVoluntaryExitV2        Type = v1.EventsVoluntaryExitV2Type
 	TypeBeaconETHV1EventsAttestation            Type = v1.EventsAttestationType
@@ -223,6 +224,9 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	})
 	router.RegisterHandler(TypeBeaconETHV1EventsHeadV2, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewEventsHeadV2(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1EventsHeadV3, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewEventsHeadV3(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconETHV1EventsVoluntaryExit, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewEventsVoluntaryExit(router.log, event), nil

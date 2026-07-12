@@ -617,6 +617,17 @@ message ClientMeta {
     PropagationV2 propagation = 3;
   }
 
+  message AdditionalEthV1EventsHeadV3Data {
+    // Epoch contains the epoch information for the head.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot information for the head event.
+    SlotV2 slot = 2;
+
+    // Propagation contains information about the propagation of the head.
+    PropagationV2 propagation = 3;
+  }
+
   message AdditionalEthV1EventsBlockData {
     // Epoch contains the epoch information for the block.
     Epoch epoch = 1;
@@ -2259,6 +2270,7 @@ message ClientMeta {
     AdditionalBeaconSyntheticPayloadStatusResolvedData beacon_synthetic_payload_status_resolved = 120 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED" ];
     AdditionalBeaconSyntheticBuilderPendingPaymentSettlementData beacon_synthetic_builder_pending_payment_settlement = 121 [ json_name = "BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT" ];
     AdditionalBeaconSyntheticPayloadAttestationProcessedData beacon_synthetic_payload_attestation_processed = 122 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED" ];
+    AdditionalEthV1EventsHeadV3Data eth_v1_events_head_v3 = 123 [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD_V3" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2535,6 +2547,9 @@ message Event {
 
     BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST = 133;
     BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD = 134;
+    // The beacon-API head_v2 SSE topic (gloas); V3 because
+    // BEACON_API_ETH_V1_EVENTS_HEAD_V2 is the schema rev of the v1 topic.
+    BEACON_API_ETH_V1_EVENTS_HEAD_V3 = 135;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -3271,6 +3286,8 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
     xatu.eth.v1.ExecutionPayloadEvent eth_v1_events_execution_payload = 255
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
+    xatu.eth.v1.EventHeadV3 eth_v1_events_head_v3 = 256
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD_V3" ];
   };
 }
 

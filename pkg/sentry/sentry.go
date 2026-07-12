@@ -483,6 +483,42 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return nil
 		})
 
+		s.beacon.Node().OnHeadV2(ctx, func(ctx context.Context, head *eth2v1.HeadEventV2) error {
+			now := time.Now().Add(s.clockDrift)
+
+			meta, err := s.createNewClientMeta(ctx)
+			if err != nil {
+				return err
+			}
+
+			event := v1.NewEventsHeadV3(s.log, head, now, s.beacon, s.duplicateCache.BeaconETHV1EventsHeadV3, meta)
+
+			ignore, err := event.ShouldIgnore(ctx)
+			if err != nil {
+				return err
+			}
+
+			if ignore {
+				return nil
+			}
+
+			decoratedEvent, err := event.Decorate(ctx)
+			if err != nil {
+				return err
+			}
+
+			if err := s.handleNewDecoratedEvent(ctx, decoratedEvent); err != nil {
+				return err
+			}
+
+			// Trigger state size polling if enabled in "head" mode.
+			if err := s.onHeadEventForStateSize(ctx); err != nil {
+				s.log.WithError(err).WithContext(ctx).Debug("Failed to trigger state size polling on head_v2 event")
+			}
+
+			return nil
+		})
+
 		s.beacon.Node().OnVoluntaryExit(ctx, func(ctx context.Context, voluntaryExit *phase0.SignedVoluntaryExit) error {
 			now := time.Now().Add(s.clockDrift)
 

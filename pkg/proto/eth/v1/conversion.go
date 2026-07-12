@@ -202,6 +202,55 @@ func NewAttesterSlashingsFromElectra(data []*electra.AttesterSlashing) []*Attest
 	return slashings
 }
 
+func NewAttesterSlashingsFromGloas(data []*gloas.AttesterSlashing) []*AttesterSlashing {
+	slashings := []*AttesterSlashing{}
+
+	if data == nil {
+		return slashings
+	}
+
+	for _, slashing := range data {
+		slashings = append(slashings, &AttesterSlashing{
+			Attestation_1: &IndexedAttestation{
+				AttestingIndices: slashing.Attestation1.AttestingIndices,
+				Data: &AttestationData{
+					Slot:            uint64(slashing.Attestation1.Data.Slot),
+					Index:           uint64(slashing.Attestation1.Data.Index),
+					BeaconBlockRoot: slashing.Attestation1.Data.BeaconBlockRoot.String(),
+					Source: &Checkpoint{
+						Epoch: uint64(slashing.Attestation1.Data.Source.Epoch),
+						Root:  slashing.Attestation1.Data.Source.Root.String(),
+					},
+					Target: &Checkpoint{
+						Epoch: uint64(slashing.Attestation1.Data.Target.Epoch),
+						Root:  slashing.Attestation1.Data.Target.Root.String(),
+					},
+				},
+				Signature: slashing.Attestation1.Signature.String(),
+			},
+			Attestation_2: &IndexedAttestation{
+				AttestingIndices: slashing.Attestation2.AttestingIndices,
+				Data: &AttestationData{
+					Slot:            uint64(slashing.Attestation2.Data.Slot),
+					Index:           uint64(slashing.Attestation2.Data.Index),
+					BeaconBlockRoot: slashing.Attestation2.Data.BeaconBlockRoot.String(),
+					Source: &Checkpoint{
+						Epoch: uint64(slashing.Attestation2.Data.Source.Epoch),
+						Root:  slashing.Attestation2.Data.Source.Root.String(),
+					},
+					Target: &Checkpoint{
+						Epoch: uint64(slashing.Attestation2.Data.Target.Epoch),
+						Root:  slashing.Attestation2.Data.Target.Root.String(),
+					},
+				},
+				Signature: slashing.Attestation2.Signature.String(),
+			},
+		})
+	}
+
+	return slashings
+}
+
 func NewAttestationsFromPhase0(data []*phase0.Attestation) []*Attestation {
 	attestations := []*Attestation{}
 
@@ -233,6 +282,36 @@ func NewAttestationsFromPhase0(data []*phase0.Attestation) []*Attestation {
 }
 
 func NewAttestationsFromElectra(data []*electra.Attestation) []*Attestation {
+	attestations := []*Attestation{}
+
+	if data == nil {
+		return attestations
+	}
+
+	for _, attestation := range data {
+		attestations = append(attestations, &Attestation{
+			AggregationBits: fmt.Sprintf("0x%x", attestation.AggregationBits),
+			Data: &AttestationData{
+				Slot:            uint64(attestation.Data.Slot),
+				Index:           uint64(attestation.Data.Index),
+				BeaconBlockRoot: attestation.Data.BeaconBlockRoot.String(),
+				Source: &Checkpoint{
+					Epoch: uint64(attestation.Data.Source.Epoch),
+					Root:  attestation.Data.Source.Root.String(),
+				},
+				Target: &Checkpoint{
+					Epoch: uint64(attestation.Data.Target.Epoch),
+					Root:  attestation.Data.Target.Root.String(),
+				},
+			},
+			Signature: attestation.Signature.String(),
+		})
+	}
+
+	return attestations
+}
+
+func NewAttestationsFromGloas(data []*gloas.Attestation) []*Attestation {
 	attestations := []*Attestation{}
 
 	if data == nil {

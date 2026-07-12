@@ -433,8 +433,8 @@ func NewEventBlockFromGloas(block *gloas.BeaconBlock, signature *phase0.BLSSigna
 					},
 					Graffiti:          fmt.Sprintf("0x%x", block.Body.Graffiti[:]),
 					ProposerSlashings: v1.NewProposerSlashingsFromPhase0(block.Body.ProposerSlashings),
-					AttesterSlashings: v1.NewAttesterSlashingsFromElectra(block.Body.AttesterSlashings),
-					Attestations:      v1.NewAttestationsFromElectra(block.Body.Attestations),
+					AttesterSlashings: v1.NewAttesterSlashingsFromGloas(block.Body.AttesterSlashings),
+					Attestations:      v1.NewAttestationsFromGloas(block.Body.Attestations),
 					Deposits:          v1.NewDepositsFromPhase0(block.Body.Deposits),
 					VoluntaryExits:    v1.NewSignedVoluntaryExitsFromPhase0(block.Body.VoluntaryExits),
 					SyncAggregate: &v1.SyncAggregate{

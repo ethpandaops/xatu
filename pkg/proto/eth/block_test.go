@@ -450,8 +450,8 @@ func mockGloasBlock() *gloas.BeaconBlock {
 			},
 			Graffiti:          [32]byte{},
 			ProposerSlashings: []*phase0.ProposerSlashing{},
-			AttesterSlashings: []*electra.AttesterSlashing{},
-			Attestations:      []*electra.Attestation{},
+			AttesterSlashings: []*gloas.AttesterSlashing{},
+			Attestations:      []*gloas.Attestation{},
 			Deposits:          []*phase0.Deposit{},
 			VoluntaryExits:    []*phase0.SignedVoluntaryExit{},
 			SyncAggregate: &altair.SyncAggregate{
@@ -501,8 +501,8 @@ func TestNewEventBlockFromGloas(t *testing.T) {
 			},
 			Graffiti:          [32]byte{},
 			ProposerSlashings: []*phase0.ProposerSlashing{},
-			AttesterSlashings: []*electra.AttesterSlashing{},
-			Attestations:      []*electra.Attestation{},
+			AttesterSlashings: []*gloas.AttesterSlashing{},
+			Attestations:      []*gloas.Attestation{},
 			Deposits:          []*phase0.Deposit{},
 			VoluntaryExits:    []*phase0.SignedVoluntaryExit{},
 			SyncAggregate: &altair.SyncAggregate{

@@ -50,8 +50,10 @@ p2p:
     restart: 2m
     # execution layer discovery settings (optional, defaults shown)
     # execution:
-    #   retryAttempts: 5    # max retry attempts for dialing a peer
-    #   retryDelay: 5s      # delay between retry attempts
+    #   retryAttempts: 1    # max retry attempts for dialing a peer; EL clients
+    #                       # throttle same-IP reconnects (30s-5m), so retries
+    #                       # spaced closer than that are rejected pre-handshake
+    #   retryDelay: 60s     # delay between retry attempts, when enabled
     #   dialTimeout: 15s    # timeout for dialing a peer
     #   bootstrapRpcUrl: "" # optional EL JSON-RPC. When set, discovery serves
     #                       # Status/headers/bodies/receipts from this endpoint
@@ -124,8 +126,8 @@ p2p:
   #   forkIdHashes: [0xf0afd0e3] # execution layer
   #   forkDigests: [0x09fb0a12] # consensus layer
   #   execution:  # optional
-  #     retryAttempts: 5
-  #     retryDelay: 5s
+  #     retryAttempts: 1
+  #     retryDelay: 60s
   #     dialTimeout: 15s
   #     bootstrapRpcUrl: "" # optional EL JSON-RPC for Status/headers/bodies/receipts
   #   consensus:  # optional

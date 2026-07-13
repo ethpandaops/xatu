@@ -48,8 +48,8 @@ func (c *Config) GetNetworkIDs() []uint64 {
 // Returns a config with default values if not configured or on error.
 func (c *Config) GetExecutionConfig() *static.ExecutionConfig {
 	defaultConfig := &static.ExecutionConfig{
-		RetryAttempts: 5,
-		RetryDelay:    5 * time.Second,
+		RetryAttempts: 1,
+		RetryDelay:    60 * time.Second,
 		DialTimeout:   15 * time.Second,
 	}
 
@@ -86,11 +86,11 @@ func (c *Config) GetExecutionConfig() *static.ExecutionConfig {
 // applyExecutionDefaults applies default values for zero-valued fields.
 func (c *Config) applyExecutionDefaults(exec *static.ExecutionConfig) *static.ExecutionConfig {
 	if exec.RetryAttempts == 0 {
-		exec.RetryAttempts = 5
+		exec.RetryAttempts = 1
 	}
 
 	if exec.RetryDelay == 0 {
-		exec.RetryDelay = 5 * time.Second
+		exec.RetryDelay = 60 * time.Second
 	}
 
 	if exec.DialTimeout == 0 {

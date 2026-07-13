@@ -22,7 +22,13 @@ import (
 const (
 	topicExecutionStatus = "execution_status"
 	topicConsensusStatus = "consensus_status"
+
+	dialFailureTimeout  = "timeout"
+	dialFailureCanceled = "canceled"
+	dialFailureError    = "dial_error"
 )
+
+var errDialTimeout = errors.New(dialFailureTimeout)
 
 type Status struct {
 	config           *Config
@@ -168,6 +174,10 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 
 							s.metrics.AddDialedNodeRecod(1, status, "execution")
 
+							if !connected {
+								s.metrics.AddDialFailure(1, "execution", executionDialFailureReason(peer, response))
+							}
+
 							if err = peer.Stop(s.ctx); err != nil {
 								s.log.WithError(err).WithContext(ctx).Warn("failed to stop peer")
 							}
@@ -186,7 +196,7 @@ func (s *Status) AddExecutionNodeRecords(ctx context.Context, nodeRecords []stri
 					select {
 					case response = <-disconnect:
 					case <-timer.C:
-						response = errors.New("timeout")
+						response = errDialTimeout
 					case <-s.ctx.Done():
 						response = s.ctx.Err()
 					}
@@ -314,7 +324,7 @@ func (s *Status) AddConsensusNodeRecords(_ context.Context, nodeRecords []string
 			select {
 			case response = <-disconnect:
 			case <-timer.C:
-				response = errors.New("timeout")
+				response = errDialTimeout
 			case <-s.ctx.Done():
 				response = s.ctx.Err()
 			}
@@ -356,7 +366,7 @@ func (s *Status) OnExecutionStatus(ctx context.Context, handler func(ctx context
 		}
 
 		// exclude execution status for fork id hashes that are not in the list
-		if len(forkIdHashes) > 0 && !slices.Contains(forkIdHashes, fmt.Sprintf("0x%x", status.ForkId.Hash)) {
+		if len(forkIdHashes) > 0 && !slices.Contains(forkIdHashes, fmt.Sprintf("0x%x", status.GetForkId().GetHash())) {
 			s.log.WithField("fork_id_hash", fmt.Sprintf("0x%x", status.GetForkId().GetHash())).WithContext(ctx).Warn("skipping execution status for fork id hash")
 
 			return
@@ -370,4 +380,27 @@ func (s *Status) OnConsensusStatus(ctx context.Context, handler func(ctx context
 	s.broker.On(topicConsensusStatus, func(status *xatu.ConsensusNodeStatus) {
 		s.handleSubscriberError(handler(ctx, status), topicConsensusStatus)
 	})
+}
+
+// executionDialFailureReason maps a failed dial attempt to a bounded metric
+// label: the remote's devp2p disconnect reason when one was received,
+// otherwise a coarse local classification.
+func executionDialFailureReason(peer *ExecutionPeer, response error) string {
+	if reason := peer.DisconnectReason(); reason != "" {
+		return reason
+	}
+
+	if response == nil {
+		return dialFailureError
+	}
+
+	if errors.Is(response, context.Canceled) || errors.Is(response, context.DeadlineExceeded) {
+		return dialFailureCanceled
+	}
+
+	if errors.Is(response, errDialTimeout) {
+		return dialFailureTimeout
+	}
+
+	return dialFailureError
 }

@@ -209,29 +209,29 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 	})
 
 	p.client.OnStatus(ctx, func(ctx context.Context, status mimicry.Status) error {
+		s := &xatu.ExecutionNodeStatus{NodeRecord: p.nodeRecord}
+
+		s.Name = p.name
+		s.ProtocolVersion = p.protocolVersion
+
+		if p.capabilities != nil {
+			for _, cap := range *p.capabilities {
+				s.Capabilities = append(s.Capabilities, &xatu.ExecutionNodeStatus_Capability{
+					Name:    cap.Name,
+					Version: uint32(cap.Version), //nolint:gosec // devp2p capability versions are small protocol numbers.
+				})
+			}
+		}
+
+		s.NetworkId = status.GetNetworkID()
+		s.Head = status.GetHead()
+		s.Genesis = status.GetGenesis()
+		s.ForkId = &xatu.ExecutionNodeStatus_ForkID{
+			Hash: status.GetForkIDHash(),
+			Next: status.GetForkIDNext(),
+		}
+
 		if p.handlers.ExecutionStatus != nil {
-			s := &xatu.ExecutionNodeStatus{NodeRecord: p.nodeRecord}
-
-			s.Name = p.name
-			s.ProtocolVersion = p.protocolVersion
-
-			if p.capabilities != nil {
-				for _, cap := range *p.capabilities {
-					s.Capabilities = append(s.Capabilities, &xatu.ExecutionNodeStatus_Capability{
-						Name:    cap.Name,
-						Version: uint32(cap.Version),
-					})
-				}
-			}
-
-			s.NetworkId = status.GetNetworkID()
-			s.Head = status.GetHead()
-			s.Genesis = status.GetGenesis()
-			s.ForkId = &xatu.ExecutionNodeStatus_ForkID{
-				Hash: status.GetForkIDHash(),
-				Next: status.GetForkIDNext(),
-			}
-
 			if serr := p.handlers.ExecutionStatus(ctx, s); serr != nil {
 				p.log.WithError(serr).WithContext(ctx).Error("failed to handle execution status")
 			}
@@ -272,6 +272,15 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 			"fork_id_hash": "0x" + fmt.Sprintf("%x", status.GetForkIDHash()),
 			"fork_id_next": fmt.Sprintf("%d", status.GetForkIDNext()),
 		}).WithContext(ctx).Debug("got client status")
+
+		if p.handlers.DecoratedEvent != nil {
+			nodeRecordEvent, nrErr := p.createNodeRecordEvent(ctx, s)
+			if nrErr != nil {
+				p.log.WithError(nrErr).WithContext(ctx).Error("failed to create node record event")
+			} else if nrErr := p.handlers.DecoratedEvent(ctx, nodeRecordEvent); nrErr != nil {
+				p.log.WithError(nrErr).WithContext(ctx).Error("failed to publish node record event")
+			}
+		}
 
 		p.markConnectedMetric()
 

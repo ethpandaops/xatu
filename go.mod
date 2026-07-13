@@ -2,6 +2,8 @@ module github.com/ethpandaops/xatu
 
 go 1.26.2
 
+toolchain go1.26.5
+
 // release-xatu branch.
 
 // Match tysm's tablewriter version requirement
@@ -274,7 +276,7 @@ require (
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20240618144021-706c95b2dd15 // indirect
 	github.com/prysmaticlabs/gohashtree v0.0.5-beta // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
-	github.com/quic-go/quic-go v0.59.0 // indirect
+	github.com/quic-go/quic-go v0.59.1 // indirect
 	github.com/quic-go/webtransport-go v0.10.0 // indirect
 	github.com/quipo/dependencysolver v0.0.0-20170801134659-2b009cb4ddcc // indirect
 	github.com/r3labs/sse/v2 v2.10.0 // indirect

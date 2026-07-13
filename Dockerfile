@@ -29,7 +29,12 @@ RUN go build \
 # every build path (docker build, docker compose, `make docker`, and the
 # release cryo image) builds this Dockerfile, so bump it here to upgrade cryo
 # everywhere. Override with --build-arg CRYO_GIT_REF=<ref> for ad-hoc testing.
-FROM rust:1-bookworm AS cryo-builder
+# Rust is pinned because the cryo ref is: cryo's lockfile carries ethnum
+# 1.5.0, whose IntErrorKind transmute fails to compile (E0512) from rustc
+# 1.97.0. The floating rust:1 tag only bit when a new stable invalidated the
+# cryo-buildcache layer. Unpin (or bump) together with CRYO_GIT_REF once
+# cryo's lockfile moves to an ethnum that builds on current stable.
+FROM rust:1.96-bookworm AS cryo-builder
 ARG CRYO_GIT_REF=559b65455d7ef6b03e8e9e96a0e50fd4fe8a9c86
 RUN cargo install --git https://github.com/paradigmxyz/cryo --rev "${CRYO_GIT_REF}" --locked cryo_cli
 

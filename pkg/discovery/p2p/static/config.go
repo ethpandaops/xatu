@@ -8,9 +8,13 @@ import (
 // ExecutionConfig holds configuration for execution layer node discovery dialing.
 type ExecutionConfig struct {
 	// RetryAttempts is the maximum number of retry attempts for dialing a peer.
-	RetryAttempts uint `yaml:"retryAttempts" default:"5"`
-	// RetryDelay is the delay between retry attempts.
-	RetryDelay time.Duration `yaml:"retryDelay" default:"5s"`
+	// Execution clients throttle repeat connections from the same IP (30s for
+	// geth/erigon/reth, 5m per /24 for nethermind), so rapid in-process retries
+	// are rejected before the handshake; rely on rediscovery instead.
+	RetryAttempts uint `yaml:"retryAttempts" default:"1"`
+	// RetryDelay is the delay between retry attempts, when retries are enabled.
+	// Must exceed the remote client's same-IP reconnect throttle to be useful.
+	RetryDelay time.Duration `yaml:"retryDelay" default:"60s"`
 	// DialTimeout is the timeout for dialing a peer.
 	DialTimeout time.Duration `yaml:"dialTimeout" default:"15s"`
 	// BootstrapRPCURL is an optional execution JSON-RPC endpoint used to build

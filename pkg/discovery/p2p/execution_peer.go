@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync/atomic"
 
 	"github.com/ethpandaops/ethcore/pkg/execution/mimicry"
 
@@ -20,6 +21,8 @@ type ExecutionPeer struct {
 	client *mimicry.Client
 
 	hello *mimicry.Hello
+
+	disconnectReason atomic.Pointer[string]
 
 	handlerFunc func(ctx context.Context, status *xatu.ExecutionNodeStatus)
 }
@@ -106,6 +109,8 @@ func (p *ExecutionPeer) Start(ctx context.Context) (<-chan error, error) {
 			str = reason.Reason.String()
 		}
 
+		p.disconnectReason.Store(&str)
+
 		response <- errors.New("disconnected from peer (reason " + str + ")")
 
 		return nil
@@ -117,6 +122,16 @@ func (p *ExecutionPeer) Start(ctx context.Context) (<-chan error, error) {
 	}
 
 	return response, nil
+}
+
+// DisconnectReason returns the devp2p disconnect reason sent by the remote
+// peer, or an empty string if the session ended without one.
+func (p *ExecutionPeer) DisconnectReason() string {
+	if reason := p.disconnectReason.Load(); reason != nil {
+		return *reason
+	}
+
+	return ""
 }
 
 func (p *ExecutionPeer) Stop(ctx context.Context) error {

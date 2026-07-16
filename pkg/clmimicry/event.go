@@ -18,7 +18,8 @@ const (
 	unknown = "unknown"
 
 	// libp2p pubsub events.
-	TraceEvent_HANDLE_MESSAGE = "HANDLE_MESSAGE"
+	TraceEvent_HANDLE_MESSAGE            = "HANDLE_MESSAGE"
+	TraceEvent_GOSSIPSUB_MESSAGE_PAYLOAD = "GOSSIPSUB_MESSAGE_PAYLOAD"
 
 	// libp2p core networking events.
 	TraceEvent_CONNECTED    = "CONNECTED"
@@ -80,6 +81,10 @@ func (p *Processor) HandleHermesEvent(ctx context.Context, event *TraceEvent) er
 	// GossipSub protocol events.
 	case isGossipSubEvent(event):
 		return p.handleHermesGossipSubEvent(ctx, event, clientMeta, traceMeta)
+
+	// Raw gossipsub message payload events.
+	case event.Type == TraceEvent_GOSSIPSUB_MESSAGE_PAYLOAD:
+		return p.handleGossipsubMessagePayloadEvent(ctx, event, clientMeta)
 
 	// libp2p pubsub protocol level events.
 	case isLibp2pEvent(event):

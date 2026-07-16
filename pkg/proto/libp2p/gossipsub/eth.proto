@@ -30,3 +30,15 @@ message DataColumnSidecar {
     google.protobuf.UInt32Value kzg_commitments_count = 6 [json_name = "kzg_commitments_count"];
     google.protobuf.StringValue block_root = 7 [json_name = "block_root"];
 }
+
+// MessagePayload carries the raw wire bytes of a gossipsub message, regardless
+// of topic. The bytes are stored exactly as received off the wire (snappy-framed
+// SSZ), so the archive stays byte-faithful and fork-agnostic.
+message MessagePayload {
+    // Data is the raw gossipsub message payload as received off the wire.
+    bytes data = 1 [json_name = "data"];
+    // Outcome is the gossip validation outcome for the message: "deliver" or "reject".
+    google.protobuf.StringValue outcome = 2 [json_name = "outcome"];
+    // RejectReason is the validation rejection reason. Empty for delivered messages.
+    google.protobuf.StringValue reject_reason = 3 [json_name = "reject_reason"];
+}

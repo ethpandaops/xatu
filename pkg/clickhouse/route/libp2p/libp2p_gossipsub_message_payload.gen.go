@@ -26,7 +26,6 @@ type libp2pGossipsubMessagePayloadBatch struct {
 	MessageID                                 proto.ColStr
 	MessageSize                               proto.ColUInt32
 	MessageData                               proto.ColStr
-	Outcome                                   proto.ColStr
 	MetaClientName                            proto.ColStr
 	MetaClientVersion                         proto.ColStr
 	MetaClientImplementation                  proto.ColStr
@@ -109,7 +108,6 @@ func (b *libp2pGossipsubMessagePayloadBatch) Input() proto.Input {
 		{Name: "message_id", Data: &b.MessageID},
 		{Name: "message_size", Data: &b.MessageSize},
 		{Name: "message_data", Data: &b.MessageData},
-		{Name: "outcome", Data: &b.Outcome},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
 		{Name: "meta_client_version", Data: &b.MetaClientVersion},
 		{Name: "meta_client_implementation", Data: &b.MetaClientImplementation},
@@ -141,7 +139,6 @@ func (b *libp2pGossipsubMessagePayloadBatch) Reset() {
 	b.MessageID.Reset()
 	b.MessageSize.Reset()
 	b.MessageData.Reset()
-	b.Outcome.Reset()
 	b.MetaClientName.Reset()
 	b.MetaClientVersion.Reset()
 	b.MetaClientImplementation.Reset()
@@ -164,7 +161,7 @@ func (b *libp2pGossipsubMessagePayloadBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 28)
+		row := make(map[string]any, 27)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["wallclock_slot"] = b.WallclockSlot.Row(i)
@@ -178,7 +175,6 @@ func (b *libp2pGossipsubMessagePayloadBatch) Snapshot() []map[string]any {
 		row["message_id"] = b.MessageID.Row(i)
 		row["message_size"] = b.MessageSize.Row(i)
 		row["message_data"] = b.MessageData.Row(i)
-		row["outcome"] = b.Outcome.Row(i)
 		row["meta_client_name"] = b.MetaClientName.Row(i)
 		row["meta_client_version"] = b.MetaClientVersion.Row(i)
 		row["meta_client_implementation"] = b.MetaClientImplementation.Row(i)

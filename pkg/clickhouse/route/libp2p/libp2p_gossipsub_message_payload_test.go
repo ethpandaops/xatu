@@ -51,6 +51,5 @@ func TestSnapshot_libp2p_gossipsub_message_payload(t *testing.T) {
 	}, 1, map[string]any{
 		"message_id":   testMessageID,
 		"message_data": string(testData),
-		"outcome":      "deliver",
 	})
 }

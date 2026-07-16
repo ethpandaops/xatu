@@ -63,10 +63,6 @@ func (b *libp2pGossipsubMessagePayloadBatch) validate(event *xatu.DecoratedEvent
 		return fmt.Errorf("nil MessageId: %w", route.ErrInvalidEvent)
 	}
 
-	if event.GetLibp2PTraceGossipsubMessagePayload().GetOutcome() == nil {
-		return fmt.Errorf("nil Outcome: %w", route.ErrInvalidEvent)
-	}
-
 	if additional.GetWallclockSlot() == nil {
 		return fmt.Errorf("nil WallclockSlot: %w", route.ErrInvalidEvent)
 	}
@@ -92,7 +88,6 @@ func (b *libp2pGossipsubMessagePayloadBatch) appendPayload(event *xatu.Decorated
 	payload := event.GetLibp2PTraceGossipsubMessagePayload()
 
 	b.MessageData.AppendBytes(payload.GetData())
-	b.Outcome.Append(wrappedStringValue(payload.GetOutcome()))
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse column schema

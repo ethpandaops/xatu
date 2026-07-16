@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS libp2p_gossipsub_message_payload_local ON CLUSTER '{c
     `message_id` String COMMENT 'Gossipsub message ID, derived from the message contents' CODEC(ZSTD(1)),
     `message_size` UInt32 COMMENT 'Size of the message payload in bytes' CODEC(ZSTD(1)),
     `message_data` String COMMENT 'Raw gossipsub message payload as received off the wire (snappy-framed SSZ)' CODEC(ZSTD(1)),
-    `outcome` LowCardinality(String) COMMENT 'Gossip validation outcome for the message: deliver or reject. Part of the sorting key, so a message delivered by one client and rejected by another keeps one row per outcome',
     `meta_client_name` LowCardinality(String) COMMENT 'Name of the client that generated the event',
     `meta_client_version` LowCardinality(String) COMMENT 'Version of the client that generated the event',
     `meta_client_implementation` LowCardinality(String) COMMENT 'Implementation of the client that generated the event',
@@ -31,8 +30,8 @@ CREATE TABLE IF NOT EXISTS libp2p_gossipsub_message_payload_local ON CLUSTER '{c
 )
 ENGINE = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
 PARTITION BY (meta_network_name, toDate(wallclock_slot_start_date_time))
-ORDER BY (meta_network_name, wallclock_slot_start_date_time, topic_fork_digest_value, topic_name, message_id, outcome)
-COMMENT 'Contains raw gossipsub message payloads keyed by message ID and validation outcome. Message IDs are content-derived, and the sorting key deliberately excludes observation-specific columns (peer, client, receive time) so identical messages captured by multiple clients deduplicate on merge. Per-observation detail lives in the libp2p_deliver_message and libp2p_reject_message tables.';
+ORDER BY (meta_network_name, wallclock_slot_start_date_time, topic_fork_digest_value, topic_name, message_id)
+COMMENT 'Contains raw gossipsub message payloads keyed by message ID. Message IDs are content-derived, and the sorting key deliberately excludes observation-specific columns (peer, client, receive time, validation outcome) so identical messages captured by multiple clients deduplicate on merge. Per-observation detail lives in the libp2p_deliver_message and libp2p_reject_message tables.';
 
 CREATE TABLE IF NOT EXISTS libp2p_gossipsub_message_payload ON CLUSTER '{cluster}'
 AS libp2p_gossipsub_message_payload_local

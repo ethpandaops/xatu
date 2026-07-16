@@ -23,12 +23,10 @@ type libp2pGossipsubMessagePayloadBatch struct {
 	TopicForkDigestValue                      proto.ColStr
 	TopicName                                 proto.ColStr
 	TopicEncoding                             proto.ColStr
-	PeerIDUniqueKey                           proto.ColInt64
 	MessageID                                 proto.ColStr
 	MessageSize                               proto.ColUInt32
 	MessageData                               proto.ColStr
 	Outcome                                   proto.ColStr
-	RejectReason                              proto.ColStr
 	MetaClientName                            proto.ColStr
 	MetaClientVersion                         proto.ColStr
 	MetaClientImplementation                  proto.ColStr
@@ -108,12 +106,10 @@ func (b *libp2pGossipsubMessagePayloadBatch) Input() proto.Input {
 		{Name: "topic_fork_digest_value", Data: &b.TopicForkDigestValue},
 		{Name: "topic_name", Data: &b.TopicName},
 		{Name: "topic_encoding", Data: &b.TopicEncoding},
-		{Name: "peer_id_unique_key", Data: &b.PeerIDUniqueKey},
 		{Name: "message_id", Data: &b.MessageID},
 		{Name: "message_size", Data: &b.MessageSize},
 		{Name: "message_data", Data: &b.MessageData},
 		{Name: "outcome", Data: &b.Outcome},
-		{Name: "reject_reason", Data: &b.RejectReason},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
 		{Name: "meta_client_version", Data: &b.MetaClientVersion},
 		{Name: "meta_client_implementation", Data: &b.MetaClientImplementation},
@@ -142,12 +138,10 @@ func (b *libp2pGossipsubMessagePayloadBatch) Reset() {
 	b.TopicForkDigestValue.Reset()
 	b.TopicName.Reset()
 	b.TopicEncoding.Reset()
-	b.PeerIDUniqueKey.Reset()
 	b.MessageID.Reset()
 	b.MessageSize.Reset()
 	b.MessageData.Reset()
 	b.Outcome.Reset()
-	b.RejectReason.Reset()
 	b.MetaClientName.Reset()
 	b.MetaClientVersion.Reset()
 	b.MetaClientImplementation.Reset()
@@ -170,7 +164,7 @@ func (b *libp2pGossipsubMessagePayloadBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 30)
+		row := make(map[string]any, 28)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["wallclock_slot"] = b.WallclockSlot.Row(i)
@@ -181,12 +175,10 @@ func (b *libp2pGossipsubMessagePayloadBatch) Snapshot() []map[string]any {
 		row["topic_fork_digest_value"] = b.TopicForkDigestValue.Row(i)
 		row["topic_name"] = b.TopicName.Row(i)
 		row["topic_encoding"] = b.TopicEncoding.Row(i)
-		row["peer_id_unique_key"] = b.PeerIDUniqueKey.Row(i)
 		row["message_id"] = b.MessageID.Row(i)
 		row["message_size"] = b.MessageSize.Row(i)
 		row["message_data"] = b.MessageData.Row(i)
 		row["outcome"] = b.Outcome.Row(i)
-		row["reject_reason"] = b.RejectReason.Row(i)
 		row["meta_client_name"] = b.MetaClientName.Row(i)
 		row["meta_client_version"] = b.MetaClientVersion.Row(i)
 		row["meta_client_implementation"] = b.MetaClientImplementation.Row(i)

@@ -5,7 +5,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route/testfixture"
 	libp2ppb "github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p/gossipsub"
@@ -22,8 +21,6 @@ func TestSnapshot_libp2p_gossipsub_message_payload(t *testing.T) {
 	)
 
 	testData := []byte{0xff, 0x06, 0x00, 0x00, 0x73, 0x4e, 0x61, 0x50, 0x70, 0x59}
-
-	expectedPeerIDKey := route.SeaHashInt64(testPeerID + testNetwork)
 
 	testfixture.AssertSnapshot(t, newlibp2pGossipsubMessagePayloadBatch(), &xatu.DecoratedEvent{
 		Event: &xatu.Event{
@@ -52,10 +49,8 @@ func TestSnapshot_libp2p_gossipsub_message_payload(t *testing.T) {
 			},
 		},
 	}, 1, map[string]any{
-		"peer_id_unique_key": expectedPeerIDKey,
-		"message_id":         testMessageID,
-		"message_data":       string(testData),
-		"outcome":            "deliver",
-		"reject_reason":      "",
+		"message_id":   testMessageID,
+		"message_data": string(testData),
+		"outcome":      "deliver",
 	})
 }

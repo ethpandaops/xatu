@@ -59,12 +59,12 @@ func (b *libp2pGossipsubMessagePayloadBatch) validate(event *xatu.DecoratedEvent
 		return fmt.Errorf("nil additional data: %w", route.ErrInvalidEvent)
 	}
 
-	if traceMeta := additional.GetMetadata(); traceMeta == nil || traceMeta.GetPeerId() == nil {
-		return fmt.Errorf("nil PeerId: %w", route.ErrInvalidEvent)
-	}
-
 	if additional.GetMessageId() == nil {
 		return fmt.Errorf("nil MessageId: %w", route.ErrInvalidEvent)
+	}
+
+	if event.GetLibp2PTraceGossipsubMessagePayload().GetOutcome() == nil {
+		return fmt.Errorf("nil Outcome: %w", route.ErrInvalidEvent)
 	}
 
 	if additional.GetWallclockSlot() == nil {
@@ -93,7 +93,6 @@ func (b *libp2pGossipsubMessagePayloadBatch) appendPayload(event *xatu.Decorated
 
 	b.MessageData.AppendBytes(payload.GetData())
 	b.Outcome.Append(wrappedStringValue(payload.GetOutcome()))
-	b.RejectReason.Append(wrappedStringValue(payload.GetRejectReason()))
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse column schema
@@ -133,11 +132,4 @@ func (b *libp2pGossipsubMessagePayloadBatch) appendClientAdditionalData(
 		b.TopicName.Append("")
 		b.TopicEncoding.Append("")
 	}
-
-	peerID := peerIDFromMetadata(event, func(c *xatu.ClientMeta) peerIDMetadataProvider {
-		return c.GetLibp2PTraceGossipsubMessagePayload()
-	})
-
-	networkName := event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName()
-	b.PeerIDUniqueKey.Append(computePeerIDUniqueKey(peerID, networkName))
 }

@@ -96,28 +96,22 @@ func (b *libp2pGossipsubMessagePayloadBatch) appendPayload(event *xatu.Decorated
 	b.RejectReason.Append(wrappedStringValue(payload.GetRejectReason()))
 }
 
+//nolint:gosec // G115: proto uint64 values are bounded by ClickHouse column schema
 func (b *libp2pGossipsubMessagePayloadBatch) appendClientAdditionalData(
 	event *xatu.DecoratedEvent,
 ) {
+	// validate() rejects the event before any append when the additional data,
+	// wallclock fields, or message ID are missing, so required fields are
+	// appended unconditionally rather than falling back to sentinel zeros.
 	additional := event.GetMeta().GetClient().GetLibp2PTraceGossipsubMessagePayload()
 
-	if wallclockSlot := additional.GetWallclockSlot(); wallclockSlot != nil {
-		//nolint:gosec // G115: proto uint64 values are bounded by ClickHouse column schema
-		b.WallclockSlot.Append(uint32(wallclockSlot.GetNumber().GetValue()))
-		b.WallclockSlotStartDateTime.Append(wallclockSlot.GetStartDateTime().AsTime())
-	} else {
-		b.WallclockSlot.Append(0)
-		b.WallclockSlotStartDateTime.Append(time.Time{})
-	}
+	wallclockSlot := additional.GetWallclockSlot()
+	b.WallclockSlot.Append(uint32(wallclockSlot.GetNumber().GetValue()))
+	b.WallclockSlotStartDateTime.Append(wallclockSlot.GetStartDateTime().AsTime())
 
-	if wallclockEpoch := additional.GetWallclockEpoch(); wallclockEpoch != nil {
-		//nolint:gosec // G115: proto uint64 values are bounded by ClickHouse column schema
-		b.WallclockEpoch.Append(uint32(wallclockEpoch.GetNumber().GetValue()))
-		b.WallclockEpochStartDateTime.Append(wallclockEpoch.GetStartDateTime().AsTime())
-	} else {
-		b.WallclockEpoch.Append(0)
-		b.WallclockEpochStartDateTime.Append(time.Time{})
-	}
+	wallclockEpoch := additional.GetWallclockEpoch()
+	b.WallclockEpoch.Append(uint32(wallclockEpoch.GetNumber().GetValue()))
+	b.WallclockEpochStartDateTime.Append(wallclockEpoch.GetStartDateTime().AsTime())
 
 	b.MessageID.Append(wrappedStringValue(additional.GetMessageId()))
 

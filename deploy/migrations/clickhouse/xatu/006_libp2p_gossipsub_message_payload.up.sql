@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS libp2p_gossipsub_message_payload_local ON CLUSTER '{c
 ENGINE = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}', updated_date_time)
 PARTITION BY (meta_network_name, toDate(wallclock_slot_start_date_time))
 ORDER BY (meta_network_name, wallclock_slot_start_date_time, topic_fork_digest_value, topic_name, message_id)
-COMMENT 'Contains raw gossipsub message payloads keyed by message ID. Message IDs are content-derived, and the sorting key deliberately excludes observation-specific columns (peer, client, receive time, validation outcome) so identical messages captured by multiple clients deduplicate on merge. Per-observation detail lives in the libp2p_deliver_message and libp2p_reject_message tables.';
+COMMENT 'Contains raw gossipsub message payloads keyed by message ID. Message IDs are content-derived, and the sorting key deliberately excludes observation-specific columns (peer, client, receive time, validation outcome) so identical messages captured by multiple clients deduplicate on merge. Deduplication is best-effort: clients that receive the same message on opposite sides of a wallclock slot or partition boundary keep one row per side. Per-observation detail lives in the libp2p_deliver_message and libp2p_reject_message tables.';
 
 CREATE TABLE IF NOT EXISTS libp2p_gossipsub_message_payload ON CLUSTER '{cluster}'
 AS libp2p_gossipsub_message_payload_local

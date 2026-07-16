@@ -56,10 +56,7 @@ func (p *Processor) handleGossipMessagePayload(
 	event *TraceEvent,
 	payload *TraceEventMessagePayload,
 ) error {
-	if payload.Data == nil {
-		return fmt.Errorf("handleGossipMessagePayload() called with nil message data")
-	}
-
+	// A nil Data slice is a legitimate empty message, not a caller error.
 	data := &gossipsub.MessagePayload{
 		Data:         payload.Data,
 		Outcome:      wrapperspb.String(payload.Outcome),

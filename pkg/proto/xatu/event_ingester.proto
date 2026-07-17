@@ -1833,6 +1833,27 @@ message ClientMeta {
     google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
   }
 
+  // AdditionalLibP2PTraceGossipSubMessagePayloadData contains additional data about a raw gossipsub message payload event.
+  message AdditionalLibP2PTraceGossipSubMessagePayloadData {
+    // WallclockEpoch contains the wall clock epoch information at the time the message was received.
+    EpochV2 wallclock_epoch = 1 [ json_name = "wallclock_epoch" ];
+
+    // WallclockSlot contains the wall clock slot information at the time the message was received.
+    SlotV2 wallclock_slot = 2 [ json_name = "wallclock_slot" ];
+
+    // Metadata contains additional trace event metadata.
+    xatu.libp2p.TraceEventMetadata metadata = 3;
+
+    // Topic is the gossipsub topic the message was received on.
+    google.protobuf.StringValue topic = 4;
+
+    // MessageSize is the size of the message payload in bytes.
+    google.protobuf.UInt32Value message_size = 5 [ json_name = "message_size" ];
+
+    // MessageID is the gossipsub message ID, which is derived from the message contents.
+    google.protobuf.StringValue message_id = 6 [ json_name = "message_id" ];
+  }
+
   // AdditionalEthV1ValidatorsData contains additional data about the eth v1 validators.
   message AdditionalEthV1ValidatorsData {
     EpochV2 epoch = 1;
@@ -2271,6 +2292,11 @@ message ClientMeta {
     AdditionalBeaconSyntheticBuilderPendingPaymentSettlementData beacon_synthetic_builder_pending_payment_settlement = 121 [ json_name = "BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT" ];
     AdditionalBeaconSyntheticPayloadAttestationProcessedData beacon_synthetic_payload_attestation_processed = 122 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED" ];
     AdditionalEthV1EventsHeadV3Data eth_v1_events_head_v3 = 123 [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD_V3" ];
+
+    // AdditionalLibP2PTraceGossipSubMessagePayloadData contains additional data about a raw gossipsub message payload event.
+    // NOTE: field 124 here vs 107 on master — this branch had already assigned
+    // 107-123 to the ePBS fields above. Reconcile when the branches converge.
+    AdditionalLibP2PTraceGossipSubMessagePayloadData libp2p_trace_gossipsub_message_payload = 124 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_MESSAGE_PAYLOAD" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2550,6 +2576,10 @@ message Event {
     // The beacon-API head_v2 SSE topic (gloas); V3 because
     // BEACON_API_ETH_V1_EVENTS_HEAD_V2 is the schema rev of the v1 topic.
     BEACON_API_ETH_V1_EVENTS_HEAD_V3 = 135;
+
+    // NOTE: 136 here vs 119 on master — this branch had already assigned
+    // 119-135 to the ePBS events above. Reconcile when the branches converge.
+    LIBP2P_TRACE_GOSSIPSUB_MESSAGE_PAYLOAD = 136;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -3288,6 +3318,11 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
     xatu.eth.v1.EventHeadV3 eth_v1_events_head_v3 = 256
         [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD_V3" ];
+
+    // NOTE: field 257 here vs 240 on master — this branch had already assigned
+    // 240-256 to the ePBS fields above. Reconcile when the branches converge.
+    xatu.libp2p.gossipsub.eth.MessagePayload libp2p_trace_gossipsub_message_payload = 257
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_MESSAGE_PAYLOAD" ];
   };
 }
 

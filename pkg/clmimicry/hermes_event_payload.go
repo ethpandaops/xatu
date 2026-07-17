@@ -163,6 +163,16 @@ type TraceEventProposerPreferences struct {
 	ProposerPreferences *ethtypes.SignedProposerPreferences
 }
 
+// TraceEventMessagePayload represents a raw gossipsub message payload event.
+// Data holds the message bytes exactly as received off the wire, so capture
+// works for any topic without a decoder.
+type TraceEventMessagePayload struct {
+	TraceEventPayloadMetaData
+	Data         []byte
+	Outcome      string
+	RejectReason string
+}
+
 // TraceEventCustodyProbe represents a data column custody probe event.
 //
 //nolint:tagliatelle // JSON tags match Hermes format for compatibility

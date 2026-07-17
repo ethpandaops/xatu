@@ -130,6 +130,7 @@ outputs:
 #   gossipSubAttestationEnabled: false
 #   gossipSubBlobSidecarEnabled: false
 #   gossipSubDataColumnSidecarEnabled: false
+#   gossipSubMessagePayloadEnabled: false
 
 tracing:
   enabled: false

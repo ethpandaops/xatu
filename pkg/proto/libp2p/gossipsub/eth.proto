@@ -75,3 +75,15 @@ message ProposerPreferences {
     google.protobuf.StringValue fee_recipient = 3 [json_name = "fee_recipient"];
     google.protobuf.UInt64Value target_gas_limit = 4 [json_name = "target_gas_limit"];
 }
+
+// MessagePayload carries the raw wire bytes of a gossipsub message, regardless
+// of topic. The bytes are stored exactly as received off the wire (snappy-framed
+// SSZ), so the archive stays byte-faithful and fork-agnostic.
+message MessagePayload {
+    // Data is the raw gossipsub message payload as received off the wire.
+    bytes data = 1 [json_name = "data"];
+    // Outcome is the gossip validation outcome for the message: "deliver" or "reject".
+    google.protobuf.StringValue outcome = 2 [json_name = "outcome"];
+    // RejectReason is the validation rejection reason. Empty for delivered messages.
+    google.protobuf.StringValue reject_reason = 3 [json_name = "reject_reason"];
+}

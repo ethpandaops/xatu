@@ -614,6 +614,75 @@ func (x *ProposerPreferences) GetTargetGasLimit() *wrapperspb.UInt64Value {
 	return nil
 }
 
+// MessagePayload carries the raw wire bytes of a gossipsub message, regardless
+// of topic. The bytes are stored exactly as received off the wire (snappy-framed
+// SSZ), so the archive stays byte-faithful and fork-agnostic.
+type MessagePayload struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Data is the raw gossipsub message payload as received off the wire.
+	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	// Outcome is the gossip validation outcome for the message: "deliver" or "reject".
+	Outcome *wrapperspb.StringValue `protobuf:"bytes,2,opt,name=outcome,proto3" json:"outcome,omitempty"`
+	// RejectReason is the validation rejection reason. Empty for delivered messages.
+	RejectReason *wrapperspb.StringValue `protobuf:"bytes,3,opt,name=reject_reason,proto3" json:"reject_reason,omitempty"`
+}
+
+func (x *MessagePayload) Reset() {
+	*x = MessagePayload{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_libp2p_gossipsub_eth_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MessagePayload) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MessagePayload) ProtoMessage() {}
+
+func (x *MessagePayload) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_libp2p_gossipsub_eth_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MessagePayload.ProtoReflect.Descriptor instead.
+func (*MessagePayload) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_libp2p_gossipsub_eth_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *MessagePayload) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *MessagePayload) GetOutcome() *wrapperspb.StringValue {
+	if x != nil {
+		return x.Outcome
+	}
+	return nil
+}
+
+func (x *MessagePayload) GetRejectReason() *wrapperspb.StringValue {
+	if x != nil {
+		return x.RejectReason
+	}
+	return nil
+}
+
 var File_pkg_proto_libp2p_gossipsub_eth_proto protoreflect.FileDescriptor
 
 var file_pkg_proto_libp2p_gossipsub_eth_proto_rawDesc = []byte{
@@ -789,11 +858,22 @@ var file_pkg_proto_libp2p_gossipsub_eth_proto_rawDesc = []byte{
 	0x61, 0x73, 0x5f, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c,
 	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
 	0x2e, 0x55, 0x49, 0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x10, 0x74, 0x61,
-	0x72, 0x67, 0x65, 0x74, 0x5f, 0x67, 0x61, 0x73, 0x5f, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x42, 0x38,
-	0x5a, 0x36, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68,
-	0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f, 0x70, 0x6b,
-	0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6c, 0x69, 0x62, 0x70, 0x32, 0x70, 0x2f, 0x67,
-	0x6f, 0x73, 0x73, 0x69, 0x70, 0x73, 0x75, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x67, 0x65, 0x74, 0x5f, 0x67, 0x61, 0x73, 0x5f, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x22, 0xa0,
+	0x01, 0x0a, 0x0e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x50, 0x61, 0x79, 0x6c, 0x6f, 0x61,
+	0x64, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52,
+	0x04, 0x64, 0x61, 0x74, 0x61, 0x12, 0x36, 0x0a, 0x07, 0x6f, 0x75, 0x74, 0x63, 0x6f, 0x6d, 0x65,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x56,
+	0x61, 0x6c, 0x75, 0x65, 0x52, 0x07, 0x6f, 0x75, 0x74, 0x63, 0x6f, 0x6d, 0x65, 0x12, 0x42, 0x0a,
+	0x0d, 0x72, 0x65, 0x6a, 0x65, 0x63, 0x74, 0x5f, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c,
+	0x75, 0x65, 0x52, 0x0d, 0x72, 0x65, 0x6a, 0x65, 0x63, 0x74, 0x5f, 0x72, 0x65, 0x61, 0x73, 0x6f,
+	0x6e, 0x42, 0x38, 0x5a, 0x36, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
+	0x65, 0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75,
+	0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6c, 0x69, 0x62, 0x70, 0x32,
+	0x70, 0x2f, 0x67, 0x6f, 0x73, 0x73, 0x69, 0x70, 0x73, 0x75, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -808,7 +888,7 @@ func file_pkg_proto_libp2p_gossipsub_eth_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_libp2p_gossipsub_eth_proto_rawDescData
 }
 
-var file_pkg_proto_libp2p_gossipsub_eth_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_pkg_proto_libp2p_gossipsub_eth_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_pkg_proto_libp2p_gossipsub_eth_proto_goTypes = []any{
 	(*BeaconBlock)(nil),               // 0: xatu.libp2p.gossipsub.eth.BeaconBlock
 	(*BlobSidecar)(nil),               // 1: xatu.libp2p.gossipsub.eth.BlobSidecar
@@ -817,56 +897,59 @@ var file_pkg_proto_libp2p_gossipsub_eth_proto_goTypes = []any{
 	(*ExecutionPayloadBid)(nil),       // 4: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid
 	(*PayloadAttestationMessage)(nil), // 5: xatu.libp2p.gossipsub.eth.PayloadAttestationMessage
 	(*ProposerPreferences)(nil),       // 6: xatu.libp2p.gossipsub.eth.ProposerPreferences
-	(*wrapperspb.StringValue)(nil),    // 7: google.protobuf.StringValue
-	(*wrapperspb.UInt64Value)(nil),    // 8: google.protobuf.UInt64Value
-	(*wrapperspb.UInt32Value)(nil),    // 9: google.protobuf.UInt32Value
-	(*wrapperspb.BoolValue)(nil),      // 10: google.protobuf.BoolValue
+	(*MessagePayload)(nil),            // 7: xatu.libp2p.gossipsub.eth.MessagePayload
+	(*wrapperspb.StringValue)(nil),    // 8: google.protobuf.StringValue
+	(*wrapperspb.UInt64Value)(nil),    // 9: google.protobuf.UInt64Value
+	(*wrapperspb.UInt32Value)(nil),    // 10: google.protobuf.UInt32Value
+	(*wrapperspb.BoolValue)(nil),      // 11: google.protobuf.BoolValue
 }
 var file_pkg_proto_libp2p_gossipsub_eth_proto_depIdxs = []int32{
-	7,  // 0: xatu.libp2p.gossipsub.eth.BeaconBlock.block:type_name -> google.protobuf.StringValue
-	8,  // 1: xatu.libp2p.gossipsub.eth.BeaconBlock.slot:type_name -> google.protobuf.UInt64Value
-	8,  // 2: xatu.libp2p.gossipsub.eth.BeaconBlock.proposer_index:type_name -> google.protobuf.UInt64Value
-	8,  // 3: xatu.libp2p.gossipsub.eth.BlobSidecar.index:type_name -> google.protobuf.UInt64Value
-	8,  // 4: xatu.libp2p.gossipsub.eth.BlobSidecar.slot:type_name -> google.protobuf.UInt64Value
-	8,  // 5: xatu.libp2p.gossipsub.eth.BlobSidecar.proposer_index:type_name -> google.protobuf.UInt64Value
-	7,  // 6: xatu.libp2p.gossipsub.eth.BlobSidecar.state_root:type_name -> google.protobuf.StringValue
-	7,  // 7: xatu.libp2p.gossipsub.eth.BlobSidecar.parent_root:type_name -> google.protobuf.StringValue
-	7,  // 8: xatu.libp2p.gossipsub.eth.BlobSidecar.block_root:type_name -> google.protobuf.StringValue
-	8,  // 9: xatu.libp2p.gossipsub.eth.DataColumnSidecar.index:type_name -> google.protobuf.UInt64Value
-	8,  // 10: xatu.libp2p.gossipsub.eth.DataColumnSidecar.slot:type_name -> google.protobuf.UInt64Value
-	8,  // 11: xatu.libp2p.gossipsub.eth.DataColumnSidecar.proposer_index:type_name -> google.protobuf.UInt64Value
-	7,  // 12: xatu.libp2p.gossipsub.eth.DataColumnSidecar.state_root:type_name -> google.protobuf.StringValue
-	7,  // 13: xatu.libp2p.gossipsub.eth.DataColumnSidecar.parent_root:type_name -> google.protobuf.StringValue
-	9,  // 14: xatu.libp2p.gossipsub.eth.DataColumnSidecar.kzg_commitments_count:type_name -> google.protobuf.UInt32Value
-	7,  // 15: xatu.libp2p.gossipsub.eth.DataColumnSidecar.block_root:type_name -> google.protobuf.StringValue
-	8,  // 16: xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope.slot:type_name -> google.protobuf.UInt64Value
-	8,  // 17: xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope.builder_index:type_name -> google.protobuf.UInt64Value
-	7,  // 18: xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope.beacon_block_root:type_name -> google.protobuf.StringValue
-	7,  // 19: xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope.block_hash:type_name -> google.protobuf.StringValue
-	7,  // 20: xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope.state_root:type_name -> google.protobuf.StringValue
-	8,  // 21: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.slot:type_name -> google.protobuf.UInt64Value
-	8,  // 22: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.builder_index:type_name -> google.protobuf.UInt64Value
-	7,  // 23: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.block_hash:type_name -> google.protobuf.StringValue
-	7,  // 24: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.parent_block_hash:type_name -> google.protobuf.StringValue
-	8,  // 25: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.value:type_name -> google.protobuf.UInt64Value
-	8,  // 26: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.execution_payment:type_name -> google.protobuf.UInt64Value
-	7,  // 27: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.fee_recipient:type_name -> google.protobuf.StringValue
-	8,  // 28: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.gas_limit:type_name -> google.protobuf.UInt64Value
-	9,  // 29: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.blob_kzg_commitment_count:type_name -> google.protobuf.UInt32Value
-	8,  // 30: xatu.libp2p.gossipsub.eth.PayloadAttestationMessage.slot:type_name -> google.protobuf.UInt64Value
-	8,  // 31: xatu.libp2p.gossipsub.eth.PayloadAttestationMessage.validator_index:type_name -> google.protobuf.UInt64Value
-	7,  // 32: xatu.libp2p.gossipsub.eth.PayloadAttestationMessage.beacon_block_root:type_name -> google.protobuf.StringValue
-	10, // 33: xatu.libp2p.gossipsub.eth.PayloadAttestationMessage.payload_present:type_name -> google.protobuf.BoolValue
-	10, // 34: xatu.libp2p.gossipsub.eth.PayloadAttestationMessage.blob_data_available:type_name -> google.protobuf.BoolValue
-	8,  // 35: xatu.libp2p.gossipsub.eth.ProposerPreferences.slot:type_name -> google.protobuf.UInt64Value
-	8,  // 36: xatu.libp2p.gossipsub.eth.ProposerPreferences.validator_index:type_name -> google.protobuf.UInt64Value
-	7,  // 37: xatu.libp2p.gossipsub.eth.ProposerPreferences.fee_recipient:type_name -> google.protobuf.StringValue
-	8,  // 38: xatu.libp2p.gossipsub.eth.ProposerPreferences.target_gas_limit:type_name -> google.protobuf.UInt64Value
-	39, // [39:39] is the sub-list for method output_type
-	39, // [39:39] is the sub-list for method input_type
-	39, // [39:39] is the sub-list for extension type_name
-	39, // [39:39] is the sub-list for extension extendee
-	0,  // [0:39] is the sub-list for field type_name
+	8,  // 0: xatu.libp2p.gossipsub.eth.BeaconBlock.block:type_name -> google.protobuf.StringValue
+	9,  // 1: xatu.libp2p.gossipsub.eth.BeaconBlock.slot:type_name -> google.protobuf.UInt64Value
+	9,  // 2: xatu.libp2p.gossipsub.eth.BeaconBlock.proposer_index:type_name -> google.protobuf.UInt64Value
+	9,  // 3: xatu.libp2p.gossipsub.eth.BlobSidecar.index:type_name -> google.protobuf.UInt64Value
+	9,  // 4: xatu.libp2p.gossipsub.eth.BlobSidecar.slot:type_name -> google.protobuf.UInt64Value
+	9,  // 5: xatu.libp2p.gossipsub.eth.BlobSidecar.proposer_index:type_name -> google.protobuf.UInt64Value
+	8,  // 6: xatu.libp2p.gossipsub.eth.BlobSidecar.state_root:type_name -> google.protobuf.StringValue
+	8,  // 7: xatu.libp2p.gossipsub.eth.BlobSidecar.parent_root:type_name -> google.protobuf.StringValue
+	8,  // 8: xatu.libp2p.gossipsub.eth.BlobSidecar.block_root:type_name -> google.protobuf.StringValue
+	9,  // 9: xatu.libp2p.gossipsub.eth.DataColumnSidecar.index:type_name -> google.protobuf.UInt64Value
+	9,  // 10: xatu.libp2p.gossipsub.eth.DataColumnSidecar.slot:type_name -> google.protobuf.UInt64Value
+	9,  // 11: xatu.libp2p.gossipsub.eth.DataColumnSidecar.proposer_index:type_name -> google.protobuf.UInt64Value
+	8,  // 12: xatu.libp2p.gossipsub.eth.DataColumnSidecar.state_root:type_name -> google.protobuf.StringValue
+	8,  // 13: xatu.libp2p.gossipsub.eth.DataColumnSidecar.parent_root:type_name -> google.protobuf.StringValue
+	10, // 14: xatu.libp2p.gossipsub.eth.DataColumnSidecar.kzg_commitments_count:type_name -> google.protobuf.UInt32Value
+	8,  // 15: xatu.libp2p.gossipsub.eth.DataColumnSidecar.block_root:type_name -> google.protobuf.StringValue
+	9,  // 16: xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope.slot:type_name -> google.protobuf.UInt64Value
+	9,  // 17: xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope.builder_index:type_name -> google.protobuf.UInt64Value
+	8,  // 18: xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope.beacon_block_root:type_name -> google.protobuf.StringValue
+	8,  // 19: xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope.block_hash:type_name -> google.protobuf.StringValue
+	8,  // 20: xatu.libp2p.gossipsub.eth.ExecutionPayloadEnvelope.state_root:type_name -> google.protobuf.StringValue
+	9,  // 21: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.slot:type_name -> google.protobuf.UInt64Value
+	9,  // 22: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.builder_index:type_name -> google.protobuf.UInt64Value
+	8,  // 23: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.block_hash:type_name -> google.protobuf.StringValue
+	8,  // 24: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.parent_block_hash:type_name -> google.protobuf.StringValue
+	9,  // 25: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.value:type_name -> google.protobuf.UInt64Value
+	9,  // 26: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.execution_payment:type_name -> google.protobuf.UInt64Value
+	8,  // 27: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.fee_recipient:type_name -> google.protobuf.StringValue
+	9,  // 28: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.gas_limit:type_name -> google.protobuf.UInt64Value
+	10, // 29: xatu.libp2p.gossipsub.eth.ExecutionPayloadBid.blob_kzg_commitment_count:type_name -> google.protobuf.UInt32Value
+	9,  // 30: xatu.libp2p.gossipsub.eth.PayloadAttestationMessage.slot:type_name -> google.protobuf.UInt64Value
+	9,  // 31: xatu.libp2p.gossipsub.eth.PayloadAttestationMessage.validator_index:type_name -> google.protobuf.UInt64Value
+	8,  // 32: xatu.libp2p.gossipsub.eth.PayloadAttestationMessage.beacon_block_root:type_name -> google.protobuf.StringValue
+	11, // 33: xatu.libp2p.gossipsub.eth.PayloadAttestationMessage.payload_present:type_name -> google.protobuf.BoolValue
+	11, // 34: xatu.libp2p.gossipsub.eth.PayloadAttestationMessage.blob_data_available:type_name -> google.protobuf.BoolValue
+	9,  // 35: xatu.libp2p.gossipsub.eth.ProposerPreferences.slot:type_name -> google.protobuf.UInt64Value
+	9,  // 36: xatu.libp2p.gossipsub.eth.ProposerPreferences.validator_index:type_name -> google.protobuf.UInt64Value
+	8,  // 37: xatu.libp2p.gossipsub.eth.ProposerPreferences.fee_recipient:type_name -> google.protobuf.StringValue
+	9,  // 38: xatu.libp2p.gossipsub.eth.ProposerPreferences.target_gas_limit:type_name -> google.protobuf.UInt64Value
+	8,  // 39: xatu.libp2p.gossipsub.eth.MessagePayload.outcome:type_name -> google.protobuf.StringValue
+	8,  // 40: xatu.libp2p.gossipsub.eth.MessagePayload.reject_reason:type_name -> google.protobuf.StringValue
+	41, // [41:41] is the sub-list for method output_type
+	41, // [41:41] is the sub-list for method input_type
+	41, // [41:41] is the sub-list for extension type_name
+	41, // [41:41] is the sub-list for extension extendee
+	0,  // [0:41] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_libp2p_gossipsub_eth_proto_init() }
@@ -959,6 +1042,18 @@ func file_pkg_proto_libp2p_gossipsub_eth_proto_init() {
 				return nil
 			}
 		}
+		file_pkg_proto_libp2p_gossipsub_eth_proto_msgTypes[7].Exporter = func(v any, i int) any {
+			switch v := v.(*MessagePayload); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -966,7 +1061,7 @@ func file_pkg_proto_libp2p_gossipsub_eth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_proto_libp2p_gossipsub_eth_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

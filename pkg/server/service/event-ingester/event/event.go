@@ -98,6 +98,7 @@ var (
 	TypeLibP2PTraceGossipSubAggregateAndProof   Type = Type(libp2p.TraceGossipSubAggregateAndProofType)
 	TypeLibP2PTraceGossipSubBlobSidecar         Type = Type(libp2p.TraceGossipSubBlobSidecarType)
 	TypeLibP2PTraceGossipSubDataColumnSidecar   Type = Type(libp2p.TraceGossipSubDataColumnSidecarType)
+	TypeLibP2PTraceGossipSubMessagePayload      Type = Type(libp2p.TraceGossipSubMessagePayloadType)
 	TypeBeaconETHV1BeaconValidators             Type = Type(v1.BeaconValidatorsType)
 	TypeMEVRelayBidTraceBuilderBlockSubmission  Type = Type(mevrelay.BidTraceBuilderBlockSubmissionType)
 	TypeMEVRelayProposerPayloadDelivered        Type = Type(mevrelay.ProposerPayloadDeliveredType)
@@ -507,6 +508,9 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	})
 	router.RegisterHandler(TypeLibP2PTraceGossipSubDataColumnSidecar, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceGossipSubDataColumnSidecar(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceGossipSubMessagePayload, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGossipSubMessagePayload(router.log, event), nil
 	})
 	router.RegisterHandler(TypeLibP2PTraceSyntheticHeartbeat, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceSyntheticHeartbeat(router.log, event, router.geoipProvider), nil

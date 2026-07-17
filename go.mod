@@ -2,6 +2,8 @@ module github.com/ethpandaops/xatu
 
 go 1.26.2
 
+toolchain go1.26.5
+
 // release-xatu branch.
 
 // Match tysm's tablewriter version requirement

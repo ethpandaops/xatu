@@ -20,12 +20,12 @@ func TestEventCategorization(t *testing.T) {
 		t.Logf("Group %d has %d events", group, len(events))
 	}
 
-	// We should have categorized all 34 currently emitted events
-	assert.Equal(t, 34, totalEvents, "Should have exactly 34 events categorized")
+	// We should have categorized all 35 currently emitted events
+	assert.Equal(t, 35, totalEvents, "Should have exactly 35 events categorized")
 
 	// Test specific group queries
 	groupA := ec.GetGroupAEvents()
-	assert.Len(t, groupA, 14, "Group A should have 14 events")
+	assert.Len(t, groupA, 15, "Group A should have 15 events")
 
 	groupB := ec.GetGroupBEvents()
 	assert.Len(t, groupB, 7, "Group B should have 7 events")

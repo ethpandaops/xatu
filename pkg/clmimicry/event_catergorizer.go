@@ -57,6 +57,7 @@ func (ec *EventCategorizer) initializeEvents() {
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID, GroupA, true, true, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE, GroupA, true, true, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES, GroupA, true, true, false)
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_MESSAGE_PAYLOAD, GroupA, true, true, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_MESSAGE, GroupA, true, true, true)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IHAVE, GroupA, true, true, true)
 

@@ -66,6 +66,7 @@ Events are categorized into four groups based on their available sharding keys:
 Events with both topic and message ID, enabling full sharding flexibility:
 - `PUBLISH_MESSAGE`, `DELIVER_MESSAGE`, `DUPLICATE_MESSAGE`, `REJECT_MESSAGE`
 - `GOSSIPSUB_BEACON_BLOCK`, `GOSSIPSUB_BEACON_ATTESTATION`, `GOSSIPSUB_BLOB_SIDECAR`
+- `GOSSIPSUB_MESSAGE_PAYLOAD`
 - `RPC_META_MESSAGE`, `RPC_META_CONTROL_IHAVE`
 
 **Sharding**: Uses message ID for sharding, with topic-based configuration

@@ -135,5 +135,26 @@ func (c *Config) ApplyOverrides(o *Override, log observability.ContextualLogger)
 		c.MetricsAddr = o.MetricsAddr.Value
 	}
 
+	networkNameOverride := o.EventIngesterMetaNetworkName
+	if networkNameOverride.Value != "" || networkNameOverride.Prefix != "" || networkNameOverride.Suffix != "" {
+		log.Info("Overriding event ingester meta network name mutation")
+
+		if networkNameOverride.Value != "" {
+			c.Services.EventIngester.Mutations.MetaNetworkName.Value = networkNameOverride.Value
+		}
+
+		if networkNameOverride.Prefix != "" {
+			c.Services.EventIngester.Mutations.MetaNetworkName.Prefix = networkNameOverride.Prefix
+		}
+
+		if networkNameOverride.Suffix != "" {
+			c.Services.EventIngester.Mutations.MetaNetworkName.Suffix = networkNameOverride.Suffix
+		}
+
+		if err := c.Services.EventIngester.Mutations.Validate(); err != nil {
+			return fmt.Errorf("invalid event ingester meta network name override: %w", err)
+		}
+	}
+
 	return nil
 }

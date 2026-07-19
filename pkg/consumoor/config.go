@@ -29,6 +29,11 @@ type Config struct {
 	// DisabledEvents is a list of event names to drop without processing.
 	DisabledEvents []string `yaml:"disabledEvents"`
 
+	// Mutations are applied to every decoded event before it is routed and
+	// written to ClickHouse. Useful for enforcing a canonical network name
+	// on everything this consumer persists.
+	Mutations xatu.EventMutatorConfig `yaml:"mutations"`
+
 	// Tracing configuration
 	Tracing observability.TracingConfig `yaml:"tracing"`
 }
@@ -49,6 +54,10 @@ func (c *Config) Validate() error {
 
 	if _, err := c.DisabledEventEnums(); err != nil {
 		return err
+	}
+
+	if err := c.Mutations.Validate(); err != nil {
+		return fmt.Errorf("invalid mutations config: %w", err)
 	}
 
 	if err := c.Tracing.Validate(); err != nil {

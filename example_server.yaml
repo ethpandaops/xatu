@@ -76,6 +76,18 @@ services:
     #             eventNames:
     #             - BEACON_API_ETH_V1_EVENTS_ATTESTATION
     #             - BEACON_API_ETH_V1_EVENTS_BLOCK
+    # Mutations are applied to every ingested event before it is handed to
+    # the outputs. Useful when this server runs as a relay that re-namespaces
+    # events before forwarding them upstream, e.g. networks that share a
+    # genesis and would otherwise derive identical network names.
+    # `value` is mutually exclusive with `prefix`/`suffix`.
+    # Also settable via --server-event-ingester-meta-network-name-{value,prefix,suffix}
+    # or SERVER_EVENT_INGESTER_META_NETWORK_NAME_{VALUE,PREFIX,SUFFIX}.
+    # mutations:
+    #   metaNetworkName:
+    #     value: "my-network"
+    #     # prefix: "relay/"
+    #     # suffix: "--copy-1"
     outputs:
     - name: stdout
       type: stdout

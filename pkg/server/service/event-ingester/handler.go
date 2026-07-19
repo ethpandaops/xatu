@@ -27,12 +27,13 @@ type Handler struct {
 	geoipProvider  geoip.Provider
 	cache          store.Cache
 	clientNameSalt string
+	mutator        xatu.EventMutator
 	metrics        *Metrics
 
 	eventRouter *eventHandler.EventRouter
 }
 
-func NewHandler(log observability.ContextualLogger, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache, clientNameSalt string) *Handler {
+func NewHandler(log observability.ContextualLogger, clockDrift *time.Duration, geoipProvider geoip.Provider, cache store.Cache, clientNameSalt string, mutator xatu.EventMutator) *Handler {
 	return &Handler{
 		log:            log,
 		clockDrift:     clockDrift,
@@ -41,6 +42,7 @@ func NewHandler(log observability.ContextualLogger, clockDrift *time.Duration, g
 		metrics:        NewMetrics("xatu_server_event_ingester"),
 		eventRouter:    eventHandler.NewEventRouter(log, cache, geoipProvider),
 		clientNameSalt: clientNameSalt,
+		mutator:        mutator,
 	}
 }
 
@@ -209,6 +211,10 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 
 		if user != nil {
 			meta.Client.User = username
+		}
+
+		if h.mutator != nil {
+			h.mutator.Mutate(event)
 		}
 
 		event.Meta.Server = e.AppendServerMeta(ctx, &meta)

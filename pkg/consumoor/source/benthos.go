@@ -15,6 +15,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/clickhouse/router"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
 	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 const benthosOutputType = "xatu_clickhouse"
@@ -42,6 +43,7 @@ func NewBenthosStream(
 	writer Writer,
 	ownsWriter bool,
 	groupRetry GroupRetryConfig,
+	mutator xatu.EventMutator,
 ) (*service.Stream, error) {
 	if kafkaConfig == nil {
 		return nil, fmt.Errorf("nil kafka config")
@@ -77,6 +79,7 @@ func NewBenthosStream(
 				log:                   log.WithField("component", "benthos_clickhouse_output"),
 				encoding:              kafkaConfig.Encoding,
 				router:                routeEngine,
+				mutator:               mutator,
 				writer:                writer,
 				metrics:               metrics,
 				rejectSink:            rejectSink,

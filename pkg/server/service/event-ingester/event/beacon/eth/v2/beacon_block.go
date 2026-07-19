@@ -23,6 +23,10 @@ type BeaconBlock struct {
 	event *xatu.DecoratedEvent
 
 	cache store.Cache
+
+	// markedKey holds the cache key set during Filter so it can be released if the
+	// event fails to reach a durable sink.
+	markedKey string
 }
 
 func NewBeaconBlock(log observability.ContextualLogger, event *xatu.DecoratedEvent, cache store.Cache) *BeaconBlock {
@@ -121,7 +125,21 @@ func (b *BeaconBlock) Filter(ctx context.Context) bool {
 	}
 
 	// If the block is already in the cache, filter it out
-	return retrieved
+	if retrieved {
+		return true
+	}
+
+	// We just marked this block. Record the key so the pipeline can release it if the
+	// event fails to reach a durable sink.
+	b.markedKey = key
+
+	return false
+}
+
+// DedupKey returns the cache key marked during Filter, or an empty string if none was
+// marked.
+func (b *BeaconBlock) DedupKey() string {
+	return b.markedKey
 }
 
 func (b *BeaconBlock) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {

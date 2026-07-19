@@ -45,7 +45,7 @@ func NewHandler(log observability.ContextualLogger, clockDrift *time.Duration, g
 }
 
 //nolint:gocyclo // Needs refactor
-func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {
+func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, []string, error) {
 	groupName := "unknown"
 	if group != nil {
 		groupName = group.Name()
@@ -58,7 +58,7 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 
 	filteredEvents, err := h.filterEvents(ctx, events, user, group)
 	if err != nil {
-		return nil, fmt.Errorf("failed to filter events: %w", err)
+		return nil, nil, fmt.Errorf("failed to filter events: %w", err)
 	}
 
 	events = filteredEvents
@@ -67,7 +67,7 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 	if group != nil {
 		redactedEvents, err := group.ApplyRedacter(ctx, events)
 		if err != nil {
-			return nil, fmt.Errorf("failed to apply group redacter: %w", err)
+			return nil, nil, fmt.Errorf("failed to apply group redacter: %w", err)
 		}
 
 		events = redactedEvents
@@ -82,12 +82,12 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 
 	p, ok := peer.FromContext(ctx)
 	if !ok {
-		return nil, errors.New("failed to get grpc peer")
+		return nil, nil, errors.New("failed to get grpc peer")
 	}
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil, errors.New("failed to get metadata from context")
+		return nil, nil, errors.New("failed to get metadata from context")
 	}
 
 	var ipAddress string
@@ -155,6 +155,9 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 	}
 
 	handlerFilteredEvents := make([]*xatu.DecoratedEvent, 0)
+	// dedupKeys holds the cache keys marked by events that passed filtering, so the
+	// caller can release them if the events fail to reach a durable sink.
+	dedupKeys := make([]string, 0)
 	// Route the events to the correct handler
 	for _, event := range events {
 		if event == nil || event.Event == nil {
@@ -171,13 +174,13 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 		if err != nil {
 			h.log.WithError(err).WithField("event", eventName).WithContext(ctx).Warn("failed to create event handler")
 
-			return nil, fmt.Errorf("failed to create event for %s event handler: %w ", eventName, err)
+			return nil, nil, fmt.Errorf("failed to create event for %s event handler: %w ", eventName, err)
 		}
 
 		if err := e.Validate(ctx); err != nil {
 			h.log.WithError(err).WithField("event", eventName).WithContext(ctx).Warn("failed to validate event")
 
-			return nil, fmt.Errorf("%s event failed validation: %w", eventName, err)
+			return nil, nil, fmt.Errorf("%s event failed validation: %w", eventName, err)
 		}
 
 		if shouldFilter := e.Filter(ctx); shouldFilter {
@@ -213,6 +216,12 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 
 		event.Meta.Server = e.AppendServerMeta(ctx, &meta)
 
+		if dk, ok := e.(eventHandler.DedupKeyer); ok {
+			if key := dk.DedupKey(); key != "" {
+				dedupKeys = append(dedupKeys, key)
+			}
+		}
+
 		handlerFilteredEvents = append(handlerFilteredEvents, event)
 	}
 
@@ -222,13 +231,24 @@ func (h *Handler) Events(ctx context.Context, events []*xatu.DecoratedEvent, use
 	if group != nil {
 		redactedEvents, err := group.ApplyRedacter(ctx, filteredEvents)
 		if err != nil {
-			return nil, fmt.Errorf("failed to apply group redacter: %w", err)
+			return nil, nil, fmt.Errorf("failed to apply group redacter: %w", err)
 		}
 
 		filteredEvents = redactedEvents
 	}
 
-	return filteredEvents, nil
+	return filteredEvents, dedupKeys, nil
+}
+
+// ReleaseDedupKeys removes the given deduplication keys from the cache. It is used when
+// events fail to reach a durable sink so a retry of the same events is not dropped as a
+// duplicate of a write that never landed.
+func (h *Handler) ReleaseDedupKeys(ctx context.Context, keys []string) {
+	for _, key := range keys {
+		if err := h.cache.Delete(ctx, key); err != nil {
+			h.log.WithError(err).WithField("key", key).WithContext(ctx).Warn("failed to release dedup key")
+		}
+	}
 }
 
 func (h *Handler) filterEvents(ctx context.Context, events []*xatu.DecoratedEvent, user *auth.User, group *auth.Group) ([]*xatu.DecoratedEvent, error) {

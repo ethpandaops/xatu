@@ -438,6 +438,15 @@ func GetGasPrice(block *spec.VersionedSignedBeaconBlock, transaction *types.Tran
 			}
 
 			baseFee = new(big.Int).SetBytes(be[:])
+		case spec.DataVersionCapella:
+			le := block.Capella.Message.Body.ExecutionPayload.BaseFeePerGasLE
+
+			var be [32]byte
+			for i := 0; i < 32; i++ {
+				be[i] = le[31-i]
+			}
+
+			baseFee = new(big.Int).SetBytes(be[:])
 		case spec.DataVersionDeneb:
 			executionPayload := block.Deneb.Message.Body.ExecutionPayload
 			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())

@@ -67,4 +67,4 @@ SETTINGS allow_nullable_key = 1;
 
 CREATE TABLE IF NOT EXISTS canonical_beacon_block_access_list ON CLUSTER '{cluster}'
     AS canonical_beacon_block_access_list_local
-    ENGINE = Distributed('{cluster}', currentDatabase(), canonical_beacon_block_access_list_local, rand());
+    ENGINE = Distributed('{cluster}', currentDatabase(), canonical_beacon_block_access_list_local, cityHash64(slot_start_date_time, meta_network_name, block_hash, address, change_type, ifNull(storage_key, ''), block_access_index));

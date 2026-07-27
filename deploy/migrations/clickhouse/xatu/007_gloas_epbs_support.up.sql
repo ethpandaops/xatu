@@ -52,7 +52,7 @@ COMMENT 'Aggregated PTC payload attestations from canonical beacon blocks (max 4
 
 CREATE TABLE canonical_beacon_block_payload_attestation ON CLUSTER '{cluster}'
     AS canonical_beacon_block_payload_attestation_local
-    ENGINE = Distributed('{cluster}', currentDatabase(), canonical_beacon_block_payload_attestation_local, rand());
+    ENGINE = Distributed('{cluster}', currentDatabase(), canonical_beacon_block_payload_attestation_local, cityHash64(slot_start_date_time, meta_network_name, block_root, position));
 
 ---------------------------------------------------------------------
 -- 2. CANNON: canonical_beacon_block_execution_payload_bid
@@ -108,7 +108,7 @@ COMMENT 'Winning execution payload bid from canonical beacon blocks (1 per block
 
 CREATE TABLE canonical_beacon_block_execution_payload_bid ON CLUSTER '{cluster}'
     AS canonical_beacon_block_execution_payload_bid_local
-    ENGINE = Distributed('{cluster}', currentDatabase(), canonical_beacon_block_execution_payload_bid_local, rand());
+    ENGINE = Distributed('{cluster}', currentDatabase(), canonical_beacon_block_execution_payload_bid_local, cityHash64(slot_start_date_time, meta_network_name, block_root));
 
 ---------------------------------------------------------------------
 -- 3. SENTRY SSE: beacon_api_eth_v1_events_execution_payload

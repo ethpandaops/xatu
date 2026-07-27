@@ -67,29 +67,3 @@ ALTER TABLE libp2p_gossipsub_execution_payload_envelope ON CLUSTER '{cluster}'
     MODIFY COLUMN builder_index Nullable(UInt64)
         COMMENT 'Index of the builder that produced the payload, NULL when self-built'
         CODEC(ZSTD(1));
-
----------------------------------------------------------------------
--- Rewrite the historical UInt64-max sentinel to NULL.
---
--- Mutations run against the _local tables only, as the Distributed tables have
--- no data of their own. Each is scoped by the sentinel so the mutation only
--- rewrites the affected parts.
----------------------------------------------------------------------
-
-ALTER TABLE beacon_api_eth_v1_events_execution_payload_local ON CLUSTER '{cluster}'
-    UPDATE builder_index = NULL WHERE builder_index = 18446744073709551615;
-
-ALTER TABLE beacon_api_eth_v1_events_execution_payload_gossip_local ON CLUSTER '{cluster}'
-    UPDATE builder_index = NULL WHERE builder_index = 18446744073709551615;
-
-ALTER TABLE beacon_api_eth_v1_events_execution_payload_bid_local ON CLUSTER '{cluster}'
-    UPDATE builder_index = NULL WHERE builder_index = 18446744073709551615;
-
-ALTER TABLE canonical_beacon_block_execution_payload_bid_local ON CLUSTER '{cluster}'
-    UPDATE builder_index = NULL WHERE builder_index = 18446744073709551615;
-
-ALTER TABLE libp2p_gossipsub_execution_payload_bid_local ON CLUSTER '{cluster}'
-    UPDATE builder_index = NULL WHERE builder_index = 18446744073709551615;
-
-ALTER TABLE libp2p_gossipsub_execution_payload_envelope_local ON CLUSTER '{cluster}'
-    UPDATE builder_index = NULL WHERE builder_index = 18446744073709551615;

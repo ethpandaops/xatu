@@ -20,7 +20,7 @@ type canonicalBeaconBlockExecutionPayloadBidBatch struct {
 	EpochStartDateTime                        proto.ColDateTime
 	BlockRoot                                 route.SafeColFixedStr
 	BlockVersion                              proto.ColStr
-	BuilderIndex                              proto.ColUInt64
+	BuilderIndex                              *proto.ColNullable[uint64]
 	BlockHash                                 route.SafeColFixedStr
 	ParentBlockHash                           route.SafeColFixedStr
 	ParentBlockRoot                           route.SafeColFixedStr
@@ -58,6 +58,7 @@ type canonicalBeaconBlockExecutionPayloadBidBatch struct {
 func newcanonicalBeaconBlockExecutionPayloadBidBatch() *canonicalBeaconBlockExecutionPayloadBidBatch {
 	return &canonicalBeaconBlockExecutionPayloadBidBatch{
 		BlockRoot:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		BuilderIndex:                        new(proto.ColUInt64).Nullable(),
 		BlockHash:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		ParentBlockHash:                     func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		ParentBlockRoot:                     func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
@@ -141,7 +142,7 @@ func (b *canonicalBeaconBlockExecutionPayloadBidBatch) Input() proto.Input {
 		{Name: "epoch_start_date_time", Data: &b.EpochStartDateTime},
 		{Name: "block_root", Data: &b.BlockRoot},
 		{Name: "block_version", Data: &b.BlockVersion},
-		{Name: "builder_index", Data: &b.BuilderIndex},
+		{Name: "builder_index", Data: b.BuilderIndex},
 		{Name: "block_hash", Data: &b.BlockHash},
 		{Name: "parent_block_hash", Data: &b.ParentBlockHash},
 		{Name: "parent_block_root", Data: &b.ParentBlockRoot},
@@ -232,7 +233,11 @@ func (b *canonicalBeaconBlockExecutionPayloadBidBatch) Snapshot() []map[string]a
 		row["epoch_start_date_time"] = b.EpochStartDateTime.Row(i).Unix()
 		row["block_root"] = string(b.BlockRoot.Row(i))
 		row["block_version"] = b.BlockVersion.Row(i)
-		row["builder_index"] = b.BuilderIndex.Row(i)
+		if v := b.BuilderIndex.Row(i); v.Set {
+			row["builder_index"] = v.Value
+		} else {
+			row["builder_index"] = nil
+		}
 		row["block_hash"] = string(b.BlockHash.Row(i))
 		row["parent_block_hash"] = string(b.ParentBlockHash.Row(i))
 		row["parent_block_root"] = string(b.ParentBlockRoot.Row(i))

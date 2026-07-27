@@ -74,8 +74,9 @@ func TestSnapshot_libp2p_gossipsub_execution_payload_envelope(t *testing.T) {
 	}, 1, map[string]any{
 		testfixture.MetaClientNameKey: testfixture.MetaClientName,
 		colEnvelopeBlockRoot:          beaconBlockRoot,
-		colBuilderIndex:               selfBuiltIndex,
-		colBlockHash:                  blockHash,
-		colPeerIDUniqueKey:            expectedPeerIDKey,
+		// The self-build sentinel is stored as NULL, not as UInt64 max.
+		colBuilderIndex:    nil,
+		colBlockHash:       blockHash,
+		colPeerIDUniqueKey: expectedPeerIDKey,
 	})
 }

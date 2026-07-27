@@ -21,7 +21,7 @@ type beaconApiEthV1EventsExecutionPayloadBatch struct {
 	Epoch                                     proto.ColUInt32
 	EpochStartDateTime                        proto.ColDateTime
 	BlockRoot                                 route.SafeColFixedStr
-	BuilderIndex                              proto.ColUInt64
+	BuilderIndex                              *proto.ColNullable[uint64]
 	BlockHash                                 route.SafeColFixedStr
 	ExecutionOptimistic                       proto.ColBool
 	MetaClientName                            proto.ColStr
@@ -53,6 +53,7 @@ func newbeaconApiEthV1EventsExecutionPayloadBatch() *beaconApiEthV1EventsExecuti
 	return &beaconApiEthV1EventsExecutionPayloadBatch{
 		EventDateTime:                       func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
 		BlockRoot:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		BuilderIndex:                        new(proto.ColUInt64).Nullable(),
 		BlockHash:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		MetaClientIP:                        new(proto.ColIPv6).Nullable(),
 		MetaClientGeoLongitude:              new(proto.ColFloat64).Nullable(),
@@ -133,7 +134,7 @@ func (b *beaconApiEthV1EventsExecutionPayloadBatch) Input() proto.Input {
 		{Name: "epoch", Data: &b.Epoch},
 		{Name: "epoch_start_date_time", Data: &b.EpochStartDateTime},
 		{Name: "block_root", Data: &b.BlockRoot},
-		{Name: "builder_index", Data: &b.BuilderIndex},
+		{Name: "builder_index", Data: b.BuilderIndex},
 		{Name: "block_hash", Data: &b.BlockHash},
 		{Name: "execution_optimistic", Data: &b.ExecutionOptimistic},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
@@ -212,7 +213,11 @@ func (b *beaconApiEthV1EventsExecutionPayloadBatch) Snapshot() []map[string]any 
 		row["epoch"] = b.Epoch.Row(i)
 		row["epoch_start_date_time"] = b.EpochStartDateTime.Row(i).Unix()
 		row["block_root"] = string(b.BlockRoot.Row(i))
-		row["builder_index"] = b.BuilderIndex.Row(i)
+		if v := b.BuilderIndex.Row(i); v.Set {
+			row["builder_index"] = v.Value
+		} else {
+			row["builder_index"] = nil
+		}
 		row["block_hash"] = string(b.BlockHash.Row(i))
 		row["execution_optimistic"] = b.ExecutionOptimistic.Row(i)
 		row["meta_client_name"] = b.MetaClientName.Row(i)

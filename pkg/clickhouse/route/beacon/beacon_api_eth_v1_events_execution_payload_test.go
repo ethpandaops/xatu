@@ -1,6 +1,7 @@
 package beacon
 
 import (
+	"math"
 	"testing"
 
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -52,4 +53,35 @@ func TestSnapshot_beacon_api_eth_v1_events_execution_payload(t *testing.T) {
 			EthV1EventsExecutionPayload: event,
 		},
 	}, 1, expected)
+}
+
+// Beacon nodes emit builder_index as UInt64 max to mean "no builder" for a
+// self-built payload. That sentinel must land as NULL rather than as a magic
+// number that would skew aggregates over the column.
+func TestSnapshot_beacon_api_eth_v1_events_execution_payload_selfBuilt(t *testing.T) {
+	if len(beaconApiEthV1EventsExecutionPayloadEventNames) == 0 {
+		t.Skip("no event names registered for beacon_api_eth_v1_events_execution_payload")
+	}
+
+	blockHash := repeatHex("ee", 32)
+
+	testfixture.AssertSnapshot(t, newbeaconApiEthV1EventsExecutionPayloadBatch(), &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     beaconApiEthV1EventsExecutionPayloadEventNames[0],
+			DateTime: testfixture.TS(),
+			Id:       testfixture.SnapshotID,
+		},
+		Meta: testfixture.BaseMeta(),
+		Data: &xatu.DecoratedEvent_EthV1EventsExecutionPayload{
+			EthV1EventsExecutionPayload: &ethv1.ExecutionPayloadEvent{
+				Slot:         wrapperspb.UInt64(8_675_309),
+				BuilderIndex: wrapperspb.UInt64(math.MaxUint64),
+				BlockHash:    blockHash,
+				BlockRoot:    blockRoot64A,
+			},
+		},
+	}, 1, map[string]any{
+		colBuilderIndex:  nil,
+		colExecBlockHash: blockHash,
+	})
 }

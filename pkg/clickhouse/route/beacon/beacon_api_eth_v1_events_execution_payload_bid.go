@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -64,9 +65,9 @@ func (b *beaconApiEthV1EventsExecutionPayloadBidBatch) appendPayload(event *xatu
 	bid := signed.GetMessage()
 
 	if builderIndex := bid.GetBuilderIndex(); builderIndex != nil {
-		b.BuilderIndex.Append(builderIndex.GetValue())
+		b.BuilderIndex.Append(route.NullableBuilderIndex(builderIndex.GetValue()))
 	} else {
-		b.BuilderIndex.Append(0)
+		b.BuilderIndex.Append(proto.Nullable[uint64]{})
 	}
 
 	b.BlockHash.Append([]byte(bid.GetBlockHash()))

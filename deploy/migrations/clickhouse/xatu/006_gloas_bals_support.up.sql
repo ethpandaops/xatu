@@ -33,7 +33,10 @@ CREATE TABLE IF NOT EXISTS canonical_beacon_block_access_list_local ON CLUSTER '
     address FixedString(42) CODEC(ZSTD(1)),
     change_type LowCardinality(String) CODEC(ZSTD(1)),
     block_access_index UInt32 CODEC(DoubleDelta, ZSTD(1)),
-    storage_key FixedString(66) CODEC(ZSTD(1)),
+    -- Nullable: balance/nonce/code/touched changes carry no storage slot. A
+    -- non-nullable FixedString would store 66 raw NUL bytes for them, which is
+    -- not valid hex, and the zero hash is ambiguous with real storage slot 0.
+    storage_key Nullable(FixedString(66)) CODEC(ZSTD(1)),
     new_value Nullable(String) CODEC(ZSTD(1)),
     meta_client_name LowCardinality(String) CODEC(ZSTD(1)),
     meta_client_id String CODEC(ZSTD(1)),
@@ -59,7 +62,8 @@ CREATE TABLE IF NOT EXISTS canonical_beacon_block_access_list_local ON CLUSTER '
     meta_labels Map(String, String) CODEC(ZSTD(1))
 ) ENGINE = ReplicatedReplacingMergeTree(updated_date_time)
 PARTITION BY toStartOfMonth(slot_start_date_time)
-ORDER BY (slot_start_date_time, meta_network_name, block_hash, address, change_type, storage_key, block_access_index);
+ORDER BY (slot_start_date_time, meta_network_name, block_hash, address, change_type, storage_key, block_access_index)
+SETTINGS allow_nullable_key = 1;
 
 CREATE TABLE IF NOT EXISTS canonical_beacon_block_access_list ON CLUSTER '{cluster}'
     AS canonical_beacon_block_access_list_local

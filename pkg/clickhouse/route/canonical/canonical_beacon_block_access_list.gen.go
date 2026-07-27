@@ -24,7 +24,7 @@ type canonicalBeaconBlockAccessListBatch struct {
 	Address                                   route.SafeColFixedStr
 	ChangeType                                proto.ColStr
 	BlockAccessIndex                          proto.ColUInt32
-	StorageKey                                route.SafeColFixedStr
+	StorageKey                                *proto.ColNullable[[]byte]
 	NewValue                                  *proto.ColNullable[string]
 	MetaClientName                            proto.ColStr
 	MetaClientID                              proto.ColStr
@@ -56,7 +56,7 @@ func newcanonicalBeaconBlockAccessListBatch() *canonicalBeaconBlockAccessListBat
 		BlockRoot:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		BlockHash:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		Address:                             func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(42); return c }(),
-		StorageKey:                          func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		StorageKey:                          route.NewNullableFixedStr(66),
 		NewValue:                            new(proto.ColStr).Nullable(),
 		MetaClientIP:                        new(proto.ColIPv6).Nullable(),
 		MetaClientGeoLongitude:              new(proto.ColFloat64).Nullable(),
@@ -140,7 +140,7 @@ func (b *canonicalBeaconBlockAccessListBatch) Input() proto.Input {
 		{Name: "address", Data: &b.Address},
 		{Name: "change_type", Data: &b.ChangeType},
 		{Name: "block_access_index", Data: &b.BlockAccessIndex},
-		{Name: "storage_key", Data: &b.StorageKey},
+		{Name: "storage_key", Data: b.StorageKey},
 		{Name: "new_value", Data: b.NewValue},
 		{Name: "meta_client_name", Data: &b.MetaClientName},
 		{Name: "meta_client_id", Data: &b.MetaClientID},
@@ -223,7 +223,11 @@ func (b *canonicalBeaconBlockAccessListBatch) Snapshot() []map[string]any {
 		row["address"] = string(b.Address.Row(i))
 		row["change_type"] = b.ChangeType.Row(i)
 		row["block_access_index"] = b.BlockAccessIndex.Row(i)
-		row["storage_key"] = string(b.StorageKey.Row(i))
+		if v := b.StorageKey.Row(i); v.Set {
+			row["storage_key"] = string(v.Value)
+		} else {
+			row["storage_key"] = nil
+		}
 		if v := b.NewValue.Row(i); v.Set {
 			row["new_value"] = v.Value
 		} else {

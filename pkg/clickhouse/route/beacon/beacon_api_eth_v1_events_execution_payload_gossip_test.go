@@ -51,7 +51,8 @@ func TestSnapshot_beacon_api_eth_v1_events_execution_payload_gossip(t *testing.T
 	}, 1, map[string]any{
 		testfixture.MetaClientNameKey: testfixture.MetaClientName,
 		colBlockRoot:                  beaconBlockRoot,
-		colBuilderIndex:               selfBuiltIndex,
-		colExecBlockHash:              blockHash,
+		// The self-build sentinel is stored as NULL, not as UInt64 max.
+		colBuilderIndex:  nil,
+		colExecBlockHash: blockHash,
 	})
 }

@@ -82,10 +82,12 @@ func (b *canonicalBeaconBlockAccessListBatch) appendPayload(event *xatu.Decorate
 		b.BlockAccessIndex.Append(0)
 	}
 
+	// balance/nonce/code/touched changes carry no storage slot, so store NULL
+	// rather than a zero-padded FixedString of raw NUL bytes.
 	if storageKey := change.GetStorageKey(); storageKey != nil {
-		b.StorageKey.Append([]byte(storageKey.GetValue()))
+		b.StorageKey.Append(proto.NewNullable[[]byte]([]byte(storageKey.GetValue())))
 	} else {
-		b.StorageKey.Append(nil)
+		b.StorageKey.Append(proto.Nullable[[]byte]{})
 	}
 
 	if newValue := change.GetNewValue(); newValue != nil {

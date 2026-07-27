@@ -24,7 +24,7 @@ type libp2pGossipsubExecutionPayloadBidBatch struct {
 	WallclockEpoch                            proto.ColUInt32
 	WallclockEpochStartDateTime               proto.ColDateTime
 	PropagationSlotStartDiff                  proto.ColInt32
-	BuilderIndex                              proto.ColUInt64
+	BuilderIndex                              *proto.ColNullable[uint64]
 	BlockHash                                 route.SafeColFixedStr
 	ParentBlockHash                           route.SafeColFixedStr
 	Value                                     proto.ColUInt64
@@ -61,6 +61,7 @@ type libp2pGossipsubExecutionPayloadBidBatch struct {
 func newlibp2pGossipsubExecutionPayloadBidBatch() *libp2pGossipsubExecutionPayloadBidBatch {
 	return &libp2pGossipsubExecutionPayloadBidBatch{
 		EventDateTime:                       func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
+		BuilderIndex:                        new(proto.ColUInt64).Nullable(),
 		BlockHash:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		ParentBlockHash:                     func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		FeeRecipient:                        func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(42); return c }(),
@@ -128,7 +129,7 @@ func (b *libp2pGossipsubExecutionPayloadBidBatch) Input() proto.Input {
 		{Name: "wallclock_epoch", Data: &b.WallclockEpoch},
 		{Name: "wallclock_epoch_start_date_time", Data: &b.WallclockEpochStartDateTime},
 		{Name: "propagation_slot_start_diff", Data: &b.PropagationSlotStartDiff},
-		{Name: "builder_index", Data: &b.BuilderIndex},
+		{Name: "builder_index", Data: b.BuilderIndex},
 		{Name: "block_hash", Data: &b.BlockHash},
 		{Name: "parent_block_hash", Data: &b.ParentBlockHash},
 		{Name: "value", Data: &b.Value},
@@ -225,7 +226,11 @@ func (b *libp2pGossipsubExecutionPayloadBidBatch) Snapshot() []map[string]any {
 		row["wallclock_epoch"] = b.WallclockEpoch.Row(i)
 		row["wallclock_epoch_start_date_time"] = b.WallclockEpochStartDateTime.Row(i).Unix()
 		row["propagation_slot_start_diff"] = b.PropagationSlotStartDiff.Row(i)
-		row["builder_index"] = b.BuilderIndex.Row(i)
+		if v := b.BuilderIndex.Row(i); v.Set {
+			row["builder_index"] = v.Value
+		} else {
+			row["builder_index"] = nil
+		}
 		row["block_hash"] = string(b.BlockHash.Row(i))
 		row["parent_block_hash"] = string(b.ParentBlockHash.Row(i))
 		row["value"] = b.Value.Row(i)

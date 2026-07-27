@@ -81,7 +81,8 @@ func TestSnapshot_canonical_beacon_block_access_list_balance(t *testing.T) {
 		balAddressKey:          "0xaabbccddee112233445566778899aabbccddeeff",
 		balChangeTypeKey:       balChangeTypeBalance,
 		balBlockAccessIndexKey: uint32(2),
-		balStorageKeyKey:       "",
-		balNewValueKey:         "1000000000000000000",
+		// Balance changes carry no storage slot, so storage_key is NULL.
+		balStorageKeyKey: nil,
+		balNewValueKey:   "1000000000000000000",
 	})
 }

@@ -25,7 +25,7 @@ type libp2pGossipsubExecutionPayloadEnvelopeBatch struct {
 	WallclockEpochStartDateTime               proto.ColDateTime
 	PropagationSlotStartDiff                  proto.ColUInt32
 	BlockRoot                                 route.SafeColFixedStr
-	BuilderIndex                              proto.ColUInt64
+	BuilderIndex                              *proto.ColNullable[uint64]
 	BlockHash                                 route.SafeColFixedStr
 	PeerIDUniqueKey                           proto.ColInt64
 	MessageID                                 proto.ColStr
@@ -57,6 +57,7 @@ func newlibp2pGossipsubExecutionPayloadEnvelopeBatch() *libp2pGossipsubExecution
 	return &libp2pGossipsubExecutionPayloadEnvelopeBatch{
 		EventDateTime:                       func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
 		BlockRoot:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		BuilderIndex:                        new(proto.ColUInt64).Nullable(),
 		BlockHash:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		MetaClientIP:                        new(proto.ColIPv6).Nullable(),
 		MetaClientGeoLongitude:              new(proto.ColFloat64).Nullable(),
@@ -123,7 +124,7 @@ func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) Input() proto.Input {
 		{Name: "wallclock_epoch_start_date_time", Data: &b.WallclockEpochStartDateTime},
 		{Name: "propagation_slot_start_diff", Data: &b.PropagationSlotStartDiff},
 		{Name: "block_root", Data: &b.BlockRoot},
-		{Name: "builder_index", Data: &b.BuilderIndex},
+		{Name: "builder_index", Data: b.BuilderIndex},
 		{Name: "block_hash", Data: &b.BlockHash},
 		{Name: "peer_id_unique_key", Data: &b.PeerIDUniqueKey},
 		{Name: "message_id", Data: &b.MessageID},
@@ -210,7 +211,11 @@ func (b *libp2pGossipsubExecutionPayloadEnvelopeBatch) Snapshot() []map[string]a
 		row["wallclock_epoch_start_date_time"] = b.WallclockEpochStartDateTime.Row(i).Unix()
 		row["propagation_slot_start_diff"] = b.PropagationSlotStartDiff.Row(i)
 		row["block_root"] = string(b.BlockRoot.Row(i))
-		row["builder_index"] = b.BuilderIndex.Row(i)
+		if v := b.BuilderIndex.Row(i); v.Set {
+			row["builder_index"] = v.Value
+		} else {
+			row["builder_index"] = nil
+		}
 		row["block_hash"] = string(b.BlockHash.Row(i))
 		row["peer_id_unique_key"] = b.PeerIDUniqueKey.Row(i)
 		row["message_id"] = b.MessageID.Row(i)

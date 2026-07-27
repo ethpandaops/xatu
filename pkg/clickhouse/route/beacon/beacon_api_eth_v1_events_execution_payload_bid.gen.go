@@ -20,7 +20,7 @@ type beaconApiEthV1EventsExecutionPayloadBidBatch struct {
 	PropagationSlotStartDiff                  proto.ColInt32
 	Epoch                                     proto.ColUInt32
 	EpochStartDateTime                        proto.ColDateTime
-	BuilderIndex                              proto.ColUInt64
+	BuilderIndex                              *proto.ColNullable[uint64]
 	BlockHash                                 route.SafeColFixedStr
 	ParentBlockHash                           route.SafeColFixedStr
 	ParentBlockRoot                           route.SafeColFixedStr
@@ -57,6 +57,7 @@ type beaconApiEthV1EventsExecutionPayloadBidBatch struct {
 func newbeaconApiEthV1EventsExecutionPayloadBidBatch() *beaconApiEthV1EventsExecutionPayloadBidBatch {
 	return &beaconApiEthV1EventsExecutionPayloadBidBatch{
 		EventDateTime:                       func() proto.ColDateTime64 { var c proto.ColDateTime64; c.WithPrecision(proto.Precision(3)); return c }(),
+		BuilderIndex:                        new(proto.ColUInt64).Nullable(),
 		BlockHash:                           func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		ParentBlockHash:                     func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		ParentBlockRoot:                     func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
@@ -139,7 +140,7 @@ func (b *beaconApiEthV1EventsExecutionPayloadBidBatch) Input() proto.Input {
 		{Name: "propagation_slot_start_diff", Data: &b.PropagationSlotStartDiff},
 		{Name: "epoch", Data: &b.Epoch},
 		{Name: "epoch_start_date_time", Data: &b.EpochStartDateTime},
-		{Name: "builder_index", Data: &b.BuilderIndex},
+		{Name: "builder_index", Data: b.BuilderIndex},
 		{Name: "block_hash", Data: &b.BlockHash},
 		{Name: "parent_block_hash", Data: &b.ParentBlockHash},
 		{Name: "parent_block_root", Data: &b.ParentBlockRoot},
@@ -228,7 +229,11 @@ func (b *beaconApiEthV1EventsExecutionPayloadBidBatch) Snapshot() []map[string]a
 		row["propagation_slot_start_diff"] = b.PropagationSlotStartDiff.Row(i)
 		row["epoch"] = b.Epoch.Row(i)
 		row["epoch_start_date_time"] = b.EpochStartDateTime.Row(i).Unix()
-		row["builder_index"] = b.BuilderIndex.Row(i)
+		if v := b.BuilderIndex.Row(i); v.Set {
+			row["builder_index"] = v.Value
+		} else {
+			row["builder_index"] = nil
+		}
 		row["block_hash"] = string(b.BlockHash.Row(i))
 		row["parent_block_hash"] = string(b.ParentBlockHash.Row(i))
 		row["parent_block_root"] = string(b.ParentBlockRoot.Row(i))

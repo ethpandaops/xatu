@@ -457,7 +457,17 @@ func (b *BeaconBlockSyncAggregateDeriver) fetchSyncCommittee(
 		State: fmt.Sprintf("%d", boundarySlot),
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get sync committee from beacon node")
+		// Pruned (non-archive) beacons drop the period-boundary state, but every
+		// retained state in the period carries the same sync committee. Pinning
+		// the epoch makes the node error on a period mismatch rather than
+		// silently returning a different period's committee.
+		resp, err = provider.SyncCommittee(ctx, &api.SyncCommitteeOpts{
+			State: "finalized",
+			Epoch: &epoch,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get sync committee from beacon node")
+		}
 	}
 
 	if resp == nil || resp.Data == nil {

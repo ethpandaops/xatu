@@ -137,9 +137,15 @@ func (m *DutiesService) FetchBeaconCommittee(ctx context.Context, epoch phase0.E
 
 	committees, err := m.beacon.FetchBeaconCommittees(ctx, fmt.Sprintf("%d", phase0.Slot(epoch)*spec.SlotsPerEpoch), &epoch)
 	if err != nil {
-		m.log.WithError(err).WithContext(ctx).Error("Failed to fetch beacon committees")
+		// Pruned (non-archive) beacons drop this epoch's boundary state once the
+		// epoch finalizes, but the next epoch's boundary state — the finalized
+		// split, which pruning retains — still carries this epoch's shuffling.
+		committees, err = m.beacon.FetchBeaconCommittees(ctx, fmt.Sprintf("%d", phase0.Slot(epoch+1)*spec.SlotsPerEpoch), &epoch)
+		if err != nil {
+			m.log.WithError(err).WithContext(ctx).Error("Failed to fetch beacon committees")
 
-		return nil, err
+			return nil, err
+		}
 	}
 
 	m.beaconCommittees.Set(epoch, committees, time.Minute*90)

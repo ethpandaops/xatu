@@ -27,12 +27,21 @@ type Location struct {
 }
 
 var (
-	ErrFailedToMarshal   = errors.New("failed to marshal location")
-	ErrFailedToUnmarshal = errors.New("failed to unmarshal location")
+	ErrFailedToMarshal      = errors.New("failed to marshal location")
+	ErrFailedToUnmarshal    = errors.New("failed to unmarshal location")
+	ErrLocationDataRequired = errors.New("location data is required")
 )
 
 // marshalLocationData protojson-marshals data into l.Value and sets l.Type.
+// data must be a non-nil, populated message: an absent oneof value (Type set
+// but its corresponding Data variant not populated) is rejected rather than
+// silently written as an empty "{}" marker, which would otherwise reset
+// whatever cursor/progress this location represents.
 func (l *Location) marshalLocationData(typ string, data proto.Message) error {
+	if data == nil || !data.ProtoReflect().IsValid() {
+		return fmt.Errorf("%w: type %s", ErrLocationDataRequired, typ)
+	}
+
 	l.Type = typ
 
 	b, err := protojson.Marshal(data)
@@ -60,174 +69,35 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 
 	switch msg.Type {
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT:
-		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT"
-
-		data := msg.GetEthV2BeaconBlockVoluntaryExit()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_VOLUNTARY_EXIT", msg.GetEthV2BeaconBlockVoluntaryExit())
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING:
-		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING"
-
-		data := msg.GetEthV2BeaconBlockProposerSlashing()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_PROPOSER_SLASHING", msg.GetEthV2BeaconBlockProposerSlashing())
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT:
-		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT"
-
-		data := msg.GetEthV2BeaconBlockDeposit()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_DEPOSIT", msg.GetEthV2BeaconBlockDeposit())
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING:
-		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING"
-
-		data := msg.GetEthV2BeaconBlockAttesterSlashing()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
-
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_ATTESTER_SLASHING", msg.GetEthV2BeaconBlockAttesterSlashing())
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION:
-		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION"
-
-		data := msg.GetEthV2BeaconBlockExecutionTransaction()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
-
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_TRANSACTION", msg.GetEthV2BeaconBlockExecutionTransaction())
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE:
-		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE"
-
-		data := msg.GetEthV2BeaconBlockBlsToExecutionChange()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_BLS_TO_EXECUTION_CHANGE", msg.GetEthV2BeaconBlockBlsToExecutionChange())
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL:
-		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL"
-
-		data := msg.GetEthV2BeaconBlockWithdrawal()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
-
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL", msg.GetEthV2BeaconBlockWithdrawal())
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK:
-		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK"
-
-		data := msg.GetEthV2BeaconBlock()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
-
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK", msg.GetEthV2BeaconBlock())
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR:
-		l.Type = "BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR"
-
-		data := msg.GetEthV1BeaconBlobSidecar()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_BLOB_SIDECAR", msg.GetEthV1BeaconBlobSidecar())
 	case xatu.CannonType_BEACON_API_ETH_V1_PROPOSER_DUTY:
-		l.Type = "BEACON_API_ETH_V1_PROPOSER_DUTY"
-
-		data := msg.GetEthV1BeaconProposerDuty()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
+		return l.marshalLocationData("BEACON_API_ETH_V1_PROPOSER_DUTY", msg.GetEthV1BeaconProposerDuty())
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION:
-		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION"
-
-		data := msg.GetEthV2BeaconBlockElaboratedAttestation()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION", msg.GetEthV2BeaconBlockElaboratedAttestation())
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_VALIDATORS:
-		l.Type = "BEACON_API_ETH_V1_BEACON_VALIDATORS"
-
-		data := msg.GetEthV1BeaconValidators()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_VALIDATORS", msg.GetEthV1BeaconValidators())
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_COMMITTEE:
-		l.Type = "BEACON_API_ETH_V1_BEACON_COMMITTEE"
-
-		data := msg.GetEthV1BeaconCommittee()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_COMMITTEE", msg.GetEthV1BeaconCommittee())
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE:
-		l.Type = "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE"
-
-		data := msg.GetEthV1BeaconSyncCommittee()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE", msg.GetEthV1BeaconSyncCommittee())
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE:
-		l.Type = "BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE"
-
-		data := msg.GetEthV2BeaconBlockSyncAggregate()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_SYNC_AGGREGATE", msg.GetEthV2BeaconBlockSyncAggregate())
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT:
 		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_DEPOSIT", msg.GetEthV2BeaconBlockExecutionRequestDeposit())
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_WITHDRAWAL:
@@ -251,27 +121,9 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION:
 		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION", msg.GetEthV1BeaconStatePendingConsolidation())
 	case xatu.CannonType_EXECUTION_CANONICAL_BLOCK:
-		l.Type = "EXECUTION_CANONICAL_BLOCK"
-
-		data := msg.GetExecutionCanonicalBlock()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
+		return l.marshalLocationData("EXECUTION_CANONICAL_BLOCK", msg.GetExecutionCanonicalBlock())
 	case xatu.CannonType_EXECUTION_CANONICAL_TRANSACTION:
-		l.Type = "EXECUTION_CANONICAL_TRANSACTION"
-
-		data := msg.GetExecutionCanonicalTransaction()
-
-		b, err := protojson.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-		}
-
-		l.Value = string(b)
+		return l.marshalLocationData("EXECUTION_CANONICAL_TRANSACTION", msg.GetExecutionCanonicalTransaction())
 	case xatu.CannonType_EXECUTION_CANONICAL_LOGS:
 		return l.marshalLocationData("EXECUTION_CANONICAL_LOGS", msg.GetExecutionCanonicalLogs())
 	case xatu.CannonType_EXECUTION_CANONICAL_TRACES:
@@ -303,8 +155,6 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 	default:
 		return fmt.Errorf("unknown type: %s", msg.Type)
 	}
-
-	return nil
 }
 
 func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {

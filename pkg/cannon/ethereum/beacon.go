@@ -190,6 +190,12 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 	}
 }
 
+// Finality returns the current finality checkpoints as reported by the
+// upstream beacon node.
+func (b *BeaconNode) Finality() (*apiv1.Finality, error) {
+	return b.beacon.Finality()
+}
+
 func (b *BeaconNode) Node() beacon.Node {
 	return b.beacon
 }

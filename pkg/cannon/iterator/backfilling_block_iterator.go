@@ -5,12 +5,16 @@ import (
 	"time"
 
 	"github.com/ethpandaops/ethwallclock"
+	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
+	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/observability"
+	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -41,6 +45,19 @@ type BackFillingBlockNextResponse struct {
 	Direction BackfillingBlockDirection
 }
 
+// CeilingBeaconNode is the subset of *ethereum.BeaconNode the EL block
+// iterator needs to resolve its head ceiling.
+type CeilingBeaconNode interface {
+	// Finality returns the current finality checkpoints.
+	Finality() (*apiv1.Finality, error)
+	// GetBeaconBlock returns a beacon block by an immutable identifier
+	// (slot or block root). Results are cached by identifier, so moving
+	// aliases such as "finalized" or "head" must never be passed here.
+	GetBeaconBlock(ctx context.Context, identifier string, ignoreMetrics ...bool) (*spec.VersionedSignedBeaconBlock, error)
+}
+
+var _ CeilingBeaconNode = (*ethereum.BeaconNode)(nil)
+
 // BackfillingBlock walks execution-block-number space, gated on the consensus
 // layer: the head frontier never runs past the execution block embedded in the
 // CL-finalized beacon block. Backfill walks immutable history down to a floor.
@@ -52,7 +69,7 @@ type BackfillingBlock struct {
 	networkID   string
 	networkName string
 	metrics     *BackfillingBlockMetrics
-	beaconNode  *ethereum.BeaconNode
+	beaconNode  CeilingBeaconNode
 	config      *BackfillingBlockConfig
 }
 
@@ -63,7 +80,7 @@ func NewBackfillingBlock(
 	coordinatorClient *coordinator.Client,
 	wallclock *ethwallclock.EthereumBeaconChain,
 	metrics *BackfillingBlockMetrics,
-	beacon *ethereum.BeaconNode,
+	beacon CeilingBeaconNode,
 	config *BackfillingBlockConfig,
 ) *BackfillingBlock {
 	return &BackfillingBlock{
@@ -121,10 +138,30 @@ func minBackfillBlock(cannonType xatu.CannonType) uint64 {
 
 // fetchExecutionCeiling resolves the execution block number of the CL-finalized
 // beacon block. This is the highest block EL cannon may process on the head.
+// The finalized checkpoint is resolved via the finality endpoint and the block
+// is then fetched by its immutable root: passing the moving "finalized" alias
+// to GetBeaconBlock would pin the block cache to the finality observed at
+// startup, freezing the ceiling until restart.
 func (b *BackfillingBlock) fetchExecutionCeiling(ctx context.Context) (uint64, error) {
-	block, err := b.beaconNode.GetBeaconBlock(ctx, "finalized")
+	finality, err := b.beaconNode.Finality()
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to fetch finalized beacon block")
+		return 0, errors.Wrap(err, "failed to fetch finality")
+	}
+
+	if finality == nil || finality.Finalized == nil {
+		return 0, errors.New("finalized checkpoint is nil")
+	}
+
+	// Before the first epoch finalizes the checkpoint root is zero; the
+	// finalized block is then genesis, which slot 0 addresses immutably.
+	identifier := xatuethv1.RootAsString(finality.Finalized.Root)
+	if finality.Finalized.Root == (phase0.Root{}) {
+		identifier = "0"
+	}
+
+	block, err := b.beaconNode.GetBeaconBlock(ctx, identifier)
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to fetch finalized beacon block %s", identifier)
 	}
 
 	if block == nil {

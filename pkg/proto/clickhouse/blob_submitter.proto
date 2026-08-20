@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains blob submitter address to name mappings.
+
+message BlobSubmitter {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // Ethereum address of the blob submitter
+  string address = 12;
+  // Name of the blob submitter
+  string name = 13;
+  // Ethereum network name
+  string meta_network_name = 14;
+}
+
+// Request for listing blob_submitter records
+message ListBlobSubmitterRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by address - Ethereum address of the blob submitter (ORDER BY column 2 - optional)
+  StringFilter address = 2;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 3;
+  // Filter by name - Name of the blob submitter (optional)
+  StringFilter name = 4;
+
+  // The maximum number of blob_submitter to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 5;
+  // A page token, received from a previous `ListBlobSubmitter` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 6;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 7;
+}
+
+// Response for listing blob_submitter records
+message ListBlobSubmitterResponse {
+  // The list of blob_submitter.
+  repeated BlobSubmitter blob_submitter = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single blob_submitter record by primary key
+message GetBlobSubmitterRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single blob_submitter record
+message GetBlobSubmitterResponse {
+  BlobSubmitter item = 1;
+}
+
+// Query blob_submitter data
+service BlobSubmitterService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListBlobSubmitterRequest) returns (ListBlobSubmitterResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetBlobSubmitterRequest) returns (GetBlobSubmitterResponse);
+}

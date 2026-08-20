@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// This table contains the list of sources that have been imported into the database
+
+message ImportedSources {
+  // Creation date of this row
+  int64 create_date_time = 11;
+  // The date of the data that was imported
+  uint32 target_date_time = 12;
+  // Source of the data that was imported
+  string source = 13;
+}
+
+// Request for listing imported_sources records
+message ListImportedSourcesRequest {
+  // Filter by create_date_time - Creation date of this row (PRIMARY KEY - required)
+  Int64Filter create_date_time = 1;
+
+  // Filter by source - Source of the data that was imported (ORDER BY column 2 - optional)
+  StringFilter source = 2;
+
+  // Filter by target_date_time - The date of the data that was imported (optional)
+  UInt32Filter target_date_time = 3;
+
+  // The maximum number of imported_sources to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 4;
+  // A page token, received from a previous `ListImportedSources` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 5;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 6;
+}
+
+// Response for listing imported_sources records
+message ListImportedSourcesResponse {
+  // The list of imported_sources.
+  repeated ImportedSources imported_sources = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single imported_sources record by primary key
+message GetImportedSourcesRequest {
+  // Creation date of this row
+  int64 create_date_time = 1; // Primary key (required)
+}
+
+// Response for getting a single imported_sources record
+message GetImportedSourcesResponse {
+  ImportedSources item = 1;
+}
+
+// Query imported_sources data
+service ImportedSourcesService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListImportedSourcesRequest) returns (ListImportedSourcesResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetImportedSourcesRequest) returns (GetImportedSourcesResponse);
+}

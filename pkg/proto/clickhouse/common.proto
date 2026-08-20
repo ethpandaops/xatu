@@ -1,0 +1,407 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+
+// Common types used across all generated services
+
+// UInt32Filter represents filtering options for non-nullable uint32 values
+message UInt32Filter {
+  oneof filter {
+    uint32 eq = 1;                 // Equal to value
+    uint32 ne = 2;                 // Not equal to value
+    uint32 lt = 3;                 // Less than value
+    uint32 lte = 4;                // Less than or equal to value
+    uint32 gt = 5;                 // Greater than value
+    uint32 gte = 6;                // Greater than or equal to value
+    UInt32Range between = 7;       // Between min and max (inclusive)
+    UInt32List in = 8;             // In list of values
+    UInt32List not_in = 9;         // Not in list of values
+  }
+}
+
+// NullableUInt32Filter represents filtering options for nullable uint32 values
+message NullableUInt32Filter {
+  oneof filter {
+    uint32 eq = 1;                 // Equal to value
+    uint32 ne = 2;                 // Not equal to value
+    uint32 lt = 3;                 // Less than value
+    uint32 lte = 4;                // Less than or equal to value
+    uint32 gt = 5;                 // Greater than value
+    uint32 gte = 6;                // Greater than or equal to value
+    UInt32Range between = 7;       // Between min and max (inclusive)
+    UInt32List in = 8;             // In list of values
+    UInt32List not_in = 9;         // Not in list of values
+    google.protobuf.Empty is_null = 10;     // IS NULL check
+    google.protobuf.Empty is_not_null = 11; // IS NOT NULL check
+  }
+}
+
+// UInt32Range represents a range of uint32 values
+message UInt32Range {
+  uint32 min = 1;
+  google.protobuf.UInt32Value max = 2; // If not set, matches exact value (min)
+}
+
+// UInt32List represents a list of uint32 values
+message UInt32List {
+  repeated uint32 values = 1;
+}
+
+// UInt64Filter represents filtering options for non-nullable uint64 values
+message UInt64Filter {
+  oneof filter {
+    uint64 eq = 1;                 // Equal to value
+    uint64 ne = 2;                 // Not equal to value
+    uint64 lt = 3;                 // Less than value
+    uint64 lte = 4;                // Less than or equal to value
+    uint64 gt = 5;                 // Greater than value
+    uint64 gte = 6;                // Greater than or equal to value
+    UInt64Range between = 7;       // Between min and max (inclusive)
+    UInt64List in = 8;             // In list of values
+    UInt64List not_in = 9;         // Not in list of values
+  }
+}
+
+// NullableUInt64Filter represents filtering options for nullable uint64 values
+message NullableUInt64Filter {
+  oneof filter {
+    uint64 eq = 1;                 // Equal to value
+    uint64 ne = 2;                 // Not equal to value
+    uint64 lt = 3;                 // Less than value
+    uint64 lte = 4;                // Less than or equal to value
+    uint64 gt = 5;                 // Greater than value
+    uint64 gte = 6;                // Greater than or equal to value
+    UInt64Range between = 7;       // Between min and max (inclusive)
+    UInt64List in = 8;             // In list of values
+    UInt64List not_in = 9;         // Not in list of values
+    google.protobuf.Empty is_null = 10;     // IS NULL check
+    google.protobuf.Empty is_not_null = 11; // IS NOT NULL check
+  }
+}
+
+// UInt64Range represents a range of uint64 values
+message UInt64Range {
+  uint64 min = 1;
+  google.protobuf.UInt64Value max = 2;
+}
+
+// UInt64List represents a list of uint64 values
+message UInt64List {
+  repeated uint64 values = 1;
+}
+
+// Int32Filter represents filtering options for non-nullable int32 values
+message Int32Filter {
+  oneof filter {
+    int32 eq = 1;                  // Equal to value
+    int32 ne = 2;                  // Not equal to value
+    int32 lt = 3;                  // Less than value
+    int32 lte = 4;                 // Less than or equal to value
+    int32 gt = 5;                  // Greater than value
+    int32 gte = 6;                 // Greater than or equal to value
+    Int32Range between = 7;        // Between min and max (inclusive)
+    Int32List in = 8;              // In list of values
+    Int32List not_in = 9;          // Not in list of values
+  }
+}
+
+// NullableInt32Filter represents filtering options for nullable int32 values
+message NullableInt32Filter {
+  oneof filter {
+    int32 eq = 1;                  // Equal to value
+    int32 ne = 2;                  // Not equal to value
+    int32 lt = 3;                  // Less than value
+    int32 lte = 4;                 // Less than or equal to value
+    int32 gt = 5;                  // Greater than value
+    int32 gte = 6;                 // Greater than or equal to value
+    Int32Range between = 7;        // Between min and max (inclusive)
+    Int32List in = 8;              // In list of values
+    Int32List not_in = 9;          // Not in list of values
+    google.protobuf.Empty is_null = 10;     // IS NULL check
+    google.protobuf.Empty is_not_null = 11; // IS NOT NULL check
+  }
+}
+
+// Int32Range represents a range of int32 values
+message Int32Range {
+  int32 min = 1;
+  google.protobuf.Int32Value max = 2;
+}
+
+// Int32List represents a list of int32 values
+message Int32List {
+  repeated int32 values = 1;
+}
+
+// Int64Filter represents filtering options for non-nullable int64 values
+message Int64Filter {
+  oneof filter {
+    int64 eq = 1;                  // Equal to value
+    int64 ne = 2;                  // Not equal to value
+    int64 lt = 3;                  // Less than value
+    int64 lte = 4;                 // Less than or equal to value
+    int64 gt = 5;                  // Greater than value
+    int64 gte = 6;                 // Greater than or equal to value
+    Int64Range between = 7;        // Between min and max (inclusive)
+    Int64List in = 8;              // In list of values
+    Int64List not_in = 9;          // Not in list of values
+  }
+}
+
+// NullableInt64Filter represents filtering options for nullable int64 values
+message NullableInt64Filter {
+  oneof filter {
+    int64 eq = 1;                  // Equal to value
+    int64 ne = 2;                  // Not equal to value
+    int64 lt = 3;                  // Less than value
+    int64 lte = 4;                 // Less than or equal to value
+    int64 gt = 5;                  // Greater than value
+    int64 gte = 6;                 // Greater than or equal to value
+    Int64Range between = 7;        // Between min and max (inclusive)
+    Int64List in = 8;              // In list of values
+    Int64List not_in = 9;          // Not in list of values
+    google.protobuf.Empty is_null = 10;     // IS NULL check
+    google.protobuf.Empty is_not_null = 11; // IS NOT NULL check
+  }
+}
+
+// Int64Range represents a range of int64 values
+message Int64Range {
+  int64 min = 1;
+  google.protobuf.Int64Value max = 2;
+}
+
+// Int64List represents a list of int64 values
+message Int64List {
+  repeated int64 values = 1;
+}
+
+// StringFilter represents filtering options for non-nullable string values
+message StringFilter {
+  oneof filter {
+    string eq = 1;                 // Equal to value
+    string ne = 2;                 // Not equal to value
+    string contains = 3;           // Contains substring (SQL LIKE '%value%')
+    string starts_with = 4;        // Starts with prefix (SQL LIKE 'value%')
+    string ends_with = 5;          // Ends with suffix (SQL LIKE '%value')
+    string like = 6;               // SQL LIKE pattern (% and _ wildcards)
+    string not_like = 7;           // SQL NOT LIKE pattern
+    StringList in = 8;             // In list of values
+    StringList not_in = 9;         // Not in list of values
+  }
+}
+
+// NullableStringFilter represents filtering options for nullable string values
+message NullableStringFilter {
+  oneof filter {
+    string eq = 1;                 // Equal to value
+    string ne = 2;                 // Not equal to value
+    string contains = 3;           // Contains substring (SQL LIKE '%value%')
+    string starts_with = 4;        // Starts with prefix (SQL LIKE 'value%')
+    string ends_with = 5;          // Ends with suffix (SQL LIKE '%value')
+    string like = 6;               // SQL LIKE pattern (% and _ wildcards)
+    string not_like = 7;           // SQL NOT LIKE pattern
+    StringList in = 8;             // In list of values
+    StringList not_in = 9;         // Not in list of values
+    google.protobuf.Empty is_null = 10;     // IS NULL check
+    google.protobuf.Empty is_not_null = 11; // IS NOT NULL check
+  }
+}
+
+// StringList represents a list of string values
+message StringList {
+  repeated string values = 1;
+}
+
+// BoolFilter represents filtering options for non-nullable bool values
+message BoolFilter {
+  oneof filter {
+    bool eq = 1;                   // Equal to value
+    bool ne = 2;                   // Not equal to value
+  }
+}
+
+// NullableBoolFilter represents filtering options for nullable bool values
+message NullableBoolFilter {
+  oneof filter {
+    bool eq = 1;                   // Equal to value
+    bool ne = 2;                   // Not equal to value
+    google.protobuf.Empty is_null = 3;     // IS NULL check
+    google.protobuf.Empty is_not_null = 4; // IS NOT NULL check
+  }
+}
+
+// MapKeyValueStringString represents a key-value pair filter for Map(String, String)
+message MapKeyValueStringString {
+  string key = 1;
+  StringFilter value_filter = 2;
+}
+
+// MapStringStringFilter represents filtering options for Map(String, String) values
+message MapStringStringFilter {
+  oneof filter {
+    MapKeyValueStringString key_value = 1;  // mapColumn['key'] op 'value'
+    string has_key = 2;                     // mapContains(mapColumn, 'key')
+    string not_has_key = 3;                 // NOT mapContains(mapColumn, 'key')
+    StringList has_any_key = 4;             // mapContainsAny(mapColumn, ['k1', 'k2'])
+    StringList has_all_keys = 5;            // mapContainsAll(mapColumn, ['k1', 'k2'])
+  }
+}
+
+// MapKeyValueStringUInt32 represents a key-value pair filter for Map(String, UInt32)
+message MapKeyValueStringUInt32 {
+  string key = 1;
+  UInt32Filter value_filter = 2;
+}
+
+// MapStringUInt32Filter represents filtering options for Map(String, UInt32) values
+message MapStringUInt32Filter {
+  oneof filter {
+    MapKeyValueStringUInt32 key_value = 1;  // mapColumn['key'] op value
+    string has_key = 2;                     // mapContains(mapColumn, 'key')
+    string not_has_key = 3;                 // NOT mapContains(mapColumn, 'key')
+    StringList has_any_key = 4;             // mapContainsAny(mapColumn, ['k1', 'k2'])
+    StringList has_all_keys = 5;            // mapContainsAll(mapColumn, ['k1', 'k2'])
+  }
+}
+
+// MapKeyValueStringInt32 represents a key-value pair filter for Map(String, Int32)
+message MapKeyValueStringInt32 {
+  string key = 1;
+  Int32Filter value_filter = 2;
+}
+
+// MapStringInt32Filter represents filtering options for Map(String, Int32) values
+message MapStringInt32Filter {
+  oneof filter {
+    MapKeyValueStringInt32 key_value = 1;   // mapColumn['key'] op value
+    string has_key = 2;                     // mapContains(mapColumn, 'key')
+    string not_has_key = 3;                 // NOT mapContains(mapColumn, 'key')
+    StringList has_any_key = 4;             // mapContainsAny(mapColumn, ['k1', 'k2'])
+    StringList has_all_keys = 5;            // mapContainsAll(mapColumn, ['k1', 'k2'])
+  }
+}
+
+// MapKeyValueStringUInt64 represents a key-value pair filter for Map(String, UInt64)
+message MapKeyValueStringUInt64 {
+  string key = 1;
+  UInt64Filter value_filter = 2;
+}
+
+// MapStringUInt64Filter represents filtering options for Map(String, UInt64) values
+message MapStringUInt64Filter {
+  oneof filter {
+    MapKeyValueStringUInt64 key_value = 1;  // mapColumn['key'] op value
+    string has_key = 2;                     // mapContains(mapColumn, 'key')
+    string not_has_key = 3;                 // NOT mapContains(mapColumn, 'key')
+    StringList has_any_key = 4;             // mapContainsAny(mapColumn, ['k1', 'k2'])
+    StringList has_all_keys = 5;            // mapContainsAll(mapColumn, ['k1', 'k2'])
+  }
+}
+
+// MapKeyValueStringInt64 represents a key-value pair filter for Map(String, Int64)
+message MapKeyValueStringInt64 {
+  string key = 1;
+  Int64Filter value_filter = 2;
+}
+
+// MapStringInt64Filter represents filtering options for Map(String, Int64) values
+message MapStringInt64Filter {
+  oneof filter {
+    MapKeyValueStringInt64 key_value = 1;   // mapColumn['key'] op value
+    string has_key = 2;                     // mapContains(mapColumn, 'key')
+    string not_has_key = 3;                 // NOT mapContains(mapColumn, 'key')
+    StringList has_any_key = 4;             // mapContainsAny(mapColumn, ['k1', 'k2'])
+    StringList has_all_keys = 5;            // mapContainsAll(mapColumn, ['k1', 'k2'])
+  }
+}
+
+// ArrayUInt32Filter represents filtering options for Array(UInt32) columns
+message ArrayUInt32Filter {
+  oneof filter {
+    uint32 has = 1;                         // has(arr, value) - array contains value
+    UInt32List has_all = 2;                 // hasAll(arr, [v1, v2]) - contains all values
+    UInt32List has_any = 3;                 // hasAny(arr, [v1, v2]) - contains any value
+    uint32 length_eq = 4;                   // length(arr) = n
+    uint32 length_gt = 5;                   // length(arr) > n
+    uint32 length_gte = 6;                  // length(arr) >= n
+    uint32 length_lt = 7;                   // length(arr) < n
+    uint32 length_lte = 8;                  // length(arr) <= n
+    google.protobuf.Empty is_empty = 9;     // empty(arr)
+    google.protobuf.Empty is_not_empty = 10; // notEmpty(arr)
+  }
+}
+
+// ArrayUInt64Filter represents filtering options for Array(UInt64) columns
+message ArrayUInt64Filter {
+  oneof filter {
+    uint64 has = 1;                         // has(arr, value) - array contains value
+    UInt64List has_all = 2;                 // hasAll(arr, [v1, v2]) - contains all values
+    UInt64List has_any = 3;                 // hasAny(arr, [v1, v2]) - contains any value
+    uint32 length_eq = 4;                   // length(arr) = n
+    uint32 length_gt = 5;                   // length(arr) > n
+    uint32 length_gte = 6;                  // length(arr) >= n
+    uint32 length_lt = 7;                   // length(arr) < n
+    uint32 length_lte = 8;                  // length(arr) <= n
+    google.protobuf.Empty is_empty = 9;     // empty(arr)
+    google.protobuf.Empty is_not_empty = 10; // notEmpty(arr)
+  }
+}
+
+// ArrayInt32Filter represents filtering options for Array(Int32) columns
+message ArrayInt32Filter {
+  oneof filter {
+    int32 has = 1;                          // has(arr, value) - array contains value
+    Int32List has_all = 2;                  // hasAll(arr, [v1, v2]) - contains all values
+    Int32List has_any = 3;                  // hasAny(arr, [v1, v2]) - contains any value
+    uint32 length_eq = 4;                   // length(arr) = n
+    uint32 length_gt = 5;                   // length(arr) > n
+    uint32 length_gte = 6;                  // length(arr) >= n
+    uint32 length_lt = 7;                   // length(arr) < n
+    uint32 length_lte = 8;                  // length(arr) <= n
+    google.protobuf.Empty is_empty = 9;     // empty(arr)
+    google.protobuf.Empty is_not_empty = 10; // notEmpty(arr)
+  }
+}
+
+// ArrayInt64Filter represents filtering options for Array(Int64) columns
+message ArrayInt64Filter {
+  oneof filter {
+    int64 has = 1;                          // has(arr, value) - array contains value
+    Int64List has_all = 2;                  // hasAll(arr, [v1, v2]) - contains all values
+    Int64List has_any = 3;                  // hasAny(arr, [v1, v2]) - contains any value
+    uint32 length_eq = 4;                   // length(arr) = n
+    uint32 length_gt = 5;                   // length(arr) > n
+    uint32 length_gte = 6;                  // length(arr) >= n
+    uint32 length_lt = 7;                   // length(arr) < n
+    uint32 length_lte = 8;                  // length(arr) <= n
+    google.protobuf.Empty is_empty = 9;     // empty(arr)
+    google.protobuf.Empty is_not_empty = 10; // notEmpty(arr)
+  }
+}
+
+// ArrayStringFilter represents filtering options for Array(String) columns
+message ArrayStringFilter {
+  oneof filter {
+    string has = 1;                         // has(arr, value) - array contains value
+    StringList has_all = 2;                 // hasAll(arr, [v1, v2]) - contains all values
+    StringList has_any = 3;                 // hasAny(arr, [v1, v2]) - contains any value
+    uint32 length_eq = 4;                   // length(arr) = n
+    uint32 length_gt = 5;                   // length(arr) > n
+    uint32 length_gte = 6;                  // length(arr) >= n
+    uint32 length_lt = 7;                   // length(arr) < n
+    uint32 length_lte = 8;                  // length(arr) <= n
+    google.protobuf.Empty is_empty = 9;     // empty(arr)
+    google.protobuf.Empty is_not_empty = 10; // notEmpty(arr)
+  }
+}
+
+// SortOrder defines the order of results
+enum SortOrder {
+  ASC = 0;
+  DESC = 1;
+}

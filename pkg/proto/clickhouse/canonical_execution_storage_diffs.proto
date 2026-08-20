@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains canonical execution storage diffs data.
+
+message CanonicalExecutionStorageDiffs {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // The block number
+  uint64 block_number = 12;
+  // The transaction index
+  uint64 transaction_index = 13;
+  // The transaction hash associated with the storage diff
+  string transaction_hash = 14;
+  // The internal index of the storage diff within the transaction
+  uint32 internal_index = 15;
+  // The address associated with the storage diff
+  string address = 16;
+  // The storage slot key
+  string slot = 17;
+  // The original value before the storage diff
+  string from_value = 18;
+  // The new value after the storage diff
+  string to_value = 19;
+  // Ethereum network name
+  string meta_network_name = 20;
+}
+
+// Request for listing canonical_execution_storage_diffs records
+message ListCanonicalExecutionStorageDiffsRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by block_number - The block number (ORDER BY column 2 - optional)
+  UInt64Filter block_number = 2;
+
+  // Filter by transaction_hash - The transaction hash associated with the storage diff (ORDER BY column 3 - optional)
+  StringFilter transaction_hash = 3;
+
+  // Filter by internal_index - The internal index of the storage diff within the transaction (ORDER BY column 4 - optional)
+  UInt32Filter internal_index = 4;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by transaction_index - The transaction index (optional)
+  UInt64Filter transaction_index = 6;
+  // Filter by address - The address associated with the storage diff (optional)
+  StringFilter address = 7;
+  // Filter by slot - The storage slot key (optional)
+  StringFilter slot = 8;
+  // Filter by from_value - The original value before the storage diff (optional)
+  StringFilter from_value = 9;
+  // Filter by to_value - The new value after the storage diff (optional)
+  StringFilter to_value = 10;
+
+  // The maximum number of canonical_execution_storage_diffs to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 11;
+  // A page token, received from a previous `ListCanonicalExecutionStorageDiffs` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 12;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 13;
+}
+
+// Response for listing canonical_execution_storage_diffs records
+message ListCanonicalExecutionStorageDiffsResponse {
+  // The list of canonical_execution_storage_diffs.
+  repeated CanonicalExecutionStorageDiffs canonical_execution_storage_diffs = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_execution_storage_diffs record by primary key
+message GetCanonicalExecutionStorageDiffsRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_execution_storage_diffs record
+message GetCanonicalExecutionStorageDiffsResponse {
+  CanonicalExecutionStorageDiffs item = 1;
+}
+
+// Query canonical_execution_storage_diffs data
+service CanonicalExecutionStorageDiffsService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalExecutionStorageDiffsRequest) returns (ListCanonicalExecutionStorageDiffsResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalExecutionStorageDiffsRequest) returns (GetCanonicalExecutionStorageDiffsResponse);
+}

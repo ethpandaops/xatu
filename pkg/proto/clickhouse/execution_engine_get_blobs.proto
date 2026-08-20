@@ -1,0 +1,183 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains timing and instrumentation data for engine_getBlobs calls from the execution layer perspective.
+
+message ExecutionEngineGetBlobs {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // When the event was received
+  int64 event_date_time = 12;
+  // Timestamp when the engine_getBlobs call was received
+  int64 requested_date_time = 13;
+  // How long the engine_getBlobs call took in milliseconds
+  uint64 duration_ms = 14;
+  // Source of the event (SNOOPER, EXECUTION_CLIENT)
+  string source = 15;
+  // Number of versioned hashes requested
+  uint32 requested_count = 16;
+  // List of versioned hashes requested (hex encoded)
+  repeated string versioned_hashes = 17;
+  // Number of non-null blobs returned
+  uint32 returned_count = 18;
+  // Indexes (0-based) of the requested versioned_hashes that were successfully returned
+  repeated uint32 returned_blob_indexes = 19;
+  // Result status (SUCCESS, PARTIAL, EMPTY, UNSUPPORTED, ERROR)
+  string status = 20;
+  // Error details if status is ERROR or UNSUPPORTED
+  google.protobuf.StringValue error_message = 21;
+  // Version of the engine_getBlobs method (e.g., V1, V2)
+  string method_version = 22;
+  // Implementation of the execution client (e.g., go-ethereum, reth, nethermind)
+  string meta_execution_implementation = 23;
+  // Version of the execution client
+  string meta_execution_version = 24;
+  // Major version number of the execution client
+  string meta_execution_version_major = 25;
+  // Minor version number of the execution client
+  string meta_execution_version_minor = 26;
+  // Patch version number of the execution client
+  string meta_execution_version_patch = 27;
+  // Name of the client that generated the event
+  string meta_client_name = 28;
+  // Version of the client that generated the event
+  string meta_client_version = 29;
+  // Implementation of the client that generated the event
+  string meta_client_implementation = 30;
+  // Operating system of the client that generated the event
+  string meta_client_os = 31;
+  // IP address of the client that generated the event
+  google.protobuf.StringValue meta_client_ip = 32;
+  // City of the client that generated the event
+  string meta_client_geo_city = 33;
+  // Country of the client that generated the event
+  string meta_client_geo_country = 34;
+  // Country code of the client that generated the event
+  string meta_client_geo_country_code = 35;
+  // Continent code of the client that generated the event
+  string meta_client_geo_continent_code = 36;
+  // Longitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_longitude = 37;
+  // Latitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_latitude = 38;
+  // Autonomous system number of the client that generated the event
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 39;
+  // Autonomous system organization of the client that generated the event
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 40;
+  // Ethereum network name
+  string meta_network_name = 41;
+}
+
+// Request for listing execution_engine_get_blobs records
+message ListExecutionEngineGetBlobsRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by event_date_time - When the event was received (ORDER BY column 2 - optional)
+  Int64Filter event_date_time = 2;
+
+  // Filter by meta_client_name - Name of the client that generated the event (ORDER BY column 3 - optional)
+  StringFilter meta_client_name = 3;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 4;
+  // Filter by requested_date_time - Timestamp when the engine_getBlobs call was received (optional)
+  Int64Filter requested_date_time = 5;
+  // Filter by duration_ms - How long the engine_getBlobs call took in milliseconds (optional)
+  UInt64Filter duration_ms = 6;
+  // Filter by source - Source of the event (SNOOPER, EXECUTION_CLIENT) (optional)
+  StringFilter source = 7;
+  // Filter by requested_count - Number of versioned hashes requested (optional)
+  UInt32Filter requested_count = 8;
+  // Filter by versioned_hashes - List of versioned hashes requested (hex encoded) (optional)
+  ArrayStringFilter versioned_hashes = 9;
+  // Filter by returned_count - Number of non-null blobs returned (optional)
+  UInt32Filter returned_count = 10;
+  // Filter by returned_blob_indexes - Indexes (0-based) of the requested versioned_hashes that were successfully returned (optional)
+  ArrayUInt32Filter returned_blob_indexes = 11;
+  // Filter by status - Result status (SUCCESS, PARTIAL, EMPTY, UNSUPPORTED, ERROR) (optional)
+  StringFilter status = 12;
+  // Filter by error_message - Error details if status is ERROR or UNSUPPORTED (optional)
+  NullableStringFilter error_message = 13;
+  // Filter by method_version - Version of the engine_getBlobs method (e.g., V1, V2) (optional)
+  StringFilter method_version = 14;
+  // Filter by meta_execution_implementation - Implementation of the execution client (e.g., go-ethereum, reth, nethermind) (optional)
+  StringFilter meta_execution_implementation = 15;
+  // Filter by meta_execution_version - Version of the execution client (optional)
+  StringFilter meta_execution_version = 16;
+  // Filter by meta_execution_version_major - Major version number of the execution client (optional)
+  StringFilter meta_execution_version_major = 17;
+  // Filter by meta_execution_version_minor - Minor version number of the execution client (optional)
+  StringFilter meta_execution_version_minor = 18;
+  // Filter by meta_execution_version_patch - Patch version number of the execution client (optional)
+  StringFilter meta_execution_version_patch = 19;
+  // Filter by meta_client_version - Version of the client that generated the event (optional)
+  StringFilter meta_client_version = 20;
+  // Filter by meta_client_implementation - Implementation of the client that generated the event (optional)
+  StringFilter meta_client_implementation = 21;
+  // Filter by meta_client_os - Operating system of the client that generated the event (optional)
+  StringFilter meta_client_os = 22;
+  // Filter by meta_client_ip - IP address of the client that generated the event (optional)
+  NullableStringFilter meta_client_ip = 23;
+  // Filter by meta_client_geo_city - City of the client that generated the event (optional)
+  StringFilter meta_client_geo_city = 24;
+  // Filter by meta_client_geo_country - Country of the client that generated the event (optional)
+  StringFilter meta_client_geo_country = 25;
+  // Filter by meta_client_geo_country_code - Country code of the client that generated the event (optional)
+  StringFilter meta_client_geo_country_code = 26;
+  // Filter by meta_client_geo_continent_code - Continent code of the client that generated the event (optional)
+  StringFilter meta_client_geo_continent_code = 27;
+  // Filter by meta_client_geo_longitude - Longitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 28;
+  // Filter by meta_client_geo_latitude - Latitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 29;
+  // Filter by meta_client_geo_autonomous_system_number - Autonomous system number of the client that generated the event (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 30;
+  // Filter by meta_client_geo_autonomous_system_organization - Autonomous system organization of the client that generated the event (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 31;
+
+  // The maximum number of execution_engine_get_blobs to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 32;
+  // A page token, received from a previous `ListExecutionEngineGetBlobs` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 33;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 34;
+}
+
+// Response for listing execution_engine_get_blobs records
+message ListExecutionEngineGetBlobsResponse {
+  // The list of execution_engine_get_blobs.
+  repeated ExecutionEngineGetBlobs execution_engine_get_blobs = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single execution_engine_get_blobs record by primary key
+message GetExecutionEngineGetBlobsRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single execution_engine_get_blobs record
+message GetExecutionEngineGetBlobsResponse {
+  ExecutionEngineGetBlobs item = 1;
+}
+
+// Query execution_engine_get_blobs data
+service ExecutionEngineGetBlobsService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListExecutionEngineGetBlobsRequest) returns (ListExecutionEngineGetBlobsResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetExecutionEngineGetBlobsRequest) returns (GetExecutionEngineGetBlobsResponse);
+}

@@ -1,0 +1,14 @@
+# Generates the typed ClickHouse read package at pkg/proto/clickhouse.
+# Run via `make proto-clickhouse`, which points the DSN at the local
+# docker-compose ClickHouse after applying the migrations in
+# deploy/migrations/clickhouse.
+dsn: "clickhouse://127.0.0.1:9000/default"
+all_tables: true
+# Shard-local tables back the Distributed wrappers; consumers query the
+# wrappers, whose sorting keys resolve through the underlying table.
+exclude_tables:
+  - "*_local"
+output_dir: ./pkg/proto/clickhouse
+package: xatu.clickhouse
+go_package: github.com/ethpandaops/xatu/pkg/proto/clickhouse
+include_comments: true

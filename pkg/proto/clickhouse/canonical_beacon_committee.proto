@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains canonical beacon API /eth/v1/beacon/committees data.
+
+message CanonicalBeaconCommittee {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // Slot number in the beacon API committee payload
+  uint32 slot = 12;
+  // The wall clock time when the slot started
+  uint32 slot_start_date_time = 13;
+  // The committee index in the beacon API committee payload
+  string committee_index = 14;
+  // The validator indices in the beacon API committee payload
+  repeated uint32 validators = 15;
+  // The epoch number in the beacon API committee payload
+  uint32 epoch = 16;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 17;
+  // Ethereum network name
+  string meta_network_name = 18;
+}
+
+// Request for listing canonical_beacon_committee records
+message ListCanonicalBeaconCommitteeRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by slot_start_date_time - The wall clock time when the slot started (ORDER BY column 2 - optional)
+  UInt32Filter slot_start_date_time = 2;
+
+  // Filter by committee_index - The committee index in the beacon API committee payload (ORDER BY column 3 - optional)
+  StringFilter committee_index = 3;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 4;
+  // Filter by slot - Slot number in the beacon API committee payload (optional)
+  UInt32Filter slot = 5;
+  // Filter by validators - The validator indices in the beacon API committee payload (optional)
+  ArrayUInt32Filter validators = 6;
+  // Filter by epoch - The epoch number in the beacon API committee payload (optional)
+  UInt32Filter epoch = 7;
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (optional)
+  UInt32Filter epoch_start_date_time = 8;
+
+  // The maximum number of canonical_beacon_committee to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 9;
+  // A page token, received from a previous `ListCanonicalBeaconCommittee` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 10;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 11;
+}
+
+// Response for listing canonical_beacon_committee records
+message ListCanonicalBeaconCommitteeResponse {
+  // The list of canonical_beacon_committee.
+  repeated CanonicalBeaconCommittee canonical_beacon_committee = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_beacon_committee record by primary key
+message GetCanonicalBeaconCommitteeRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_beacon_committee record
+message GetCanonicalBeaconCommitteeResponse {
+  CanonicalBeaconCommittee item = 1;
+}
+
+// Query canonical_beacon_committee data
+service CanonicalBeaconCommitteeService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalBeaconCommitteeRequest) returns (ListCanonicalBeaconCommitteeResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalBeaconCommitteeRequest) returns (GetCanonicalBeaconCommitteeResponse);
+}

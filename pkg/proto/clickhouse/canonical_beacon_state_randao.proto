@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains the RANDAO mix for a canonical beacon state epoch.
+
+message CanonicalBeaconStateRandao {
+  // When this row was last updated
+  uint32 updated_date_time = 11;
+  // The epoch number the RANDAO mix is for
+  uint32 epoch = 12;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 13;
+  // The state ID the RANDAO mix was requested against
+  string state_id = 14;
+  // The RANDAO mix for the epoch
+  string randao = 15;
+  // Ethereum network name
+  string meta_network_name = 16;
+}
+
+// Request for listing canonical_beacon_state_randao records
+message ListCanonicalBeaconStateRandaoRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (ORDER BY column 2 - optional)
+  UInt32Filter epoch_start_date_time = 2;
+
+  // Filter by epoch - The epoch number the RANDAO mix is for (ORDER BY column 3 - optional)
+  UInt32Filter epoch = 3;
+
+  // Filter by updated_date_time - When this row was last updated (optional)
+  UInt32Filter updated_date_time = 4;
+  // Filter by state_id - The state ID the RANDAO mix was requested against (optional)
+  StringFilter state_id = 5;
+  // Filter by randao - The RANDAO mix for the epoch (optional)
+  StringFilter randao = 6;
+
+  // The maximum number of canonical_beacon_state_randao to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 7;
+  // A page token, received from a previous `ListCanonicalBeaconStateRandao` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 8;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 9;
+}
+
+// Response for listing canonical_beacon_state_randao records
+message ListCanonicalBeaconStateRandaoResponse {
+  // The list of canonical_beacon_state_randao.
+  repeated CanonicalBeaconStateRandao canonical_beacon_state_randao = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_beacon_state_randao record by primary key
+message GetCanonicalBeaconStateRandaoRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_beacon_state_randao record
+message GetCanonicalBeaconStateRandaoResponse {
+  CanonicalBeaconStateRandao item = 1;
+}
+
+// Query canonical_beacon_state_randao data
+service CanonicalBeaconStateRandaoService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalBeaconStateRandaoRequest) returns (ListCanonicalBeaconStateRandaoResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalBeaconStateRandaoRequest) returns (GetCanonicalBeaconStateRandaoResponse);
+}

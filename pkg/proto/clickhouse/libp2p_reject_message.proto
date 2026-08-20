@@ -1,0 +1,168 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains the details of the REJECT_MESSAGE events from the libp2p client.
+
+message Libp2pRejectMessage {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // Timestamp of the event
+  int64 event_date_time = 12;
+  // Layer of the topic
+  string topic_layer = 13;
+  // Fork digest value of the topic
+  string topic_fork_digest_value = 14;
+  // Name of the topic
+  string topic_name = 15;
+  // Encoding of the topic
+  string topic_encoding = 16;
+  // A linearly increasing number that is unique among messages originating from the given peer
+  uint64 seq_number = 17;
+  // Indicates if the message was rejected by local subscriber
+  bool local_delivery = 18;
+  // Unique key for the peer that rejected the message
+  int64 peer_id_unique_key = 19;
+  // Identifier of the message
+  string message_id = 20;
+  // Size of the message in bytes
+  uint32 message_size = 21;
+  // Reason for message rejection
+  string reason = 22;
+  // Name of the client that generated the event
+  string meta_client_name = 23;
+  // Version of the client that generated the event
+  string meta_client_version = 24;
+  // Implementation of the client that generated the event
+  string meta_client_implementation = 25;
+  // Operating system of the client that generated the event
+  string meta_client_os = 26;
+  // IP address of the client that generated the event
+  google.protobuf.StringValue meta_client_ip = 27;
+  // City of the client that generated the event
+  string meta_client_geo_city = 28;
+  // Country of the client that generated the event
+  string meta_client_geo_country = 29;
+  // Country code of the client that generated the event
+  string meta_client_geo_country_code = 30;
+  // Continent code of the client that generated the event
+  string meta_client_geo_continent_code = 31;
+  // Longitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_longitude = 32;
+  // Latitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_latitude = 33;
+  // Autonomous system number of the client that generated the event
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 34;
+  // Autonomous system organization of the client that generated the event
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 35;
+  // Ethereum network name
+  string meta_network_name = 36;
+}
+
+// Request for listing libp2p_reject_message records
+message ListLibp2pRejectMessageRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by event_date_time - Timestamp of the event (ORDER BY column 2 - optional)
+  Int64Filter event_date_time = 2;
+
+  // Filter by meta_client_name - Name of the client that generated the event (ORDER BY column 3 - optional)
+  StringFilter meta_client_name = 3;
+
+  // Filter by peer_id_unique_key - Unique key for the peer that rejected the message (ORDER BY column 4 - optional)
+  Int64Filter peer_id_unique_key = 4;
+
+  // Filter by topic_fork_digest_value - Fork digest value of the topic (ORDER BY column 5 - optional)
+  StringFilter topic_fork_digest_value = 5;
+
+  // Filter by topic_name - Name of the topic (ORDER BY column 6 - optional)
+  StringFilter topic_name = 6;
+
+  // Filter by message_id - Identifier of the message (ORDER BY column 7 - optional)
+  StringFilter message_id = 7;
+
+  // Filter by seq_number - A linearly increasing number that is unique among messages originating from the given peer (ORDER BY column 8 - optional)
+  UInt64Filter seq_number = 8;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 9;
+  // Filter by topic_layer - Layer of the topic (optional)
+  StringFilter topic_layer = 10;
+  // Filter by topic_encoding - Encoding of the topic (optional)
+  StringFilter topic_encoding = 11;
+  // Filter by local_delivery - Indicates if the message was rejected by local subscriber (optional)
+  BoolFilter local_delivery = 12;
+  // Filter by message_size - Size of the message in bytes (optional)
+  UInt32Filter message_size = 13;
+  // Filter by reason - Reason for message rejection (optional)
+  StringFilter reason = 14;
+  // Filter by meta_client_version - Version of the client that generated the event (optional)
+  StringFilter meta_client_version = 15;
+  // Filter by meta_client_implementation - Implementation of the client that generated the event (optional)
+  StringFilter meta_client_implementation = 16;
+  // Filter by meta_client_os - Operating system of the client that generated the event (optional)
+  StringFilter meta_client_os = 17;
+  // Filter by meta_client_ip - IP address of the client that generated the event (optional)
+  NullableStringFilter meta_client_ip = 18;
+  // Filter by meta_client_geo_city - City of the client that generated the event (optional)
+  StringFilter meta_client_geo_city = 19;
+  // Filter by meta_client_geo_country - Country of the client that generated the event (optional)
+  StringFilter meta_client_geo_country = 20;
+  // Filter by meta_client_geo_country_code - Country code of the client that generated the event (optional)
+  StringFilter meta_client_geo_country_code = 21;
+  // Filter by meta_client_geo_continent_code - Continent code of the client that generated the event (optional)
+  StringFilter meta_client_geo_continent_code = 22;
+  // Filter by meta_client_geo_longitude - Longitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 23;
+  // Filter by meta_client_geo_latitude - Latitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 24;
+  // Filter by meta_client_geo_autonomous_system_number - Autonomous system number of the client that generated the event (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 25;
+  // Filter by meta_client_geo_autonomous_system_organization - Autonomous system organization of the client that generated the event (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 26;
+
+  // The maximum number of libp2p_reject_message to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 27;
+  // A page token, received from a previous `ListLibp2pRejectMessage` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 28;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 29;
+}
+
+// Response for listing libp2p_reject_message records
+message ListLibp2pRejectMessageResponse {
+  // The list of libp2p_reject_message.
+  repeated Libp2pRejectMessage libp2p_reject_message = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single libp2p_reject_message record by primary key
+message GetLibp2pRejectMessageRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single libp2p_reject_message record
+message GetLibp2pRejectMessageResponse {
+  Libp2pRejectMessage item = 1;
+}
+
+// Query libp2p_reject_message data
+service Libp2pRejectMessageService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListLibp2pRejectMessageRequest) returns (ListLibp2pRejectMessageResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetLibp2pRejectMessageRequest) returns (GetLibp2pRejectMessageResponse);
+}

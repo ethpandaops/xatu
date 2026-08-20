@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains canonical execution traces data.
+
+message CanonicalExecutionTraces {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // The block number
+  uint64 block_number = 12;
+  // The transaction index
+  uint64 transaction_index = 13;
+  // The transaction hash
+  string transaction_hash = 14;
+  // The internal index of the trace within the transaction
+  uint32 internal_index = 15;
+  // The from address of the action
+  string action_from = 16;
+  // The to address of the action
+  google.protobuf.StringValue action_to = 17;
+  // The value of the action
+  string action_value = 18;
+  // The gas provided for the action
+  uint64 action_gas = 19;
+  // The input data for the action
+  google.protobuf.StringValue action_input = 20;
+  // The call type of the action
+  string action_call_type = 21;
+  // The initialization code for the action
+  google.protobuf.StringValue action_init = 22;
+  // The reward type for the action
+  string action_reward_type = 23;
+  // The type of the action
+  string action_type = 24;
+  // The gas used in the result
+  uint64 result_gas_used = 25;
+  // The output of the result
+  google.protobuf.StringValue result_output = 26;
+  // The code returned in the result
+  google.protobuf.StringValue result_code = 27;
+  // The address returned in the result
+  google.protobuf.StringValue result_address = 28;
+  // The trace address
+  google.protobuf.StringValue trace_address = 29;
+  // The number of subtraces
+  uint32 subtraces = 30;
+  // The error, if any, in the trace
+  google.protobuf.StringValue error = 31;
+  // Ethereum network name
+  string meta_network_name = 32;
+}
+
+// Request for listing canonical_execution_traces records
+message ListCanonicalExecutionTracesRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by block_number - The block number (ORDER BY column 2 - optional)
+  UInt64Filter block_number = 2;
+
+  // Filter by transaction_hash - The transaction hash (ORDER BY column 3 - optional)
+  StringFilter transaction_hash = 3;
+
+  // Filter by internal_index - The internal index of the trace within the transaction (ORDER BY column 4 - optional)
+  UInt32Filter internal_index = 4;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by transaction_index - The transaction index (optional)
+  UInt64Filter transaction_index = 6;
+  // Filter by action_from - The from address of the action (optional)
+  StringFilter action_from = 7;
+  // Filter by action_to - The to address of the action (optional)
+  NullableStringFilter action_to = 8;
+  // Filter by action_value - The value of the action (optional)
+  StringFilter action_value = 9;
+  // Filter by action_gas - The gas provided for the action (optional)
+  UInt64Filter action_gas = 10;
+  // Filter by action_input - The input data for the action (optional)
+  NullableStringFilter action_input = 11;
+  // Filter by action_call_type - The call type of the action (optional)
+  StringFilter action_call_type = 12;
+  // Filter by action_init - The initialization code for the action (optional)
+  NullableStringFilter action_init = 13;
+  // Filter by action_reward_type - The reward type for the action (optional)
+  StringFilter action_reward_type = 14;
+  // Filter by action_type - The type of the action (optional)
+  StringFilter action_type = 15;
+  // Filter by result_gas_used - The gas used in the result (optional)
+  UInt64Filter result_gas_used = 16;
+  // Filter by result_output - The output of the result (optional)
+  NullableStringFilter result_output = 17;
+  // Filter by result_code - The code returned in the result (optional)
+  NullableStringFilter result_code = 18;
+  // Filter by result_address - The address returned in the result (optional)
+  NullableStringFilter result_address = 19;
+  // Filter by trace_address - The trace address (optional)
+  NullableStringFilter trace_address = 20;
+  // Filter by subtraces - The number of subtraces (optional)
+  UInt32Filter subtraces = 21;
+  // Filter by error - The error, if any, in the trace (optional)
+  NullableStringFilter error = 22;
+
+  // The maximum number of canonical_execution_traces to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 23;
+  // A page token, received from a previous `ListCanonicalExecutionTraces` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 24;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 25;
+}
+
+// Response for listing canonical_execution_traces records
+message ListCanonicalExecutionTracesResponse {
+  // The list of canonical_execution_traces.
+  repeated CanonicalExecutionTraces canonical_execution_traces = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_execution_traces record by primary key
+message GetCanonicalExecutionTracesRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_execution_traces record
+message GetCanonicalExecutionTracesResponse {
+  CanonicalExecutionTraces item = 1;
+}
+
+// Query canonical_execution_traces data
+service CanonicalExecutionTracesService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalExecutionTracesRequest) returns (ListCanonicalExecutionTracesResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalExecutionTracesRequest) returns (GetCanonicalExecutionTracesResponse);
+}

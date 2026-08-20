@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Aggregated beacon API slot data. Each row represents a slot from each sentry client attached to a beacon node.
+
+message BeaconApiSlot {
+  // Slot number
+  uint32 slot = 11;
+  // The wall clock time when the slot started
+  uint32 slot_start_date_time = 12;
+  // Epoch number
+  uint32 epoch = 13;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 14;
+  // Name of the client that generated the event
+  string meta_client_name = 15;
+  // Ethereum network name
+  string meta_network_name = 16;
+  // City of the client that generated the event
+  string meta_client_geo_city = 17;
+  // Continent code of the client that generated the event
+  string meta_client_geo_continent_code = 18;
+  // Longitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_longitude = 19;
+  // Latitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_latitude = 20;
+  // Ethereum consensus client implementation that generated the event
+  string meta_consensus_implementation = 21;
+  // Ethereum consensus client version that generated the event
+  string meta_consensus_version = 22;
+  // The number of beacon blocks seen in the slot
+  string blocks = 23;
+  // The number of attestations seen in the slot
+  string attestations = 24;
+}
+
+// Request for listing beacon_api_slot records
+message ListBeaconApiSlotRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by slot_start_date_time - The wall clock time when the slot started (ORDER BY column 2 - optional)
+  UInt32Filter slot_start_date_time = 2;
+
+  // Filter by slot - Slot number (ORDER BY column 3 - optional)
+  UInt32Filter slot = 3;
+
+  // Filter by epoch - Epoch number (optional)
+  UInt32Filter epoch = 4;
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (optional)
+  UInt32Filter epoch_start_date_time = 5;
+  // Filter by meta_client_name - Name of the client that generated the event (optional)
+  StringFilter meta_client_name = 6;
+  // Filter by meta_client_geo_city - City of the client that generated the event (optional)
+  StringFilter meta_client_geo_city = 7;
+  // Filter by meta_client_geo_continent_code - Continent code of the client that generated the event (optional)
+  StringFilter meta_client_geo_continent_code = 8;
+  // Filter by meta_client_geo_longitude - Longitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 9;
+  // Filter by meta_client_geo_latitude - Latitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 10;
+  // Filter by meta_consensus_implementation - Ethereum consensus client implementation that generated the event (optional)
+  StringFilter meta_consensus_implementation = 11;
+  // Filter by meta_consensus_version - Ethereum consensus client version that generated the event (optional)
+  StringFilter meta_consensus_version = 12;
+  // Filter by blocks - The number of beacon blocks seen in the slot (optional)
+  StringFilter blocks = 13;
+  // Filter by attestations - The number of attestations seen in the slot (optional)
+  StringFilter attestations = 14;
+
+  // The maximum number of beacon_api_slot to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 15;
+  // A page token, received from a previous `ListBeaconApiSlot` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 16;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 17;
+}
+
+// Response for listing beacon_api_slot records
+message ListBeaconApiSlotResponse {
+  // The list of beacon_api_slot.
+  repeated BeaconApiSlot beacon_api_slot = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single beacon_api_slot record by primary key
+message GetBeaconApiSlotRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single beacon_api_slot record
+message GetBeaconApiSlotResponse {
+  BeaconApiSlot item = 1;
+}
+
+// Query beacon_api_slot data
+service BeaconApiSlotService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListBeaconApiSlotRequest) returns (ListBeaconApiSlotResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetBeaconApiSlotRequest) returns (GetBeaconApiSlotResponse);
+}

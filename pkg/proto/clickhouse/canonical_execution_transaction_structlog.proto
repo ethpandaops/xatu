@@ -1,0 +1,144 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains canonical execution transaction structlog data.
+
+message CanonicalExecutionTransactionStructlog {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // The block number
+  uint64 block_number = 12;
+  // The transaction hash
+  string transaction_hash = 13;
+  // The transaction position in the block
+  uint64 transaction_index = 14;
+  // The transaction gas
+  uint64 transaction_gas = 15;
+  // The transaction failed
+  bool transaction_failed = 16;
+  // The transaction return value
+  google.protobuf.StringValue transaction_return_value = 17;
+  // The index of this structlog in this transaction
+  uint32 index = 18;
+  // The operation
+  string operation = 19;
+  // The gas
+  uint64 gas = 20;
+  // The gas cost
+  uint64 gas_cost = 21;
+  // Actual gas consumed (computed from consecutive gas values)
+  uint64 gas_used = 22;
+  // Gas consumed by this opcode only, excludes child frame gas for CALL/CREATE opcodes. sum(gas_self) = total execution gas without double counting
+  uint64 gas_self = 23;
+  // The depth
+  uint64 depth = 24;
+  // The return data
+  google.protobuf.StringValue return_data = 25;
+  // The refund
+  google.protobuf.UInt64Value refund = 26;
+  // The error
+  google.protobuf.StringValue error = 27;
+  // Address of a CALL operation
+  google.protobuf.StringValue call_to_address = 28;
+  // Sequential identifier for the call frame within the transaction
+  uint32 call_frame_id = 29;
+  // Path of frame IDs from root to current frame
+  repeated uint32 call_frame_path = 30;
+  // Ethereum network name
+  string meta_network_name = 31;
+}
+
+// Request for listing canonical_execution_transaction_structlog records
+message ListCanonicalExecutionTransactionStructlogRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by block_number - The block number (ORDER BY column 2 - optional)
+  UInt64Filter block_number = 2;
+
+  // Filter by transaction_hash - The transaction hash (ORDER BY column 3 - optional)
+  StringFilter transaction_hash = 3;
+
+  // Filter by index - The index of this structlog in this transaction (ORDER BY column 4 - optional)
+  UInt32Filter index = 4;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by transaction_index - The transaction position in the block (optional)
+  UInt64Filter transaction_index = 6;
+  // Filter by transaction_gas - The transaction gas (optional)
+  UInt64Filter transaction_gas = 7;
+  // Filter by transaction_failed - The transaction failed (optional)
+  BoolFilter transaction_failed = 8;
+  // Filter by transaction_return_value - The transaction return value (optional)
+  NullableStringFilter transaction_return_value = 9;
+  // Filter by operation - The operation (optional)
+  StringFilter operation = 10;
+  // Filter by gas - The gas (optional)
+  UInt64Filter gas = 11;
+  // Filter by gas_cost - The gas cost (optional)
+  UInt64Filter gas_cost = 12;
+  // Filter by gas_used - Actual gas consumed (computed from consecutive gas values) (optional)
+  UInt64Filter gas_used = 13;
+  // Filter by gas_self - Gas consumed by this opcode only, excludes child frame gas for CALL/CREATE opcodes. sum(gas_self) = total execution gas without double counting (optional)
+  UInt64Filter gas_self = 14;
+  // Filter by depth - The depth (optional)
+  UInt64Filter depth = 15;
+  // Filter by return_data - The return data (optional)
+  NullableStringFilter return_data = 16;
+  // Filter by refund - The refund (optional)
+  NullableUInt64Filter refund = 17;
+  // Filter by error - The error (optional)
+  NullableStringFilter error = 18;
+  // Filter by call_to_address - Address of a CALL operation (optional)
+  NullableStringFilter call_to_address = 19;
+  // Filter by call_frame_id - Sequential identifier for the call frame within the transaction (optional)
+  UInt32Filter call_frame_id = 20;
+  // Filter by call_frame_path - Path of frame IDs from root to current frame (optional)
+  ArrayUInt32Filter call_frame_path = 21;
+
+  // The maximum number of canonical_execution_transaction_structlog to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 22;
+  // A page token, received from a previous `ListCanonicalExecutionTransactionStructlog` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 23;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 24;
+}
+
+// Response for listing canonical_execution_transaction_structlog records
+message ListCanonicalExecutionTransactionStructlogResponse {
+  // The list of canonical_execution_transaction_structlog.
+  repeated CanonicalExecutionTransactionStructlog canonical_execution_transaction_structlog = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_execution_transaction_structlog record by primary key
+message GetCanonicalExecutionTransactionStructlogRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_execution_transaction_structlog record
+message GetCanonicalExecutionTransactionStructlogResponse {
+  CanonicalExecutionTransactionStructlog item = 1;
+}
+
+// Query canonical_execution_transaction_structlog data
+service CanonicalExecutionTransactionStructlogService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalExecutionTransactionStructlogRequest) returns (ListCanonicalExecutionTransactionStructlogResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalExecutionTransactionStructlogRequest) returns (GetCanonicalExecutionTransactionStructlogResponse);
+}

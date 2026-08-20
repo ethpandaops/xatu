@@ -1,0 +1,193 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains execution layer state size metrics including account, contract code, and storage data measurements at specific block heights.
+
+message ExecutionStateSize {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // When the state size measurement was taken
+  int64 event_date_time = 12;
+  // Block number at which the state size was measured
+  uint64 block_number = 13;
+  // State root hash of the execution layer at this block
+  string state_root = 14;
+  // Total number of accounts in the state
+  uint64 accounts = 15;
+  // Total bytes used by account data
+  uint64 account_bytes = 16;
+  // Number of trie nodes in the account trie
+  uint64 account_trienodes = 17;
+  // Total bytes used by account trie nodes
+  uint64 account_trienode_bytes = 18;
+  // Total number of contract codes stored
+  uint64 contract_codes = 19;
+  // Total bytes used by contract code
+  uint64 contract_code_bytes = 20;
+  // Total number of storage slots in the state
+  uint64 storages = 21;
+  // Total bytes used by storage data
+  uint64 storage_bytes = 22;
+  // Number of trie nodes in the storage trie
+  uint64 storage_trienodes = 23;
+  // Total bytes used by storage trie nodes
+  uint64 storage_trienode_bytes = 24;
+  // Name of the client that generated the event
+  string meta_client_name = 25;
+  // Version of the client that generated the event
+  string meta_client_version = 26;
+  // Implementation of the client that generated the event
+  string meta_client_implementation = 27;
+  // Operating system of the client that generated the event
+  string meta_client_os = 28;
+  // IP address of the client that generated the event
+  google.protobuf.StringValue meta_client_ip = 29;
+  // City of the client that generated the event
+  string meta_client_geo_city = 30;
+  // Country of the client that generated the event
+  string meta_client_geo_country = 31;
+  // Country code of the client that generated the event
+  string meta_client_geo_country_code = 32;
+  // Continent code of the client that generated the event
+  string meta_client_geo_continent_code = 33;
+  // Longitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_longitude = 34;
+  // Latitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_latitude = 35;
+  // Autonomous system number of the client that generated the event
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 36;
+  // Autonomous system organization of the client that generated the event
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 37;
+  // Ethereum network name
+  string meta_network_name = 38;
+  // Execution client version that generated the event
+  string meta_execution_version = 39;
+  // Execution client major version that generated the event
+  string meta_execution_version_major = 40;
+  // Execution client minor version that generated the event
+  string meta_execution_version_minor = 41;
+  // Execution client patch version that generated the event
+  string meta_execution_version_patch = 42;
+  // Execution client implementation that generated the event
+  string meta_execution_implementation = 43;
+}
+
+// Request for listing execution_state_size records
+message ListExecutionStateSizeRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by block_number - Block number at which the state size was measured (ORDER BY column 2 - optional)
+  UInt64Filter block_number = 2;
+
+  // Filter by meta_client_name - Name of the client that generated the event (ORDER BY column 3 - optional)
+  StringFilter meta_client_name = 3;
+
+  // Filter by state_root - State root hash of the execution layer at this block (ORDER BY column 4 - optional)
+  StringFilter state_root = 4;
+
+  // Filter by event_date_time - When the state size measurement was taken (ORDER BY column 5 - optional)
+  Int64Filter event_date_time = 5;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 6;
+  // Filter by accounts - Total number of accounts in the state (optional)
+  UInt64Filter accounts = 7;
+  // Filter by account_bytes - Total bytes used by account data (optional)
+  UInt64Filter account_bytes = 8;
+  // Filter by account_trienodes - Number of trie nodes in the account trie (optional)
+  UInt64Filter account_trienodes = 9;
+  // Filter by account_trienode_bytes - Total bytes used by account trie nodes (optional)
+  UInt64Filter account_trienode_bytes = 10;
+  // Filter by contract_codes - Total number of contract codes stored (optional)
+  UInt64Filter contract_codes = 11;
+  // Filter by contract_code_bytes - Total bytes used by contract code (optional)
+  UInt64Filter contract_code_bytes = 12;
+  // Filter by storages - Total number of storage slots in the state (optional)
+  UInt64Filter storages = 13;
+  // Filter by storage_bytes - Total bytes used by storage data (optional)
+  UInt64Filter storage_bytes = 14;
+  // Filter by storage_trienodes - Number of trie nodes in the storage trie (optional)
+  UInt64Filter storage_trienodes = 15;
+  // Filter by storage_trienode_bytes - Total bytes used by storage trie nodes (optional)
+  UInt64Filter storage_trienode_bytes = 16;
+  // Filter by meta_client_version - Version of the client that generated the event (optional)
+  StringFilter meta_client_version = 17;
+  // Filter by meta_client_implementation - Implementation of the client that generated the event (optional)
+  StringFilter meta_client_implementation = 18;
+  // Filter by meta_client_os - Operating system of the client that generated the event (optional)
+  StringFilter meta_client_os = 19;
+  // Filter by meta_client_ip - IP address of the client that generated the event (optional)
+  NullableStringFilter meta_client_ip = 20;
+  // Filter by meta_client_geo_city - City of the client that generated the event (optional)
+  StringFilter meta_client_geo_city = 21;
+  // Filter by meta_client_geo_country - Country of the client that generated the event (optional)
+  StringFilter meta_client_geo_country = 22;
+  // Filter by meta_client_geo_country_code - Country code of the client that generated the event (optional)
+  StringFilter meta_client_geo_country_code = 23;
+  // Filter by meta_client_geo_continent_code - Continent code of the client that generated the event (optional)
+  StringFilter meta_client_geo_continent_code = 24;
+  // Filter by meta_client_geo_longitude - Longitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 25;
+  // Filter by meta_client_geo_latitude - Latitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 26;
+  // Filter by meta_client_geo_autonomous_system_number - Autonomous system number of the client that generated the event (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 27;
+  // Filter by meta_client_geo_autonomous_system_organization - Autonomous system organization of the client that generated the event (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 28;
+  // Filter by meta_execution_version - Execution client version that generated the event (optional)
+  StringFilter meta_execution_version = 29;
+  // Filter by meta_execution_version_major - Execution client major version that generated the event (optional)
+  StringFilter meta_execution_version_major = 30;
+  // Filter by meta_execution_version_minor - Execution client minor version that generated the event (optional)
+  StringFilter meta_execution_version_minor = 31;
+  // Filter by meta_execution_version_patch - Execution client patch version that generated the event (optional)
+  StringFilter meta_execution_version_patch = 32;
+  // Filter by meta_execution_implementation - Execution client implementation that generated the event (optional)
+  StringFilter meta_execution_implementation = 33;
+
+  // The maximum number of execution_state_size to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 34;
+  // A page token, received from a previous `ListExecutionStateSize` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 35;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 36;
+}
+
+// Response for listing execution_state_size records
+message ListExecutionStateSizeResponse {
+  // The list of execution_state_size.
+  repeated ExecutionStateSize execution_state_size = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single execution_state_size record by primary key
+message GetExecutionStateSizeRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single execution_state_size record
+message GetExecutionStateSizeResponse {
+  ExecutionStateSize item = 1;
+}
+
+// Query execution_state_size data
+service ExecutionStateSizeService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListExecutionStateSizeRequest) returns (ListExecutionStateSizeResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetExecutionStateSizeRequest) returns (GetExecutionStateSizeResponse);
+}

@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains canonical execution contract data.
+
+message CanonicalExecutionContracts {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // The block number
+  uint64 block_number = 12;
+  // The transaction hash that created the contract
+  string transaction_hash = 13;
+  // The internal index of the contract creation within the transaction
+  uint32 internal_index = 14;
+  // The create index
+  uint32 create_index = 15;
+  // The contract address
+  string contract_address = 16;
+  // The address of the contract deployer
+  string deployer = 17;
+  // The address of the factory that deployed the contract
+  string factory = 18;
+  // The initialization code of the contract
+  string init_code = 19;
+  // The code of the contract
+  google.protobuf.StringValue code = 20;
+  // The hash of the initialization code
+  string init_code_hash = 21;
+  // Number of bytes in the initialization code
+  uint32 n_init_code_bytes = 22;
+  // Number of bytes in the contract code
+  uint32 n_code_bytes = 23;
+  // The hash of the contract code
+  string code_hash = 24;
+  // Ethereum network name
+  string meta_network_name = 25;
+}
+
+// Request for listing canonical_execution_contracts records
+message ListCanonicalExecutionContractsRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by block_number - The block number (ORDER BY column 2 - optional)
+  UInt64Filter block_number = 2;
+
+  // Filter by transaction_hash - The transaction hash that created the contract (ORDER BY column 3 - optional)
+  StringFilter transaction_hash = 3;
+
+  // Filter by internal_index - The internal index of the contract creation within the transaction (ORDER BY column 4 - optional)
+  UInt32Filter internal_index = 4;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by create_index - The create index (optional)
+  UInt32Filter create_index = 6;
+  // Filter by contract_address - The contract address (optional)
+  StringFilter contract_address = 7;
+  // Filter by deployer - The address of the contract deployer (optional)
+  StringFilter deployer = 8;
+  // Filter by factory - The address of the factory that deployed the contract (optional)
+  StringFilter factory = 9;
+  // Filter by init_code - The initialization code of the contract (optional)
+  StringFilter init_code = 10;
+  // Filter by code - The code of the contract (optional)
+  NullableStringFilter code = 11;
+  // Filter by init_code_hash - The hash of the initialization code (optional)
+  StringFilter init_code_hash = 12;
+  // Filter by n_init_code_bytes - Number of bytes in the initialization code (optional)
+  UInt32Filter n_init_code_bytes = 13;
+  // Filter by n_code_bytes - Number of bytes in the contract code (optional)
+  UInt32Filter n_code_bytes = 14;
+  // Filter by code_hash - The hash of the contract code (optional)
+  StringFilter code_hash = 15;
+
+  // The maximum number of canonical_execution_contracts to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 16;
+  // A page token, received from a previous `ListCanonicalExecutionContracts` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 17;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 18;
+}
+
+// Response for listing canonical_execution_contracts records
+message ListCanonicalExecutionContractsResponse {
+  // The list of canonical_execution_contracts.
+  repeated CanonicalExecutionContracts canonical_execution_contracts = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_execution_contracts record by primary key
+message GetCanonicalExecutionContractsRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_execution_contracts record
+message GetCanonicalExecutionContractsResponse {
+  CanonicalExecutionContracts item = 1;
+}
+
+// Query canonical_execution_contracts data
+service CanonicalExecutionContractsService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalExecutionContractsRequest) returns (ListCanonicalExecutionContractsResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalExecutionContractsRequest) returns (GetCanonicalExecutionContractsResponse);
+}

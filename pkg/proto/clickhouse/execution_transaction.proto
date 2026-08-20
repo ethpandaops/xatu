@@ -1,0 +1,160 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains execution transaction data that may not be canonical.
+
+message ExecutionTransaction {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // The block number
+  uint64 block_number = 12;
+  // The block hash
+  string block_hash = 13;
+  // The parent block hash
+  string parent_hash = 14;
+  // The position of the transaction in the beacon block
+  uint32 position = 15;
+  // The hash of the transaction
+  string hash = 16;
+  // The address of the account that sent the transaction
+  string from = 17;
+  // The address of the account that is the transaction recipient
+  google.protobuf.StringValue to = 18;
+  // The nonce of the sender account at the time of the transaction
+  uint64 nonce = 19;
+  // The gas price of the transaction in wei
+  string gas_price = 20;
+  // The maximum gas provided for the transaction execution
+  uint64 gas = 21;
+  // The priority fee (tip) the user has set for the transaction
+  google.protobuf.StringValue gas_tip_cap = 22;
+  // The max fee the user has set for the transaction
+  google.protobuf.StringValue gas_fee_cap = 23;
+  // The value transferred with the transaction in wei
+  string value = 24;
+  // The type of the transaction
+  uint32 type = 25;
+  // The size of the transaction data in bytes
+  uint32 size = 26;
+  // The size of the call data of the transaction in bytes
+  uint32 call_data_size = 27;
+  // The maximum gas provided for the blob transaction execution
+  google.protobuf.UInt64Value blob_gas = 28;
+  // The max fee the user has set for the transaction
+  google.protobuf.StringValue blob_gas_fee_cap = 29;
+  // The hashes of the blob commitments for blob transactions
+  repeated string blob_hashes = 30;
+  // The transaction success
+  bool success = 31;
+  // The transaction input bytes
+  uint32 n_input_bytes = 32;
+  // The transaction input zero bytes
+  uint32 n_input_zero_bytes = 33;
+  // The transaction input nonzero bytes
+  uint32 n_input_nonzero_bytes = 34;
+  // Ethereum network name
+  string meta_network_name = 35;
+}
+
+// Request for listing execution_transaction records
+message ListExecutionTransactionRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by block_number - The block number (ORDER BY column 2 - optional)
+  UInt64Filter block_number = 2;
+
+  // Filter by block_hash - The block hash (ORDER BY column 3 - optional)
+  StringFilter block_hash = 3;
+
+  // Filter by position - The position of the transaction in the beacon block (ORDER BY column 4 - optional)
+  UInt32Filter position = 4;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by parent_hash - The parent block hash (optional)
+  StringFilter parent_hash = 6;
+  // Filter by hash - The hash of the transaction (optional)
+  StringFilter hash = 7;
+  // Filter by from - The address of the account that sent the transaction (optional)
+  StringFilter from = 8;
+  // Filter by to - The address of the account that is the transaction recipient (optional)
+  NullableStringFilter to = 9;
+  // Filter by nonce - The nonce of the sender account at the time of the transaction (optional)
+  UInt64Filter nonce = 10;
+  // Filter by gas_price - The gas price of the transaction in wei (optional)
+  StringFilter gas_price = 11;
+  // Filter by gas - The maximum gas provided for the transaction execution (optional)
+  UInt64Filter gas = 12;
+  // Filter by gas_tip_cap - The priority fee (tip) the user has set for the transaction (optional)
+  NullableStringFilter gas_tip_cap = 13;
+  // Filter by gas_fee_cap - The max fee the user has set for the transaction (optional)
+  NullableStringFilter gas_fee_cap = 14;
+  // Filter by value - The value transferred with the transaction in wei (optional)
+  StringFilter value = 15;
+  // Filter by type - The type of the transaction (optional)
+  UInt32Filter type = 16;
+  // Filter by size - The size of the transaction data in bytes (optional)
+  UInt32Filter size = 17;
+  // Filter by call_data_size - The size of the call data of the transaction in bytes (optional)
+  UInt32Filter call_data_size = 18;
+  // Filter by blob_gas - The maximum gas provided for the blob transaction execution (optional)
+  NullableUInt64Filter blob_gas = 19;
+  // Filter by blob_gas_fee_cap - The max fee the user has set for the transaction (optional)
+  NullableStringFilter blob_gas_fee_cap = 20;
+  // Filter by blob_hashes - The hashes of the blob commitments for blob transactions (optional)
+  ArrayStringFilter blob_hashes = 21;
+  // Filter by success - The transaction success (optional)
+  BoolFilter success = 22;
+  // Filter by n_input_bytes - The transaction input bytes (optional)
+  UInt32Filter n_input_bytes = 23;
+  // Filter by n_input_zero_bytes - The transaction input zero bytes (optional)
+  UInt32Filter n_input_zero_bytes = 24;
+  // Filter by n_input_nonzero_bytes - The transaction input nonzero bytes (optional)
+  UInt32Filter n_input_nonzero_bytes = 25;
+
+  // The maximum number of execution_transaction to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 26;
+  // A page token, received from a previous `ListExecutionTransaction` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 27;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 28;
+}
+
+// Response for listing execution_transaction records
+message ListExecutionTransactionResponse {
+  // The list of execution_transaction.
+  repeated ExecutionTransaction execution_transaction = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single execution_transaction record by primary key
+message GetExecutionTransactionRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single execution_transaction record
+message GetExecutionTransactionResponse {
+  ExecutionTransaction item = 1;
+}
+
+// Query execution_transaction data
+service ExecutionTransactionService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListExecutionTransactionRequest) returns (ListExecutionTransactionResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetExecutionTransactionRequest) returns (GetExecutionTransactionResponse);
+}

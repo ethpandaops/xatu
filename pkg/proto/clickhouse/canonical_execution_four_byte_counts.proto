@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains canonical execution four byte count data.
+
+message CanonicalExecutionFourByteCounts {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // The block number
+  uint64 block_number = 12;
+  // The transaction index in the block
+  uint64 transaction_index = 13;
+  // The transaction hash
+  string transaction_hash = 14;
+  // The signature of the four byte count
+  string signature = 15;
+  // The size of the four byte count
+  uint64 size = 16;
+  // The count of the four byte count
+  uint64 count = 17;
+  // Ethereum network name
+  string meta_network_name = 18;
+}
+
+// Request for listing canonical_execution_four_byte_counts records
+message ListCanonicalExecutionFourByteCountsRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by block_number - The block number (ORDER BY column 2 - optional)
+  UInt64Filter block_number = 2;
+
+  // Filter by transaction_hash - The transaction hash (ORDER BY column 3 - optional)
+  StringFilter transaction_hash = 3;
+
+  // Filter by signature - The signature of the four byte count (ORDER BY column 4 - optional)
+  StringFilter signature = 4;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by transaction_index - The transaction index in the block (optional)
+  UInt64Filter transaction_index = 6;
+  // Filter by size - The size of the four byte count (optional)
+  UInt64Filter size = 7;
+  // Filter by count - The count of the four byte count (optional)
+  UInt64Filter count = 8;
+
+  // The maximum number of canonical_execution_four_byte_counts to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 9;
+  // A page token, received from a previous `ListCanonicalExecutionFourByteCounts` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 10;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 11;
+}
+
+// Response for listing canonical_execution_four_byte_counts records
+message ListCanonicalExecutionFourByteCountsResponse {
+  // The list of canonical_execution_four_byte_counts.
+  repeated CanonicalExecutionFourByteCounts canonical_execution_four_byte_counts = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_execution_four_byte_counts record by primary key
+message GetCanonicalExecutionFourByteCountsRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_execution_four_byte_counts record
+message GetCanonicalExecutionFourByteCountsResponse {
+  CanonicalExecutionFourByteCounts item = 1;
+}
+
+// Query canonical_execution_four_byte_counts data
+service CanonicalExecutionFourByteCountsService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalExecutionFourByteCountsRequest) returns (ListCanonicalExecutionFourByteCountsResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalExecutionFourByteCountsRequest) returns (GetCanonicalExecutionFourByteCountsResponse);
+}

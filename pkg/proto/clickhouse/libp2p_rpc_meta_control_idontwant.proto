@@ -1,0 +1,152 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains the details of the IDONTWANT control messages from the peer.
+
+message Libp2pRpcMetaControlIdontwant {
+  // Unique identifier for each IDONTWANT control record
+  int64 unique_key = 11;
+  // Timestamp when the IDONTWANT control record was last updated
+  uint32 updated_date_time = 12;
+  // Timestamp of the IDONTWANT control event
+  int64 event_date_time = 13;
+  // Position in the RPC meta control idontwant array
+  int32 control_index = 14;
+  // Position in the RPC meta control idontwant message_ids array
+  int32 message_index = 15;
+  // Unique key associated with the IDONTWANT control metadata
+  int64 rpc_meta_unique_key = 16;
+  // Identifier of the message associated with the IDONTWANT control
+  string message_id = 17;
+  // Unique key associated with the identifier of the peer involved in the IDONTWANT control
+  int64 peer_id_unique_key = 18;
+  // Name of the client that generated the event
+  string meta_client_name = 19;
+  // Version of the client that generated the event
+  string meta_client_version = 20;
+  // Implementation of the client that generated the event
+  string meta_client_implementation = 21;
+  // Operating system of the client that generated the event
+  string meta_client_os = 22;
+  // IP address of the client that generated the event
+  google.protobuf.StringValue meta_client_ip = 23;
+  // City of the client that generated the event
+  string meta_client_geo_city = 24;
+  // Country of the client that generated the event
+  string meta_client_geo_country = 25;
+  // Country code of the client that generated the event
+  string meta_client_geo_country_code = 26;
+  // Continent code of the client that generated the event
+  string meta_client_geo_continent_code = 27;
+  // Longitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_longitude = 28;
+  // Latitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_latitude = 29;
+  // Autonomous system number of the client that generated the event
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 30;
+  // Autonomous system organization of the client that generated the event
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 31;
+  // Ethereum network name
+  string meta_network_name = 32;
+}
+
+// Request for listing libp2p_rpc_meta_control_idontwant records
+message ListLibp2pRpcMetaControlIdontwantRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by event_date_time - Timestamp of the IDONTWANT control event (ORDER BY column 2 - optional)
+  Int64Filter event_date_time = 2;
+
+  // Filter by unique_key - Unique identifier for each IDONTWANT control record (ORDER BY column 3 - optional)
+  Int64Filter unique_key = 3;
+
+  // Filter by control_index - Position in the RPC meta control idontwant array (ORDER BY column 4 - optional)
+  Int32Filter control_index = 4;
+
+  // Filter by peer_id_unique_key - Unique key associated with the identifier of the peer involved in the IDONTWANT control (ORDER BY column 5 - optional)
+  Int64Filter peer_id_unique_key = 5;
+
+  // Filter by message_id - Identifier of the message associated with the IDONTWANT control (ORDER BY column 6 - optional)
+  StringFilter message_id = 6;
+
+  // Filter by message_index - Position in the RPC meta control idontwant message_ids array (ORDER BY column 7 - optional)
+  Int32Filter message_index = 7;
+
+  // Filter by meta_client_name - Name of the client that generated the event (ORDER BY column 8 - optional)
+  StringFilter meta_client_name = 8;
+
+  // Filter by updated_date_time - Timestamp when the IDONTWANT control record was last updated (optional)
+  UInt32Filter updated_date_time = 9;
+  // Filter by rpc_meta_unique_key - Unique key associated with the IDONTWANT control metadata (optional)
+  Int64Filter rpc_meta_unique_key = 10;
+  // Filter by meta_client_version - Version of the client that generated the event (optional)
+  StringFilter meta_client_version = 11;
+  // Filter by meta_client_implementation - Implementation of the client that generated the event (optional)
+  StringFilter meta_client_implementation = 12;
+  // Filter by meta_client_os - Operating system of the client that generated the event (optional)
+  StringFilter meta_client_os = 13;
+  // Filter by meta_client_ip - IP address of the client that generated the event (optional)
+  NullableStringFilter meta_client_ip = 14;
+  // Filter by meta_client_geo_city - City of the client that generated the event (optional)
+  StringFilter meta_client_geo_city = 15;
+  // Filter by meta_client_geo_country - Country of the client that generated the event (optional)
+  StringFilter meta_client_geo_country = 16;
+  // Filter by meta_client_geo_country_code - Country code of the client that generated the event (optional)
+  StringFilter meta_client_geo_country_code = 17;
+  // Filter by meta_client_geo_continent_code - Continent code of the client that generated the event (optional)
+  StringFilter meta_client_geo_continent_code = 18;
+  // Filter by meta_client_geo_longitude - Longitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 19;
+  // Filter by meta_client_geo_latitude - Latitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 20;
+  // Filter by meta_client_geo_autonomous_system_number - Autonomous system number of the client that generated the event (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 21;
+  // Filter by meta_client_geo_autonomous_system_organization - Autonomous system organization of the client that generated the event (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 22;
+
+  // The maximum number of libp2p_rpc_meta_control_idontwant to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 23;
+  // A page token, received from a previous `ListLibp2pRpcMetaControlIdontwant` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 24;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 25;
+}
+
+// Response for listing libp2p_rpc_meta_control_idontwant records
+message ListLibp2pRpcMetaControlIdontwantResponse {
+  // The list of libp2p_rpc_meta_control_idontwant.
+  repeated Libp2pRpcMetaControlIdontwant libp2p_rpc_meta_control_idontwant = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single libp2p_rpc_meta_control_idontwant record by primary key
+message GetLibp2pRpcMetaControlIdontwantRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single libp2p_rpc_meta_control_idontwant record
+message GetLibp2pRpcMetaControlIdontwantResponse {
+  Libp2pRpcMetaControlIdontwant item = 1;
+}
+
+// Query libp2p_rpc_meta_control_idontwant data
+service Libp2pRpcMetaControlIdontwantService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListLibp2pRpcMetaControlIdontwantRequest) returns (ListLibp2pRpcMetaControlIdontwantResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetLibp2pRpcMetaControlIdontwantRequest) returns (GetLibp2pRpcMetaControlIdontwantResponse);
+}

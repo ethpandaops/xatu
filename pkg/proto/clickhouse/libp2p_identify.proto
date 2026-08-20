@@ -1,0 +1,198 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains libp2p identify protocol exchange results including remote peer agent info, supported protocols, and connection metadata
+
+message Libp2pIdentify {
+  uint32 updated_date_time = 11;
+  int64 event_date_time = 12;
+  int64 remote_peer_id_unique_key = 13;
+  bool success = 14;
+  google.protobuf.StringValue error = 15;
+  string remote_protocol = 16;
+  string remote_transport_protocol = 17;
+  uint32 remote_port = 18;
+  google.protobuf.StringValue remote_ip = 19;
+  string remote_geo_city = 20;
+  string remote_geo_country = 21;
+  string remote_geo_country_code = 22;
+  string remote_geo_continent_code = 23;
+  google.protobuf.DoubleValue remote_geo_longitude = 24;
+  google.protobuf.DoubleValue remote_geo_latitude = 25;
+  google.protobuf.UInt32Value remote_geo_autonomous_system_number = 26;
+  google.protobuf.StringValue remote_geo_autonomous_system_organization = 27;
+  string remote_agent_implementation = 28;
+  string remote_agent_version = 29;
+  string remote_agent_version_major = 30;
+  string remote_agent_version_minor = 31;
+  string remote_agent_version_patch = 32;
+  string remote_agent_platform = 33;
+  string protocol_version = 34;
+  repeated string protocols = 35;
+  repeated string listen_addrs = 36;
+  string observed_addr = 37;
+  string transport = 38;
+  string security = 39;
+  string muxer = 40;
+  string direction = 41;
+  string remote_multiaddr = 42;
+  string meta_client_name = 43;
+  string meta_client_version = 44;
+  string meta_client_implementation = 45;
+  string meta_client_os = 46;
+  google.protobuf.StringValue meta_client_ip = 47;
+  string meta_client_geo_city = 48;
+  string meta_client_geo_country = 49;
+  string meta_client_geo_country_code = 50;
+  string meta_client_geo_continent_code = 51;
+  google.protobuf.DoubleValue meta_client_geo_longitude = 52;
+  google.protobuf.DoubleValue meta_client_geo_latitude = 53;
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 54;
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 55;
+  string meta_network_name = 56;
+}
+
+// Request for listing libp2p_identify records
+message ListLibp2pIdentifyRequest {
+  // Filter by meta_network_name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by event_date_time (ORDER BY column 2 - optional)
+  Int64Filter event_date_time = 2;
+
+  // Filter by meta_client_name (ORDER BY column 3 - optional)
+  StringFilter meta_client_name = 3;
+
+  // Filter by remote_peer_id_unique_key (ORDER BY column 4 - optional)
+  Int64Filter remote_peer_id_unique_key = 4;
+
+  // Filter by direction (ORDER BY column 5 - optional)
+  StringFilter direction = 5;
+
+  // Filter by updated_date_time (optional)
+  UInt32Filter updated_date_time = 6;
+  // Filter by success (optional)
+  BoolFilter success = 7;
+  // Filter by error (optional)
+  NullableStringFilter error = 8;
+  // Filter by remote_protocol (optional)
+  StringFilter remote_protocol = 9;
+  // Filter by remote_transport_protocol (optional)
+  StringFilter remote_transport_protocol = 10;
+  // Filter by remote_port (optional)
+  UInt32Filter remote_port = 11;
+  // Filter by remote_ip (optional)
+  NullableStringFilter remote_ip = 12;
+  // Filter by remote_geo_city (optional)
+  StringFilter remote_geo_city = 13;
+  // Filter by remote_geo_country (optional)
+  StringFilter remote_geo_country = 14;
+  // Filter by remote_geo_country_code (optional)
+  StringFilter remote_geo_country_code = 15;
+  // Filter by remote_geo_continent_code (optional)
+  StringFilter remote_geo_continent_code = 16;
+  // Filter by remote_geo_longitude (optional)
+  google.protobuf.DoubleValue remote_geo_longitude = 17;
+  // Filter by remote_geo_latitude (optional)
+  google.protobuf.DoubleValue remote_geo_latitude = 18;
+  // Filter by remote_geo_autonomous_system_number (optional)
+  NullableUInt32Filter remote_geo_autonomous_system_number = 19;
+  // Filter by remote_geo_autonomous_system_organization (optional)
+  NullableStringFilter remote_geo_autonomous_system_organization = 20;
+  // Filter by remote_agent_implementation (optional)
+  StringFilter remote_agent_implementation = 21;
+  // Filter by remote_agent_version (optional)
+  StringFilter remote_agent_version = 22;
+  // Filter by remote_agent_version_major (optional)
+  StringFilter remote_agent_version_major = 23;
+  // Filter by remote_agent_version_minor (optional)
+  StringFilter remote_agent_version_minor = 24;
+  // Filter by remote_agent_version_patch (optional)
+  StringFilter remote_agent_version_patch = 25;
+  // Filter by remote_agent_platform (optional)
+  StringFilter remote_agent_platform = 26;
+  // Filter by protocol_version (optional)
+  StringFilter protocol_version = 27;
+  // Filter by protocols (optional)
+  ArrayStringFilter protocols = 28;
+  // Filter by listen_addrs (optional)
+  ArrayStringFilter listen_addrs = 29;
+  // Filter by observed_addr (optional)
+  StringFilter observed_addr = 30;
+  // Filter by transport (optional)
+  StringFilter transport = 31;
+  // Filter by security (optional)
+  StringFilter security = 32;
+  // Filter by muxer (optional)
+  StringFilter muxer = 33;
+  // Filter by remote_multiaddr (optional)
+  StringFilter remote_multiaddr = 34;
+  // Filter by meta_client_version (optional)
+  StringFilter meta_client_version = 35;
+  // Filter by meta_client_implementation (optional)
+  StringFilter meta_client_implementation = 36;
+  // Filter by meta_client_os (optional)
+  StringFilter meta_client_os = 37;
+  // Filter by meta_client_ip (optional)
+  NullableStringFilter meta_client_ip = 38;
+  // Filter by meta_client_geo_city (optional)
+  StringFilter meta_client_geo_city = 39;
+  // Filter by meta_client_geo_country (optional)
+  StringFilter meta_client_geo_country = 40;
+  // Filter by meta_client_geo_country_code (optional)
+  StringFilter meta_client_geo_country_code = 41;
+  // Filter by meta_client_geo_continent_code (optional)
+  StringFilter meta_client_geo_continent_code = 42;
+  // Filter by meta_client_geo_longitude (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 43;
+  // Filter by meta_client_geo_latitude (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 44;
+  // Filter by meta_client_geo_autonomous_system_number (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 45;
+  // Filter by meta_client_geo_autonomous_system_organization (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 46;
+
+  // The maximum number of libp2p_identify to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 47;
+  // A page token, received from a previous `ListLibp2pIdentify` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 48;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 49;
+}
+
+// Response for listing libp2p_identify records
+message ListLibp2pIdentifyResponse {
+  // The list of libp2p_identify.
+  repeated Libp2pIdentify libp2p_identify = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single libp2p_identify record by primary key
+message GetLibp2pIdentifyRequest {
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single libp2p_identify record
+message GetLibp2pIdentifyResponse {
+  Libp2pIdentify item = 1;
+}
+
+// Query libp2p_identify data
+service Libp2pIdentifyService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListLibp2pIdentifyRequest) returns (ListLibp2pIdentifyResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetLibp2pIdentifyRequest) returns (GetLibp2pIdentifyResponse);
+}

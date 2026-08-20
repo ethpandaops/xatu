@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains canonical execution transaction data.
+
+message CanonicalExecutionTransaction {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // The block number
+  uint64 block_number = 12;
+  // The transaction index
+  uint64 transaction_index = 13;
+  // The transaction hash
+  string transaction_hash = 14;
+  // The transaction nonce
+  uint64 nonce = 15;
+  // The transaction from address
+  string from_address = 16;
+  // The transaction to address
+  google.protobuf.StringValue to_address = 17;
+  // The transaction value in float64
+  string value = 18;
+  // The transaction input in hex
+  google.protobuf.StringValue input = 19;
+  // The transaction gas limit
+  uint64 gas_limit = 20;
+  // The transaction gas used
+  uint64 gas_used = 21;
+  // The transaction gas price
+  string gas_price = 22;
+  // The transaction type
+  uint32 transaction_type = 23;
+  // The transaction max priority fee per gas
+  uint64 max_priority_fee_per_gas = 24;
+  // The transaction max fee per gas
+  uint64 max_fee_per_gas = 25;
+  // The transaction success
+  bool success = 26;
+  // The transaction input bytes
+  uint32 n_input_bytes = 27;
+  // The transaction input zero bytes
+  uint32 n_input_zero_bytes = 28;
+  // The transaction input nonzero bytes
+  uint32 n_input_nonzero_bytes = 29;
+  // Ethereum network name
+  string meta_network_name = 30;
+}
+
+// Request for listing canonical_execution_transaction records
+message ListCanonicalExecutionTransactionRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by block_number - The block number (ORDER BY column 2 - optional)
+  UInt64Filter block_number = 2;
+
+  // Filter by transaction_hash - The transaction hash (ORDER BY column 3 - optional)
+  StringFilter transaction_hash = 3;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 4;
+  // Filter by transaction_index - The transaction index (optional)
+  UInt64Filter transaction_index = 5;
+  // Filter by nonce - The transaction nonce (optional)
+  UInt64Filter nonce = 6;
+  // Filter by from_address - The transaction from address (optional)
+  StringFilter from_address = 7;
+  // Filter by to_address - The transaction to address (optional)
+  NullableStringFilter to_address = 8;
+  // Filter by value - The transaction value in float64 (optional)
+  StringFilter value = 9;
+  // Filter by input - The transaction input in hex (optional)
+  NullableStringFilter input = 10;
+  // Filter by gas_limit - The transaction gas limit (optional)
+  UInt64Filter gas_limit = 11;
+  // Filter by gas_used - The transaction gas used (optional)
+  UInt64Filter gas_used = 12;
+  // Filter by gas_price - The transaction gas price (optional)
+  StringFilter gas_price = 13;
+  // Filter by transaction_type - The transaction type (optional)
+  UInt32Filter transaction_type = 14;
+  // Filter by max_priority_fee_per_gas - The transaction max priority fee per gas (optional)
+  UInt64Filter max_priority_fee_per_gas = 15;
+  // Filter by max_fee_per_gas - The transaction max fee per gas (optional)
+  UInt64Filter max_fee_per_gas = 16;
+  // Filter by success - The transaction success (optional)
+  BoolFilter success = 17;
+  // Filter by n_input_bytes - The transaction input bytes (optional)
+  UInt32Filter n_input_bytes = 18;
+  // Filter by n_input_zero_bytes - The transaction input zero bytes (optional)
+  UInt32Filter n_input_zero_bytes = 19;
+  // Filter by n_input_nonzero_bytes - The transaction input nonzero bytes (optional)
+  UInt32Filter n_input_nonzero_bytes = 20;
+
+  // The maximum number of canonical_execution_transaction to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 21;
+  // A page token, received from a previous `ListCanonicalExecutionTransaction` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 22;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 23;
+}
+
+// Response for listing canonical_execution_transaction records
+message ListCanonicalExecutionTransactionResponse {
+  // The list of canonical_execution_transaction.
+  repeated CanonicalExecutionTransaction canonical_execution_transaction = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_execution_transaction record by primary key
+message GetCanonicalExecutionTransactionRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_execution_transaction record
+message GetCanonicalExecutionTransactionResponse {
+  CanonicalExecutionTransaction item = 1;
+}
+
+// Query canonical_execution_transaction data
+service CanonicalExecutionTransactionService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalExecutionTransactionRequest) returns (ListCanonicalExecutionTransactionResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalExecutionTransactionRequest) returns (GetCanonicalExecutionTransactionResponse);
+}

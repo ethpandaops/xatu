@@ -1,0 +1,170 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains beacon block from a beacon node.
+
+message CanonicalBeaconBlock {
+  // When this row was last updated
+  uint32 updated_date_time = 11;
+  // The slot number from beacon block payload
+  uint32 slot = 12;
+  // The wall clock time when the slot started
+  uint32 slot_start_date_time = 13;
+  // The epoch number from beacon block payload
+  uint32 epoch = 14;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 15;
+  // The root hash of the beacon block
+  string block_root = 16;
+  // The version of the beacon block
+  string block_version = 17;
+  // The total bytes of the beacon block payload
+  google.protobuf.UInt32Value block_total_bytes = 18;
+  // The total bytes of the beacon block payload when compressed using snappy
+  google.protobuf.UInt32Value block_total_bytes_compressed = 19;
+  // The root hash of the parent beacon block
+  string parent_root = 20;
+  // The root hash of the beacon state at this block
+  string state_root = 21;
+  // The index of the validator that proposed the beacon block
+  uint32 proposer_index = 22;
+  // The block hash of the associated execution block
+  string eth1_data_block_hash = 23;
+  // The root of the deposit tree in the associated execution block
+  string eth1_data_deposit_root = 24;
+  // The block hash of the execution payload
+  google.protobuf.StringValue execution_payload_block_hash = 25;
+  // The block number of the execution payload
+  google.protobuf.UInt32Value execution_payload_block_number = 26;
+  // The recipient of the fee for this execution payload
+  google.protobuf.StringValue execution_payload_fee_recipient = 27;
+  // Base fee per gas for execution payload
+  google.protobuf.StringValue execution_payload_base_fee_per_gas = 28;
+  // Gas used for blobs in execution payload
+  google.protobuf.UInt64Value execution_payload_blob_gas_used = 29;
+  // Excess gas used for blobs in execution payload
+  google.protobuf.UInt64Value execution_payload_excess_blob_gas = 30;
+  // Gas limit for execution payload
+  google.protobuf.UInt64Value execution_payload_gas_limit = 31;
+  // Gas used for execution payload
+  google.protobuf.UInt64Value execution_payload_gas_used = 32;
+  // The state root of the execution payload
+  google.protobuf.StringValue execution_payload_state_root = 33;
+  // The parent hash of the execution payload
+  google.protobuf.StringValue execution_payload_parent_hash = 34;
+  // The transaction count of the execution payload
+  google.protobuf.UInt32Value execution_payload_transactions_count = 35;
+  // The transaction total bytes of the execution payload
+  google.protobuf.UInt32Value execution_payload_transactions_total_bytes = 36;
+  // The transaction total bytes of the execution payload when compressed using snappy
+  google.protobuf.UInt32Value execution_payload_transactions_total_bytes_compressed = 37;
+  // Ethereum network name
+  string meta_network_name = 38;
+}
+
+// Request for listing canonical_beacon_block records
+message ListCanonicalBeaconBlockRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by slot_start_date_time - The wall clock time when the slot started (ORDER BY column 2 - optional)
+  UInt32Filter slot_start_date_time = 2;
+
+  // Filter by updated_date_time - When this row was last updated (optional)
+  UInt32Filter updated_date_time = 3;
+  // Filter by slot - The slot number from beacon block payload (optional)
+  UInt32Filter slot = 4;
+  // Filter by epoch - The epoch number from beacon block payload (optional)
+  UInt32Filter epoch = 5;
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (optional)
+  UInt32Filter epoch_start_date_time = 6;
+  // Filter by block_root - The root hash of the beacon block (optional)
+  StringFilter block_root = 7;
+  // Filter by block_version - The version of the beacon block (optional)
+  StringFilter block_version = 8;
+  // Filter by block_total_bytes - The total bytes of the beacon block payload (optional)
+  NullableUInt32Filter block_total_bytes = 9;
+  // Filter by block_total_bytes_compressed - The total bytes of the beacon block payload when compressed using snappy (optional)
+  NullableUInt32Filter block_total_bytes_compressed = 10;
+  // Filter by parent_root - The root hash of the parent beacon block (optional)
+  StringFilter parent_root = 11;
+  // Filter by state_root - The root hash of the beacon state at this block (optional)
+  StringFilter state_root = 12;
+  // Filter by proposer_index - The index of the validator that proposed the beacon block (optional)
+  UInt32Filter proposer_index = 13;
+  // Filter by eth1_data_block_hash - The block hash of the associated execution block (optional)
+  StringFilter eth1_data_block_hash = 14;
+  // Filter by eth1_data_deposit_root - The root of the deposit tree in the associated execution block (optional)
+  StringFilter eth1_data_deposit_root = 15;
+  // Filter by execution_payload_block_hash - The block hash of the execution payload (optional)
+  NullableStringFilter execution_payload_block_hash = 16;
+  // Filter by execution_payload_block_number - The block number of the execution payload (optional)
+  NullableUInt32Filter execution_payload_block_number = 17;
+  // Filter by execution_payload_fee_recipient - The recipient of the fee for this execution payload (optional)
+  NullableStringFilter execution_payload_fee_recipient = 18;
+  // Filter by execution_payload_base_fee_per_gas - Base fee per gas for execution payload (optional)
+  NullableStringFilter execution_payload_base_fee_per_gas = 19;
+  // Filter by execution_payload_blob_gas_used - Gas used for blobs in execution payload (optional)
+  NullableUInt64Filter execution_payload_blob_gas_used = 20;
+  // Filter by execution_payload_excess_blob_gas - Excess gas used for blobs in execution payload (optional)
+  NullableUInt64Filter execution_payload_excess_blob_gas = 21;
+  // Filter by execution_payload_gas_limit - Gas limit for execution payload (optional)
+  NullableUInt64Filter execution_payload_gas_limit = 22;
+  // Filter by execution_payload_gas_used - Gas used for execution payload (optional)
+  NullableUInt64Filter execution_payload_gas_used = 23;
+  // Filter by execution_payload_state_root - The state root of the execution payload (optional)
+  NullableStringFilter execution_payload_state_root = 24;
+  // Filter by execution_payload_parent_hash - The parent hash of the execution payload (optional)
+  NullableStringFilter execution_payload_parent_hash = 25;
+  // Filter by execution_payload_transactions_count - The transaction count of the execution payload (optional)
+  NullableUInt32Filter execution_payload_transactions_count = 26;
+  // Filter by execution_payload_transactions_total_bytes - The transaction total bytes of the execution payload (optional)
+  NullableUInt32Filter execution_payload_transactions_total_bytes = 27;
+  // Filter by execution_payload_transactions_total_bytes_compressed - The transaction total bytes of the execution payload when compressed using snappy (optional)
+  NullableUInt32Filter execution_payload_transactions_total_bytes_compressed = 28;
+
+  // The maximum number of canonical_beacon_block to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 29;
+  // A page token, received from a previous `ListCanonicalBeaconBlock` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 30;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 31;
+}
+
+// Response for listing canonical_beacon_block records
+message ListCanonicalBeaconBlockResponse {
+  // The list of canonical_beacon_block.
+  repeated CanonicalBeaconBlock canonical_beacon_block = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_beacon_block record by primary key
+message GetCanonicalBeaconBlockRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_beacon_block record
+message GetCanonicalBeaconBlockResponse {
+  CanonicalBeaconBlock item = 1;
+}
+
+// Query canonical_beacon_block data
+service CanonicalBeaconBlockService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalBeaconBlockRequest) returns (ListCanonicalBeaconBlockResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalBeaconBlockRequest) returns (GetCanonicalBeaconBlockResponse);
+}

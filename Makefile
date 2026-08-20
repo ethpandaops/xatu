@@ -10,7 +10,7 @@ clickhouse-routes:
 docker:
 	docker build -t ethpandaops/xatu:local .
 
-proto:
+proto: .proto-clickhouse
 	@echo "Buf generate:" ; \
 	echo "-----------------" ; \
 	for f in $$(find pkg/proto -type d); do \
@@ -26,9 +26,10 @@ proto:
 	echo "-----------------" ;
 
 # Regenerates the typed ClickHouse read package (pkg/proto/clickhouse) from
-# the migrations in deploy/migrations/clickhouse. Requires docker and buf.
-.PHONY: proto-clickhouse
-proto-clickhouse:
+# the migrations in deploy/migrations/clickhouse. Runs as part of make proto.
+# Requires docker and buf.
+.PHONY: .proto-clickhouse
+.proto-clickhouse:
 	docker compose up -d xatu-clickhouse-01 xatu-clickhouse-02 \
 		xatu-clickhouse-zookeeper-01 xatu-clickhouse-zookeeper-02 xatu-clickhouse-zookeeper-03
 	docker compose up xatu-clickhouse-migrator

@@ -1,0 +1,174 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains transactions from block native mempool dataset
+
+message BlockNativeMempoolTransaction {
+  // When this row was last updated
+  uint32 updated_date_time = 11;
+  // Timestamp that the transaction was detected in mempool
+  int64 detecttime = 12;
+  // Unique identifier hash for a given transaction
+  string hash = 13;
+  // Status of the transaction
+  string status = 14;
+  // The geographic region for the node that detected the transaction
+  string region = 15;
+  // If there was a reorg, refers to the blockhash of the reorg
+  google.protobuf.StringValue reorg = 16;
+  // If the transaction was replaced (speedup/cancel), the transaction hash of the replacement
+  google.protobuf.StringValue replace = 17;
+  // The block number the event was detected in
+  google.protobuf.UInt64Value curblocknumber = 18;
+  // If a transaction failed, this field provides contextual information
+  google.protobuf.StringValue failurereason = 19;
+  // If a transaction was finalized (confirmed, failed), this refers to the number of blocks that the transaction was waiting to get on-chain
+  google.protobuf.UInt64Value blockspending = 20;
+  // If a transaction was finalized (confirmed, failed), this refers to the time in milliseconds that the transaction was waiting to get on-chain
+  google.protobuf.UInt64Value timepending = 21;
+  // A unique number which counts the number of transactions sent from a given address
+  uint64 nonce = 22;
+  // The maximum number of gas units allowed for the transaction
+  uint64 gas = 23;
+  // The price offered to the miner/validator per unit of gas. Denominated in wei
+  string gasprice = 24;
+  // The amount of ETH transferred or sent to contract. Denominated in wei
+  string value = 25;
+  // The destination of a given transaction
+  google.protobuf.StringValue toaddress = 26;
+  // The source/initiator of a given transaction
+  string fromaddress = 27;
+  // The size of the call data of the transaction in bytes
+  uint32 datasize = 28;
+  // The first 4 bytes of the call data of the transaction
+  google.protobuf.StringValue data4bytes = 29;
+  // The specific Ethereum network used
+  string network = 30;
+  // "Post EIP-1559, this indicates how the gas parameters are submitted to the network: - type 0 - legacy - type 1 - usage of access lists according to EIP-2930 - type 2 - using maxpriorityfeepergas and maxfeepergas"
+  uint32 type = 31;
+  // The maximum value for a tip offered to the miner/validator per unit of gas. The actual tip paid can be lower if (maxfee - basefee) < maxpriorityfee. Denominated in wei
+  google.protobuf.StringValue maxpriorityfeepergas = 32;
+  // The maximum value for the transaction fee (including basefee and tip) offered to the miner/validator per unit of gas. Denominated in wei
+  google.protobuf.StringValue maxfeepergas = 33;
+  // The fee per unit of gas paid and burned for the curblocknumber. This fee is algorithmically determined. Denominated in wei
+  google.protobuf.StringValue basefeepergas = 34;
+  // If the transaction was dropped from the mempool, this describes the contextual reason for the drop
+  google.protobuf.StringValue dropreason = 35;
+  // If the transaction was rejected from the mempool, this describes the contextual reason for the rejection
+  google.protobuf.StringValue rejectionreason = 36;
+  // A transaction was detected in the queued area of the mempool and is not eligible for inclusion in a block
+  bool stuck = 37;
+  // If the transaction was published on-chain, this value indicates the amount of gas that was actually consumed. Denominated in wei
+  google.protobuf.UInt64Value gasused = 38;
+}
+
+// Request for listing block_native_mempool_transaction records
+message ListBlockNativeMempoolTransactionRequest {
+  // Filter by network - The specific Ethereum network used (PRIMARY KEY - required)
+  StringFilter network = 1;
+
+  // Filter by detecttime - Timestamp that the transaction was detected in mempool (ORDER BY column 2 - optional)
+  Int64Filter detecttime = 2;
+
+  // Filter by hash - Unique identifier hash for a given transaction (ORDER BY column 3 - optional)
+  StringFilter hash = 3;
+
+  // Filter by fromaddress - The source/initiator of a given transaction (ORDER BY column 4 - optional)
+  StringFilter fromaddress = 4;
+
+  // Filter by nonce - A unique number which counts the number of transactions sent from a given address (ORDER BY column 5 - optional)
+  UInt64Filter nonce = 5;
+
+  // Filter by gas - The maximum number of gas units allowed for the transaction (ORDER BY column 6 - optional)
+  UInt64Filter gas = 6;
+
+  // Filter by updated_date_time - When this row was last updated (optional)
+  UInt32Filter updated_date_time = 7;
+  // Filter by status - Status of the transaction (optional)
+  StringFilter status = 8;
+  // Filter by region - The geographic region for the node that detected the transaction (optional)
+  StringFilter region = 9;
+  // Filter by reorg - If there was a reorg, refers to the blockhash of the reorg (optional)
+  NullableStringFilter reorg = 10;
+  // Filter by replace - If the transaction was replaced (speedup/cancel), the transaction hash of the replacement (optional)
+  NullableStringFilter replace = 11;
+  // Filter by curblocknumber - The block number the event was detected in (optional)
+  NullableUInt64Filter curblocknumber = 12;
+  // Filter by failurereason - If a transaction failed, this field provides contextual information (optional)
+  NullableStringFilter failurereason = 13;
+  // Filter by blockspending - If a transaction was finalized (confirmed, failed), this refers to the number of blocks that the transaction was waiting to get on-chain (optional)
+  NullableUInt64Filter blockspending = 14;
+  // Filter by timepending - If a transaction was finalized (confirmed, failed), this refers to the time in milliseconds that the transaction was waiting to get on-chain (optional)
+  NullableUInt64Filter timepending = 15;
+  // Filter by gasprice - The price offered to the miner/validator per unit of gas. Denominated in wei (optional)
+  StringFilter gasprice = 16;
+  // Filter by value - The amount of ETH transferred or sent to contract. Denominated in wei (optional)
+  StringFilter value = 17;
+  // Filter by toaddress - The destination of a given transaction (optional)
+  NullableStringFilter toaddress = 18;
+  // Filter by datasize - The size of the call data of the transaction in bytes (optional)
+  UInt32Filter datasize = 19;
+  // Filter by data4bytes - The first 4 bytes of the call data of the transaction (optional)
+  NullableStringFilter data4bytes = 20;
+  // Filter by type - "Post EIP-1559, this indicates how the gas parameters are submitted to the network: - type 0 - legacy - type 1 - usage of access lists according to EIP-2930 - type 2 - using maxpriorityfeepergas and maxfeepergas" (optional)
+  UInt32Filter type = 21;
+  // Filter by maxpriorityfeepergas - The maximum value for a tip offered to the miner/validator per unit of gas. The actual tip paid can be lower if (maxfee - basefee) < maxpriorityfee. Denominated in wei (optional)
+  NullableStringFilter maxpriorityfeepergas = 22;
+  // Filter by maxfeepergas - The maximum value for the transaction fee (including basefee and tip) offered to the miner/validator per unit of gas. Denominated in wei (optional)
+  NullableStringFilter maxfeepergas = 23;
+  // Filter by basefeepergas - The fee per unit of gas paid and burned for the curblocknumber. This fee is algorithmically determined. Denominated in wei (optional)
+  NullableStringFilter basefeepergas = 24;
+  // Filter by dropreason - If the transaction was dropped from the mempool, this describes the contextual reason for the drop (optional)
+  NullableStringFilter dropreason = 25;
+  // Filter by rejectionreason - If the transaction was rejected from the mempool, this describes the contextual reason for the rejection (optional)
+  NullableStringFilter rejectionreason = 26;
+  // Filter by stuck - A transaction was detected in the queued area of the mempool and is not eligible for inclusion in a block (optional)
+  BoolFilter stuck = 27;
+  // Filter by gasused - If the transaction was published on-chain, this value indicates the amount of gas that was actually consumed. Denominated in wei (optional)
+  NullableUInt64Filter gasused = 28;
+
+  // The maximum number of block_native_mempool_transaction to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 29;
+  // A page token, received from a previous `ListBlockNativeMempoolTransaction` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 30;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 31;
+}
+
+// Response for listing block_native_mempool_transaction records
+message ListBlockNativeMempoolTransactionResponse {
+  // The list of block_native_mempool_transaction.
+  repeated BlockNativeMempoolTransaction block_native_mempool_transaction = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single block_native_mempool_transaction record by primary key
+message GetBlockNativeMempoolTransactionRequest {
+  // The specific Ethereum network used
+  string network = 1; // Primary key (required)
+}
+
+// Response for getting a single block_native_mempool_transaction record
+message GetBlockNativeMempoolTransactionResponse {
+  BlockNativeMempoolTransaction item = 1;
+}
+
+// Query block_native_mempool_transaction data
+service BlockNativeMempoolTransactionService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListBlockNativeMempoolTransactionRequest) returns (ListBlockNativeMempoolTransactionResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetBlockNativeMempoolTransactionRequest) returns (GetBlockNativeMempoolTransactionResponse);
+}

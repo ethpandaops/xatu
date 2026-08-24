@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains canonical execution block data.
+
+message CanonicalExecutionBlock {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // The block timestamp
+  int64 block_date_time = 12;
+  // The block number
+  uint64 block_number = 13;
+  // The block hash
+  string block_hash = 14;
+  // The block author
+  google.protobuf.StringValue author = 15;
+  // The block gas used
+  google.protobuf.UInt64Value gas_used = 16;
+  // The block gas limit
+  uint64 gas_limit = 17;
+  // The block extra data in hex
+  google.protobuf.StringValue extra_data = 18;
+  // The block extra data in UTF-8 string
+  google.protobuf.StringValue extra_data_string = 19;
+  // The block base fee per gas
+  google.protobuf.UInt64Value base_fee_per_gas = 20;
+  // Ethereum network name
+  string meta_network_name = 21;
+}
+
+// Request for listing canonical_execution_block records
+message ListCanonicalExecutionBlockRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by block_number - The block number (ORDER BY column 2 - optional)
+  UInt64Filter block_number = 2;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 3;
+  // Filter by block_date_time - The block timestamp (optional)
+  Int64Filter block_date_time = 4;
+  // Filter by block_hash - The block hash (optional)
+  StringFilter block_hash = 5;
+  // Filter by author - The block author (optional)
+  NullableStringFilter author = 6;
+  // Filter by gas_used - The block gas used (optional)
+  NullableUInt64Filter gas_used = 7;
+  // Filter by gas_limit - The block gas limit (optional)
+  UInt64Filter gas_limit = 8;
+  // Filter by extra_data - The block extra data in hex (optional)
+  NullableStringFilter extra_data = 9;
+  // Filter by extra_data_string - The block extra data in UTF-8 string (optional)
+  NullableStringFilter extra_data_string = 10;
+  // Filter by base_fee_per_gas - The block base fee per gas (optional)
+  NullableUInt64Filter base_fee_per_gas = 11;
+
+  // The maximum number of canonical_execution_block to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 12;
+  // A page token, received from a previous `ListCanonicalExecutionBlock` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 13;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 14;
+}
+
+// Response for listing canonical_execution_block records
+message ListCanonicalExecutionBlockResponse {
+  // The list of canonical_execution_block.
+  repeated CanonicalExecutionBlock canonical_execution_block = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_execution_block record by primary key
+message GetCanonicalExecutionBlockRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_execution_block record
+message GetCanonicalExecutionBlockResponse {
+  CanonicalExecutionBlock item = 1;
+}
+
+// Query canonical_execution_block data
+service CanonicalExecutionBlockService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalExecutionBlockRequest) returns (ListCanonicalExecutionBlockResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalExecutionBlockRequest) returns (GetCanonicalExecutionBlockResponse);
+}

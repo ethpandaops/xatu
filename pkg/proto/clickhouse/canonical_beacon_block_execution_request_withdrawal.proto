@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains an EIP-7002 execution request withdrawal from a beacon block.
+
+message CanonicalBeaconBlockExecutionRequestWithdrawal {
+  // When this row was last updated
+  uint32 updated_date_time = 11;
+  // The slot number from beacon block payload
+  uint32 slot = 12;
+  // The wall clock time when the slot started
+  uint32 slot_start_date_time = 13;
+  // The epoch number from beacon block payload
+  uint32 epoch = 14;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 15;
+  // The root hash of the beacon block
+  string block_root = 16;
+  // The version of the beacon block
+  string block_version = 17;
+  // The index of the withdrawal within the block execution requests
+  uint32 position_in_block = 18;
+  // The source address that initiated the withdrawal request
+  string source_address = 19;
+  // The public key of the validator the withdrawal targets
+  string validator_pubkey = 20;
+  // The withdrawal amount in gwei
+  string amount = 21;
+  // Ethereum network name
+  string meta_network_name = 22;
+}
+
+// Request for listing canonical_beacon_block_execution_request_withdrawal records
+message ListCanonicalBeaconBlockExecutionRequestWithdrawalRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by slot_start_date_time - The wall clock time when the slot started (ORDER BY column 2 - optional)
+  UInt32Filter slot_start_date_time = 2;
+
+  // Filter by block_root - The root hash of the beacon block (ORDER BY column 3 - optional)
+  StringFilter block_root = 3;
+
+  // Filter by position_in_block - The index of the withdrawal within the block execution requests (ORDER BY column 4 - optional)
+  UInt32Filter position_in_block = 4;
+
+  // Filter by updated_date_time - When this row was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by slot - The slot number from beacon block payload (optional)
+  UInt32Filter slot = 6;
+  // Filter by epoch - The epoch number from beacon block payload (optional)
+  UInt32Filter epoch = 7;
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (optional)
+  UInt32Filter epoch_start_date_time = 8;
+  // Filter by block_version - The version of the beacon block (optional)
+  StringFilter block_version = 9;
+  // Filter by source_address - The source address that initiated the withdrawal request (optional)
+  StringFilter source_address = 10;
+  // Filter by validator_pubkey - The public key of the validator the withdrawal targets (optional)
+  StringFilter validator_pubkey = 11;
+  // Filter by amount - The withdrawal amount in gwei (optional)
+  StringFilter amount = 12;
+
+  // The maximum number of canonical_beacon_block_execution_request_withdrawal to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 13;
+  // A page token, received from a previous `ListCanonicalBeaconBlockExecutionRequestWithdrawal` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 14;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 15;
+}
+
+// Response for listing canonical_beacon_block_execution_request_withdrawal records
+message ListCanonicalBeaconBlockExecutionRequestWithdrawalResponse {
+  // The list of canonical_beacon_block_execution_request_withdrawal.
+  repeated CanonicalBeaconBlockExecutionRequestWithdrawal canonical_beacon_block_execution_request_withdrawal = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_beacon_block_execution_request_withdrawal record by primary key
+message GetCanonicalBeaconBlockExecutionRequestWithdrawalRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_beacon_block_execution_request_withdrawal record
+message GetCanonicalBeaconBlockExecutionRequestWithdrawalResponse {
+  CanonicalBeaconBlockExecutionRequestWithdrawal item = 1;
+}
+
+// Query canonical_beacon_block_execution_request_withdrawal data
+service CanonicalBeaconBlockExecutionRequestWithdrawalService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalBeaconBlockExecutionRequestWithdrawalRequest) returns (ListCanonicalBeaconBlockExecutionRequestWithdrawalResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalBeaconBlockExecutionRequestWithdrawalRequest) returns (GetCanonicalBeaconBlockExecutionRequestWithdrawalResponse);
+}

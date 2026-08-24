@@ -2,6 +2,8 @@ version: v2
 modules:
   - path: .
     name: github.com/ethpandaops/xatu
+    excludes:
+      - pkg/proto/clickhouse
 lint:
   use:
     - STANDARD

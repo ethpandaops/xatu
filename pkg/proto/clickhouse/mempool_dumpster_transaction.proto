@@ -1,0 +1,134 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains transactions from mempool dumpster dataset. Following the parquet schema with some additions
+
+message MempoolDumpsterTransaction {
+  // When this row was last updated, this is outside the source data and used for deduplication
+  uint32 updated_date_time = 11;
+  // Timestamp of the transaction
+  int64 timestamp = 12;
+  // The hash of the transaction
+  string hash = 13;
+  // The chain id of the transaction
+  uint32 chain_id = 14;
+  // The address of the account that sent the transaction
+  string from = 15;
+  // The address of the account that is the transaction recipient
+  google.protobuf.StringValue to = 16;
+  // The value transferred with the transaction in wei
+  string value = 17;
+  // The nonce of the sender account at the time of the transaction
+  uint64 nonce = 18;
+  // The maximum gas provided for the transaction execution
+  uint64 gas = 19;
+  // The gas price of the transaction in wei
+  string gas_price = 20;
+  // The gas tip cap of the transaction in wei
+  google.protobuf.StringValue gas_tip_cap = 21;
+  // The gas fee cap of the transaction in wei
+  google.protobuf.StringValue gas_fee_cap = 22;
+  // The size of the call data of the transaction in bytes
+  uint32 data_size = 23;
+  // The first 4 bytes of the call data of the transaction
+  google.protobuf.StringValue data_4bytes = 24;
+  // The sources that saw this transaction in their mempool
+  repeated string sources = 25;
+  // The block height at which this transaction was included
+  google.protobuf.UInt64Value included_at_block_height = 26;
+  // The timestamp of the block at which this transaction was included
+  google.protobuf.Int64Value included_block_timestamp = 27;
+  // The delay between the transaction timestamp and the block timestamp
+  google.protobuf.Int64Value inclusion_delay_ms = 28;
+}
+
+// Request for listing mempool_dumpster_transaction records
+message ListMempoolDumpsterTransactionRequest {
+  // Filter by chain_id - The chain id of the transaction (PRIMARY KEY - required)
+  UInt32Filter chain_id = 1;
+
+  // Filter by timestamp - Timestamp of the transaction (ORDER BY column 2 - optional)
+  Int64Filter timestamp = 2;
+
+  // Filter by hash - The hash of the transaction (ORDER BY column 3 - optional)
+  StringFilter hash = 3;
+
+  // Filter by from - The address of the account that sent the transaction (ORDER BY column 4 - optional)
+  StringFilter from = 4;
+
+  // Filter by nonce - The nonce of the sender account at the time of the transaction (ORDER BY column 5 - optional)
+  UInt64Filter nonce = 5;
+
+  // Filter by gas - The maximum gas provided for the transaction execution (ORDER BY column 6 - optional)
+  UInt64Filter gas = 6;
+
+  // Filter by updated_date_time - When this row was last updated, this is outside the source data and used for deduplication (optional)
+  UInt32Filter updated_date_time = 7;
+  // Filter by to - The address of the account that is the transaction recipient (optional)
+  NullableStringFilter to = 8;
+  // Filter by value - The value transferred with the transaction in wei (optional)
+  StringFilter value = 9;
+  // Filter by gas_price - The gas price of the transaction in wei (optional)
+  StringFilter gas_price = 10;
+  // Filter by gas_tip_cap - The gas tip cap of the transaction in wei (optional)
+  NullableStringFilter gas_tip_cap = 11;
+  // Filter by gas_fee_cap - The gas fee cap of the transaction in wei (optional)
+  NullableStringFilter gas_fee_cap = 12;
+  // Filter by data_size - The size of the call data of the transaction in bytes (optional)
+  UInt32Filter data_size = 13;
+  // Filter by data_4bytes - The first 4 bytes of the call data of the transaction (optional)
+  NullableStringFilter data_4bytes = 14;
+  // Filter by sources - The sources that saw this transaction in their mempool (optional)
+  ArrayStringFilter sources = 15;
+  // Filter by included_at_block_height - The block height at which this transaction was included (optional)
+  NullableUInt64Filter included_at_block_height = 16;
+  // Filter by included_block_timestamp - The timestamp of the block at which this transaction was included (optional)
+  NullableInt64Filter included_block_timestamp = 17;
+  // Filter by inclusion_delay_ms - The delay between the transaction timestamp and the block timestamp (optional)
+  NullableInt64Filter inclusion_delay_ms = 18;
+
+  // The maximum number of mempool_dumpster_transaction to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 19;
+  // A page token, received from a previous `ListMempoolDumpsterTransaction` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 20;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 21;
+}
+
+// Response for listing mempool_dumpster_transaction records
+message ListMempoolDumpsterTransactionResponse {
+  // The list of mempool_dumpster_transaction.
+  repeated MempoolDumpsterTransaction mempool_dumpster_transaction = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single mempool_dumpster_transaction record by primary key
+message GetMempoolDumpsterTransactionRequest {
+  // The chain id of the transaction
+  uint32 chain_id = 1; // Primary key (required)
+}
+
+// Response for getting a single mempool_dumpster_transaction record
+message GetMempoolDumpsterTransactionResponse {
+  MempoolDumpsterTransaction item = 1;
+}
+
+// Query mempool_dumpster_transaction data
+service MempoolDumpsterTransactionService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListMempoolDumpsterTransactionRequest) returns (ListMempoolDumpsterTransactionResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetMempoolDumpsterTransactionRequest) returns (GetMempoolDumpsterTransactionResponse);
+}

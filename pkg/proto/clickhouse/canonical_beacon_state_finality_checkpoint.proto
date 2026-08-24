@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains the finality checkpoints for a canonical beacon state epoch.
+
+message CanonicalBeaconStateFinalityCheckpoint {
+  // When this row was last updated
+  uint32 updated_date_time = 11;
+  // The epoch number the finality checkpoints are for
+  uint32 epoch = 12;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 13;
+  // The state ID the finality checkpoints were requested against
+  string state_id = 14;
+  // The previous justified checkpoint epoch
+  uint32 previous_justified_epoch = 15;
+  // The previous justified checkpoint root
+  string previous_justified_root = 16;
+  // The current justified checkpoint epoch
+  uint32 current_justified_epoch = 17;
+  // The current justified checkpoint root
+  string current_justified_root = 18;
+  // The finalized checkpoint epoch
+  uint32 finalized_epoch = 19;
+  // The finalized checkpoint root
+  string finalized_root = 20;
+  // Ethereum network name
+  string meta_network_name = 21;
+}
+
+// Request for listing canonical_beacon_state_finality_checkpoint records
+message ListCanonicalBeaconStateFinalityCheckpointRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (ORDER BY column 2 - optional)
+  UInt32Filter epoch_start_date_time = 2;
+
+  // Filter by epoch - The epoch number the finality checkpoints are for (ORDER BY column 3 - optional)
+  UInt32Filter epoch = 3;
+
+  // Filter by updated_date_time - When this row was last updated (optional)
+  UInt32Filter updated_date_time = 4;
+  // Filter by state_id - The state ID the finality checkpoints were requested against (optional)
+  StringFilter state_id = 5;
+  // Filter by previous_justified_epoch - The previous justified checkpoint epoch (optional)
+  UInt32Filter previous_justified_epoch = 6;
+  // Filter by previous_justified_root - The previous justified checkpoint root (optional)
+  StringFilter previous_justified_root = 7;
+  // Filter by current_justified_epoch - The current justified checkpoint epoch (optional)
+  UInt32Filter current_justified_epoch = 8;
+  // Filter by current_justified_root - The current justified checkpoint root (optional)
+  StringFilter current_justified_root = 9;
+  // Filter by finalized_epoch - The finalized checkpoint epoch (optional)
+  UInt32Filter finalized_epoch = 10;
+  // Filter by finalized_root - The finalized checkpoint root (optional)
+  StringFilter finalized_root = 11;
+
+  // The maximum number of canonical_beacon_state_finality_checkpoint to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 12;
+  // A page token, received from a previous `ListCanonicalBeaconStateFinalityCheckpoint` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 13;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 14;
+}
+
+// Response for listing canonical_beacon_state_finality_checkpoint records
+message ListCanonicalBeaconStateFinalityCheckpointResponse {
+  // The list of canonical_beacon_state_finality_checkpoint.
+  repeated CanonicalBeaconStateFinalityCheckpoint canonical_beacon_state_finality_checkpoint = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_beacon_state_finality_checkpoint record by primary key
+message GetCanonicalBeaconStateFinalityCheckpointRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_beacon_state_finality_checkpoint record
+message GetCanonicalBeaconStateFinalityCheckpointResponse {
+  CanonicalBeaconStateFinalityCheckpoint item = 1;
+}
+
+// Query canonical_beacon_state_finality_checkpoint data
+service CanonicalBeaconStateFinalityCheckpointService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalBeaconStateFinalityCheckpointRequest) returns (ListCanonicalBeaconStateFinalityCheckpointResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalBeaconStateFinalityCheckpointRequest) returns (GetCanonicalBeaconStateFinalityCheckpointResponse);
+}

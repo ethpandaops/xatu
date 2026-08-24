@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains the Electra pending consolidation queue snapshot for a canonical beacon state epoch.
+
+message CanonicalBeaconStatePendingConsolidation {
+  // When this row was last updated
+  uint32 updated_date_time = 11;
+  // The epoch number the pending consolidation queue snapshot is for
+  uint32 epoch = 12;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 13;
+  // The state ID the pending consolidation was requested against
+  string state_id = 14;
+  // The index of the consolidation within the pending consolidations queue
+  uint32 position_in_queue = 15;
+  // The validator index of the consolidation source
+  uint32 source_index = 16;
+  // The validator index of the consolidation target
+  uint32 target_index = 17;
+  // Ethereum network name
+  string meta_network_name = 18;
+}
+
+// Request for listing canonical_beacon_state_pending_consolidation records
+message ListCanonicalBeaconStatePendingConsolidationRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (ORDER BY column 2 - optional)
+  UInt32Filter epoch_start_date_time = 2;
+
+  // Filter by epoch - The epoch number the pending consolidation queue snapshot is for (ORDER BY column 3 - optional)
+  UInt32Filter epoch = 3;
+
+  // Filter by position_in_queue - The index of the consolidation within the pending consolidations queue (ORDER BY column 4 - optional)
+  UInt32Filter position_in_queue = 4;
+
+  // Filter by updated_date_time - When this row was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by state_id - The state ID the pending consolidation was requested against (optional)
+  StringFilter state_id = 6;
+  // Filter by source_index - The validator index of the consolidation source (optional)
+  UInt32Filter source_index = 7;
+  // Filter by target_index - The validator index of the consolidation target (optional)
+  UInt32Filter target_index = 8;
+
+  // The maximum number of canonical_beacon_state_pending_consolidation to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 9;
+  // A page token, received from a previous `ListCanonicalBeaconStatePendingConsolidation` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 10;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 11;
+}
+
+// Response for listing canonical_beacon_state_pending_consolidation records
+message ListCanonicalBeaconStatePendingConsolidationResponse {
+  // The list of canonical_beacon_state_pending_consolidation.
+  repeated CanonicalBeaconStatePendingConsolidation canonical_beacon_state_pending_consolidation = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_beacon_state_pending_consolidation record by primary key
+message GetCanonicalBeaconStatePendingConsolidationRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_beacon_state_pending_consolidation record
+message GetCanonicalBeaconStatePendingConsolidationResponse {
+  CanonicalBeaconStatePendingConsolidation item = 1;
+}
+
+// Query canonical_beacon_state_pending_consolidation data
+service CanonicalBeaconStatePendingConsolidationService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalBeaconStatePendingConsolidationRequest) returns (ListCanonicalBeaconStatePendingConsolidationResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalBeaconStatePendingConsolidationRequest) returns (GetCanonicalBeaconStatePendingConsolidationResponse);
+}

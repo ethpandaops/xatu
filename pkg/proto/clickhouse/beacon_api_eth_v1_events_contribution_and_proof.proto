@@ -1,0 +1,193 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains beacon API eventstream "contribution and proof" data from each sentry client attached to a beacon node.
+
+message BeaconApiEthV1EventsContributionAndProof {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  int64 event_date_time = 12;
+  // The validator index of the aggregator in the beacon API event stream payload
+  uint32 aggregator_index = 13;
+  // The slot number of the contribution in the beacon API event stream payload
+  uint32 contribution_slot = 14;
+  // The wall clock time when the contribution slot started
+  uint32 contribution_slot_start_date_time = 15;
+  // Difference in slots between when the contribution occurred and when the sentry received the event
+  uint32 contribution_propagation_slot_start_diff = 16;
+  // The beacon block root hash in the beacon API event stream payload
+  string contribution_beacon_block_root = 17;
+  // The subcommittee index of the contribution in the beacon API event stream payload
+  string contribution_subcommittee_index = 18;
+  // The aggregation bits of the contribution in the beacon API event stream payload
+  string contribution_aggregation_bits = 19;
+  // The signature of the contribution in the beacon API event stream payload
+  string contribution_signature = 20;
+  // The epoch number of the contribution in the beacon API event stream payload
+  uint32 contribution_epoch = 21;
+  // The wall clock time when the contribution epoch started
+  uint32 contribution_epoch_start_date_time = 22;
+  // The selection proof in the beacon API event stream payload
+  string selection_proof = 23;
+  // The signature in the beacon API event stream payload
+  string signature = 24;
+  // Name of the client that generated the event
+  string meta_client_name = 25;
+  // Version of the client that generated the event
+  string meta_client_version = 26;
+  // Implementation of the client that generated the event
+  string meta_client_implementation = 27;
+  // Operating system of the client that generated the event
+  string meta_client_os = 28;
+  // IP address of the client that generated the event
+  google.protobuf.StringValue meta_client_ip = 29;
+  // City of the client that generated the event
+  string meta_client_geo_city = 30;
+  // Country of the client that generated the event
+  string meta_client_geo_country = 31;
+  // Country code of the client that generated the event
+  string meta_client_geo_country_code = 32;
+  // Continent code of the client that generated the event
+  string meta_client_geo_continent_code = 33;
+  // Longitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_longitude = 34;
+  // Latitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_latitude = 35;
+  // Autonomous system number of the client that generated the event
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 36;
+  // Autonomous system organization of the client that generated the event
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 37;
+  // Ethereum network name
+  string meta_network_name = 38;
+  // Ethereum consensus client version that generated the event
+  string meta_consensus_version = 39;
+  // Ethereum consensus client major version that generated the event
+  string meta_consensus_version_major = 40;
+  // Ethereum consensus client minor version that generated the event
+  string meta_consensus_version_minor = 41;
+  // Ethereum consensus client patch version that generated the event
+  string meta_consensus_version_patch = 42;
+  // Ethereum consensus client implementation that generated the event
+  string meta_consensus_implementation = 43;
+}
+
+// Request for listing beacon_api_eth_v1_events_contribution_and_proof records
+message ListBeaconApiEthV1EventsContributionAndProofRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by contribution_slot_start_date_time - The wall clock time when the contribution slot started (ORDER BY column 2 - optional)
+  UInt32Filter contribution_slot_start_date_time = 2;
+
+  // Filter by meta_client_name - Name of the client that generated the event (ORDER BY column 3 - optional)
+  StringFilter meta_client_name = 3;
+
+  // Filter by contribution_beacon_block_root - The beacon block root hash in the beacon API event stream payload (ORDER BY column 4 - optional)
+  StringFilter contribution_beacon_block_root = 4;
+
+  // Filter by contribution_subcommittee_index - The subcommittee index of the contribution in the beacon API event stream payload (ORDER BY column 5 - optional)
+  StringFilter contribution_subcommittee_index = 5;
+
+  // Filter by signature - The signature in the beacon API event stream payload (ORDER BY column 6 - optional)
+  StringFilter signature = 6;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 7;
+  // Filter by event_date_time (optional)
+  Int64Filter event_date_time = 8;
+  // Filter by aggregator_index - The validator index of the aggregator in the beacon API event stream payload (optional)
+  UInt32Filter aggregator_index = 9;
+  // Filter by contribution_slot - The slot number of the contribution in the beacon API event stream payload (optional)
+  UInt32Filter contribution_slot = 10;
+  // Filter by contribution_propagation_slot_start_diff - Difference in slots between when the contribution occurred and when the sentry received the event (optional)
+  UInt32Filter contribution_propagation_slot_start_diff = 11;
+  // Filter by contribution_aggregation_bits - The aggregation bits of the contribution in the beacon API event stream payload (optional)
+  StringFilter contribution_aggregation_bits = 12;
+  // Filter by contribution_signature - The signature of the contribution in the beacon API event stream payload (optional)
+  StringFilter contribution_signature = 13;
+  // Filter by contribution_epoch - The epoch number of the contribution in the beacon API event stream payload (optional)
+  UInt32Filter contribution_epoch = 14;
+  // Filter by contribution_epoch_start_date_time - The wall clock time when the contribution epoch started (optional)
+  UInt32Filter contribution_epoch_start_date_time = 15;
+  // Filter by selection_proof - The selection proof in the beacon API event stream payload (optional)
+  StringFilter selection_proof = 16;
+  // Filter by meta_client_version - Version of the client that generated the event (optional)
+  StringFilter meta_client_version = 17;
+  // Filter by meta_client_implementation - Implementation of the client that generated the event (optional)
+  StringFilter meta_client_implementation = 18;
+  // Filter by meta_client_os - Operating system of the client that generated the event (optional)
+  StringFilter meta_client_os = 19;
+  // Filter by meta_client_ip - IP address of the client that generated the event (optional)
+  NullableStringFilter meta_client_ip = 20;
+  // Filter by meta_client_geo_city - City of the client that generated the event (optional)
+  StringFilter meta_client_geo_city = 21;
+  // Filter by meta_client_geo_country - Country of the client that generated the event (optional)
+  StringFilter meta_client_geo_country = 22;
+  // Filter by meta_client_geo_country_code - Country code of the client that generated the event (optional)
+  StringFilter meta_client_geo_country_code = 23;
+  // Filter by meta_client_geo_continent_code - Continent code of the client that generated the event (optional)
+  StringFilter meta_client_geo_continent_code = 24;
+  // Filter by meta_client_geo_longitude - Longitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 25;
+  // Filter by meta_client_geo_latitude - Latitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 26;
+  // Filter by meta_client_geo_autonomous_system_number - Autonomous system number of the client that generated the event (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 27;
+  // Filter by meta_client_geo_autonomous_system_organization - Autonomous system organization of the client that generated the event (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 28;
+  // Filter by meta_consensus_version - Ethereum consensus client version that generated the event (optional)
+  StringFilter meta_consensus_version = 29;
+  // Filter by meta_consensus_version_major - Ethereum consensus client major version that generated the event (optional)
+  StringFilter meta_consensus_version_major = 30;
+  // Filter by meta_consensus_version_minor - Ethereum consensus client minor version that generated the event (optional)
+  StringFilter meta_consensus_version_minor = 31;
+  // Filter by meta_consensus_version_patch - Ethereum consensus client patch version that generated the event (optional)
+  StringFilter meta_consensus_version_patch = 32;
+  // Filter by meta_consensus_implementation - Ethereum consensus client implementation that generated the event (optional)
+  StringFilter meta_consensus_implementation = 33;
+
+  // The maximum number of beacon_api_eth_v1_events_contribution_and_proof to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 34;
+  // A page token, received from a previous `ListBeaconApiEthV1EventsContributionAndProof` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 35;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 36;
+}
+
+// Response for listing beacon_api_eth_v1_events_contribution_and_proof records
+message ListBeaconApiEthV1EventsContributionAndProofResponse {
+  // The list of beacon_api_eth_v1_events_contribution_and_proof.
+  repeated BeaconApiEthV1EventsContributionAndProof beacon_api_eth_v1_events_contribution_and_proof = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single beacon_api_eth_v1_events_contribution_and_proof record by primary key
+message GetBeaconApiEthV1EventsContributionAndProofRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single beacon_api_eth_v1_events_contribution_and_proof record
+message GetBeaconApiEthV1EventsContributionAndProofResponse {
+  BeaconApiEthV1EventsContributionAndProof item = 1;
+}
+
+// Query beacon_api_eth_v1_events_contribution_and_proof data
+service BeaconApiEthV1EventsContributionAndProofService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListBeaconApiEthV1EventsContributionAndProofRequest) returns (ListBeaconApiEthV1EventsContributionAndProofResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetBeaconApiEthV1EventsContributionAndProofRequest) returns (GetBeaconApiEthV1EventsContributionAndProofResponse);
+}

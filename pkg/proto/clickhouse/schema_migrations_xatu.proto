@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+
+message SchemaMigrationsXatu {
+  int64 version = 11;
+  uint32 dirty = 12;
+  uint64 sequence = 13;
+}

@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse/clickhouse";
+
+extend google.protobuf.FieldOptions {
+  // Indicates this field can substitute for another field (typically a primary key).
+  // Value is the field name this can substitute for.
+  // Example: slot can substitute for slot_start_date_time when using a projection.
+  string projection_alternative_for = 50001;
+
+  // Name of the ClickHouse projection this field belongs to.
+  // This helps identify which projection enables this alternative key.
+  string projection_name = 50002;
+
+  // Group name for "at least one required" validation.
+  // All fields with the same required_group value form an OR constraint.
+  // Example: All primary key alternatives should share the same required_group.
+  string required_group = 50003;
+}

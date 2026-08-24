@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains a proposer duty from a beacon block.
+
+message CanonicalBeaconProposerDuty {
+  // When this row was last updated
+  uint32 updated_date_time = 11;
+  // The slot number for which the proposer duty is assigned
+  uint32 slot = 12;
+  // The wall clock time when the slot started
+  uint32 slot_start_date_time = 13;
+  // The epoch number containing the slot
+  uint32 epoch = 14;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 15;
+  // The validator index of the proposer for the slot
+  uint32 proposer_validator_index = 16;
+  // The public key of the validator proposer
+  string proposer_pubkey = 17;
+  // Ethereum network name
+  string meta_network_name = 18;
+}
+
+// Request for listing canonical_beacon_proposer_duty records
+message ListCanonicalBeaconProposerDutyRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by slot_start_date_time - The wall clock time when the slot started (ORDER BY column 2 - optional)
+  UInt32Filter slot_start_date_time = 2;
+
+  // Filter by proposer_validator_index - The validator index of the proposer for the slot (ORDER BY column 3 - optional)
+  UInt32Filter proposer_validator_index = 3;
+
+  // Filter by proposer_pubkey - The public key of the validator proposer (ORDER BY column 4 - optional)
+  StringFilter proposer_pubkey = 4;
+
+  // Filter by updated_date_time - When this row was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by slot - The slot number for which the proposer duty is assigned (optional)
+  UInt32Filter slot = 6;
+  // Filter by epoch - The epoch number containing the slot (optional)
+  UInt32Filter epoch = 7;
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (optional)
+  UInt32Filter epoch_start_date_time = 8;
+
+  // The maximum number of canonical_beacon_proposer_duty to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 9;
+  // A page token, received from a previous `ListCanonicalBeaconProposerDuty` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 10;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 11;
+}
+
+// Response for listing canonical_beacon_proposer_duty records
+message ListCanonicalBeaconProposerDutyResponse {
+  // The list of canonical_beacon_proposer_duty.
+  repeated CanonicalBeaconProposerDuty canonical_beacon_proposer_duty = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_beacon_proposer_duty record by primary key
+message GetCanonicalBeaconProposerDutyRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_beacon_proposer_duty record
+message GetCanonicalBeaconProposerDutyResponse {
+  CanonicalBeaconProposerDuty item = 1;
+}
+
+// Query canonical_beacon_proposer_duty data
+service CanonicalBeaconProposerDutyService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalBeaconProposerDutyRequest) returns (ListCanonicalBeaconProposerDutyResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalBeaconProposerDutyRequest) returns (GetCanonicalBeaconProposerDutyResponse);
+}

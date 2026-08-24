@@ -1,0 +1,200 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains beacon block classification for a given slot. This is a best guess based on the client probabilities of the proposer. This is not guaranteed to be correct.
+
+message BeaconBlockClassification {
+  // When this row was last updated
+  uint32 updated_date_time = 11;
+  // When the client fetched the beacon block classification
+  int64 event_date_time = 12;
+  // The slot number from beacon block classification
+  uint32 slot = 13;
+  // The wall clock time when the slot started
+  uint32 slot_start_date_time = 14;
+  // The epoch number from beacon block classification
+  uint32 epoch = 15;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 16;
+  // The best guess of the client that generated the beacon block
+  string best_guess_single = 17;
+  // The best guess of the clients that generated the beacon block. This value will typically equal the best_guess_single value, but when multiple clients have high probabilities, this value will have multiple eg. "prysm or lighthouse"
+  string best_guess_multi = 18;
+  // The probability that the client that generated the beacon block is uncertain
+  float client_probability_uncertain = 19;
+  // The probability that the client that generated the beacon block is Prysm
+  float client_probability_prysm = 20;
+  // The probability that the client that generated the beacon block is Teku
+  float client_probability_teku = 21;
+  // The probability that the client that generated the beacon block is Nimbus
+  float client_probability_nimbus = 22;
+  // The probability that the client that generated the beacon block is Lodestar
+  float client_probability_lodestar = 23;
+  // The probability that the client that generated the beacon block is Grandine
+  float client_probability_grandine = 24;
+  // The probability that the client that generated the beacon block is Lighthouse
+  float client_probability_lighthouse = 25;
+  // The index of the validator that proposed the beacon block
+  uint32 proposer_index = 26;
+  // Name of the client that generated the event
+  string meta_client_name = 27;
+  // Version of the client that generated the event
+  string meta_client_version = 28;
+  // Implementation of the client that generated the event
+  string meta_client_implementation = 29;
+  // Operating system of the client that generated the event
+  string meta_client_os = 30;
+  // IP address of the client that generated the event
+  google.protobuf.StringValue meta_client_ip = 31;
+  // City of the client that generated the event
+  string meta_client_geo_city = 32;
+  // Country of the client that generated the event
+  string meta_client_geo_country = 33;
+  // Country code of the client that generated the event
+  string meta_client_geo_country_code = 34;
+  // Continent code of the client that generated the event
+  string meta_client_geo_continent_code = 35;
+  // Longitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_longitude = 36;
+  // Latitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_latitude = 37;
+  // Autonomous system number of the client that generated the event
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 38;
+  // Autonomous system organization of the client that generated the event
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 39;
+  // Ethereum network name
+  string meta_network_name = 40;
+  // Ethereum consensus client version that generated the event
+  string meta_consensus_version = 41;
+  // Ethereum consensus client major version that generated the event
+  string meta_consensus_version_major = 42;
+  // Ethereum consensus client minor version that generated the event
+  string meta_consensus_version_minor = 43;
+  // Ethereum consensus client patch version that generated the event
+  string meta_consensus_version_patch = 44;
+  // Ethereum consensus client implementation that generated the event
+  string meta_consensus_implementation = 45;
+}
+
+// Request for listing beacon_block_classification records
+message ListBeaconBlockClassificationRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by slot_start_date_time - The wall clock time when the slot started (ORDER BY column 2 - optional)
+  UInt32Filter slot_start_date_time = 2;
+
+  // Filter by meta_client_name - Name of the client that generated the event (ORDER BY column 3 - optional)
+  StringFilter meta_client_name = 3;
+
+  // Filter by proposer_index - The index of the validator that proposed the beacon block (ORDER BY column 4 - optional)
+  UInt32Filter proposer_index = 4;
+
+  // Filter by updated_date_time - When this row was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by event_date_time - When the client fetched the beacon block classification (optional)
+  Int64Filter event_date_time = 6;
+  // Filter by slot - The slot number from beacon block classification (optional)
+  UInt32Filter slot = 7;
+  // Filter by epoch - The epoch number from beacon block classification (optional)
+  UInt32Filter epoch = 8;
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (optional)
+  UInt32Filter epoch_start_date_time = 9;
+  // Filter by best_guess_single - The best guess of the client that generated the beacon block (optional)
+  StringFilter best_guess_single = 10;
+  // Filter by best_guess_multi - The best guess of the clients that generated the beacon block. This value will typically equal the best_guess_single value, but when multiple clients have high probabilities, this value will have multiple eg. "prysm or lighthouse" (optional)
+  StringFilter best_guess_multi = 11;
+  // Filter by client_probability_uncertain - The probability that the client that generated the beacon block is uncertain (optional)
+  google.protobuf.FloatValue client_probability_uncertain = 12;
+  // Filter by client_probability_prysm - The probability that the client that generated the beacon block is Prysm (optional)
+  google.protobuf.FloatValue client_probability_prysm = 13;
+  // Filter by client_probability_teku - The probability that the client that generated the beacon block is Teku (optional)
+  google.protobuf.FloatValue client_probability_teku = 14;
+  // Filter by client_probability_nimbus - The probability that the client that generated the beacon block is Nimbus (optional)
+  google.protobuf.FloatValue client_probability_nimbus = 15;
+  // Filter by client_probability_lodestar - The probability that the client that generated the beacon block is Lodestar (optional)
+  google.protobuf.FloatValue client_probability_lodestar = 16;
+  // Filter by client_probability_grandine - The probability that the client that generated the beacon block is Grandine (optional)
+  google.protobuf.FloatValue client_probability_grandine = 17;
+  // Filter by client_probability_lighthouse - The probability that the client that generated the beacon block is Lighthouse (optional)
+  google.protobuf.FloatValue client_probability_lighthouse = 18;
+  // Filter by meta_client_version - Version of the client that generated the event (optional)
+  StringFilter meta_client_version = 19;
+  // Filter by meta_client_implementation - Implementation of the client that generated the event (optional)
+  StringFilter meta_client_implementation = 20;
+  // Filter by meta_client_os - Operating system of the client that generated the event (optional)
+  StringFilter meta_client_os = 21;
+  // Filter by meta_client_ip - IP address of the client that generated the event (optional)
+  NullableStringFilter meta_client_ip = 22;
+  // Filter by meta_client_geo_city - City of the client that generated the event (optional)
+  StringFilter meta_client_geo_city = 23;
+  // Filter by meta_client_geo_country - Country of the client that generated the event (optional)
+  StringFilter meta_client_geo_country = 24;
+  // Filter by meta_client_geo_country_code - Country code of the client that generated the event (optional)
+  StringFilter meta_client_geo_country_code = 25;
+  // Filter by meta_client_geo_continent_code - Continent code of the client that generated the event (optional)
+  StringFilter meta_client_geo_continent_code = 26;
+  // Filter by meta_client_geo_longitude - Longitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 27;
+  // Filter by meta_client_geo_latitude - Latitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 28;
+  // Filter by meta_client_geo_autonomous_system_number - Autonomous system number of the client that generated the event (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 29;
+  // Filter by meta_client_geo_autonomous_system_organization - Autonomous system organization of the client that generated the event (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 30;
+  // Filter by meta_consensus_version - Ethereum consensus client version that generated the event (optional)
+  StringFilter meta_consensus_version = 31;
+  // Filter by meta_consensus_version_major - Ethereum consensus client major version that generated the event (optional)
+  StringFilter meta_consensus_version_major = 32;
+  // Filter by meta_consensus_version_minor - Ethereum consensus client minor version that generated the event (optional)
+  StringFilter meta_consensus_version_minor = 33;
+  // Filter by meta_consensus_version_patch - Ethereum consensus client patch version that generated the event (optional)
+  StringFilter meta_consensus_version_patch = 34;
+  // Filter by meta_consensus_implementation - Ethereum consensus client implementation that generated the event (optional)
+  StringFilter meta_consensus_implementation = 35;
+
+  // The maximum number of beacon_block_classification to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 36;
+  // A page token, received from a previous `ListBeaconBlockClassification` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 37;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 38;
+}
+
+// Response for listing beacon_block_classification records
+message ListBeaconBlockClassificationResponse {
+  // The list of beacon_block_classification.
+  repeated BeaconBlockClassification beacon_block_classification = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single beacon_block_classification record by primary key
+message GetBeaconBlockClassificationRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single beacon_block_classification record
+message GetBeaconBlockClassificationResponse {
+  BeaconBlockClassification item = 1;
+}
+
+// Query beacon_block_classification data
+service BeaconBlockClassificationService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListBeaconBlockClassificationRequest) returns (ListBeaconBlockClassificationResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetBeaconBlockClassificationRequest) returns (GetBeaconBlockClassificationResponse);
+}

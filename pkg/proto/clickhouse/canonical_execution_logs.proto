@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains canonical execution logs data.
+
+message CanonicalExecutionLogs {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // The block number
+  uint64 block_number = 12;
+  // The transaction index
+  uint64 transaction_index = 13;
+  // The transaction hash associated with the log
+  string transaction_hash = 14;
+  // The internal index of the log within the transaction
+  uint32 internal_index = 15;
+  // The log index within the block
+  uint32 log_index = 16;
+  // The address associated with the log
+  string address = 17;
+  // The first topic of the log
+  string topic0 = 18;
+  // The second topic of the log
+  google.protobuf.StringValue topic1 = 19;
+  // The third topic of the log
+  google.protobuf.StringValue topic2 = 20;
+  // The fourth topic of the log
+  google.protobuf.StringValue topic3 = 21;
+  // The data associated with the log
+  google.protobuf.StringValue data = 22;
+  // Ethereum network name
+  string meta_network_name = 23;
+}
+
+// Request for listing canonical_execution_logs records
+message ListCanonicalExecutionLogsRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by block_number - The block number (ORDER BY column 2 - optional)
+  UInt64Filter block_number = 2;
+
+  // Filter by transaction_hash - The transaction hash associated with the log (ORDER BY column 3 - optional)
+  StringFilter transaction_hash = 3;
+
+  // Filter by internal_index - The internal index of the log within the transaction (ORDER BY column 4 - optional)
+  UInt32Filter internal_index = 4;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by transaction_index - The transaction index (optional)
+  UInt64Filter transaction_index = 6;
+  // Filter by log_index - The log index within the block (optional)
+  UInt32Filter log_index = 7;
+  // Filter by address - The address associated with the log (optional)
+  StringFilter address = 8;
+  // Filter by topic0 - The first topic of the log (optional)
+  StringFilter topic0 = 9;
+  // Filter by topic1 - The second topic of the log (optional)
+  NullableStringFilter topic1 = 10;
+  // Filter by topic2 - The third topic of the log (optional)
+  NullableStringFilter topic2 = 11;
+  // Filter by topic3 - The fourth topic of the log (optional)
+  NullableStringFilter topic3 = 12;
+  // Filter by data - The data associated with the log (optional)
+  NullableStringFilter data = 13;
+
+  // The maximum number of canonical_execution_logs to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 14;
+  // A page token, received from a previous `ListCanonicalExecutionLogs` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 15;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 16;
+}
+
+// Response for listing canonical_execution_logs records
+message ListCanonicalExecutionLogsResponse {
+  // The list of canonical_execution_logs.
+  repeated CanonicalExecutionLogs canonical_execution_logs = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_execution_logs record by primary key
+message GetCanonicalExecutionLogsRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_execution_logs record
+message GetCanonicalExecutionLogsResponse {
+  CanonicalExecutionLogs item = 1;
+}
+
+// Query canonical_execution_logs data
+service CanonicalExecutionLogsService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalExecutionLogsRequest) returns (ListCanonicalExecutionLogsResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalExecutionLogsRequest) returns (GetCanonicalExecutionLogsResponse);
+}

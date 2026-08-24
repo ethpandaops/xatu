@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains the Electra pending partial withdrawal queue snapshot for a canonical beacon state epoch.
+
+message CanonicalBeaconStatePendingPartialWithdrawal {
+  // When this row was last updated
+  uint32 updated_date_time = 11;
+  // The epoch number the pending partial withdrawal queue snapshot is for
+  uint32 epoch = 12;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 13;
+  // The state ID the pending partial withdrawal was requested against
+  string state_id = 14;
+  // The index of the withdrawal within the pending partial withdrawals queue
+  uint32 position_in_queue = 15;
+  // The validator index the withdrawal applies to
+  uint32 validator_index = 16;
+  // The partial withdrawal amount in gwei
+  string amount = 17;
+  // The epoch at which the withdrawal becomes withdrawable
+  uint64 withdrawable_epoch = 18;
+  // Ethereum network name
+  string meta_network_name = 19;
+}
+
+// Request for listing canonical_beacon_state_pending_partial_withdrawal records
+message ListCanonicalBeaconStatePendingPartialWithdrawalRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (ORDER BY column 2 - optional)
+  UInt32Filter epoch_start_date_time = 2;
+
+  // Filter by epoch - The epoch number the pending partial withdrawal queue snapshot is for (ORDER BY column 3 - optional)
+  UInt32Filter epoch = 3;
+
+  // Filter by position_in_queue - The index of the withdrawal within the pending partial withdrawals queue (ORDER BY column 4 - optional)
+  UInt32Filter position_in_queue = 4;
+
+  // Filter by updated_date_time - When this row was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by state_id - The state ID the pending partial withdrawal was requested against (optional)
+  StringFilter state_id = 6;
+  // Filter by validator_index - The validator index the withdrawal applies to (optional)
+  UInt32Filter validator_index = 7;
+  // Filter by amount - The partial withdrawal amount in gwei (optional)
+  StringFilter amount = 8;
+  // Filter by withdrawable_epoch - The epoch at which the withdrawal becomes withdrawable (optional)
+  UInt64Filter withdrawable_epoch = 9;
+
+  // The maximum number of canonical_beacon_state_pending_partial_withdrawal to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 10;
+  // A page token, received from a previous `ListCanonicalBeaconStatePendingPartialWithdrawal` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 11;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 12;
+}
+
+// Response for listing canonical_beacon_state_pending_partial_withdrawal records
+message ListCanonicalBeaconStatePendingPartialWithdrawalResponse {
+  // The list of canonical_beacon_state_pending_partial_withdrawal.
+  repeated CanonicalBeaconStatePendingPartialWithdrawal canonical_beacon_state_pending_partial_withdrawal = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_beacon_state_pending_partial_withdrawal record by primary key
+message GetCanonicalBeaconStatePendingPartialWithdrawalRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_beacon_state_pending_partial_withdrawal record
+message GetCanonicalBeaconStatePendingPartialWithdrawalResponse {
+  CanonicalBeaconStatePendingPartialWithdrawal item = 1;
+}
+
+// Query canonical_beacon_state_pending_partial_withdrawal data
+service CanonicalBeaconStatePendingPartialWithdrawalService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalBeaconStatePendingPartialWithdrawalRequest) returns (ListCanonicalBeaconStatePendingPartialWithdrawalResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalBeaconStatePendingPartialWithdrawalRequest) returns (GetCanonicalBeaconStatePendingPartialWithdrawalResponse);
+}

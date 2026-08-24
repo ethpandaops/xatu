@@ -1,0 +1,203 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Each row represents a transaction that was seen in the mempool by a sentry client. Sentries can report the same transaction multiple times if it has been long enough since the last report.
+
+message MempoolTransaction {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // The time when the sentry saw the transaction in the mempool
+  int64 event_date_time = 12;
+  // The hash of the transaction
+  string hash = 13;
+  // The address of the account that sent the transaction
+  string from = 14;
+  // The address of the account that is the transaction recipient
+  google.protobuf.StringValue to = 15;
+  // The nonce of the sender account at the time of the transaction
+  uint64 nonce = 16;
+  // The gas price of the transaction in wei
+  string gas_price = 17;
+  // The maximum gas provided for the transaction execution
+  uint64 gas = 18;
+  // The priority fee (tip) the user has set for the transaction
+  google.protobuf.StringValue gas_tip_cap = 19;
+  // The max fee the user has set for the transaction
+  google.protobuf.StringValue gas_fee_cap = 20;
+  // The value transferred with the transaction in wei
+  string value = 21;
+  // The type of the transaction
+  google.protobuf.UInt32Value type = 22;
+  // The size of the transaction data in bytes
+  uint32 size = 23;
+  // The size of the call data of the transaction in bytes
+  uint32 call_data_size = 24;
+  // The maximum gas provided for the blob transaction execution
+  google.protobuf.UInt64Value blob_gas = 25;
+  // The max fee the user has set for the transaction
+  google.protobuf.StringValue blob_gas_fee_cap = 26;
+  // The hashes of the blob commitments for blob transactions
+  repeated string blob_hashes = 27;
+  // The total size of the sidecars for blob transactions in bytes
+  google.protobuf.UInt32Value blob_sidecars_size = 28;
+  // The total empty size of the sidecars for blob transactions in bytes
+  google.protobuf.UInt32Value blob_sidecars_empty_size = 29;
+  // Name of the client that generated the event
+  string meta_client_name = 30;
+  // Version of the client that generated the event
+  string meta_client_version = 31;
+  // Implementation of the client that generated the event
+  string meta_client_implementation = 32;
+  // Operating system of the client that generated the event
+  string meta_client_os = 33;
+  // IP address of the client that generated the event
+  google.protobuf.StringValue meta_client_ip = 34;
+  // City of the client that generated the event
+  string meta_client_geo_city = 35;
+  // Country of the client that generated the event
+  string meta_client_geo_country = 36;
+  // Country code of the client that generated the event
+  string meta_client_geo_country_code = 37;
+  // Continent code of the client that generated the event
+  string meta_client_geo_continent_code = 38;
+  // Longitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_longitude = 39;
+  // Latitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_latitude = 40;
+  // Autonomous system number of the client that generated the event
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 41;
+  // Autonomous system organization of the client that generated the event
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 42;
+  // Ethereum network name
+  string meta_network_name = 43;
+  // The hash of the fork ID of the current Ethereum network
+  string meta_execution_fork_id_hash = 44;
+  // The fork ID of the next planned Ethereum network upgrade
+  string meta_execution_fork_id_next = 45;
+}
+
+// Request for listing mempool_transaction records
+message ListMempoolTransactionRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by event_date_time - The time when the sentry saw the transaction in the mempool (ORDER BY column 2 - optional)
+  Int64Filter event_date_time = 2;
+
+  // Filter by meta_client_name - Name of the client that generated the event (ORDER BY column 3 - optional)
+  StringFilter meta_client_name = 3;
+
+  // Filter by hash - The hash of the transaction (ORDER BY column 4 - optional)
+  StringFilter hash = 4;
+
+  // Filter by from - The address of the account that sent the transaction (ORDER BY column 5 - optional)
+  StringFilter from = 5;
+
+  // Filter by nonce - The nonce of the sender account at the time of the transaction (ORDER BY column 6 - optional)
+  UInt64Filter nonce = 6;
+
+  // Filter by gas - The maximum gas provided for the transaction execution (ORDER BY column 7 - optional)
+  UInt64Filter gas = 7;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 8;
+  // Filter by to - The address of the account that is the transaction recipient (optional)
+  NullableStringFilter to = 9;
+  // Filter by gas_price - The gas price of the transaction in wei (optional)
+  StringFilter gas_price = 10;
+  // Filter by gas_tip_cap - The priority fee (tip) the user has set for the transaction (optional)
+  NullableStringFilter gas_tip_cap = 11;
+  // Filter by gas_fee_cap - The max fee the user has set for the transaction (optional)
+  NullableStringFilter gas_fee_cap = 12;
+  // Filter by value - The value transferred with the transaction in wei (optional)
+  StringFilter value = 13;
+  // Filter by type - The type of the transaction (optional)
+  NullableUInt32Filter type = 14;
+  // Filter by size - The size of the transaction data in bytes (optional)
+  UInt32Filter size = 15;
+  // Filter by call_data_size - The size of the call data of the transaction in bytes (optional)
+  UInt32Filter call_data_size = 16;
+  // Filter by blob_gas - The maximum gas provided for the blob transaction execution (optional)
+  NullableUInt64Filter blob_gas = 17;
+  // Filter by blob_gas_fee_cap - The max fee the user has set for the transaction (optional)
+  NullableStringFilter blob_gas_fee_cap = 18;
+  // Filter by blob_hashes - The hashes of the blob commitments for blob transactions (optional)
+  ArrayStringFilter blob_hashes = 19;
+  // Filter by blob_sidecars_size - The total size of the sidecars for blob transactions in bytes (optional)
+  NullableUInt32Filter blob_sidecars_size = 20;
+  // Filter by blob_sidecars_empty_size - The total empty size of the sidecars for blob transactions in bytes (optional)
+  NullableUInt32Filter blob_sidecars_empty_size = 21;
+  // Filter by meta_client_version - Version of the client that generated the event (optional)
+  StringFilter meta_client_version = 22;
+  // Filter by meta_client_implementation - Implementation of the client that generated the event (optional)
+  StringFilter meta_client_implementation = 23;
+  // Filter by meta_client_os - Operating system of the client that generated the event (optional)
+  StringFilter meta_client_os = 24;
+  // Filter by meta_client_ip - IP address of the client that generated the event (optional)
+  NullableStringFilter meta_client_ip = 25;
+  // Filter by meta_client_geo_city - City of the client that generated the event (optional)
+  StringFilter meta_client_geo_city = 26;
+  // Filter by meta_client_geo_country - Country of the client that generated the event (optional)
+  StringFilter meta_client_geo_country = 27;
+  // Filter by meta_client_geo_country_code - Country code of the client that generated the event (optional)
+  StringFilter meta_client_geo_country_code = 28;
+  // Filter by meta_client_geo_continent_code - Continent code of the client that generated the event (optional)
+  StringFilter meta_client_geo_continent_code = 29;
+  // Filter by meta_client_geo_longitude - Longitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 30;
+  // Filter by meta_client_geo_latitude - Latitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 31;
+  // Filter by meta_client_geo_autonomous_system_number - Autonomous system number of the client that generated the event (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 32;
+  // Filter by meta_client_geo_autonomous_system_organization - Autonomous system organization of the client that generated the event (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 33;
+  // Filter by meta_execution_fork_id_hash - The hash of the fork ID of the current Ethereum network (optional)
+  StringFilter meta_execution_fork_id_hash = 34;
+  // Filter by meta_execution_fork_id_next - The fork ID of the next planned Ethereum network upgrade (optional)
+  StringFilter meta_execution_fork_id_next = 35;
+
+  // The maximum number of mempool_transaction to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 36;
+  // A page token, received from a previous `ListMempoolTransaction` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 37;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 38;
+}
+
+// Response for listing mempool_transaction records
+message ListMempoolTransactionResponse {
+  // The list of mempool_transaction.
+  repeated MempoolTransaction mempool_transaction = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single mempool_transaction record by primary key
+message GetMempoolTransactionRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single mempool_transaction record
+message GetMempoolTransactionResponse {
+  MempoolTransaction item = 1;
+}
+
+// Query mempool_transaction data
+service MempoolTransactionService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListMempoolTransactionRequest) returns (ListMempoolTransactionResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetMempoolTransactionRequest) returns (GetMempoolTransactionResponse);
+}

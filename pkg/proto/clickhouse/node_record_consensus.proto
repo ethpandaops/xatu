@@ -1,0 +1,252 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains consensus node records discovered by the Xatu discovery module.
+
+message NodeRecordConsensus {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // When the discovery module found the node
+  int64 event_date_time = 12;
+  // Ethereum Node Record as text
+  string enr = 13;
+  // ID of the Ethereum Node Record
+  string node_id = 14;
+  // Unique key associated with the identifier of the peer
+  google.protobuf.Int64Value peer_id_unique_key = 15;
+  // Event timestamp in unix time
+  int64 timestamp = 16;
+  // Consensus client name
+  string name = 17;
+  // Consensus client version
+  string version = 18;
+  // Consensus client major version
+  string version_major = 19;
+  // Consensus client minor version
+  string version_minor = 20;
+  // Consensus client patch version
+  string version_patch = 21;
+  // Consensus client implementation
+  string implementation = 22;
+  // Fork digest value
+  string fork_digest = 23;
+  // Next fork digest of the next scheduled fork
+  google.protobuf.StringValue next_fork_digest = 24;
+  // Finalized beacon block root
+  string finalized_root = 25;
+  // Finalized epoch number
+  uint64 finalized_epoch = 26;
+  // Head beacon block root
+  string head_root = 27;
+  // Head slot number
+  uint64 head_slot = 28;
+  // Represents the nodes custody group count
+  google.protobuf.StringValue cgc = 29;
+  // Finalized epoch start time
+  google.protobuf.UInt32Value finalized_epoch_start_date_time = 30;
+  // Head slot start time
+  google.protobuf.UInt32Value head_slot_start_date_time = 31;
+  // IP address of the consensus node
+  google.protobuf.StringValue ip = 32;
+  // TCP port from ENR
+  google.protobuf.UInt32Value tcp = 33;
+  // UDP port from ENR
+  google.protobuf.UInt32Value udp = 34;
+  // QUIC port from ENR
+  google.protobuf.UInt32Value quic = 35;
+  // Whether the consensus node has an IPv6 address
+  bool has_ipv6 = 36;
+  // City of the consensus node
+  string geo_city = 37;
+  // Country of the consensus node
+  string geo_country = 38;
+  // Country code of the consensus node
+  string geo_country_code = 39;
+  // Continent code of the consensus node
+  string geo_continent_code = 40;
+  // Longitude of the consensus node
+  google.protobuf.DoubleValue geo_longitude = 41;
+  // Latitude of the consensus node
+  google.protobuf.DoubleValue geo_latitude = 42;
+  // Autonomous system number of the consensus node
+  google.protobuf.UInt32Value geo_autonomous_system_number = 43;
+  // Autonomous system organization of the consensus node
+  google.protobuf.StringValue geo_autonomous_system_organization = 44;
+  // Name of the client that generated the event
+  string meta_client_name = 45;
+  // Version of the client that generated the event
+  string meta_client_version = 46;
+  // Implementation of the client that generated the event
+  string meta_client_implementation = 47;
+  // Operating system of the client that generated the event
+  string meta_client_os = 48;
+  // IP address of the client that generated the event
+  google.protobuf.StringValue meta_client_ip = 49;
+  // City of the client that generated the event
+  string meta_client_geo_city = 50;
+  // Country of the client that generated the event
+  string meta_client_geo_country = 51;
+  // Country code of the client that generated the event
+  string meta_client_geo_country_code = 52;
+  // Continent code of the client that generated the event
+  string meta_client_geo_continent_code = 53;
+  // Longitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_longitude = 54;
+  // Latitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_latitude = 55;
+  // Autonomous system number of the client that generated the event
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 56;
+  // Autonomous system organization of the client that generated the event
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 57;
+  // Ethereum network name
+  string meta_network_name = 58;
+}
+
+// Request for listing node_record_consensus records
+message ListNodeRecordConsensusRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by event_date_time - When the discovery module found the node (ORDER BY column 2 - optional)
+  Int64Filter event_date_time = 2;
+
+  // Filter by enr - Ethereum Node Record as text (ORDER BY column 3 - optional)
+  StringFilter enr = 3;
+
+  // Filter by meta_client_name - Name of the client that generated the event (ORDER BY column 4 - optional)
+  StringFilter meta_client_name = 4;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by node_id - ID of the Ethereum Node Record (optional)
+  StringFilter node_id = 6;
+  // Filter by peer_id_unique_key - Unique key associated with the identifier of the peer (optional)
+  NullableInt64Filter peer_id_unique_key = 7;
+  // Filter by timestamp - Event timestamp in unix time (optional)
+  Int64Filter timestamp = 8;
+  // Filter by name - Consensus client name (optional)
+  StringFilter name = 9;
+  // Filter by version - Consensus client version (optional)
+  StringFilter version = 10;
+  // Filter by version_major - Consensus client major version (optional)
+  StringFilter version_major = 11;
+  // Filter by version_minor - Consensus client minor version (optional)
+  StringFilter version_minor = 12;
+  // Filter by version_patch - Consensus client patch version (optional)
+  StringFilter version_patch = 13;
+  // Filter by implementation - Consensus client implementation (optional)
+  StringFilter implementation = 14;
+  // Filter by fork_digest - Fork digest value (optional)
+  StringFilter fork_digest = 15;
+  // Filter by next_fork_digest - Next fork digest of the next scheduled fork (optional)
+  NullableStringFilter next_fork_digest = 16;
+  // Filter by finalized_root - Finalized beacon block root (optional)
+  StringFilter finalized_root = 17;
+  // Filter by finalized_epoch - Finalized epoch number (optional)
+  UInt64Filter finalized_epoch = 18;
+  // Filter by head_root - Head beacon block root (optional)
+  StringFilter head_root = 19;
+  // Filter by head_slot - Head slot number (optional)
+  UInt64Filter head_slot = 20;
+  // Filter by cgc - Represents the nodes custody group count (optional)
+  NullableStringFilter cgc = 21;
+  // Filter by finalized_epoch_start_date_time - Finalized epoch start time (optional)
+  NullableUInt32Filter finalized_epoch_start_date_time = 22;
+  // Filter by head_slot_start_date_time - Head slot start time (optional)
+  NullableUInt32Filter head_slot_start_date_time = 23;
+  // Filter by ip - IP address of the consensus node (optional)
+  NullableStringFilter ip = 24;
+  // Filter by tcp - TCP port from ENR (optional)
+  NullableUInt32Filter tcp = 25;
+  // Filter by udp - UDP port from ENR (optional)
+  NullableUInt32Filter udp = 26;
+  // Filter by quic - QUIC port from ENR (optional)
+  NullableUInt32Filter quic = 27;
+  // Filter by has_ipv6 - Whether the consensus node has an IPv6 address (optional)
+  BoolFilter has_ipv6 = 28;
+  // Filter by geo_city - City of the consensus node (optional)
+  StringFilter geo_city = 29;
+  // Filter by geo_country - Country of the consensus node (optional)
+  StringFilter geo_country = 30;
+  // Filter by geo_country_code - Country code of the consensus node (optional)
+  StringFilter geo_country_code = 31;
+  // Filter by geo_continent_code - Continent code of the consensus node (optional)
+  StringFilter geo_continent_code = 32;
+  // Filter by geo_longitude - Longitude of the consensus node (optional)
+  google.protobuf.DoubleValue geo_longitude = 33;
+  // Filter by geo_latitude - Latitude of the consensus node (optional)
+  google.protobuf.DoubleValue geo_latitude = 34;
+  // Filter by geo_autonomous_system_number - Autonomous system number of the consensus node (optional)
+  NullableUInt32Filter geo_autonomous_system_number = 35;
+  // Filter by geo_autonomous_system_organization - Autonomous system organization of the consensus node (optional)
+  NullableStringFilter geo_autonomous_system_organization = 36;
+  // Filter by meta_client_version - Version of the client that generated the event (optional)
+  StringFilter meta_client_version = 37;
+  // Filter by meta_client_implementation - Implementation of the client that generated the event (optional)
+  StringFilter meta_client_implementation = 38;
+  // Filter by meta_client_os - Operating system of the client that generated the event (optional)
+  StringFilter meta_client_os = 39;
+  // Filter by meta_client_ip - IP address of the client that generated the event (optional)
+  NullableStringFilter meta_client_ip = 40;
+  // Filter by meta_client_geo_city - City of the client that generated the event (optional)
+  StringFilter meta_client_geo_city = 41;
+  // Filter by meta_client_geo_country - Country of the client that generated the event (optional)
+  StringFilter meta_client_geo_country = 42;
+  // Filter by meta_client_geo_country_code - Country code of the client that generated the event (optional)
+  StringFilter meta_client_geo_country_code = 43;
+  // Filter by meta_client_geo_continent_code - Continent code of the client that generated the event (optional)
+  StringFilter meta_client_geo_continent_code = 44;
+  // Filter by meta_client_geo_longitude - Longitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 45;
+  // Filter by meta_client_geo_latitude - Latitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 46;
+  // Filter by meta_client_geo_autonomous_system_number - Autonomous system number of the client that generated the event (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 47;
+  // Filter by meta_client_geo_autonomous_system_organization - Autonomous system organization of the client that generated the event (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 48;
+
+  // The maximum number of node_record_consensus to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 49;
+  // A page token, received from a previous `ListNodeRecordConsensus` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 50;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 51;
+}
+
+// Response for listing node_record_consensus records
+message ListNodeRecordConsensusResponse {
+  // The list of node_record_consensus.
+  repeated NodeRecordConsensus node_record_consensus = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single node_record_consensus record by primary key
+message GetNodeRecordConsensusRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single node_record_consensus record
+message GetNodeRecordConsensusResponse {
+  NodeRecordConsensus item = 1;
+}
+
+// Query node_record_consensus data
+service NodeRecordConsensusService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListNodeRecordConsensusRequest) returns (ListNodeRecordConsensusResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetNodeRecordConsensusRequest) returns (GetNodeRecordConsensusResponse);
+}

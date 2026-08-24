@@ -22,7 +22,7 @@ captureDelay: 3m
 
 # ethereum:
 #   overrideNetworkName: devnet
-#   bootstrapRpcUrl: http://localhost:8545 # Optional mainnet/Sepolia/Holesky EL RPC used to build Status and answer block data requests.
+#   bootstrapRpcUrl: http://localhost:8545 # Optional mainnet/Sepolia/Holesky/Hoodi EL RPC used to build Status and answer block data requests.
 #   privateKey: "" # Optional hex devp2p node key. If omitted, one process-local identity is reused.
 #   blobTransactionBatchSize: 1  # Number of blob txns to request at a time (default: 1)
 #   transactionBatchSize: 10     # Number of other txns to request at a time (default: 10)

@@ -81,18 +81,18 @@ import (
     
     eth2v1 "github.com/attestantio/go-eth2-client/api/v1"
     xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+    "github.com/ethpandaops/xatu/pkg/observability"
     "github.com/ethpandaops/xatu/pkg/proto/xatu"
     "github.com/ethpandaops/xatu/pkg/sentry/ethereum"
     "github.com/google/uuid"
     ttlcache "github.com/jellydator/ttlcache/v3"
     hashstructure "github.com/mitchellh/hashstructure/v2"
-    "github.com/sirupsen/logrus"
     "google.golang.org/protobuf/types/known/timestamppb"
     "google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type Events{EventName} struct {
-    log            logrus.FieldLogger
+    log            observability.ContextualLogger
     now            time.Time
     event          *eth2v1.{EventName}Event
     beacon         *ethereum.BeaconNode
@@ -101,7 +101,7 @@ type Events{EventName} struct {
     id             uuid.UUID
 }
 
-func NewEvents{EventName}(log logrus.FieldLogger, event *eth2v1.{EventName}Event, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *Events{EventName} {
+func NewEvents{EventName}(log observability.ContextualLogger, event *eth2v1.{EventName}Event, now time.Time, beacon *ethereum.BeaconNode, duplicateCache *ttlcache.Cache[string, time.Time], clientMeta *xatu.ClientMeta) *Events{EventName} {
     return &Events{EventName}{
         log:            log.WithField("event", "BEACON_API_ETH_{API_VERSION}_EVENTS_{EVENT_NAME}"),
         now:            now,
@@ -256,8 +256,8 @@ import (
     "context"
     "errors"
 
+    "github.com/ethpandaops/xatu/pkg/observability"
     "github.com/ethpandaops/xatu/pkg/proto/xatu"
-    "github.com/sirupsen/logrus"
 )
 
 const (
@@ -265,11 +265,11 @@ const (
 )
 
 type Events{EventName} struct {
-    log   logrus.FieldLogger
+    log   observability.ContextualLogger
     event *xatu.DecoratedEvent
 }
 
-func NewEvents{EventName}(log logrus.FieldLogger, event *xatu.DecoratedEvent) *Events{EventName} {
+func NewEvents{EventName}(log observability.ContextualLogger, event *xatu.DecoratedEvent) *Events{EventName} {
     return &Events{EventName}{
         log:   log.WithField("event", Events{EventName}Type),
         event: event,

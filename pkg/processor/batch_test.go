@@ -868,6 +868,7 @@ func TestBatchItemProcessorQueueSize(t *testing.T) {
 		itemsToExport    = 20
 		successfulWrites int
 		failedWrites     int
+		writeErrs        []error
 		wg               sync.WaitGroup
 		mu               sync.Mutex
 	)
@@ -884,6 +885,8 @@ func TestBatchItemProcessorQueueSize(t *testing.T) {
 				successfulWrites++
 			} else {
 				failedWrites++
+
+				writeErrs = append(writeErrs, err)
 			}
 			mu.Unlock()
 		}(i)
@@ -897,6 +900,10 @@ func TestBatchItemProcessorQueueSize(t *testing.T) {
 	// 2. Or dropped some items (if the queue was full)
 	totalProcessed := successfulWrites + failedWrites
 	require.Equal(t, itemsToExport, totalProcessed, "All write attempts should complete")
+
+	for _, err := range writeErrs {
+		require.ErrorIs(t, err, ErrQueueFull, "a dropped write must return the sentinel")
+	}
 
 	// If we failed to write some items, verify they were tracked as dropped
 	if failedWrites > 0 {

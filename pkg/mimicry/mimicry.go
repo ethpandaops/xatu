@@ -34,6 +34,9 @@ type Mimicry struct {
 
 	sinks []output.Sink
 
+	// sinkSuppress is parallel to sinks and rate-limits per-sink send failure logs.
+	sinkSuppress []observability.Suppressor
+
 	coordinator coordinator.Coordinator
 
 	clockDrift time.Duration
@@ -74,13 +77,14 @@ func New(ctx context.Context, log observability.ContextualLogger, config *Config
 	}
 
 	mimicry := &Mimicry{
-		Config:      config,
-		sinks:       sinks,
-		clockDrift:  time.Duration(0),
-		log:         log,
-		id:          uuid.New(),
-		metrics:     NewMetrics("xatu_mimicry"),
-		startupTime: time.Now(),
+		Config:       config,
+		sinks:        sinks,
+		sinkSuppress: observability.NewSuppressors(len(sinks), 10*time.Second),
+		clockDrift:   time.Duration(0),
+		log:          log,
+		id:           uuid.New(),
+		metrics:      NewMetrics("xatu_mimicry"),
+		startupTime:  time.Now(),
 	}
 
 	mimicry.coordinator, err = coordinator.NewCoordinator(ctx, config.Name, config.Coordinator.Type, config.Coordinator.Config, &handler.Peer{
@@ -288,10 +292,24 @@ func (m *Mimicry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decor
 
 	m.metrics.AddDecoratedEvent(1, eventType, networkStr)
 
-	for _, sink := range m.sinks {
-		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
-			m.log.WithError(err).WithField("sink", sink.Type()).WithContext(ctx).Error("Failed to send event to sink")
+	for i, sink := range m.sinks {
+		err := sink.HandleNewDecoratedEvent(ctx, event)
+		if err == nil {
+			continue
 		}
+
+		ok, suppressed := m.sinkSuppress[i].Allow(time.Now())
+		if !ok {
+			continue
+		}
+
+		m.log.
+			WithError(err).
+			WithField("sink", sink.Type()).
+			WithField("event_type", eventType).
+			WithField("suppressed", suppressed).
+			WithContext(ctx).
+			Error("Failed to send event to sink")
 	}
 
 	return nil

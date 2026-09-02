@@ -49,6 +49,9 @@ type Sentry struct {
 
 	sinks []output.Sink
 
+	// sinkSuppress is parallel to sinks and rate-limits per-sink send failure logs.
+	sinkSuppress []observability.Suppressor
+
 	beacon *ethereum.BeaconNode
 
 	execution *execution.Client
@@ -181,6 +184,7 @@ func New(ctx context.Context, log observability.ContextualLogger, config *Config
 	s := &Sentry{
 		Config:             config,
 		sinks:              sinks,
+		sinkSuppress:       observability.NewSuppressors(len(sinks), 10*time.Second),
 		beacon:             b,
 		execution:          nil,
 		clockDrift:         time.Duration(0),
@@ -1098,14 +1102,24 @@ func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 
 	s.summary.AddEventsExported(1)
 
-	for _, sink := range s.sinks {
-		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
-			s.log.
-				WithError(err).
-				WithField("sink", sink.Type()).
-				WithField("event_type", event.GetEvent().GetName()).WithContext(ctx).
-				Error("Failed to send event to sink")
+	for i, sink := range s.sinks {
+		err := sink.HandleNewDecoratedEvent(ctx, event)
+		if err == nil {
+			continue
 		}
+
+		ok, suppressed := s.sinkSuppress[i].Allow(time.Now())
+		if !ok {
+			continue
+		}
+
+		s.log.
+			WithError(err).
+			WithField("sink", sink.Type()).
+			WithField("event_type", event.GetEvent().GetName()).
+			WithField("suppressed", suppressed).
+			WithContext(ctx).
+			Error("Failed to send event to sink")
 	}
 
 	return nil

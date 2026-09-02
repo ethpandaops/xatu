@@ -39,6 +39,7 @@ import (
 type Discovery struct {
 	Config         *Config
 	sinks          []output.Sink
+	sinkSuppress   []observability.Suppressor // parallel to sinks; rate-limits per-sink send failure logs
 	coordinator    *coordinator.Client
 	p2p            p2p.P2P
 	status         *p2p.Status
@@ -100,6 +101,7 @@ func New(ctx context.Context, log observability.ContextualLogger, config *Config
 	return &Discovery{
 		Config:         config,
 		sinks:          sinks,
+		sinkSuppress:   observability.NewSuppressors(len(sinks), 10*time.Second),
 		coordinator:    client,
 		log:            log,
 		duplicateCache: duplicateCache,
@@ -371,14 +373,24 @@ func (d *Discovery) handleExecutionStatus(ctx context.Context, status *xatu.Exec
 		if err != nil {
 			d.log.WithError(err).WithContext(ctx).Error("Failed to create execution status event")
 		} else {
-			for _, sink := range d.sinks {
-				if sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent); sinkErr != nil {
-					d.log.
-						WithError(sinkErr).
-						WithField("sink", sink.Type()).
-						WithField("event_type", decoratedEvent.GetEvent().GetName()).WithContext(ctx).
-						Error("Failed to send event to sink")
+			for i, sink := range d.sinks {
+				sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent)
+				if sinkErr == nil {
+					continue
 				}
+
+				ok, suppressed := d.sinkSuppress[i].Allow(time.Now())
+				if !ok {
+					continue
+				}
+
+				d.log.
+					WithError(sinkErr).
+					WithField("sink", sink.Type()).
+					WithField("event_type", decoratedEvent.GetEvent().GetName()).
+					WithField("suppressed", suppressed).
+					WithContext(ctx).
+					Error("Failed to send event to sink")
 			}
 		}
 	}
@@ -394,14 +406,24 @@ func (d *Discovery) handleConsensusStatus(ctx context.Context, status *xatu.Cons
 	if err != nil {
 		d.log.WithError(err).WithContext(ctx).Error("Failed to create consensus status event")
 	} else {
-		for _, sink := range d.sinks {
-			if sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent); sinkErr != nil {
-				d.log.
-					WithError(sinkErr).
-					WithField("sink", sink.Type()).
-					WithField("event_type", decoratedEvent.GetEvent().GetName()).WithContext(ctx).
-					Error("Failed to send event to sink")
+		for i, sink := range d.sinks {
+			sinkErr := sink.HandleNewDecoratedEvent(ctx, decoratedEvent)
+			if sinkErr == nil {
+				continue
 			}
+
+			ok, suppressed := d.sinkSuppress[i].Allow(time.Now())
+			if !ok {
+				continue
+			}
+
+			d.log.
+				WithError(sinkErr).
+				WithField("sink", sink.Type()).
+				WithField("event_type", decoratedEvent.GetEvent().GetName()).
+				WithField("suppressed", suppressed).
+				WithContext(ctx).
+				Error("Failed to send event to sink")
 		}
 	}
 

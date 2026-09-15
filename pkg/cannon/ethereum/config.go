@@ -35,6 +35,10 @@ type BeaconConfig struct {
 	BlockPreloadWorkers uint64 `yaml:"blockPreloadWorkers" default:"5"`
 	// BlockPreloadQueueSize is the size of the block preload queue.
 	BlockPreloadQueueSize uint64 `yaml:"blockPreloadQueueSize" default:"5000"`
+	// UnhealthyRestartAfter is how long the beacon node may keep failing the
+	// sync check that gates the derivers before the cannon exits so its
+	// supervisor restarts it. Zero disables the exit.
+	UnhealthyRestartAfter human.Duration `yaml:"unhealthyRestartAfter" default:"1h"`
 }
 
 // ExecutionConfig configures the execution-layer JSON-RPC endpoint that the EL

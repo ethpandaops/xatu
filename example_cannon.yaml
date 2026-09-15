@@ -36,6 +36,7 @@ ethereum:
     # blockCacheTtl: 1h
     # blockPreloadWorkers: 5
     # blockPreloadQueueSize: 5000
+    # unhealthyRestartAfter: 1h        # exit (for a supervisor restart) after this long failing the sync check; 0 disables
   execution:
     address: http://localhost:8545   # EL archive node; cryo --rpc (creds may be embedded: https://user:pass@host)
 

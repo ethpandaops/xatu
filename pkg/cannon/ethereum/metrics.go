@@ -14,6 +14,10 @@ type Metrics struct {
 	blockCacheMiss *prometheus.CounterVec
 	// PreloadBlockQueueSize is the number of blocks in the preload queue.
 	preloadBlockQueueSize *prometheus.GaugeVec
+	// beaconSynced is 1 while the beacon node passes the sync check that gates the derivers.
+	beaconSynced *prometheus.GaugeVec
+	// beaconHeadSlot is the head slot the beacon node last reported.
+	beaconHeadSlot *prometheus.GaugeVec
 }
 
 func NewMetrics(namespace, beaconNodeName string) *Metrics {
@@ -46,6 +50,16 @@ func NewMetrics(namespace, beaconNodeName string) *Metrics {
 			Name:      "preload_block_queue_size",
 			Help:      "The number of blocks in the preload queue",
 		}, []string{"network", "beacon"}),
+		beaconSynced: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "beacon_synced",
+			Help:      "1 when the beacon node passes the sync check that gates the derivers, 0 otherwise",
+		}, []string{"network", "beacon"}),
+		beaconHeadSlot: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "beacon_head_slot",
+			Help:      "Head slot last reported by the beacon node",
+		}, []string{"network", "beacon"}),
 	}
 
 	prometheus.MustRegister(m.blocksFetched)
@@ -53,6 +67,8 @@ func NewMetrics(namespace, beaconNodeName string) *Metrics {
 	prometheus.MustRegister(m.blockCacheHit)
 	prometheus.MustRegister(m.blockCacheMiss)
 	prometheus.MustRegister(m.preloadBlockQueueSize)
+	prometheus.MustRegister(m.beaconSynced)
+	prometheus.MustRegister(m.beaconHeadSlot)
 
 	return m
 }
@@ -75,4 +91,17 @@ func (m *Metrics) IncBlockCacheMiss(network string) {
 
 func (m *Metrics) SetPreloadBlockQueueSize(network string, size int) {
 	m.preloadBlockQueueSize.WithLabelValues(network, m.beacon).Set(float64(size))
+}
+
+func (m *Metrics) SetBeaconSynced(network string, synced bool) {
+	value := 0.0
+	if synced {
+		value = 1
+	}
+
+	m.beaconSynced.WithLabelValues(network, m.beacon).Set(value)
+}
+
+func (m *Metrics) SetBeaconHeadSlot(network string, slot uint64) {
+	m.beaconHeadSlot.WithLabelValues(network, m.beacon).Set(float64(slot))
 }

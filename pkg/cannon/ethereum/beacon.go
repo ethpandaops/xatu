@@ -25,6 +25,13 @@ import (
 	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
+const (
+	// syncWatchdogInterval is how often the watchdog re-runs the sync check.
+	syncWatchdogInterval = 30 * time.Second
+	// syncWatchdogLogEvery is how often a persistently failing sync check is logged.
+	syncWatchdogLogEvery = 5 * time.Minute
+)
+
 type BeaconNode struct {
 	config *Config
 	log    observability.ContextualLogger
@@ -154,6 +161,8 @@ func (b *BeaconNode) Start(ctx context.Context) error {
 		return err
 	}
 
+	go b.runSyncWatchdog(ctx, errs)
+
 	b.blockCache.OnEviction(func(ctx context.Context, reason ttlcache.EvictionReason, item *ttlcache.Item[string, *spec.VersionedSignedBeaconBlock]) {
 		b.log.WithField("identifier", item.Key()).WithField("reason", reason).WithContext(ctx).Trace("Block evicted from cache")
 	})
@@ -267,6 +276,74 @@ func (b *BeaconNode) Synced(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// runSyncWatchdog re-runs the sync check the derivers gate on. A long run of
+// failures is logged at error level and, once it passes the configured limit,
+// sent on errs so Start returns and the process exits instead of idling on a
+// beacon node it can no longer use.
+func (b *BeaconNode) runSyncWatchdog(ctx context.Context, errs chan<- error) {
+	limit := b.config.Beacon.UnhealthyRestartAfter.Duration
+	watchdog := newSyncWatchdog(syncWatchdogLogEvery, limit)
+	ticker := time.NewTicker(syncWatchdogInterval)
+
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case now := <-ticker.C:
+			err := b.Synced(ctx)
+
+			b.recordSyncMetrics(err == nil)
+
+			verdict := watchdog.observe(now, err == nil)
+			if verdict.shouldLog {
+				b.log.WithError(err).
+					WithField("unhealthy_for", verdict.unhealthyFor.Round(time.Second)).
+					WithContext(ctx).
+					Error("Beacon node keeps failing the sync check; derivers are paused")
+			}
+
+			if !verdict.shouldExit {
+				continue
+			}
+
+			exitErr := fmt.Errorf("beacon node failed the sync check for %s (limit %s): %w",
+				verdict.unhealthyFor.Round(time.Second), limit, err)
+
+			select {
+			case errs <- exitErr:
+			case <-ctx.Done():
+			}
+
+			return
+		}
+	}
+}
+
+// recordSyncMetrics publishes the sync check outcome and the beacon node's
+// reported head slot. Nothing is recorded until the network name is known, so
+// the metrics never carry a placeholder network label.
+func (b *BeaconNode) recordSyncMetrics(synced bool) {
+	metadata := b.Metadata()
+	if metadata == nil || metadata.Network == nil {
+		return
+	}
+
+	network := string(metadata.Network.Name)
+
+	b.metrics.SetBeaconSynced(network, synced)
+
+	status := b.beacon.Status()
+	if status == nil {
+		return
+	}
+
+	if syncState := status.SyncState(); syncState != nil {
+		b.metrics.SetBeaconHeadSlot(network, uint64(syncState.HeadSlot))
+	}
 }
 
 // GetBeaconBlock returns a beacon block by its identifier. Blocks can be cached internally.

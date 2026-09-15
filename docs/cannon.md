@@ -53,6 +53,7 @@ Cannon requires a single `yaml` config file. An example file can be found [here]
 | ethereum.blockCacheTtl | string | `1h` | The maximum duration to cache blocks                                                                                                       |
 | ethereum.blockPreloadWorkers | int | `5` | The number of workers to use for preloading blocks                                                                                         |
 | ethereum.blockPreloadQueueSize | int | `5000` | The maximum number of blocks to queue for preloading                                                                                       |
+| ethereum.beacon.unhealthyRestartAfter | string | `1h` | How long the beacon node may keep failing the sync check that gates the derivers before the cannon exits so it gets restarted; `0` disables |
 | coordinator.address | string |  | The address of the [Xatu server](./server.md)                                                                                              |
 | coordinator.tls | bool |  | Server requires TLS                                                                                                                        |
 | coordinator.headers | object |  | A key value map of headers to append to requests                                                                                           |

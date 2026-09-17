@@ -16,6 +16,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	chrouter "github.com/ethpandaops/xatu/pkg/clickhouse/router"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
+	"github.com/ethpandaops/xatu/pkg/processor"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -394,4 +395,82 @@ func TestHandleNewDecoratedEvents_RoutesEventsToCorrectTables(t *testing.T) {
 	require.NotNil(t, w.lastArgs)
 	assert.Len(t, w.lastArgs["canonical_beacon_block"], 1)
 	assert.Len(t, w.lastArgs["canonical_beacon_block_withdrawal"], 2)
+}
+
+func TestAsyncShippingBatchesPerEventCalls(t *testing.T) {
+	const events = 128
+
+	w := &stubWriter{}
+	sink := makeTestSink(t, w, []route.Route{
+		&fakeRoute{
+			table:  "canonical_beacon_block",
+			events: []xatu.Event_Name{xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK},
+		},
+	}, nil, nil)
+
+	log := logrus.New()
+	log.SetLevel(logrus.PanicLevel)
+
+	proc, err := processor.NewBatchItemProcessor[xatu.DecoratedEvent](
+		batchExporter{sink},
+		fmt.Sprintf("async_test_%d", time.Now().UnixNano()),
+		log.WithField("c", "test_proc"),
+		processor.WithShippingMethod(processor.ShippingMethodAsync),
+		processor.WithMaxExportBatchSize(events),
+	)
+	require.NoError(t, err)
+
+	sink.proc = proc
+
+	ctx := context.Background()
+	require.NoError(t, sink.Start(ctx))
+
+	for range events {
+		require.NoError(t, sink.HandleNewDecoratedEvent(
+			ctx, makeTestEvent(xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK),
+		))
+	}
+
+	require.Eventually(t, func() bool {
+		return w.flushCalled.Load() == 1
+	}, 5*time.Second, 5*time.Millisecond,
+		"128 single-event calls must collapse into one INSERT, not 128")
+
+	require.NoError(t, sink.Stop(ctx))
+	assert.Len(t, w.lastArgs["canonical_beacon_block"], events)
+}
+
+func TestNewWiresProcessorPerShippingMethod(t *testing.T) {
+	log := logrus.New()
+	log.SetLevel(logrus.PanicLevel)
+
+	newCfg := func(subsystem string) *Config {
+		return &Config{
+			Config: chwriter.Config{
+				DSN: "clickhouse://localhost:9000/default",
+				ChGo: chwriter.ChGoConfig{
+					DialTimeout:       5 * time.Second,
+					ReadTimeout:       5 * time.Second,
+					QueryTimeout:      5 * time.Second,
+					RetryBaseDelay:    100 * time.Millisecond,
+					RetryMaxDelay:     1 * time.Second,
+					MaxConns:          4,
+					MinConns:          1,
+					ConnMaxLifetime:   1 * time.Hour,
+					ConnMaxIdleTime:   10 * time.Minute,
+					HealthCheckPeriod: 30 * time.Second,
+					AdaptiveLimiter:   chwriter.AdaptiveLimiterConfig{Enabled: boolPtr(false)},
+				},
+			},
+			MetricsSubsystem: subsystem,
+		}
+	}
+
+	async, err := New("async", newCfg("test_ship_async"), log, &xatu.EventFilterConfig{}, processor.ShippingMethodAsync)
+	require.NoError(t, err)
+	assert.NotNil(t, async.proc, "async shipping must queue through a batch processor")
+
+	sync, err := New("sync", newCfg("test_ship_sync"), log, &xatu.EventFilterConfig{}, processor.ShippingMethodSync)
+	require.NoError(t, err)
+	assert.Nil(t, sync.proc, "sync shipping must keep flushing inline")
 }

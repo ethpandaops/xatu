@@ -184,6 +184,10 @@ func newCannonClickhouseSink(out *output.Config, log observability.ContextualLog
 		conf.RestrictToTablePrefixes = append([]string(nil), cannonClickhouseTablePrefixes...)
 	}
 
+	if *out.ShippingMethod != processor.ShippingMethodSync {
+		return nil, fmt.Errorf("clickhouse output %q: cannon requires shippingMethod sync, checkpoint advance is gated on the CH ack", out.Name)
+	}
+
 	return chSink.New(out.Name, conf, log, &out.FilterConfig, *out.ShippingMethod)
 }
 

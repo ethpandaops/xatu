@@ -2,17 +2,17 @@
 // directly to ClickHouse using the shared writer + router stack from
 // pkg/clickhouse.
 //
-// Unlike the other sinks (xatu, kafka, http, stdout), this sink does NOT
-// use processor.BatchItemProcessor. Each call to HandleNewDecoratedEvents
-// flushes the entire input slice as one columnar INSERT per affected
-// table. This preserves cannon's per-epoch atomicity: one deriver
+// Under sync shipping each call to HandleNewDecoratedEvents flushes the
+// entire input slice as one columnar INSERT per affected table. This
+// preserves cannon's per-epoch atomicity: one deriver
 // callback delivers one full epoch, which maps to one CH INSERT per
 // table covering exactly that epoch. The deriver only advances its
 // coordinator checkpoint after this call returns nil — so checkpoint
 // progress is gated on CH ack, not on a queued-for-batching ack.
 //
-// As a consequence, the output.Config.ShippingMethod field is ignored
-// for this sink type. A non-Sync setting logs a warning at construction.
+// Under async shipping events are queued into a processor.BatchItemProcessor,
+// as the other sinks do. Callers that emit one event at a time would
+// otherwise pay a CH round trip per event on the calling goroutine.
 package clickhouse
 
 import (
@@ -73,10 +73,12 @@ type Sink struct {
 	router           *chrouter.Engine
 	filter           xatu.EventFilter
 	restrictPrefixes []string
+
+	// proc is nil under sync shipping, where handlers flush inline.
+	proc *processor.BatchItemProcessor[xatu.DecoratedEvent]
 }
 
-// New constructs a clickhouse sink. shippingMethod is accepted for
-// interface uniformity but ignored — see the package-level godoc.
+// New constructs a clickhouse sink.
 func New(
 	name string,
 	config *Config,
@@ -94,11 +96,6 @@ func New(
 	sLog := log.
 		WithField("output_name", name).
 		WithField("output_type", SinkType)
-
-	if shippingMethod != "" && shippingMethod != processor.ShippingMethodSync {
-		sLog.WithField("shipping_method", shippingMethod).
-			Warn("clickhouse sink ignores shippingMethod — flushes are inline per call to preserve per-batch atomicity")
-	}
 
 	metrics := telemetry.NewMetrics("xatu", config.MetricsSubsystem)
 
@@ -135,15 +132,46 @@ func New(
 		return nil, err
 	}
 
-	return &Sink{
+	sink := &Sink{
 		name:             name,
 		log:              sLog,
 		writer:           writer,
 		router:           router,
 		filter:           filter,
 		restrictPrefixes: append([]string(nil), config.RestrictToTablePrefixes...),
-	}, nil
+	}
+
+	if shippingMethod == processor.ShippingMethodAsync {
+		sink.proc, err = processor.NewBatchItemProcessor[xatu.DecoratedEvent](
+			batchExporter{sink},
+			xatu.ImplementationLower()+"_output_"+SinkType+"_"+name,
+			sLog,
+			processor.WithShippingMethod(shippingMethod),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("creating clickhouse batch processor: %w", err)
+		}
+	}
+
+	return sink, nil
 }
+
+// batchExporter lets the batch processor drive the sink's inline flush.
+type batchExporter struct{ sink *Sink }
+
+// ExportItems logs its own failures. The processor records a metric but
+// drops the returned error, so an unlogged CH outage would be invisible.
+func (e batchExporter) ExportItems(ctx context.Context, events []*xatu.DecoratedEvent) error {
+	err := e.sink.flush(ctx, events)
+	if err != nil {
+		e.sink.log.WithError(err).WithField("events", len(events)).WithContext(ctx).
+			Error("Failed to flush batch to clickhouse")
+	}
+
+	return err
+}
+
+func (e batchExporter) Shutdown(_ context.Context) error { return nil }
 
 // Name returns the sink instance's user-supplied name.
 func (s *Sink) Name() string {
@@ -157,28 +185,51 @@ func (s *Sink) Type() string {
 
 // Start dials the underlying ClickHouse pool and validates table presence.
 func (s *Sink) Start(ctx context.Context) error {
-	return s.writer.Start(ctx)
+	if err := s.writer.Start(ctx); err != nil {
+		return err
+	}
+
+	if s.proc != nil {
+		s.proc.Start(ctx)
+	}
+
+	return nil
 }
 
-// Stop closes the ClickHouse pool.
+// Stop drains any queued events, then closes the ClickHouse pool.
 func (s *Sink) Stop(ctx context.Context) error {
-	return s.writer.Stop(ctx)
+	var drainErr error
+
+	if s.proc != nil {
+		drainErr = s.proc.Shutdown(ctx)
+	}
+
+	return errors.Join(drainErr, s.writer.Stop(ctx))
 }
 
-// HandleNewDecoratedEvent flushes a single event.
+// HandleNewDecoratedEvent handles a single event.
 func (s *Sink) HandleNewDecoratedEvent(ctx context.Context, event *xatu.DecoratedEvent) error {
 	return s.HandleNewDecoratedEvents(ctx, []*xatu.DecoratedEvent{event})
 }
 
-// HandleNewDecoratedEvents routes the entire input slice and flushes one
-// columnar INSERT per affected table. Returns the first table-flush error
-// encountered (joined) so the caller's checkpoint does not advance on
-// partial failure.
+// HandleNewDecoratedEvents queues the input slice under async shipping, and
+// flushes it inline under sync shipping.
 func (s *Sink) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
 	if len(events) == 0 {
 		return nil
 	}
 
+	if s.proc != nil {
+		return s.proc.Write(ctx, events)
+	}
+
+	return s.flush(ctx, events)
+}
+
+// flush routes events and writes one columnar INSERT per affected table.
+// Returns the first table-flush error encountered (joined) so the caller's
+// checkpoint does not advance on partial failure.
+func (s *Sink) flush(ctx context.Context, events []*xatu.DecoratedEvent) error {
 	ctx, span := observability.Tracer().Start(ctx, "ClickHouseSink.HandleNewDecoratedEvents",
 		trace.WithSpanKind(trace.SpanKindProducer),
 		trace.WithAttributes(attribute.Int("num_events", len(events))),

@@ -26,6 +26,10 @@ type BeaconBlockV2 struct {
 	// Typically non finalized blocks are ingested multiple times from the sentry.
 	// Finalized blocks are only ingested once from the cannon.
 	nonFinalizedCache store.Cache
+
+	// markedKey holds the cache key set during Filter so it can be released if the
+	// event fails to reach a durable sink.
+	markedKey string
 }
 
 func NewBeaconBlockV2(log observability.ContextualLogger, event *xatu.DecoratedEvent, cache store.Cache) *BeaconBlockV2 {
@@ -119,10 +123,22 @@ func (b *BeaconBlockV2) Filter(ctx context.Context) bool {
 		}
 
 		// If the block is already in the cache, filter it out
-		return retrieved
+		if retrieved {
+			return true
+		}
+
+		// We just marked this block. Record the key so the pipeline can release it if
+		// the event fails to reach a durable sink.
+		b.markedKey = key
 	}
 
 	return false
+}
+
+// DedupKey returns the cache key marked during Filter, or an empty string if none was
+// marked (for example a block that was finalized when requested).
+func (b *BeaconBlockV2) DedupKey() string {
+	return b.markedKey
 }
 
 func (b *BeaconBlockV2) AppendServerMeta(ctx context.Context, meta *xatu.ServerMeta) *xatu.ServerMeta {

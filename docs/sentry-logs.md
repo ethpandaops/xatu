@@ -161,7 +161,7 @@ Any `--log.format` value is supported (json, terminal, logfmt). If omitted, geth
 ## Development
 
 ```bash
-# Start the dev stack (xatu-server, clickhouse, kafka, vector, sentry-logs)
+# Start the dev stack (xatu-server, clickhouse, kafka, consumoor, sentry-logs)
 make sentry-logs-dev
 
 # Log file is at: deploy/local/docker-compose/sentry-logs/logs/geth.log

@@ -209,6 +209,7 @@ type BatchItemProcessor[T any] struct {
 
 	timer         *time.Timer
 	stopWait      sync.WaitGroup
+	builderWait   sync.WaitGroup
 	stopOnce      sync.Once
 	stopCh        chan struct{}
 	stopWorkersCh chan struct{}
@@ -315,7 +316,11 @@ func (bvp *BatchItemProcessor[T]) Start(ctx context.Context) {
 		}(i)
 	}
 
+	bvp.builderWait.Add(1)
+
 	go func() {
+		defer bvp.builderWait.Done()
+
 		bvp.batchBuilder(ctx)
 		bvp.log.WithContext(ctx).Info("Batch builder exited")
 	}()
@@ -452,12 +457,26 @@ func (bvp *BatchItemProcessor[T]) Shutdown(ctx context.Context) error {
 		go func() {
 			bvp.log.WithContext(ctx).Info("Stopping processor")
 
+			// Stop accepting new items and stop the flush timer.
 			close(bvp.stopCh)
 
 			bvp.timer.Stop()
 
+			// Close the queue so the batch builder drains it and flushes its final
+			// partial batch to the workers.
 			bvp.drainQueue()
 
+			// Wait for the batch builder to finish flushing before draining the worker
+			// channel, otherwise its final partial batch would be lost.
+			bvp.builderWait.Wait()
+
+			// Wait for the workers to pick up every batch that was handed off.
+			for len(bvp.batchCh) > 0 {
+				time.Sleep(10 * time.Millisecond)
+			}
+
+			// All batches have been handed to workers; stopping them now still lets any
+			// in-flight export finish before stopWait returns.
 			close(bvp.stopWorkersCh)
 
 			bvp.stopWait.Wait()
@@ -614,19 +633,11 @@ func (bvp *BatchItemProcessor[T]) worker(ctx context.Context, number int) {
 func (bvp *BatchItemProcessor[T]) drainQueue() {
 	bvp.log.Info("Draining queue: waiting for the batch builder to process remaining items")
 
-	// First wait for queue to be processed
+	// Wait for the queued items to be consumed by the batch builder, then close the
+	// queue so the builder flushes its final partial batch and exits.
 	for len(bvp.queue) > 0 {
 		time.Sleep(10 * time.Millisecond)
 	}
-
-	bvp.log.Info("Draining queue: waiting for workers to finish processing batches")
-
-	// Then wait for any in-flight batches
-	for len(bvp.batchCh) > 0 {
-		time.Sleep(10 * time.Millisecond)
-	}
-
-	bvp.log.Info("Draining queue: all items processed")
 
 	close(bvp.queue)
 }

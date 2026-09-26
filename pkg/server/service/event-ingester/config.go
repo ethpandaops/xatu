@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ethpandaops/xatu/pkg/output"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/server/service/event-ingester/auth"
 )
 
@@ -15,6 +16,10 @@ type Config struct {
 	Authorization auth.AuthorizationConfig `yaml:"authorization"`
 	// ClientNameSalt is the salt to use for computing client names
 	ClientNameSalt string `yaml:"clientNameSalt"`
+	// Mutations are applied to every ingested event before it is handed to
+	// the outputs. Useful when the server runs as a relay that needs to
+	// re-namespace events before forwarding them upstream.
+	Mutations xatu.EventMutatorConfig `yaml:"mutations"`
 }
 
 func (c *Config) Validate() error {
@@ -32,6 +37,10 @@ func (c *Config) Validate() error {
 
 	if c.ClientNameSalt == "" {
 		return fmt.Errorf("clientNameSalt is required")
+	}
+
+	if err := c.Mutations.Validate(); err != nil {
+		return fmt.Errorf("mutations config is invalid: %w", err)
 	}
 
 	return nil

@@ -364,6 +364,76 @@ func TestWriteBatchBatchModeTransientWriteFailureFailsImpactedMessages(t *testin
 	assert.Equal(t, []int{1}, failedIndexesFromBatchError(t, msgs, err))
 }
 
+// networkNameCapturingWriter records the network name of every flushed event.
+// Names are copied at flush time because events are returned to the VT pool
+// once WriteBatch returns.
+type networkNameCapturingWriter struct {
+	testWriter
+
+	networkNames []string
+}
+
+func (w *networkNameCapturingWriter) FlushTableEvents(ctx context.Context, tableEvents map[string][]*xatu.DecoratedEvent) *clickhouse.FlushResult {
+	for _, events := range tableEvents {
+		for _, event := range events {
+			w.networkNames = append(w.networkNames, event.GetMeta().GetClient().GetEthereum().GetNetwork().GetName())
+		}
+	}
+
+	return w.testWriter.FlushTableEvents(ctx, tableEvents)
+}
+
+func TestWriteBatchAppliesMutationsBeforeWrite(t *testing.T) {
+	writer := &networkNameCapturingWriter{}
+
+	mutator, err := xatu.NewEventMutator(&xatu.EventMutatorConfig{
+		MetaNetworkName: xatu.MetaNetworkNameMutationConfig{Suffix: "--copy-1"},
+	})
+	require.NoError(t, err)
+
+	output := &xatuClickHouseOutput{
+		log:      logrus.New(),
+		encoding: "json",
+		router: newRouter(t, []route.Route{
+			testRoute{
+				eventName: xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+				table:     "beacon_head",
+			},
+		}),
+		mutator:    mutator,
+		writer:     writer,
+		metrics:    newTestMetrics(),
+		logSampler: telemetry.NewLogSampler(time.Minute),
+		rejectSink: &testRejectSink{},
+	}
+
+	event := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Id:       "evt-1",
+			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_HEAD,
+			DateTime: timestamppb.New(time.Unix(1_700_000_000, 0)),
+		},
+		Meta: &xatu.Meta{
+			Client: &xatu.ClientMeta{
+				Ethereum: &xatu.ClientMeta_Ethereum{
+					Network: &xatu.ClientMeta_Ethereum_Network{Name: "devnet-1", Id: 12345},
+				},
+			},
+		},
+	}
+
+	raw, err := protojson.Marshal(event)
+	require.NoError(t, err)
+
+	msgs := service.MessageBatch{
+		newKafkaMessage(raw, "topic-a", 0, 1),
+	}
+
+	require.NoError(t, output.WriteBatch(context.Background(), msgs))
+	assert.Equal(t, 1, writer.writes["beacon_head"])
+	assert.Equal(t, []string{"devnet-1--copy-1"}, writer.networkNames)
+}
+
 func TestWriteBatchRejectSinkFailureMakesMessageRetry(t *testing.T) {
 	output := &xatuClickHouseOutput{
 		log:        logrus.New(),

@@ -89,6 +89,16 @@ clickhouse:
 #   - BEACON_API_ETH_V1_DEBUG_FORK_CHOICE
 #   - BEACON_API_ETH_V1_DEBUG_FORK_CHOICE_V2
 
+# Optional: mutations applied to every decoded event before it is routed and
+# written to ClickHouse. Useful for enforcing a canonical network name on
+# everything this consumer persists, regardless of what producers asserted.
+# `value` is mutually exclusive with `prefix`/`suffix`.
+# mutations:
+#   metaNetworkName:
+#     value: "my-devnet"
+#     # prefix: "relay/"
+#     # suffix: "--copy-1"
+
 tracing:
   enabled: false
   endpoint: localhost:4318

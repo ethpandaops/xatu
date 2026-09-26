@@ -49,6 +49,7 @@ type xatuClickHouseOutput struct {
 	log              observability.ContextualLogger
 	encoding         string
 	router           *router.Engine
+	mutator          xatu.EventMutator
 	writer           Writer
 	metrics          *telemetry.Metrics
 	rejectSink       rejectSink
@@ -208,6 +209,10 @@ func (o *xatuClickHouseOutput) WriteBatch(
 		}
 
 		pooledEvents = append(pooledEvents, event)
+
+		if o.mutator != nil {
+			o.mutator.Mutate(event)
+		}
 
 		outcome := o.router.Route(event)
 

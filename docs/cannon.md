@@ -73,7 +73,7 @@ Cannon requires a single `yaml` config file. An example file can be found [here]
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events                                                                                             |
 | outputs | array<object> |  | List of outputs for the cannon to send data to                                                                                             |
 | outputs[].name | string |  | Name of the output                                                                                                                         |
-| outputs[].type | string |  | Type of output (`xatu`, `http`, `kafka`, `stdout`)                                                                                         |
+| outputs[].type | string |  | Type of output (`xatu`, `http`, `kafka`, `stdout`, `clickhouse`)                                                                           |
 | outputs[].config | object |  | Output type configuration [`xatu`](#output-xatu-configuration)/[`http`](#output-http-configuration)/[`kafka`](#output-kafka-configuration) |
 
 ### Output `xatu` configuration

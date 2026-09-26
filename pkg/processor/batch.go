@@ -631,25 +631,26 @@ func (bvp *BatchItemProcessor[T]) drainQueue() {
 	close(bvp.queue)
 }
 
-func recoverSendOnClosedChan() {
-	x := recover()
-
-	switch err := x.(type) {
-	case nil:
-		return
-	case runtime.Error:
-		if err.Error() == "send on closed channel" {
+func (bvp *BatchItemProcessor[T]) enqueueOrDrop(ctx context.Context, item *TraceableItem[T]) (err error) {
+	// The queue send below panics if the queue was closed during shutdown. Recover it
+	// and report the item as dropped, otherwise the caller would treat a lost item as
+	// successfully enqueued.
+	defer func() {
+		r := recover()
+		if r == nil {
 			return
 		}
-	}
 
-	panic(x)
-}
+		if re, ok := r.(runtime.Error); ok && re.Error() == "send on closed channel" {
+			bvp.metrics.IncItemsDroppedBy(bvp.name, float64(1))
 
-func (bvp *BatchItemProcessor[T]) enqueueOrDrop(ctx context.Context, item *TraceableItem[T]) error {
-	// This ensures the bvp.queue<- below does not panic as the
-	// processor shuts down.
-	defer recoverSendOnClosedChan()
+			err = errors.New("processor is shutting down")
+
+			return
+		}
+
+		panic(r)
+	}()
 
 	select {
 	case <-bvp.stopCh:

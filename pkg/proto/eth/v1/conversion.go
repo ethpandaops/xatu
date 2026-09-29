@@ -520,13 +520,13 @@ func NewBlockAccessListFromGloas(rawBAL gloas.BlockAccessList) *BlockAccessList 
 
 		// Storage changes: each slot has multiple writes keyed by tx index
 		for _, slotWrite := range access.StorageChanges {
-			slotHash := slotWrite.Slot.ToHash()
+			slotHash := slotWrite.Slot.Bytes32()
 
-			for _, write := range slotWrite.Accesses {
-				valueHash := write.ValueAfter.ToHash()
+			for _, write := range slotWrite.SlotChanges {
+				valueHash := write.PostValue.Bytes32()
 
 				entry.StorageChanges = append(entry.StorageChanges, &BlockAccessListStorageChange{
-					BlockAccessIndex: &wrapperspb.UInt32Value{Value: write.TxIdx},
+					BlockAccessIndex: &wrapperspb.UInt32Value{Value: write.BlockAccessIndex},
 					Key:              &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", slotHash)},
 					NewValue:         &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", valueHash)},
 				})
@@ -536,30 +536,30 @@ func NewBlockAccessListFromGloas(rawBAL gloas.BlockAccessList) *BlockAccessList 
 		// Balance changes
 		for _, change := range access.BalanceChanges {
 			entry.BalanceChanges = append(entry.BalanceChanges, &BlockAccessListBalanceChange{
-				BlockAccessIndex: &wrapperspb.UInt32Value{Value: change.TxIdx},
-				PostBalance:      &wrapperspb.StringValue{Value: change.Balance.String()},
+				BlockAccessIndex: &wrapperspb.UInt32Value{Value: change.BlockAccessIndex},
+				PostBalance:      &wrapperspb.StringValue{Value: change.PostBalance.String()},
 			})
 		}
 
 		// Nonce changes
 		for _, change := range access.NonceChanges {
 			entry.NonceChanges = append(entry.NonceChanges, &BlockAccessListNonceChange{
-				BlockAccessIndex: &wrapperspb.UInt32Value{Value: change.TxIdx},
-				NewNonce:         &wrapperspb.UInt64Value{Value: change.Nonce},
+				BlockAccessIndex: &wrapperspb.UInt32Value{Value: change.BlockAccessIndex},
+				NewNonce:         &wrapperspb.UInt64Value{Value: change.PostNonce},
 			})
 		}
 
 		// Code changes
 		for _, code := range access.CodeChanges {
 			entry.CodeChanges = append(entry.CodeChanges, &BlockAccessListCodeChange{
-				BlockAccessIndex: &wrapperspb.UInt32Value{Value: code.TxIndex},
-				NewCode:          &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", code.Code)},
+				BlockAccessIndex: &wrapperspb.UInt32Value{Value: code.BlockAccessIndex},
+				NewCode:          &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", code.NewCode)},
 			})
 		}
 
 		// Storage reads (read-only slots, no value or tx index)
 		for _, slot := range access.StorageReads {
-			slotHash := slot.ToHash()
+			slotHash := slot.Bytes32()
 
 			entry.StorageReads = append(entry.StorageReads, &BlockAccessListStorageRead{
 				Key: &wrapperspb.StringValue{Value: fmt.Sprintf("0x%x", slotHash)},

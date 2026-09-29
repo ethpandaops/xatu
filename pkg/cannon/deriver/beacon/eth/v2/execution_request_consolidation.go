@@ -265,11 +265,16 @@ func (b *ExecutionRequestConsolidationDeriver) getConsolidations(ctx context.Con
 		return nil, errors.Wrap(err, "failed to obtain execution requests")
 	}
 
-	if requests == nil {
+	if requests == nil || requests.IsEmpty() {
 		return consolidations, nil
 	}
 
-	for _, consolidation := range requests.Consolidations {
+	consolidationRequests, err := requests.Consolidations()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain consolidation requests")
+	}
+
+	for _, consolidation := range consolidationRequests {
 		consolidations = append(consolidations, &xatuethv1.ElectraExecutionRequestConsolidation{
 			SourceAddress: wrapperspb.String(consolidation.SourceAddress.String()),
 			SourcePubkey:  wrapperspb.String(consolidation.SourcePubkey.String()),

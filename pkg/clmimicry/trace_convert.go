@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -954,5 +955,94 @@ func ExtractExecutionClientMetadataFromGetBlobs(event *TraceEvent) (*xatu.Client
 		VersionMajor:   vMajor,
 		VersionMinor:   vMinor,
 		VersionPatch:   vPatch,
+	}, nil
+}
+
+// TraceEventToBeaconSyntheticPayloadStatusResolved converts a TraceEvent to a
+// PayloadStatusResolved protobuf message. EIP-7732 ePBS.
+func TraceEventToBeaconSyntheticPayloadStatusResolved(event *TraceEvent) (*ethv1.PayloadStatusResolved, error) {
+	typed, ok := event.Payload.(*TraceEventBeaconSyntheticPayloadStatusResolved)
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid payload type for BeaconSyntheticPayloadStatusResolved: expected *TraceEventBeaconSyntheticPayloadStatusResolved, got %T",
+			event.Payload,
+		)
+	}
+
+	return &ethv1.PayloadStatusResolved{
+		Slot:      wrapperspb.UInt64(typed.Slot),
+		BlockRoot: typed.BlockRoot,
+		BlockHash: typed.BlockHash,
+		//nolint:gosec // enum value bounded to small range (PENDING/FULL/EMPTY/INVALID).
+		Status: ethv1.PayloadStatus(int32(typed.Status)),
+		//nolint:gosec // enum value bounded to small range (PENDING/FULL/EMPTY/INVALID).
+		PreviousStatus:                 ethv1.PayloadStatus(int32(typed.PreviousStatus)),
+		PayloadTimelinessVotesPositive: wrapperspb.UInt64(typed.PayloadTimelinessVotesPositive),
+		PayloadTimelinessVotesNegative: optionalUInt64(typed.PayloadTimelinessVotesNegative),
+		PayloadTimelinessVotesAbsent:   optionalUInt64(typed.PayloadTimelinessVotesAbsent),
+		DataAvailableVotesPositive:     wrapperspb.UInt64(typed.DataAvailableVotesPositive),
+		DataAvailableVotesNegative:     optionalUInt64(typed.DataAvailableVotesNegative),
+		DataAvailableVotesAbsent:       optionalUInt64(typed.DataAvailableVotesAbsent),
+		PtcSize:                        wrapperspb.UInt64(typed.PTCSize),
+		ResolvedAt:                     timestamppb.New(typed.ResolvedAt),
+	}, nil
+}
+
+// optionalUInt64 converts a *uint64 to a *wrapperspb.UInt64Value. Returns
+// nil when the source is nil, preserving the three-state semantic from
+// consensus-specs PR #5180 (Optional[boolean] PTC votes).
+func optionalUInt64(v *uint64) *wrapperspb.UInt64Value {
+	if v == nil {
+		return nil
+	}
+
+	return wrapperspb.UInt64(*v)
+}
+
+// TraceEventToBeaconSyntheticBuilderPendingPaymentSettlement converts a TraceEvent
+// to a BuilderPendingPaymentSettlement protobuf message. EIP-7732 ePBS.
+func TraceEventToBeaconSyntheticBuilderPendingPaymentSettlement(event *TraceEvent) (*ethv1.BuilderPendingPaymentSettlement, error) {
+	typed, ok := event.Payload.(*TraceEventBeaconSyntheticBuilderPendingPaymentSettlement)
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid payload type for BeaconSyntheticBuilderPendingPaymentSettlement: expected *TraceEventBeaconSyntheticBuilderPendingPaymentSettlement, got %T",
+			event.Payload,
+		)
+	}
+
+	return &ethv1.BuilderPendingPaymentSettlement{
+		Epoch:        wrapperspb.UInt64(typed.Epoch),
+		BuilderIndex: wrapperspb.UInt64(typed.BuilderIndex),
+		FeeRecipient: typed.FeeRecipient,
+		Amount:       wrapperspb.UInt64(typed.Amount),
+		Weight:       wrapperspb.UInt64(typed.Weight),
+		Quorum:       wrapperspb.UInt64(typed.Quorum),
+		//nolint:gosec // enum value bounded to small range (SETTLED/DROPPED).
+		Outcome:    ethv1.BuilderPendingPaymentOutcome(int32(typed.Outcome)),
+		ResolvedAt: timestamppb.New(typed.ResolvedAt),
+	}, nil
+}
+
+// TraceEventToBeaconSyntheticPayloadAttestationProcessed converts a TraceEvent
+// to a PayloadAttestationProcessed protobuf message. EIP-7732 ePBS.
+func TraceEventToBeaconSyntheticPayloadAttestationProcessed(event *TraceEvent) (*ethv1.PayloadAttestationProcessed, error) {
+	typed, ok := event.Payload.(*TraceEventBeaconSyntheticPayloadAttestationProcessed)
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid payload type for BeaconSyntheticPayloadAttestationProcessed: expected *TraceEventBeaconSyntheticPayloadAttestationProcessed, got %T",
+			event.Payload,
+		)
+	}
+
+	return &ethv1.PayloadAttestationProcessed{
+		Slot:                 wrapperspb.UInt64(typed.Slot),
+		BeaconBlockRoot:      typed.BeaconBlockRoot,
+		ValidatorIndex:       wrapperspb.UInt64(typed.ValidatorIndex),
+		PayloadPresent:       typed.PayloadPresent,
+		BlobDataAvailable:    typed.BlobDataAvailable,
+		PeerId:               typed.PeerID,
+		ProcessingDurationMs: wrapperspb.UInt64(typed.ProcessingDurationMs),
+		ReceivedAt:           timestamppb.New(typed.ReceivedAt),
+		ProcessedAt:          timestamppb.New(typed.ProcessedAt),
 	}, nil
 }

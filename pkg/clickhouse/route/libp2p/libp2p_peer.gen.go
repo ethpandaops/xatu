@@ -4,7 +4,6 @@ package libp2p
 
 import (
 	"github.com/ClickHouse/ch-go/proto"
-
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )

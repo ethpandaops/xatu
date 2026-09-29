@@ -12,6 +12,7 @@ var prefixRoutes = []struct {
 	Package string
 }{
 	{"beacon_api_eth_", "beacon"},
+	{"beacon_synthetic_", "beacon"},
 	{"canonical_beacon_", "canonical"},
 	{"consensus_engine_", "execution"},
 	{"execution_block_metrics", "execution"},

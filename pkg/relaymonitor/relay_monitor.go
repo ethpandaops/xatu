@@ -40,6 +40,9 @@ type RelayMonitor struct {
 
 	sinks []output.Sink
 
+	// sinkSuppress is parallel to sinks and rate-limits per-sink send failure logs.
+	sinkSuppress []observability.Suppressor
+
 	clockDrift time.Duration
 
 	log observability.ContextualLogger
@@ -110,6 +113,7 @@ func New(ctx context.Context, log observability.ContextualLogger, config *Config
 	relayMonitor := &RelayMonitor{
 		Config:                       config,
 		sinks:                        sinks,
+		sinkSuppress:                 observability.NewSuppressors(len(sinks), 10*time.Second),
 		clockDrift:                   time.Duration(0),
 		log:                          log,
 		id:                           uuid.New(),
@@ -380,10 +384,24 @@ func (r *RelayMonitor) handleNewDecoratedEvent(ctx context.Context, event *xatu.
 
 	r.metrics.AddDecoratedEvent(1, eventType)
 
-	for _, sink := range r.sinks {
-		if err := sink.HandleNewDecoratedEvent(ctx, event); err != nil {
-			r.log.WithError(err).WithField("sink", sink.Type()).WithContext(ctx).Error("Failed to send event to sink")
+	for i, sink := range r.sinks {
+		err := sink.HandleNewDecoratedEvent(ctx, event)
+		if err == nil {
+			continue
 		}
+
+		ok, suppressed := r.sinkSuppress[i].Allow(time.Now())
+		if !ok {
+			continue
+		}
+
+		r.log.
+			WithError(err).
+			WithField("sink", sink.Type()).
+			WithField("event_type", eventType).
+			WithField("suppressed", suppressed).
+			WithContext(ctx).
+			Error("Failed to send event to sink")
 	}
 
 	return nil

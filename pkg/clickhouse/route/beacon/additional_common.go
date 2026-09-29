@@ -9,6 +9,7 @@ type beaconSlotEpochPropagationV2 interface {
 }
 
 type beaconSlotEpochPropagationAdditional struct {
+	Slot                     uint64
 	SlotStartDateTime        int64
 	PropagationSlotStartDiff uint64
 	Epoch                    uint64
@@ -24,6 +25,10 @@ func extractBeaconSlotEpochPropagation(
 	}
 
 	if slot := additionalV2.GetSlot(); slot != nil {
+		if number := slot.GetNumber(); number != nil {
+			out.Slot = number.GetValue()
+		}
+
 		if startDateTime := slot.GetStartDateTime(); startDateTime != nil {
 			out.SlotStartDateTime = startDateTime.AsTime().Unix()
 		}

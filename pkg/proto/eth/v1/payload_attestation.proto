@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+// EIP-7732: ePBS Payload Attestation types
+// https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/beacon-chain.md#payloadattestationdata
+
+package xatu.eth.v1;
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/eth/v1";
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
+
+// PayloadAttestationData is the data that PTC validators attest to.
+message PayloadAttestationData {
+  string beacon_block_root = 1 [ json_name = "beacon_block_root" ];
+
+  google.protobuf.UInt64Value slot = 2 [ json_name = "slot" ];
+
+  bool payload_present = 3 [ json_name = "payload_present" ];
+
+  bool blob_data_available = 4 [ json_name = "blob_data_available" ];
+}
+
+// PayloadAttestationMessage is an individual PTC validator's attestation.
+// ~512 of these are produced per slot.
+message PayloadAttestationMessage {
+  google.protobuf.UInt64Value validator_index = 1
+      [ json_name = "validator_index" ];
+
+  PayloadAttestationData data = 2;
+
+  string signature = 3;
+}
+
+// PayloadAttestation is the aggregated PTC attestation included in the block body.
+// Max MAX_PAYLOAD_ATTESTATIONS (4) per block.
+message PayloadAttestation {
+  // Bitvector[PTC_SIZE] (512 bits) as hex string
+  string aggregation_bits = 1 [ json_name = "aggregation_bits" ];
+
+  PayloadAttestationData data = 2;
+
+  string signature = 3;
+}
+
+// IndexedPayloadAttestation is a PayloadAttestation with attesting indices
+// expanded from the aggregation bits.
+message IndexedPayloadAttestation {
+  repeated google.protobuf.UInt64Value attesting_indices = 1
+      [ json_name = "attesting_indices" ];
+
+  PayloadAttestationData data = 2;
+
+  string signature = 3;
+}

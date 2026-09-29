@@ -47,8 +47,8 @@ type BLSToExecutionChangeDeriver struct {
 func NewBLSToExecutionChangeDeriver(log observability.ContextualLogger, config *BLSToExecutionChangeDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BLSToExecutionChangeDeriver {
 	return &BLSToExecutionChangeDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/bls_to_execution_change",
-			"type":   BLSToExecutionChangeDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/bls_to_execution_change",
+			typeLogField:   BLSToExecutionChangeDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

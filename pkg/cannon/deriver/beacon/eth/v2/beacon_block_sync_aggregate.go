@@ -60,8 +60,8 @@ func NewBeaconBlockSyncAggregateDeriver(
 ) *BeaconBlockSyncAggregateDeriver {
 	return &BeaconBlockSyncAggregateDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/beacon_block_sync_aggregate",
-			"type":   BeaconBlockSyncAggregateDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/beacon_block_sync_aggregate",
+			typeLogField:   BeaconBlockSyncAggregateDeriverName.String(),
 		}),
 		cfg:                config,
 		iterator:           iter,
@@ -365,6 +365,14 @@ func (b *BeaconBlockSyncAggregateDeriver) getSyncAggregate(
 		sa := block.Fulu.Message.Body.SyncAggregate
 		bits = sa.SyncCommitteeBits[:]
 		signature = sa.SyncCommitteeSignature[:]
+	case spec.DataVersionGloas:
+		if block.Gloas == nil || block.Gloas.Message == nil || block.Gloas.Message.Body == nil {
+			return nil, nil //nolint:nilnil // nil indicates no sync aggregate available
+		}
+
+		sa := block.Gloas.Message.Body.SyncAggregate
+		bits = sa.SyncCommitteeBits[:]
+		signature = sa.SyncCommitteeSignature[:]
 	default:
 		return nil, fmt.Errorf("unsupported block version: %s", block.Version)
 	}
@@ -449,7 +457,17 @@ func (b *BeaconBlockSyncAggregateDeriver) fetchSyncCommittee(
 		State: fmt.Sprintf("%d", boundarySlot),
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get sync committee from beacon node")
+		// Pruned (non-archive) beacons drop the period-boundary state, but every
+		// retained state in the period carries the same sync committee. Pinning
+		// the epoch makes the node error on a period mismatch rather than
+		// silently returning a different period's committee.
+		resp, err = provider.SyncCommittee(ctx, &api.SyncCommitteeOpts{
+			State: "finalized",
+			Epoch: &epoch,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get sync committee from beacon node")
+		}
 	}
 
 	if resp == nil || resp.Data == nil {

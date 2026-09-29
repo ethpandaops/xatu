@@ -616,6 +616,81 @@ func Test_handleGossipDataColumnSidecar(t *testing.T) {
 	}
 }
 
+func Test_handleGossipDataColumnSidecar_Gloas(t *testing.T) {
+	peerID, err := peer.Decode(examplePeerID)
+	require.NoError(t, err)
+
+	beaconBlockRoot := [32]byte{13, 14, 15, 16}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockSink := mock.NewMockSink(ctrl)
+	config := &Config{
+		Events: EventConfig{
+			GossipSubDataColumnSidecarEnabled: true,
+		},
+	}
+	mimicry := createTestMimicryWithWallclock(t, config, mockSink)
+
+	expectEventWithValidation(t, mockSink, func(t *testing.T, event *xatu.DecoratedEvent) {
+		t.Helper()
+
+		assert.Equal(t, xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR, event.GetEvent().GetName())
+
+		data := event.GetLibp2PTraceGossipsubDataColumnSidecar()
+		require.NotNil(t, data)
+
+		// Gloas sidecars carry index, slot and beacon_block_root directly.
+		assert.Equal(t, uint64(7), data.GetIndex().GetValue())
+		assert.Equal(t, uint64(300), data.GetSlot().GetValue())
+		assert.Equal(t, fmt.Sprintf("0x%x", beaconBlockRoot[:]), data.GetBlockRoot().GetValue())
+
+		// Header-derived fields have no source on Gloas and are left unset.
+		assert.Nil(t, data.GetProposerIndex())
+		assert.Nil(t, data.GetStateRoot())
+		assert.Nil(t, data.GetParentRoot())
+		assert.Nil(t, data.GetKzgCommitmentsCount())
+
+		additionalData := event.GetMeta().GetClient().GetLibp2PTraceGossipsubDataColumnSidecar()
+		require.NotNil(t, additionalData)
+		assert.Equal(t, uint64(300), additionalData.GetSlot().GetNumber().GetValue())
+		assert.NotNil(t, additionalData.GetEpoch())
+		assert.NotNil(t, additionalData.GetPropagation())
+		assert.Equal(t, peerID.String(), additionalData.GetMetadata().GetPeerId().GetValue())
+	})
+
+	event := &TraceEvent{
+		Type:      "HANDLE_MESSAGE",
+		PeerID:    peerID,
+		Timestamp: time.Now(),
+		Topic:     "/eth2/fc90fcde/data_column_sidecar_7/ssz_snappy",
+	}
+	event.Payload = &TraceEventDataColumnSidecar{
+		TraceEventPayloadMetaData: TraceEventPayloadMetaData{
+			Topic:   "/eth2/fc90fcde/data_column_sidecar_7/ssz_snappy",
+			MsgID:   "gloas-msg",
+			MsgSize: 1234,
+			PeerID:  peerID.String(),
+		},
+		DataColumnSidecarGloas: &ethtypes.DataColumnSidecarGloas{
+			Index:           7,
+			Slot:            primitives.Slot(300),
+			BeaconBlockRoot: beaconBlockRoot[:],
+			Column:          [][]byte{make([]byte, 2048)},
+			KzgProofs:       [][]byte{make([]byte, 48)},
+		},
+	}
+
+	err = mimicry.processor.handleHermesGossipSubEvent(
+		context.Background(),
+		event,
+		createTestClientMeta(),
+		createTestTraceMeta(),
+	)
+	assert.NoError(t, err)
+}
+
 func Test_createAdditionalGossipSubDataColumnSidecarData(t *testing.T) {
 	// Create test wallclock
 	wallclock := ethwallclock.NewEthereumBeaconChain(

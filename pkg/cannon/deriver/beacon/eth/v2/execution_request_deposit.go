@@ -264,14 +264,25 @@ func (b *ExecutionRequestDepositDeriver) getDeposits(ctx context.Context, block 
 		return nil, errors.Wrap(err, "failed to obtain execution requests")
 	}
 
-	if requests == nil {
+	if requests == nil || requests.IsEmpty() {
 		return []*xatuethv1.ElectraExecutionRequestDeposit{}, nil
 	}
 
-	converted := xatuethv1.NewElectraExecutionRequestsFromElectra(requests)
+	depositRequests, err := requests.Deposits()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain deposit requests")
+	}
 
-	deposits := make([]*xatuethv1.ElectraExecutionRequestDeposit, 0, len(converted.GetDeposits()))
-	deposits = append(deposits, converted.GetDeposits()...)
+	deposits := make([]*xatuethv1.ElectraExecutionRequestDeposit, 0, len(depositRequests))
+	for _, deposit := range depositRequests {
+		deposits = append(deposits, &xatuethv1.ElectraExecutionRequestDeposit{
+			Pubkey:                &wrapperspb.StringValue{Value: deposit.Pubkey.String()},
+			WithdrawalCredentials: &wrapperspb.StringValue{Value: fmt.Sprintf("%#x", deposit.WithdrawalCredentials)},
+			Amount:                &wrapperspb.UInt64Value{Value: uint64(deposit.Amount)},
+			Signature:             &wrapperspb.StringValue{Value: deposit.Signature.String()},
+			Index:                 &wrapperspb.UInt64Value{Value: deposit.Index},
+		})
+	}
 
 	return deposits, nil
 }

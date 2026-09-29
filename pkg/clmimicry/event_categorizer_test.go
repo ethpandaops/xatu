@@ -20,12 +20,12 @@ func TestEventCategorization(t *testing.T) {
 		t.Logf("Group %d has %d events", group, len(events))
 	}
 
-	// We should have categorized all 28 currently emitted events
-	assert.Equal(t, 28, totalEvents, "Should have exactly 28 events categorized")
+	// We should have categorized all 35 currently emitted events
+	assert.Equal(t, 35, totalEvents, "Should have exactly 35 events categorized")
 
 	// Test specific group queries
 	groupA := ec.GetGroupAEvents()
-	assert.Len(t, groupA, 11, "Group A should have 11 events")
+	assert.Len(t, groupA, 15, "Group A should have 15 events")
 
 	groupB := ec.GetGroupBEvents()
 	assert.Len(t, groupB, 7, "Group B should have 7 events")
@@ -34,7 +34,7 @@ func TestEventCategorization(t *testing.T) {
 	assert.Len(t, groupC, 2, "Group C should have 2 events")
 
 	groupD := ec.GetGroupDEvents()
-	assert.Len(t, groupD, 8, "Group D should have 8 events")
+	assert.Len(t, groupD, 11, "Group D should have 11 events")
 }
 
 func TestMetaEventIdentification(t *testing.T) {
@@ -149,6 +149,10 @@ func TestEventCompleteness(t *testing.T) {
 		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BEACON_ATTESTATION,
 		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_BLOB_SIDECAR,
 		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_DATA_COLUMN_SIDECAR,
+		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_ENVELOPE,
+		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID,
+		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE,
+		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES,
 		xatu.Event_LIBP2P_TRACE_RPC_META_MESSAGE,
 		xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IHAVE,
 		// Group B
@@ -171,6 +175,9 @@ func TestEventCompleteness(t *testing.T) {
 		xatu.Event_LIBP2P_TRACE_HANDLE_METADATA,
 		xatu.Event_LIBP2P_TRACE_HANDLE_STATUS,
 		xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT,
+		xatu.Event_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED,
+		xatu.Event_BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT,
+		xatu.Event_BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED,
 	}
 
 	// Check all events are properly categorized

@@ -47,8 +47,8 @@ type BeaconCommitteeDeriver struct {
 func NewBeaconCommitteeDeriver(log observability.ContextualLogger, config *BeaconCommitteeDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *BeaconCommitteeDeriver {
 	return &BeaconCommitteeDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v1/beacon_committee",
-			"type":   BeaconCommitteeDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v1/beacon_committee",
+			typeLogField:   BeaconCommitteeDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

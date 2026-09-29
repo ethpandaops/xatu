@@ -17,7 +17,7 @@ require (
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum/go-ethereum v1.17.6
-	github.com/ethpandaops/beacon v0.69.1-0.20260712074721-da5e1aac0890
+	github.com/ethpandaops/beacon v0.71.0
 	github.com/ethpandaops/ethcore v0.0.0-20260807105509-b0a20c27b6e7
 	github.com/ethpandaops/ethwallclock v0.4.0
 	github.com/ethpandaops/go-eth2-client v0.1.7

@@ -12885,15 +12885,15 @@ func (m *ClientMeta_EthV1BeaconStatePendingConsolidation) MarshalToSizedBufferVT
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ClientMeta_EthV2BeaconBlockAccessList) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ClientMeta_Libp2PTraceGossipsubMessagePayload) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ClientMeta_EthV2BeaconBlockAccessList) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ClientMeta_Libp2PTraceGossipsubMessagePayload) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.EthV2BeaconBlockAccessList != nil {
-		size, err := m.EthV2BeaconBlockAccessList.MarshalToSizedBufferVT(dAtA[:i])
+	if m.Libp2PTraceGossipsubMessagePayload != nil {
+		size, err := m.Libp2PTraceGossipsubMessagePayload.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -13242,15 +13242,15 @@ func (m *ClientMeta_EthV1EventsHeadV3) MarshalToSizedBufferVT(dAtA []byte) (int,
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ClientMeta_Libp2PTraceGossipsubMessagePayload) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ClientMeta_EthV2BeaconBlockAccessList) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ClientMeta_Libp2PTraceGossipsubMessagePayload) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ClientMeta_EthV2BeaconBlockAccessList) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.Libp2PTraceGossipsubMessagePayload != nil {
-		size, err := m.Libp2PTraceGossipsubMessagePayload.MarshalToSizedBufferVT(dAtA[:i])
+	if m.EthV2BeaconBlockAccessList != nil {
+		size, err := m.EthV2BeaconBlockAccessList.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -20791,15 +20791,15 @@ func (m *DecoratedEvent_EthV1BeaconStatePendingConsolidation) MarshalToSizedBuff
 	}
 	return len(dAtA) - i, nil
 }
-func (m *DecoratedEvent_EthV1EventsPayloadAttestation) MarshalToVT(dAtA []byte) (int, error) {
+func (m *DecoratedEvent_Libp2PTraceGossipsubMessagePayload) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *DecoratedEvent_EthV1EventsPayloadAttestation) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *DecoratedEvent_Libp2PTraceGossipsubMessagePayload) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.EthV1EventsPayloadAttestation != nil {
-		if vtmsg, ok := interface{}(m.EthV1EventsPayloadAttestation).(interface {
+	if m.Libp2PTraceGossipsubMessagePayload != nil {
+		if vtmsg, ok := interface{}(m.Libp2PTraceGossipsubMessagePayload).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -20809,7 +20809,7 @@ func (m *DecoratedEvent_EthV1EventsPayloadAttestation) MarshalToSizedBufferVT(dA
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		} else {
-			encoded, err := proto.Marshal(m.EthV1EventsPayloadAttestation)
+			encoded, err := proto.Marshal(m.Libp2PTraceGossipsubMessagePayload)
 			if err != nil {
 				return 0, err
 			}
@@ -21352,15 +21352,15 @@ func (m *DecoratedEvent_EthV1EventsHeadV3) MarshalToSizedBufferVT(dAtA []byte) (
 	}
 	return len(dAtA) - i, nil
 }
-func (m *DecoratedEvent_Libp2PTraceGossipsubMessagePayload) MarshalToVT(dAtA []byte) (int, error) {
+func (m *DecoratedEvent_EthV1EventsPayloadAttestation) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *DecoratedEvent_Libp2PTraceGossipsubMessagePayload) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *DecoratedEvent_EthV1EventsPayloadAttestation) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.Libp2PTraceGossipsubMessagePayload != nil {
-		if vtmsg, ok := interface{}(m.Libp2PTraceGossipsubMessagePayload).(interface {
+	if m.EthV1EventsPayloadAttestation != nil {
+		if vtmsg, ok := interface{}(m.EthV1EventsPayloadAttestation).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -21370,7 +21370,7 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubMessagePayload) MarshalToSizedBuffer
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		} else {
-			encoded, err := proto.Marshal(m.Libp2PTraceGossipsubMessagePayload)
+			encoded, err := proto.Marshal(m.EthV1EventsPayloadAttestation)
 			if err != nil {
 				return 0, err
 			}
@@ -25267,8 +25267,8 @@ func (m *ClientMeta) ResetVT() {
 		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconStatePendingConsolidation); ok {
 			oneof.EthV1BeaconStatePendingConsolidation.ReturnToVTPool()
 		}
-		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockAccessList); ok {
-			oneof.EthV2BeaconBlockAccessList.ReturnToVTPool()
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceGossipsubMessagePayload); ok {
+			oneof.Libp2PTraceGossipsubMessagePayload.ReturnToVTPool()
 		}
 		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsExecutionPayload); ok {
 			oneof.EthV1EventsExecutionPayload.ReturnToVTPool()
@@ -25318,8 +25318,8 @@ func (m *ClientMeta) ResetVT() {
 		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1EventsHeadV3); ok {
 			oneof.EthV1EventsHeadV3.ReturnToVTPool()
 		}
-		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceGossipsubMessagePayload); ok {
-			oneof.Libp2PTraceGossipsubMessagePayload.ReturnToVTPool()
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockAccessList); ok {
+			oneof.EthV2BeaconBlockAccessList.ReturnToVTPool()
 		}
 		m.Reset()
 	}
@@ -26918,8 +26918,8 @@ func (m *DecoratedEvent) ResetVT() {
 		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconStatePendingConsolidation); ok {
 			oneof.EthV1BeaconStatePendingConsolidation.ReturnToVTPool()
 		}
-		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsPayloadAttestation); ok {
-			oneof.EthV1EventsPayloadAttestation.ReturnToVTPool()
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubMessagePayload); ok {
+			oneof.Libp2PTraceGossipsubMessagePayload.ReturnToVTPool()
 		}
 		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsExecutionPayloadBid); ok {
 			oneof.EthV1EventsExecutionPayloadBid.ReturnToVTPool()
@@ -26969,8 +26969,8 @@ func (m *DecoratedEvent) ResetVT() {
 		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsHeadV3); ok {
 			oneof.EthV1EventsHeadV3.ReturnToVTPool()
 		}
-		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubMessagePayload); ok {
-			oneof.Libp2PTraceGossipsubMessagePayload.ReturnToVTPool()
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsPayloadAttestation); ok {
+			oneof.EthV1EventsPayloadAttestation.ReturnToVTPool()
 		}
 		m.Reset()
 	}
@@ -32168,14 +32168,14 @@ func (m *ClientMeta_EthV1BeaconStatePendingConsolidation) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *ClientMeta_EthV2BeaconBlockAccessList) SizeVT() (n int) {
+func (m *ClientMeta_Libp2PTraceGossipsubMessagePayload) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.EthV2BeaconBlockAccessList != nil {
-		l = m.EthV2BeaconBlockAccessList.SizeVT()
+	if m.Libp2PTraceGossipsubMessagePayload != nil {
+		l = m.Libp2PTraceGossipsubMessagePayload.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -32372,14 +32372,14 @@ func (m *ClientMeta_EthV1EventsHeadV3) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *ClientMeta_Libp2PTraceGossipsubMessagePayload) SizeVT() (n int) {
+func (m *ClientMeta_EthV2BeaconBlockAccessList) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.Libp2PTraceGossipsubMessagePayload != nil {
-		l = m.Libp2PTraceGossipsubMessagePayload.SizeVT()
+	if m.EthV2BeaconBlockAccessList != nil {
+		l = m.EthV2BeaconBlockAccessList.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -35948,19 +35948,19 @@ func (m *DecoratedEvent_EthV1BeaconStatePendingConsolidation) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *DecoratedEvent_EthV1EventsPayloadAttestation) SizeVT() (n int) {
+func (m *DecoratedEvent_Libp2PTraceGossipsubMessagePayload) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.EthV1EventsPayloadAttestation != nil {
-		if size, ok := interface{}(m.EthV1EventsPayloadAttestation).(interface {
+	if m.Libp2PTraceGossipsubMessagePayload != nil {
+		if size, ok := interface{}(m.Libp2PTraceGossipsubMessagePayload).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
 		} else {
-			l = proto.Size(m.EthV1EventsPayloadAttestation)
+			l = proto.Size(m.Libp2PTraceGossipsubMessagePayload)
 		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -36254,19 +36254,19 @@ func (m *DecoratedEvent_EthV1EventsHeadV3) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *DecoratedEvent_Libp2PTraceGossipsubMessagePayload) SizeVT() (n int) {
+func (m *DecoratedEvent_EthV1EventsPayloadAttestation) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.Libp2PTraceGossipsubMessagePayload != nil {
-		if size, ok := interface{}(m.Libp2PTraceGossipsubMessagePayload).(interface {
+	if m.EthV1EventsPayloadAttestation != nil {
+		if size, ok := interface{}(m.EthV1EventsPayloadAttestation).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
 		} else {
-			l = proto.Size(m.Libp2PTraceGossipsubMessagePayload)
+			l = proto.Size(m.EthV1EventsPayloadAttestation)
 		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -67524,7 +67524,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 107:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EthV2BeaconBlockAccessList", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Libp2PTraceGossipsubMessagePayload", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -67551,16 +67551,16 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockAccessList); ok {
-				if err := oneof.EthV2BeaconBlockAccessList.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceGossipsubMessagePayload); ok {
+				if err := oneof.Libp2PTraceGossipsubMessagePayload.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := ClientMeta_AdditionalEthV2BeaconBlockAccessListDataFromVTPool()
+				v := ClientMeta_AdditionalLibP2PTraceGossipSubMessagePayloadDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.AdditionalData = &ClientMeta_EthV2BeaconBlockAccessList{EthV2BeaconBlockAccessList: v}
+				m.AdditionalData = &ClientMeta_Libp2PTraceGossipsubMessagePayload{Libp2PTraceGossipsubMessagePayload: v}
 			}
 			iNdEx = postIndex
 		case 108:
@@ -68221,7 +68221,7 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 124:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Libp2PTraceGossipsubMessagePayload", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV2BeaconBlockAccessList", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -68248,16 +68248,16 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceGossipsubMessagePayload); ok {
-				if err := oneof.Libp2PTraceGossipsubMessagePayload.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockAccessList); ok {
+				if err := oneof.EthV2BeaconBlockAccessList.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := ClientMeta_AdditionalLibP2PTraceGossipSubMessagePayloadDataFromVTPool()
+				v := ClientMeta_AdditionalEthV2BeaconBlockAccessListDataFromVTPool()
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.AdditionalData = &ClientMeta_Libp2PTraceGossipsubMessagePayload{Libp2PTraceGossipsubMessagePayload: v}
+				m.AdditionalData = &ClientMeta_EthV2BeaconBlockAccessList{EthV2BeaconBlockAccessList: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -86142,7 +86142,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 240:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EthV1EventsPayloadAttestation", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Libp2PTraceGossipsubMessagePayload", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -86169,20 +86169,20 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsPayloadAttestation); ok {
-				if unmarshal, ok := interface{}(oneof.EthV1EventsPayloadAttestation).(interface {
+			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubMessagePayload); ok {
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceGossipsubMessagePayload).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 						return err
 					}
 				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.EthV1EventsPayloadAttestation); err != nil {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGossipsubMessagePayload); err != nil {
 						return err
 					}
 				}
 			} else {
-				v := v1.PayloadAttestationMessageFromVTPool()
+				v := gossipsub.MessagePayloadFromVTPool()
 				if unmarshal, ok := interface{}(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
@@ -86194,7 +86194,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 						return err
 					}
 				}
-				m.Data = &DecoratedEvent_EthV1EventsPayloadAttestation{EthV1EventsPayloadAttestation: v}
+				m.Data = &DecoratedEvent_Libp2PTraceGossipsubMessagePayload{Libp2PTraceGossipsubMessagePayload: v}
 			}
 			iNdEx = postIndex
 		case 241:
@@ -87111,7 +87111,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 257:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Libp2PTraceGossipsubMessagePayload", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1EventsPayloadAttestation", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -87138,20 +87138,20 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubMessagePayload); ok {
-				if unmarshal, ok := interface{}(oneof.Libp2PTraceGossipsubMessagePayload).(interface {
+			if oneof, ok := m.Data.(*DecoratedEvent_EthV1EventsPayloadAttestation); ok {
+				if unmarshal, ok := interface{}(oneof.EthV1EventsPayloadAttestation).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 						return err
 					}
 				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGossipsubMessagePayload); err != nil {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.EthV1EventsPayloadAttestation); err != nil {
 						return err
 					}
 				}
 			} else {
-				v := gossipsub.MessagePayloadFromVTPool()
+				v := v1.PayloadAttestationMessageFromVTPool()
 				if unmarshal, ok := interface{}(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
@@ -87163,7 +87163,7 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 						return err
 					}
 				}
-				m.Data = &DecoratedEvent_Libp2PTraceGossipsubMessagePayload{Libp2PTraceGossipsubMessagePayload: v}
+				m.Data = &DecoratedEvent_EthV1EventsPayloadAttestation{EthV1EventsPayloadAttestation: v}
 			}
 			iNdEx = postIndex
 		default:

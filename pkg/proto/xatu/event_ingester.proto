@@ -2262,9 +2262,8 @@ message ClientMeta {
     // AdditionalEthV1BeaconStatePendingConsolidationData contains additional data about an Electra pending consolidation queue entry.
     AdditionalEthV1BeaconStatePendingConsolidationData eth_v1_beacon_state_pending_consolidation = 106 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION" ];
 
-    // AdditionalEthV2BeaconBlockAccessListData contains additional data on
-    // block access list entries derived from beacon blocks.
-    AdditionalEthV2BeaconBlockAccessListData eth_v2_beacon_block_access_list = 107 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
+    // AdditionalLibP2PTraceGossipSubMessagePayloadData contains additional data about a raw gossipsub message payload event.
+    AdditionalLibP2PTraceGossipSubMessagePayloadData libp2p_trace_gossipsub_message_payload = 107 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_MESSAGE_PAYLOAD" ];
 
     // EIP-7732 ePBS: Sentry SSE additional data
     AdditionalEthV1EventsExecutionPayloadData eth_v1_events_execution_payload = 108 [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
@@ -2293,10 +2292,9 @@ message ClientMeta {
     AdditionalBeaconSyntheticPayloadAttestationProcessedData beacon_synthetic_payload_attestation_processed = 122 [ json_name = "BEACON_SYNTHETIC_PAYLOAD_ATTESTATION_PROCESSED" ];
     AdditionalEthV1EventsHeadV3Data eth_v1_events_head_v3 = 123 [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD_V3" ];
 
-    // AdditionalLibP2PTraceGossipSubMessagePayloadData contains additional data about a raw gossipsub message payload event.
-    // NOTE: field 124 here vs 107 on master — this branch had already assigned
-    // 107-123 to the ePBS fields above. Reconcile when the branches converge.
-    AdditionalLibP2PTraceGossipSubMessagePayloadData libp2p_trace_gossipsub_message_payload = 124 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_MESSAGE_PAYLOAD" ];
+    // AdditionalEthV2BeaconBlockAccessListData contains additional data on
+    // block access list entries derived from beacon blocks.
+    AdditionalEthV2BeaconBlockAccessListData eth_v2_beacon_block_access_list = 124 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2546,9 +2544,9 @@ message Event {
     BEACON_API_ETH_V1_BEACON_STATE_PENDING_DEPOSIT = 116;
     BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL = 117;
     BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION = 118;
+    LIBP2P_TRACE_GOSSIPSUB_MESSAGE_PAYLOAD = 119;
 
     // EIP-7732 ePBS: Sentry SSE events
-    BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION = 119;
     BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID = 120;
     BEACON_API_ETH_V1_EVENTS_PROPOSER_PREFERENCES = 121;
     BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_GOSSIP = 122;
@@ -2576,10 +2574,7 @@ message Event {
     // The beacon-API head_v2 SSE topic (gloas); V3 because
     // BEACON_API_ETH_V1_EVENTS_HEAD_V2 is the schema rev of the v1 topic.
     BEACON_API_ETH_V1_EVENTS_HEAD_V3 = 135;
-
-    // NOTE: 136 here vs 119 on master — this branch had already assigned
-    // 119-135 to the ePBS events above. Reconcile when the branches converge.
-    LIBP2P_TRACE_GOSSIPSUB_MESSAGE_PAYLOAD = 136;
+    BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION = 136;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -3273,10 +3268,10 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL" ];
     PendingConsolidationData eth_v1_beacon_state_pending_consolidation = 239
         [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION" ];
+    xatu.libp2p.gossipsub.eth.MessagePayload libp2p_trace_gossipsub_message_payload = 240
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_MESSAGE_PAYLOAD" ];
 
     // EIP-7732 ePBS: Sentry SSE events
-    xatu.eth.v1.PayloadAttestationMessage eth_v1_events_payload_attestation = 240
-        [ json_name = "BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION" ];
     xatu.eth.v1.SignedExecutionPayloadBid eth_v1_events_execution_payload_bid = 241
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD_BID" ];
     xatu.eth.v1.SignedProposerPreferences eth_v1_events_proposer_preferences = 242
@@ -3318,11 +3313,8 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V1_EVENTS_EXECUTION_PAYLOAD" ];
     xatu.eth.v1.EventHeadV3 eth_v1_events_head_v3 = 256
         [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD_V3" ];
-
-    // NOTE: field 257 here vs 240 on master — this branch had already assigned
-    // 240-256 to the ePBS fields above. Reconcile when the branches converge.
-    xatu.libp2p.gossipsub.eth.MessagePayload libp2p_trace_gossipsub_message_payload = 257
-        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_MESSAGE_PAYLOAD" ];
+    xatu.eth.v1.PayloadAttestationMessage eth_v1_events_payload_attestation = 257
+        [ json_name = "BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION" ];
   };
 }
 

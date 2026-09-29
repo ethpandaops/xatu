@@ -123,14 +123,14 @@ jobs:
           --hostname xatu-minio \
           -e MINIO_ROOT_USER=minioadmin \
           -e MINIO_ROOT_PASSWORD=minioadmin \
-          minio/minio:RELEASE.2024-09-13T20-26-02Z \
+          pgsty/minio:RELEASE.2026-08-04T00-00-00Z \
           server /data
 
         echo "Waiting for MinIO and creating bucket..."
         for i in $(seq 1 30); do
           if docker run --rm --network xatu_xatu-net \
               --entrypoint sh \
-              minio/mc:RELEASE.2024-09-16T17-43-14Z \
+              pgsty/mc:RELEASE.2026-09-16T00-00-00Z \
               -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin && mc mb --ignore-existing local/xatu-blobs" \
               >/dev/null 2>&1; then
             echo "MinIO is ready and bucket created."
@@ -366,7 +366,7 @@ jobs:
         for i in $(seq 1 "$MAX_ATTEMPTS"); do
           STAT=$(docker run --rm --network xatu_xatu-net \
             --entrypoint sh \
-            minio/mc:RELEASE.2024-09-16T17-43-14Z \
+            pgsty/mc:RELEASE.2026-09-16T00-00-00Z \
             -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc stat --json local/xatu-blobs/${EXPECTED_KEY} 2>/dev/null" \
             || true)
 
@@ -381,7 +381,7 @@ jobs:
             echo "=== Available keys under ${NETWORK_NAME}/ ==="
             docker run --rm --network xatu_xatu-net \
               --entrypoint sh \
-              minio/mc:RELEASE.2024-09-16T17-43-14Z \
+              pgsty/mc:RELEASE.2026-09-16T00-00-00Z \
               -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc ls --recursive local/xatu-blobs/${NETWORK_NAME}/" || true
             echo "=== xatu-cannon logs (last 100) ==="
             docker logs xatu-cannon 2>&1 | tail -100
@@ -402,7 +402,7 @@ jobs:
 
         docker run --rm --network xatu_xatu-net \
           --entrypoint sh \
-          minio/mc:RELEASE.2024-09-16T17-43-14Z \
+          pgsty/mc:RELEASE.2026-09-16T00-00-00Z \
           -c "mc alias set local http://xatu-minio:9000 minioadmin minioadmin >/dev/null && mc cat local/xatu-blobs/${EXPECTED_KEY}" \
           > "$TMP_GZ"
 

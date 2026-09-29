@@ -13,6 +13,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -51,8 +52,8 @@ const (
 func NewExecutionTransactionDeriver(log observability.ContextualLogger, config *ExecutionTransactionDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ExecutionTransactionDeriver {
 	return &ExecutionTransactionDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v2/execution_transaction",
-			"type":   ExecutionTransactionDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v2/execution_transaction",
+			typeLogField:   ExecutionTransactionDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,
@@ -244,18 +245,25 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	if block.Version >= spec.DataVersionDeneb {
 		sidecars, errr := b.beacon.Node().FetchBeaconBlockBlobs(ctx, xatuethv1.SlotAsString(slot))
 		if errr != nil {
-			var apiErr *api.Error
-			if errors.As(errr, &apiErr) {
-				switch apiErr.StatusCode {
-				case 404:
-					b.log.WithError(errr).WithField("slot", slot).WithContext(ctx).Debug("no beacon block blob sidecars found for slot")
-				case 503:
-					return nil, errors.New("beacon node is syncing")
-				default:
+			// From Gloas (EIP-7732) blobs are only obtainable by reconstruction
+			// from data columns, which not all clients serve reliably. Blob size
+			// stats are best-effort there — never block the transaction dataset.
+			if block.Version >= spec.DataVersionGloas {
+				b.log.WithError(errr).WithField("slot", slot).WithContext(ctx).Debug("failed to get blob sidecars for gloas block, continuing without blob stats")
+			} else {
+				var apiErr *api.Error
+				if errors.As(errr, &apiErr) {
+					switch apiErr.StatusCode {
+					case 404:
+						b.log.WithError(errr).WithField("slot", slot).WithContext(ctx).Debug("no beacon block blob sidecars found for slot")
+					case 503:
+						return nil, errors.New("beacon node is syncing")
+					default:
+						return nil, errors.Wrapf(errr, "failed to get beacon block blob sidecars for slot %d", slot)
+					}
+				} else {
 					return nil, errors.Wrapf(errr, "failed to get beacon block blob sidecars for slot %d", slot)
 				}
-			} else {
-				return nil, errors.Wrapf(errr, "failed to get beacon block blob sidecars for slot %d", slot)
 			}
 		}
 
@@ -271,7 +279,23 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 
 	events := []*xatu.DecoratedEvent{}
 
-	transactions, err := b.getExecutionTransactions(ctx, block)
+	// EIP-7732: under ePBS the execution payload (transactions, base fee, etc.)
+	// arrives in a separate ExecutionPayloadEnvelope. Fetch it once here so
+	// downstream helpers (getExecutionTransactions, GetGasPrice) can read from
+	// it. envelope==nil means the builder withheld the payload — emit nothing.
+	var envelope *gloas.SignedExecutionPayloadEnvelope
+	if block.Version >= spec.DataVersionGloas {
+		envelope, err = b.beacon.GetExecutionPayloadEnvelope(ctx, xatuethv1.SlotAsString(slot))
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get execution payload envelope for slot %d", slot)
+		}
+
+		if envelope == nil || envelope.Message == nil || envelope.Message.Payload == nil {
+			return events, nil
+		}
+	}
+
+	transactions, err := b.getExecutionTransactions(ctx, block, envelope)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +313,7 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 			return nil, fmt.Errorf("failed to get transaction sender: %v", err)
 		}
 
-		gasPrice, err := GetGasPrice(block, transaction)
+		gasPrice, err := GetGasPrice(block, transaction, envelope)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get transaction gas price: %v", err)
 		}
@@ -365,17 +389,43 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	return events, nil
 }
 
-func (b *ExecutionTransactionDeriver) getExecutionTransactions(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*types.Transaction, error) {
-	transactions := []*types.Transaction{}
+func (b *ExecutionTransactionDeriver) getExecutionTransactions(
+	ctx context.Context,
+	block *spec.VersionedSignedBeaconBlock,
+	envelope *gloas.SignedExecutionPayloadEnvelope,
+) ([]*types.Transaction, error) {
+	var rawTxs [][]byte
 
-	txs, err := block.ExecutionTransactions()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get execution transactions: %v", err)
+	switch {
+	case block.Version >= spec.DataVersionGloas:
+		// EIP-7732: transactions live in the envelope's payload, not the body.
+		// Caller is responsible for fetching the envelope and short-circuiting
+		// when it is absent; by the time we get here it must be populated.
+		if envelope == nil || envelope.Message == nil || envelope.Message.Payload == nil {
+			return nil, errors.New("gloas envelope required to source transactions but was nil")
+		}
+
+		rawTxs = make([][]byte, len(envelope.Message.Payload.Transactions))
+		for i, tx := range envelope.Message.Payload.Transactions {
+			rawTxs[i] = tx
+		}
+	default:
+		txs, err := block.ExecutionTransactions()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get execution transactions: %v", err)
+		}
+
+		rawTxs = make([][]byte, len(txs))
+		for i, tx := range txs {
+			rawTxs[i] = tx
+		}
 	}
 
-	for _, transaction := range txs {
+	transactions := make([]*types.Transaction, 0, len(rawTxs))
+
+	for _, raw := range rawTxs {
 		ethTransaction := new(types.Transaction)
-		if err := ethTransaction.UnmarshalBinary(transaction); err != nil {
+		if err := ethTransaction.UnmarshalBinary(raw); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal transaction: %v", err)
 		}
 
@@ -420,7 +470,14 @@ func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transacti
 	return decoratedEvent, nil
 }
 
-func GetGasPrice(block *spec.VersionedSignedBeaconBlock, transaction *types.Transaction) (*big.Int, error) {
+// GetGasPrice computes the effective gas price for a transaction. For Gloas+
+// (EIP-7732) blocks the base fee comes from the envelope's payload; envelope
+// must be supplied by the caller in that case.
+func GetGasPrice(
+	block *spec.VersionedSignedBeaconBlock,
+	transaction *types.Transaction,
+	envelope *gloas.SignedExecutionPayloadEnvelope,
+) (*big.Int, error) {
 	if transaction.Type() == 0 || transaction.Type() == 1 {
 		return transaction.GasPrice(), nil
 	}
@@ -447,6 +504,12 @@ func GetGasPrice(block *spec.VersionedSignedBeaconBlock, transaction *types.Tran
 		case spec.DataVersionFulu:
 			executionPayload := block.Fulu.Message.Body.ExecutionPayload
 			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
+		case spec.DataVersionGloas:
+			if envelope == nil || envelope.Message == nil || envelope.Message.Payload == nil {
+				return nil, errors.New("gloas envelope required to compute gas price but was nil")
+			}
+
+			baseFee.SetBytes(envelope.Message.Payload.BaseFeePerGas.Bytes())
 		default:
 			return nil, fmt.Errorf("unknown block version: %d", block.Version)
 		}

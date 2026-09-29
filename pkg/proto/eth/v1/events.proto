@@ -43,6 +43,32 @@ message EventHeadV2 {
       [ json_name = "current_duty_dependent_root" ];
 }
 
+// EventHeadV3 carries the beacon-API head_v2 SSE topic (gloas): relative to
+// head it drops previous_duty_dependent_root, renames
+// current_duty_dependent_root to current_epoch_dependent_root, and adds
+// payload_status, next_epoch_dependent_root and execution_optimistic. The
+// topic fires twice for the same head when payload_status transitions from
+// empty to full. (V3 because EventHeadV2 is the schema rev of the v1 topic.)
+message EventHeadV3 {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
+
+  string block = 2;
+
+  string state = 3;
+
+  string payload_status = 4 [ json_name = "payload_status" ];
+
+  bool epoch_transition = 5 [ json_name = "epoch_transition" ];
+
+  string current_epoch_dependent_root = 6
+      [ json_name = "current_epoch_dependent_root" ];
+
+  string next_epoch_dependent_root = 7
+      [ json_name = "next_epoch_dependent_root" ];
+
+  bool execution_optimistic = 8 [ json_name = "execution_optimistic" ];
+}
+
 message EventBlock {
   uint64 slot = 1;
 

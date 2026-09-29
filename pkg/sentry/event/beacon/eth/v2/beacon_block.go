@@ -182,16 +182,20 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Add
 		}
 	}
 
-	transactions, err := e.event.ExecutionTransactions()
-	if err != nil {
-		e.log.WithError(err).Warn("Failed to get execution transactions")
-	} else {
-		txs := make([][]byte, len(transactions))
-		for i, tx := range transactions {
-			txs[i] = tx
-		}
+	// Gloas (EIP-7732) block bodies carry no transactions — they live in the
+	// execution payload envelope. The body-level stats are legitimately zero.
+	if e.event.Version < spec.DataVersionGloas {
+		transactions, err := e.event.ExecutionTransactions()
+		if err != nil {
+			e.log.WithError(err).Warn("Failed to get execution transactions")
+		} else {
+			txs := make([][]byte, len(transactions))
+			for i, tx := range transactions {
+				txs[i] = tx
+			}
 
-		addTxData(txs)
+			addTxData(txs)
+		}
 	}
 
 	compressedTransactions := snappy.Encode(nil, transactionsBytes)
@@ -220,6 +224,8 @@ func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, err
 		return block.Electra.Message, nil
 	case spec.DataVersionFulu:
 		return block.Fulu.Message, nil
+	case spec.DataVersionGloas:
+		return block.Gloas.Message, nil
 	default:
 		return nil, fmt.Errorf("unsupported block version: %s", block.Version)
 	}

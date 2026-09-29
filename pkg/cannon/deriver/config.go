@@ -44,6 +44,11 @@ type ConsensusConfig struct {
 	BeaconStatePendingDepositConfig           v1.BeaconStatePendingDepositDeriverConfig           `yaml:"beaconStatePendingDeposit"`
 	BeaconStatePendingPartialWithdrawalConfig v1.BeaconStatePendingPartialWithdrawalDeriverConfig `yaml:"beaconStatePendingPartialWithdrawal"`
 	BeaconStatePendingConsolidationConfig     v1.BeaconStatePendingConsolidationDeriverConfig     `yaml:"beaconStatePendingConsolidation"`
+
+	// EIP-7732 ePBS + EIP-7928 BAL derivers (Gloas).
+	BlockAccessListConfig     v2.BlockAccessListDeriverConfig     `yaml:"blockAccessList"`
+	PayloadAttestationConfig  v2.PayloadAttestationDeriverConfig  `yaml:"payloadAttestation"`
+	ExecutionPayloadBidConfig v2.ExecutionPayloadBidDeriverConfig `yaml:"executionPayloadBid"`
 }
 
 func (c *Config) Validate() error {

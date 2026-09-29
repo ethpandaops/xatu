@@ -53,8 +53,8 @@ func NewBeaconSyncCommitteeDeriver(
 ) *BeaconSyncCommitteeDeriver {
 	return &BeaconSyncCommitteeDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v1/beacon_sync_committee",
-			"type":   BeaconSyncCommitteeDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v1/beacon_sync_committee",
+			typeLogField:   BeaconSyncCommitteeDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

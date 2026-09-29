@@ -17,6 +17,16 @@ import (
 	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
+var (
+	// ErrQueueFull is returned by Write when an item is dropped because the
+	// processor's queue is at capacity.
+	ErrQueueFull = errors.New("queue is full")
+
+	// ErrShuttingDown is returned by Write when an item is rejected because
+	// the processor is stopping.
+	ErrShuttingDown = errors.New("processor is shutting down")
+)
+
 // ItemExporter is an interface for exporting items.
 type ItemExporter[T any] interface {
 	// ExportItems exports a batch of items.
@@ -653,7 +663,7 @@ func (bvp *BatchItemProcessor[T]) enqueueOrDrop(ctx context.Context, item *Trace
 
 	select {
 	case <-bvp.stopCh:
-		return errors.New("processor is shutting down")
+		return ErrShuttingDown
 	default:
 	}
 
@@ -666,5 +676,5 @@ func (bvp *BatchItemProcessor[T]) enqueueOrDrop(ctx context.Context, item *Trace
 		bvp.metrics.IncItemsDroppedBy(bvp.name, float64(1))
 	}
 
-	return errors.New("queue is full")
+	return ErrQueueFull
 }

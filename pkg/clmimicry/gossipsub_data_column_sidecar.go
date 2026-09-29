@@ -21,25 +21,9 @@ func (p *Processor) handleGossipDataColumnSidecar(
 	event *TraceEvent,
 	payload *TraceEventDataColumnSidecar,
 ) error {
-	if payload.DataColumnSidecar == nil {
-		return fmt.Errorf("handleGossipDataColumnSidecar() called with nil data column sidecar")
-	}
-
-	header := payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader()
-
-	blockRoot, err := header.HashTreeRoot()
+	data, err := dataColumnSidecarProto(payload)
 	if err != nil {
-		return fmt.Errorf("failed to calculate block header hash tree root: %w", err)
-	}
-
-	data := &gossipsub.DataColumnSidecar{
-		Index:               wrapperspb.UInt64(payload.DataColumnSidecar.GetIndex()),
-		Slot:                wrapperspb.UInt64(uint64(header.GetSlot())),
-		ProposerIndex:       wrapperspb.UInt64(uint64(header.GetProposerIndex())),
-		StateRoot:           wrapperspb.String(fmt.Sprintf("0x%x", header.GetStateRoot())),
-		ParentRoot:          wrapperspb.String(fmt.Sprintf("0x%x", header.GetParentRoot())),
-		BlockRoot:           wrapperspb.String(fmt.Sprintf("0x%x", blockRoot)),
-		KzgCommitmentsCount: wrapperspb.UInt32(uint32(len(payload.DataColumnSidecar.GetKzgCommitments()))), //nolint:gosec // conversion fine.
+		return err
 	}
 
 	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
@@ -83,9 +67,13 @@ func (p *Processor) createAdditionalGossipSubDataColumnSidecarData(
 		return nil, fmt.Errorf("failed to get wallclock time: %w", err)
 	}
 
-	slotNumber := payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader().GetSlot()
-	slot := p.wallclock.Slots().FromNumber(uint64(slotNumber))
-	epoch := p.wallclock.Epochs().FromSlot(uint64(slotNumber))
+	slotNumber, err := dataColumnSidecarSlot(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	slot := p.wallclock.Slots().FromNumber(slotNumber)
+	epoch := p.wallclock.Epochs().FromSlot(slotNumber)
 	timestampAdjusted := timestamp.Add(p.clockDrift)
 
 	return &xatu.ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData{
@@ -102,7 +90,7 @@ func (p *Processor) createAdditionalGossipSubDataColumnSidecarData(
 			StartDateTime: timestamppb.New(epoch.TimeWindow().Start()),
 		},
 		Slot: &xatu.SlotV2{
-			Number:        wrapperspb.UInt64(uint64(slotNumber)),
+			Number:        wrapperspb.UInt64(slotNumber),
 			StartDateTime: timestamppb.New(slot.TimeWindow().Start()),
 		},
 		Propagation: &xatu.PropagationV2{
@@ -115,4 +103,56 @@ func (p *Processor) createAdditionalGossipSubDataColumnSidecarData(
 		MessageSize: wrapperspb.UInt32(uint32(payload.MsgSize)),
 		MessageId:   wrapperspb.String(payload.MsgID),
 	}, nil
+}
+
+// dataColumnSidecarProto projects a data column sidecar payload onto the
+// gossipsub summary proto, handling both fork shapes.
+//
+// Gloas sidecars (EIP-7732) drop the signed block header, so proposer_index,
+// state_root, parent_root and kzg_commitments_count have no source and are
+// left unset; slot and block_root are carried directly on the sidecar.
+func dataColumnSidecarProto(payload *TraceEventDataColumnSidecar) (*gossipsub.DataColumnSidecar, error) {
+	switch {
+	case payload.DataColumnSidecarGloas != nil:
+		sidecar := payload.DataColumnSidecarGloas
+
+		return &gossipsub.DataColumnSidecar{
+			Index:     wrapperspb.UInt64(sidecar.GetIndex()),
+			Slot:      wrapperspb.UInt64(uint64(sidecar.GetSlot())),
+			BlockRoot: wrapperspb.String(fmt.Sprintf("0x%x", sidecar.GetBeaconBlockRoot())),
+		}, nil
+	case payload.DataColumnSidecar != nil:
+		header := payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader()
+
+		blockRoot, err := header.HashTreeRoot()
+		if err != nil {
+			return nil, fmt.Errorf("failed to calculate block header hash tree root: %w", err)
+		}
+
+		return &gossipsub.DataColumnSidecar{
+			Index:               wrapperspb.UInt64(payload.DataColumnSidecar.GetIndex()),
+			Slot:                wrapperspb.UInt64(uint64(header.GetSlot())),
+			ProposerIndex:       wrapperspb.UInt64(uint64(header.GetProposerIndex())),
+			StateRoot:           wrapperspb.String(fmt.Sprintf("0x%x", header.GetStateRoot())),
+			ParentRoot:          wrapperspb.String(fmt.Sprintf("0x%x", header.GetParentRoot())),
+			BlockRoot:           wrapperspb.String(fmt.Sprintf("0x%x", blockRoot)),
+			KzgCommitmentsCount: wrapperspb.UInt32(uint32(len(payload.DataColumnSidecar.GetKzgCommitments()))), //nolint:gosec // conversion fine.
+		}, nil
+	default:
+		return nil, fmt.Errorf("handleGossipDataColumnSidecar() called with nil data column sidecar")
+	}
+}
+
+// dataColumnSidecarSlot returns the slot of a data column sidecar payload,
+// reading it from the Gloas sidecar directly or from the Fulu sidecar's
+// signed block header.
+func dataColumnSidecarSlot(payload *TraceEventDataColumnSidecar) (uint64, error) {
+	switch {
+	case payload.DataColumnSidecarGloas != nil:
+		return uint64(payload.DataColumnSidecarGloas.GetSlot()), nil
+	case payload.DataColumnSidecar != nil:
+		return uint64(payload.DataColumnSidecar.GetSignedBlockHeader().GetHeader().GetSlot()), nil
+	default:
+		return 0, fmt.Errorf("handleGossipDataColumnSidecar() called with nil data column sidecar")
+	}
 }

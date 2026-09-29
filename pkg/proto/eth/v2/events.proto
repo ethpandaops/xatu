@@ -24,6 +24,8 @@ enum BlockVersion {
   ELECTRA = 6;
 
   FULU = 7;
+
+  GLOAS = 8;
 }
 
 message EventBlock {
@@ -41,6 +43,8 @@ message EventBlock {
     v2.BeaconBlockElectra electra_block = 8 [ json_name = "ELECTRA" ];
 
     v2.BeaconBlockFulu fulu_block = 9 [ json_name = "FULU" ];
+
+    v2.BeaconBlockGloas gloas_block = 10 [ json_name = "GLOAS" ];
   }
 
   string signature = 5;
@@ -62,7 +66,9 @@ message EventBlockV2 {
 
     v2.BeaconBlockElectra electra_block = 8 [ json_name = "ELECTRA" ];
 
-    v2.BeaconBlockFulu fulu_block = 9 [ json_name = "FULU" ]; 
+    v2.BeaconBlockFulu fulu_block = 9 [ json_name = "FULU" ];
+
+    v2.BeaconBlockGloas gloas_block = 10 [ json_name = "GLOAS" ];
   }
 
   string signature = 5;

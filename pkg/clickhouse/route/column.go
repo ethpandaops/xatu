@@ -52,6 +52,21 @@ func NormalizeIPToIPv6Nullable(raw string) proto.Nullable[proto.IPv6] {
 	return proto.NewNullable[proto.IPv6](proto.ToIPv6(addr))
 }
 
+// BuilderIndexSelfBuilt is the UInt64-max sentinel beacon nodes emit for
+// `builder_index` on an EIP-7732 payload the proposer built itself. It is a
+// wire-level "absent" marker, not a real index into the builder registry.
+const BuilderIndexSelfBuilt uint64 = math.MaxUint64
+
+// NullableBuilderIndex maps a raw ePBS builder index to a Nullable, turning the
+// self-built sentinel into NULL so it does not skew aggregates over the column.
+func NullableBuilderIndex(raw uint64) proto.Nullable[uint64] {
+	if raw == BuilderIndexSelfBuilt {
+		return proto.Nullable[uint64]{}
+	}
+
+	return proto.NewNullable[uint64](raw)
+}
+
 // NormalizeConsensusVersion strips the implementation prefix from a
 // consensus version string (e.g. "Lighthouse/v4.5.0" -> "v4.5.0").
 func NormalizeConsensusVersion(raw string) string {

@@ -205,6 +205,16 @@ func (e *ValidatorBlock) getAdditionalData() (*xatu.ClientMeta_AdditionalEthV3Va
 		}
 
 		addTxData(fuluTxs)
+	case spec.DataVersionGloas:
+		// EIP-7732: the proposed Gloas block body has no inline ExecutionPayload —
+		// transactions arrive separately via the ExecutionPayloadEnvelope after the
+		// builder reveals it. At validator-proposal time the envelope isn't published
+		// yet, so block size is the body-only size and tx-related counts stay zero
+		// (cannon's envelope-sourced derivers fill in tx data downstream).
+		totalBytes, totalBytesCompressed, err = computeBlockSize(e.event.Gloas.Body)
+		if err != nil {
+			e.log.WithError(err).Warn("Failed to compute gloas block size")
+		}
 
 	default:
 		e.log.WithError(err).Warn("Failed to get block message to compute block size. Missing fork version?")

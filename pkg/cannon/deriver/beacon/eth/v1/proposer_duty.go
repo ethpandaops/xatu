@@ -48,8 +48,8 @@ type ProposerDutyDeriver struct {
 func NewProposerDutyDeriver(log observability.ContextualLogger, config *ProposerDutyDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *ProposerDutyDeriver {
 	return &ProposerDutyDeriver{
 		log: log.WithFields(logrus.Fields{
-			"module": "cannon/event/beacon/eth/v1/proposer_duty",
-			"type":   ProposerDutyDeriverName.String(),
+			moduleLogField: "cannon/event/beacon/eth/v1/proposer_duty",
+			typeLogField:   ProposerDutyDeriverName.String(),
 		}),
 		cfg:        config,
 		iterator:   iter,

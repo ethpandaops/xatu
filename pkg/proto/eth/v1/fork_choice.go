@@ -145,6 +145,12 @@ func (f *ForkChoiceNodeV2) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceN
 		return nil, errors.Wrap(err, "failed to marshal extra_data")
 	}
 
+	// Round-trip the EIP-7732 payload_status into extra_data so downstream
+	// consumers that only inspect extra_data still see it.
+	if ps := f.GetPayloadStatus(); ps != nil {
+		extraData["payload_status"] = ps.GetValue()
+	}
+
 	validity, err := eth2v1.ForkChoiceNodeValidityFromString(f.Validity)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert validity")
@@ -242,7 +248,7 @@ func NewForkChoiceNodeV2FromGoEth2ClientV1(node *eth2v1.ForkChoiceNode) (*ForkCh
 		return nil, err
 	}
 
-	return &ForkChoiceNodeV2{
+	out := &ForkChoiceNodeV2{
 		Slot:               &wrapperspb.UInt64Value{Value: uint64(node.Slot)},
 		BlockRoot:          RootAsString(node.BlockRoot),
 		ParentRoot:         RootAsString(node.ParentRoot),
@@ -252,5 +258,49 @@ func NewForkChoiceNodeV2FromGoEth2ClientV1(node *eth2v1.ForkChoiceNode) (*ForkCh
 		Validity:           node.Validity.String(),
 		ExecutionBlockHash: RootAsString(node.ExecutionBlockHash),
 		ExtraData:          string(extraData),
-	}, nil
+	}
+
+	if v, ok := payloadStatusFromExtraData(node.ExtraData); ok {
+		out.PayloadStatus = &wrapperspb.UInt32Value{Value: v}
+	}
+
+	return out, nil
+}
+
+// payloadStatusFromExtraData reads the EIP-7732 per-node payload_status enum
+// from the beacon API's fork_choice extra_data map. Gloas+ beacon nodes report
+// it as a string ("EMPTY", "FULL", "PENDING") or an integer (0/1/2); upstream
+// hasn't standardised the shape yet so we tolerate both. Returns false when
+// the key isn't present (pre-Gloas nodes), or when the value can't be coerced.
+func payloadStatusFromExtraData(extraData map[string]any) (uint32, bool) {
+	raw, ok := extraData["payload_status"]
+	if !ok {
+		return 0, false
+	}
+
+	switch v := raw.(type) {
+	case string:
+		switch v {
+		case "EMPTY", "empty", "0":
+			return 0, true
+		case "FULL", "full", "1":
+			return 1, true
+		case "PENDING", "pending", "2":
+			return 2, true
+		}
+	case float64:
+		if v >= 0 && v <= 2 {
+			return uint32(v), true
+		}
+	case int:
+		if v >= 0 && v <= 2 {
+			return uint32(v), true
+		}
+	case uint64:
+		if v <= 2 {
+			return uint32(v), true
+		}
+	}
+
+	return 0, false
 }

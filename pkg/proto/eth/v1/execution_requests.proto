@@ -11,6 +11,22 @@ message ElectraExecutionRequests {
   repeated ElectraExecutionRequestDeposit deposits = 1;
   repeated ElectraExecutionRequestWithdrawal withdrawals = 2;
   repeated ElectraExecutionRequestConsolidation consolidations = 3;
+  // EIP-8282 (Gloas): builder request types carried in the execution
+  // requests list alongside the Electra types. Empty pre-Gloas.
+  repeated GloasBuilderDepositRequest builder_deposits = 4 [json_name = "builder_deposits"];
+  repeated GloasBuilderExitRequest builder_exits = 5 [json_name = "builder_exits"];
+}
+
+message GloasBuilderDepositRequest {
+    google.protobuf.StringValue pubkey = 1;
+    google.protobuf.StringValue withdrawal_credentials = 2 [json_name = "withdrawal_credentials"];
+    google.protobuf.UInt64Value amount = 3;
+    google.protobuf.StringValue signature = 4;
+}
+
+message GloasBuilderExitRequest {
+    google.protobuf.StringValue source_address = 1 [json_name = "source_address"];
+    google.protobuf.StringValue pubkey = 2;
 }
 
 message ElectraExecutionRequestDeposit {

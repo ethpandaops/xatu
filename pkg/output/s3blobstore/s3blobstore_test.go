@@ -497,7 +497,7 @@ func TestEndToEnd_AgainstMinio(t *testing.T) {
 func startMinio(t *testing.T, ctx context.Context) (endpoint, accessKey, secretKey string) {
 	t.Helper()
 
-	c, err := minio.Run(ctx, "minio/minio:RELEASE.2024-09-13T20-26-02Z")
+	c, err := minio.Run(ctx, "pgsty/minio:RELEASE.2026-08-04T00-00-00Z")
 	require.NoError(t, err)
 
 	t.Cleanup(func() {

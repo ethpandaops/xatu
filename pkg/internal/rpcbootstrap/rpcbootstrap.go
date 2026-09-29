@@ -470,8 +470,6 @@ func bootstrapNetwork(networkID uint64) (*params.ChainConfig, *types.Block, *big
 		return params.MainnetChainConfig, core.DefaultGenesisBlock().ToBlock(), copyBigInt(params.MainnetTerminalTotalDifficulty), nil
 	case 11155111:
 		return params.SepoliaChainConfig, core.DefaultSepoliaGenesisBlock().ToBlock(), copyBigInt(params.SepoliaChainConfig.TerminalTotalDifficulty), nil
-	case 17000:
-		return params.HoleskyChainConfig, core.DefaultHoleskyGenesisBlock().ToBlock(), copyBigInt(params.HoleskyChainConfig.TerminalTotalDifficulty), nil
 	case 560048:
 		return params.HoodiChainConfig, core.DefaultHoodiGenesisBlock().ToBlock(), copyBigInt(params.HoodiChainConfig.TerminalTotalDifficulty), nil
 	default:

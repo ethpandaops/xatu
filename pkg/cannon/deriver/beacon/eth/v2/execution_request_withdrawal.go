@@ -256,14 +256,9 @@ func (b *ExecutionRequestWithdrawalDeriver) lookAhead(ctx context.Context, epoch
 func (b *ExecutionRequestWithdrawalDeriver) getExecutionRequestWithdrawals(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.ElectraExecutionRequestWithdrawal, error) {
 	withdrawals := []*xatuethv1.ElectraExecutionRequestWithdrawal{}
 
-	// Execution requests only exist from Electra onwards.
-	if block.Version < spec.DataVersionElectra {
-		return withdrawals, nil
-	}
-
-	requests, err := block.ExecutionRequests()
+	requests, err := getExecutionRequests(ctx, b.beacon, block)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to obtain execution requests")
+		return nil, err
 	}
 
 	if requests == nil || requests.IsEmpty() {

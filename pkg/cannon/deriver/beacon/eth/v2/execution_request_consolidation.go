@@ -256,13 +256,9 @@ func (b *ExecutionRequestConsolidationDeriver) lookAhead(ctx context.Context, ep
 func (b *ExecutionRequestConsolidationDeriver) getConsolidations(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.ElectraExecutionRequestConsolidation, error) {
 	consolidations := []*xatuethv1.ElectraExecutionRequestConsolidation{}
 
-	if block.Version < spec.DataVersionElectra {
-		return consolidations, nil
-	}
-
-	requests, err := block.ExecutionRequests()
+	requests, err := getExecutionRequests(ctx, b.beacon, block)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to obtain execution requests")
+		return nil, err
 	}
 
 	if requests == nil || requests.IsEmpty() {

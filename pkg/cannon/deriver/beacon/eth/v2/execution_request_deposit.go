@@ -254,14 +254,9 @@ func (b *ExecutionRequestDepositDeriver) lookAhead(ctx context.Context, epochs [
 }
 
 func (b *ExecutionRequestDepositDeriver) getDeposits(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.ElectraExecutionRequestDeposit, error) {
-	// Execution requests only exist from Electra onwards.
-	if block.Version < spec.DataVersionElectra {
-		return []*xatuethv1.ElectraExecutionRequestDeposit{}, nil
-	}
-
-	requests, err := block.ExecutionRequests()
+	requests, err := getExecutionRequests(ctx, b.beacon, block)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to obtain execution requests")
+		return nil, err
 	}
 
 	if requests == nil || requests.IsEmpty() {

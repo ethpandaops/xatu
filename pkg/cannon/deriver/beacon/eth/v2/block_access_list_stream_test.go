@@ -112,6 +112,7 @@ func (h *streamHarness) stream(ctx context.Context, epoch phase0.Epoch) error {
 
 func (h *streamHarness) allIDs() []string {
 	var ids []string
+
 	for slot := range h.slotSizes {
 		for i := range h.slotSizes[slot] {
 			ids = append(ids, eventID(testFirstSlot+phase0.Slot(slot), i))

@@ -3,8 +3,10 @@ package v1
 import (
 	"encoding/hex"
 	"fmt"
+	"math"
 
 	"github.com/ethereum/go-ethereum/core/types/bal"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/capella"
@@ -480,22 +482,34 @@ func NewGloasExecutionRequestsFromGloas(data *gloas.ExecutionRequests) *ElectraE
 	}
 
 	for _, deposit := range data.BuilderDeposits {
-		requests.BuilderDeposits = append(requests.BuilderDeposits, &GloasBuilderDepositRequest{
-			Pubkey:                &wrapperspb.StringValue{Value: deposit.Pubkey.String()},
-			WithdrawalCredentials: &wrapperspb.StringValue{Value: fmt.Sprintf("%#x", deposit.WithdrawalCredentials)},
-			Amount:                &wrapperspb.UInt64Value{Value: uint64(deposit.Amount)},
-			Signature:             &wrapperspb.StringValue{Value: deposit.Signature.String()},
-		})
+		requests.BuilderDeposits = append(requests.BuilderDeposits, NewGloasBuilderDepositRequestFromGloas(deposit))
 	}
 
 	for _, exit := range data.BuilderExits {
-		requests.BuilderExits = append(requests.BuilderExits, &GloasBuilderExitRequest{
-			SourceAddress: &wrapperspb.StringValue{Value: exit.SourceAddress.String()},
-			Pubkey:        &wrapperspb.StringValue{Value: exit.Pubkey.String()},
-		})
+		requests.BuilderExits = append(requests.BuilderExits, NewGloasBuilderExitRequestFromGloas(exit))
 	}
 
 	return requests
+}
+
+// NewGloasBuilderDepositRequestFromGloas converts the SDK's EIP-8282 builder
+// deposit request into our proto representation.
+func NewGloasBuilderDepositRequestFromGloas(deposit *gloas.BuilderDepositRequest) *GloasBuilderDepositRequest {
+	return &GloasBuilderDepositRequest{
+		Pubkey:                &wrapperspb.StringValue{Value: deposit.Pubkey.String()},
+		WithdrawalCredentials: &wrapperspb.StringValue{Value: fmt.Sprintf("%#x", deposit.WithdrawalCredentials)},
+		Amount:                &wrapperspb.UInt64Value{Value: uint64(deposit.Amount)},
+		Signature:             &wrapperspb.StringValue{Value: deposit.Signature.String()},
+	}
+}
+
+// NewGloasBuilderExitRequestFromGloas converts the SDK's EIP-8282 builder exit
+// request into our proto representation.
+func NewGloasBuilderExitRequestFromGloas(exit *gloas.BuilderExitRequest) *GloasBuilderExitRequest {
+	return &GloasBuilderExitRequest{
+		SourceAddress: &wrapperspb.StringValue{Value: exit.SourceAddress.String()},
+		Pubkey:        &wrapperspb.StringValue{Value: exit.Pubkey.String()},
+	}
 }
 
 // NewBlockAccessListFromGloas decodes a raw RLP-encoded block access list
@@ -570,6 +584,77 @@ func NewBlockAccessListFromGloas(rawBAL gloas.BlockAccessList) *BlockAccessList 
 	}
 
 	return &BlockAccessList{Entries: entries}
+}
+
+// NewBlockAccessListSummaryFromGloas summarises a raw RLP-encoded block access
+// list (EIP-7928) into per-block statistics. Unlike NewBlockAccessListFromGloas
+// an undecodable list is an error, so callers never record zeroed statistics
+// for a block whose list they could not read.
+func NewBlockAccessListSummaryFromGloas(rawBAL gloas.BlockAccessList) (*BlockAccessListSummary, error) {
+	var accesses bal.BlockAccessList
+	if err := rlp.DecodeBytes(rawBAL, &accesses); err != nil {
+		return nil, fmt.Errorf("failed to decode block access list: %w", err)
+	}
+
+	type slotKey struct {
+		address [20]byte
+		slot    [32]byte
+	}
+
+	var (
+		accounts       = make(map[[20]byte]struct{}, len(accesses))
+		slotsChanged   = make(map[slotKey]struct{})
+		slotsRead      = make(map[slotKey]struct{})
+		storageChanges int
+		balanceChanges int
+		nonceChanges   int
+		codeChanges    int
+	)
+
+	for i := range accesses {
+		access := &accesses[i]
+		accounts[access.Address] = struct{}{}
+
+		for _, slotWrite := range access.StorageChanges {
+			slotsChanged[slotKey{address: access.Address, slot: slotWrite.Slot.Bytes32()}] = struct{}{}
+			storageChanges += len(slotWrite.SlotChanges)
+		}
+
+		for _, slot := range access.StorageReads {
+			slotsRead[slotKey{address: access.Address, slot: slot.Bytes32()}] = struct{}{}
+		}
+
+		balanceChanges += len(access.BalanceChanges)
+		nonceChanges += len(access.NonceChanges)
+		codeChanges += len(access.CodeChanges)
+	}
+
+	return &BlockAccessListSummary{
+		AccountsTouched:     &wrapperspb.UInt32Value{Value: uint32Count(len(accounts))},
+		StorageSlotsChanged: &wrapperspb.UInt32Value{Value: uint32Count(len(slotsChanged))},
+		StorageChanges:      &wrapperspb.UInt32Value{Value: uint32Count(storageChanges)},
+		StorageReads:        &wrapperspb.UInt32Value{Value: uint32Count(len(slotsRead))},
+		BalanceChanges:      &wrapperspb.UInt32Value{Value: uint32Count(balanceChanges)},
+		NonceChanges:        &wrapperspb.UInt32Value{Value: uint32Count(nonceChanges)},
+		CodeChanges:         &wrapperspb.UInt32Value{Value: uint32Count(codeChanges)},
+		TotalChanges:        &wrapperspb.UInt32Value{Value: uint32Count(storageChanges + balanceChanges + nonceChanges + codeChanges)},
+		BalSizeBytes:        &wrapperspb.UInt32Value{Value: uint32Count(len(rawBAL))},
+		BalHash:             &wrapperspb.StringValue{Value: crypto.Keccak256Hash(rawBAL).Hex()},
+	}, nil
+}
+
+// uint32Count converts a collection size to uint32, saturating rather than
+// wrapping.
+func uint32Count(n int) uint32 {
+	if n < 0 {
+		return 0
+	}
+
+	if uint64(n) > math.MaxUint32 {
+		return math.MaxUint32
+	}
+
+	return uint32(n)
 }
 
 // NewSignedExecutionPayloadBidFromGloas converts the SDK's Gloas (EIP-7732)

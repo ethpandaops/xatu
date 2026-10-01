@@ -51,6 +51,12 @@ type ConsensusConfig struct {
 	BlockAccessListConfig     v2.BlockAccessListDeriverConfig     `yaml:"blockAccessList"`
 	PayloadAttestationConfig  v2.PayloadAttestationDeriverConfig  `yaml:"payloadAttestation"`
 	ExecutionPayloadBidConfig v2.ExecutionPayloadBidDeriverConfig `yaml:"executionPayloadBid"`
+
+	// EIP-8282 builder execution requests and the per-block EIP-7928 BAL
+	// summary (Gloas).
+	ExecutionRequestBuilderDepositConfig v2.ExecutionRequestBuilderDepositDeriverConfig `yaml:"executionRequestBuilderDeposit"`
+	ExecutionRequestBuilderExitConfig    v2.ExecutionRequestBuilderExitDeriverConfig    `yaml:"executionRequestBuilderExit"`
+	BlockAccessListSummaryConfig         v2.BlockAccessListSummaryDeriverConfig         `yaml:"blockAccessListSummary"`
 }
 
 func (c *Config) Validate() error {

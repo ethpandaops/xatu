@@ -70,6 +70,9 @@ Cannon requires a single `yaml` config file. An example file can be found [here]
 | derivers.proposerSlashing.headSlotLag | int | `5` | The number of slots to lag behind the head                                                                                                 |
 | derivers.voluntaryExit.enabled | bool | `true` | Enable the voluntary exit deriver                                                                                                          |
 | derivers.voluntaryExit.headSlotLag | int | `5` | The number of slots to lag behind the head                                                                                                 |
+| derivers.consensus.executionRequestBuilderDeposit.enabled | bool | `true` | Enable the EIP-8282 builder deposit request deriver (activates at Gloas)                                                                   |
+| derivers.consensus.executionRequestBuilderExit.enabled | bool | `true` | Enable the EIP-8282 builder exit request deriver (activates at Gloas)                                                                      |
+| derivers.consensus.blockAccessListSummary.enabled | bool | `true` | Enable the per-block EIP-7928 block access list summary deriver (activates at Gloas)                                                       |
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events                                                                                             |
 | outputs | array<object> |  | List of outputs for the cannon to send data to                                                                                             |
 | outputs[].name | string |  | Name of the output                                                                                                                         |

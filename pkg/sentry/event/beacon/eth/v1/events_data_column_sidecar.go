@@ -58,6 +58,7 @@ func (e *EventsDataColumnSidecar) Decorate(ctx context.Context) (*xatu.Decorated
 				Slot:      &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
 				Index:     &wrapperspb.UInt64Value{Value: e.event.Index},
 				BlockRoot: e.event.BlockRoot.String(),
+				// kzg_commitments is optional (beacon-APIs #583); omitted is recorded as 0.
 				//nolint:gosec // overflow not a concern for KZG commitment count
 				KzgCommitmentsCount: &wrapperspb.UInt32Value{Value: uint32(len(e.event.KZGCommitments))},
 			},

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethpandaops/ethwallclock"
 	eth2v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
@@ -54,7 +55,7 @@ func (e *EventsChainReorg) Decorate(ctx context.Context) (*xatu.DecoratedEvent, 
 			Client: e.clientMeta,
 		},
 		Data: &xatu.DecoratedEvent_EthV1EventsChainReorgV2{
-			EthV1EventsChainReorgV2: xatuethv1.NewReorgEventV2FromGoEth2ClientEvent(e.event),
+			EthV1EventsChainReorgV2: newReorgEventV2(e.event, e.beacon.Metadata().Wallclock()),
 		},
 	}
 
@@ -117,4 +118,16 @@ func (e *EventsChainReorg) getAdditionalData(_ context.Context) (*xatu.ClientMet
 	}
 
 	return extra, nil
+}
+
+// newReorgEventV2 derives the epoch from the slot when the beacon node omits it.
+func newReorgEventV2(event *eth2v1.ChainReorgEvent, wallclock *ethwallclock.EthereumBeaconChain) *xatuethv1.EventChainReorgV2 {
+	reorg := xatuethv1.NewReorgEventV2FromGoEth2ClientEvent(event)
+
+	if event.Epoch == 0 && wallclock != nil {
+		epoch := wallclock.Epochs().FromSlot(uint64(event.Slot))
+		reorg.Epoch = &wrapperspb.UInt64Value{Value: epoch.Number()}
+	}
+
+	return reorg
 }

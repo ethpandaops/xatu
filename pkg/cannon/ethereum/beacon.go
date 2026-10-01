@@ -15,6 +15,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/jellydator/ttlcache/v3"
+	dynssz "github.com/pk910/dynamic-ssz"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -54,6 +55,15 @@ type BeaconNode struct {
 	// payload_status = EMPTY); we cache the negative answer too.
 	envelopeSfGroup *singleflight.Group
 	envelopeCache   *ttlcache.Cache[string, *gloas.SignedExecutionPayloadEnvelope]
+
+	// The Gloas state derivers share one state download per epoch. Only the
+	// reduced GloasEpochState is cached, and stateSem keeps a single full state
+	// in memory at a time.
+	stateSfGroup *singleflight.Group
+	stateCache   *ttlcache.Cache[string, *GloasEpochState]
+	stateSem     chan struct{}
+	stateCodecMu sync.Mutex
+	stateCodec   *dynssz.DynSsz
 }
 
 func NewBeaconNode(ctx context.Context, name string, config *Config, log observability.ContextualLogger) (*BeaconNode, error) {
@@ -120,7 +130,13 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 			ttlcache.WithTTL[string, *gloas.SignedExecutionPayloadEnvelope](config.Beacon.BlockCacheTTL.Duration),
 			ttlcache.WithCapacity[string, *gloas.SignedExecutionPayloadEnvelope](256),
 		),
-		metrics: NewMetrics(namespace, name),
+		stateSfGroup: &singleflight.Group{},
+		stateCache: ttlcache.New(
+			ttlcache.WithTTL[string, *GloasEpochState](gloasEpochStateCacheTTL),
+			ttlcache.WithCapacity[string, *GloasEpochState](gloasEpochStateCacheSize),
+		),
+		stateSem: make(chan struct{}, 1),
+		metrics:  NewMetrics(namespace, name),
 	}, nil
 }
 

@@ -234,6 +234,13 @@ enum CannonType {
   BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_DEPOSIT = 46;
   BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_EXIT = 47;
   BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST_SUMMARY = 48;
+
+  // Gloas beacon state snapshots
+  BEACON_API_ETH_V1_BEACON_STATE_PTC_MEMBER = 49;
+  BEACON_API_ETH_V1_BEACON_STATE_BUILDER = 50;
+  BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT = 51;
+  BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL = 52;
+  BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY = 53;
 }
 
 message BackfillingCheckpointMarker {
@@ -414,6 +421,26 @@ message CannonLocationEthV1BeaconStatePendingConsolidation {
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
 }
 
+message CannonLocationEthV1BeaconStatePtcMember {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV1BeaconStateBuilder {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV1BeaconStateBuilderPendingPayment {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV1BeaconStateBuilderPendingWithdrawal {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
+message CannonLocationEthV1BeaconStateExecutionPayloadAvailability {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
 message CannonLocation {
   string network_id = 1;
   CannonType type = 2;
@@ -527,6 +554,18 @@ message CannonLocation {
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_EXIT" ];
     CannonLocationEthV2BeaconBlockAccessListSummary eth_v2_beacon_block_access_list_summary = 51
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST_SUMMARY" ];
+
+    // Gloas beacon state snapshots
+    CannonLocationEthV1BeaconStatePtcMember eth_v1_beacon_state_ptc_member = 52
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PTC_MEMBER" ];
+    CannonLocationEthV1BeaconStateBuilder eth_v1_beacon_state_builder = 53
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_BUILDER" ];
+    CannonLocationEthV1BeaconStateBuilderPendingPayment eth_v1_beacon_state_builder_pending_payment = 54
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT" ];
+    CannonLocationEthV1BeaconStateBuilderPendingWithdrawal eth_v1_beacon_state_builder_pending_withdrawal = 55
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL" ];
+    CannonLocationEthV1BeaconStateExecutionPayloadAvailability eth_v1_beacon_state_execution_payload_availability = 56
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY" ];
   }
 }
 

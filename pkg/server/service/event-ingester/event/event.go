@@ -128,6 +128,11 @@ var (
 	TypeBeaconETHV1BeaconStatePendingDeposit                Type = Type(v1.BeaconStatePendingDepositType)
 	TypeBeaconETHV1BeaconStatePendingPartialWithdrawal      Type = Type(v1.BeaconStatePendingPartialWithdrawalType)
 	TypeBeaconETHV1BeaconStatePendingConsolidation          Type = Type(v1.BeaconStatePendingConsolidationType)
+	TypeBeaconETHV1BeaconStatePtcMember                     Type = Type(v1.BeaconStatePtcMemberType)
+	TypeBeaconETHV1BeaconStateBuilder                       Type = Type(v1.BeaconStateBuilderType)
+	TypeBeaconETHV1BeaconStateBuilderPendingPayment         Type = Type(v1.BeaconStateBuilderPendingPaymentType)
+	TypeBeaconETHV1BeaconStateBuilderPendingWithdrawal      Type = Type(v1.BeaconStateBuilderPendingWithdrawalType)
+	TypeBeaconETHV1BeaconStateExecutionPayloadAvailability  Type = Type(v1.BeaconStateExecutionPayloadAvailabilityType)
 
 	TypeBeaconEthV2BeaconBlockAccessList Type = v2.BeaconBlockAccessListType
 
@@ -335,6 +340,21 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	})
 	router.RegisterHandler(TypeBeaconETHV1BeaconStatePendingConsolidation, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewBeaconStatePendingConsolidation(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1BeaconStatePtcMember, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconStatePtcMember(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1BeaconStateBuilder, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconStateBuilder(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1BeaconStateBuilderPendingPayment, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconStateBuilderPendingPayment(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1BeaconStateBuilderPendingWithdrawal, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconStateBuilderPendingWithdrawal(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconETHV1BeaconStateExecutionPayloadAvailability, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconStateExecutionPayloadAvailability(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconEthV2BeaconBlockAccessList, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v2.NewBeaconBlockAccessList(router.log, event), nil

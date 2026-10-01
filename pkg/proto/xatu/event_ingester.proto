@@ -261,6 +261,82 @@ message PendingConsolidationData {
   google.protobuf.UInt64Value target_index = 2 [ json_name = "target_index" ];
 }
 
+// PtcMemberData contains one position of a payload timeliness committee (PTC),
+// taken from the Gloas beacon state's ptc_window. Position is the index into
+// the committee, which is also the bit index into
+// PayloadAttestation.aggregation_bits. A validator can occupy several
+// positions of the same committee.
+message PtcMemberData {
+  // Position is the index of the member within the committee (0-511).
+  google.protobuf.UInt64Value position = 1 [ json_name = "position" ];
+  // ValidatorIndex is the validator that holds this position.
+  google.protobuf.UInt64Value validator_index = 2 [ json_name = "validator_index" ];
+}
+
+// BuilderData contains a single entry of the Gloas beacon state's builder
+// registry.
+message BuilderData {
+  // Index is the position of the builder in the registry.
+  google.protobuf.UInt64Value index = 1 [ json_name = "index" ];
+  // Pubkey is the builder's public key (hex encoded with 0x prefix).
+  string pubkey = 2 [ json_name = "pubkey" ];
+  // Version is the builder version byte.
+  google.protobuf.UInt32Value version = 3 [ json_name = "version" ];
+  // ExecutionAddress is the builder's execution address (hex encoded with 0x
+  // prefix).
+  string execution_address = 4 [ json_name = "execution_address" ];
+  // Balance is the builder balance in gwei.
+  google.protobuf.UInt64Value balance = 5 [ json_name = "balance" ];
+  // DepositEpoch is the epoch in which the builder was added to the registry.
+  google.protobuf.UInt64Value deposit_epoch = 6 [ json_name = "deposit_epoch" ];
+  // WithdrawableEpoch is the epoch from which the builder can be withdrawn,
+  // FAR_FUTURE_EPOCH while no exit was initiated.
+  google.protobuf.UInt64Value withdrawable_epoch = 7 [ json_name = "withdrawable_epoch" ];
+  // Status is the beacon API builder status (pending, active or exited)
+  // evaluated against the state's finalized checkpoint.
+  string status = 8 [ json_name = "status" ];
+}
+
+// BuilderPendingPaymentData contains a single non-empty entry of the Gloas
+// beacon state's builder_pending_payments vector.
+message BuilderPendingPaymentData {
+  // PaymentIndex is the index into builder_pending_payments (0-63). Indices
+  // below SLOTS_PER_EPOCH belong to the previous epoch, the rest to the
+  // current epoch.
+  google.protobuf.UInt64Value payment_index = 1 [ json_name = "payment_index" ];
+  // Weight is the attestation weight accumulated for the payment, in gwei.
+  google.protobuf.UInt64Value weight = 2 [ json_name = "weight" ];
+  // FeeRecipient is the withdrawal's fee recipient (hex encoded with 0x
+  // prefix).
+  string fee_recipient = 3 [ json_name = "fee_recipient" ];
+  // Amount is the withdrawal amount in gwei.
+  google.protobuf.UInt64Value amount = 4 [ json_name = "amount" ];
+  // BuilderIndex is the index of the paying builder.
+  google.protobuf.UInt64Value builder_index = 5 [ json_name = "builder_index" ];
+  // ProposerIndex is the validator index of the slot's proposer.
+  google.protobuf.UInt64Value proposer_index = 6 [ json_name = "proposer_index" ];
+}
+
+// BuilderPendingWithdrawalData contains a single entry from the Gloas beacon
+// state's builder_pending_withdrawals queue.
+message BuilderPendingWithdrawalData {
+  // FeeRecipient is the withdrawal's fee recipient (hex encoded with 0x
+  // prefix).
+  string fee_recipient = 1 [ json_name = "fee_recipient" ];
+  // Amount is the withdrawal amount in gwei.
+  google.protobuf.UInt64Value amount = 2 [ json_name = "amount" ];
+  // BuilderIndex is the index of the builder the withdrawal is charged to.
+  google.protobuf.UInt64Value builder_index = 3 [ json_name = "builder_index" ];
+}
+
+// ExecutionPayloadAvailabilityData contains the Gloas beacon state's
+// execution_payload_availability bit for one slot.
+message ExecutionPayloadAvailabilityData {
+  // Available is the availability bit: true when the slot's execution payload
+  // was revealed and applied to the state.
+  google.protobuf.BoolValue available = 1 [ json_name = "available" ];
+}
+
 message BlockIdentifier {
   // Epoch contains the epoch information for the block.
   EpochV2 epoch = 1;
@@ -992,6 +1068,70 @@ message ClientMeta {
     // consolidations queue.
     google.protobuf.UInt64Value position_in_queue = 3
         [ json_name = "position_in_queue" ];
+  }
+
+  // AdditionalEthV1BeaconStatePtcMemberData contains additional data about a
+  // payload timeliness committee member.
+  message AdditionalEthV1BeaconStatePtcMemberData {
+    // Slot contains the slot the committee serves.
+    SlotV2 slot = 1;
+
+    // Epoch contains the epoch the slot belongs to.
+    EpochV2 epoch = 2;
+
+    // StateID is the state ID the committee was read from.
+    string state_id = 3 [ json_name = "state_id" ];
+  }
+
+  // AdditionalEthV1BeaconStateBuilderData contains additional data about a
+  // builder registry entry for an epoch.
+  message AdditionalEthV1BeaconStateBuilderData {
+    // Epoch contains the epoch the registry snapshot is for.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the registry was read from.
+    string state_id = 2 [ json_name = "state_id" ];
+  }
+
+  // AdditionalEthV1BeaconStateBuilderPendingPaymentData contains additional
+  // data about a builder pending payment for an epoch.
+  message AdditionalEthV1BeaconStateBuilderPendingPaymentData {
+    // Epoch contains the epoch the snapshot is for.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot the payment belongs to, derived from the payment
+    // index and the state's epoch.
+    SlotV2 slot = 2;
+
+    // StateID is the state ID the payment was read from.
+    string state_id = 3 [ json_name = "state_id" ];
+  }
+
+  // AdditionalEthV1BeaconStateBuilderPendingWithdrawalData contains additional
+  // data about a builder pending withdrawal queue entry for an epoch.
+  message AdditionalEthV1BeaconStateBuilderPendingWithdrawalData {
+    // Epoch contains the epoch the snapshot is for.
+    EpochV2 epoch = 1;
+
+    // StateID is the state ID the withdrawal was read from.
+    string state_id = 2 [ json_name = "state_id" ];
+
+    // PositionInQueue is the index of the withdrawal within the queue.
+    google.protobuf.UInt64Value position_in_queue = 3
+        [ json_name = "position_in_queue" ];
+  }
+
+  // AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData contains
+  // additional data about a slot's execution payload availability bit.
+  message AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData {
+    // Slot contains the slot the bit is for.
+    SlotV2 slot = 1;
+
+    // Epoch contains the epoch the slot belongs to.
+    EpochV2 epoch = 2;
+
+    // StateID is the state ID the bit was read from.
+    string state_id = 3 [ json_name = "state_id" ];
   }
 
   message AdditionalMempoolTransactionData {
@@ -2352,6 +2492,13 @@ message ClientMeta {
     AdditionalEthV2BeaconBlockExecutionRequestBuilderDepositData eth_v2_beacon_block_execution_request_builder_deposit = 125 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_DEPOSIT" ];
     AdditionalEthV2BeaconBlockExecutionRequestBuilderExitData eth_v2_beacon_block_execution_request_builder_exit = 126 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_EXIT" ];
     AdditionalEthV2BeaconBlockAccessListSummaryData eth_v2_beacon_block_access_list_summary = 127 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST_SUMMARY" ];
+
+    // Gloas beacon state snapshots.
+    AdditionalEthV1BeaconStatePtcMemberData eth_v1_beacon_state_ptc_member = 128 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PTC_MEMBER" ];
+    AdditionalEthV1BeaconStateBuilderData eth_v1_beacon_state_builder = 129 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_BUILDER" ];
+    AdditionalEthV1BeaconStateBuilderPendingPaymentData eth_v1_beacon_state_builder_pending_payment = 130 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT" ];
+    AdditionalEthV1BeaconStateBuilderPendingWithdrawalData eth_v1_beacon_state_builder_pending_withdrawal = 131 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL" ];
+    AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData eth_v1_beacon_state_execution_payload_availability = 132 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2637,6 +2784,13 @@ message Event {
     BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_DEPOSIT = 137;
     BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_EXIT = 138;
     BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST_SUMMARY = 139;
+
+    // Gloas beacon state snapshots.
+    BEACON_API_ETH_V1_BEACON_STATE_PTC_MEMBER = 140;
+    BEACON_API_ETH_V1_BEACON_STATE_BUILDER = 141;
+    BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT = 142;
+    BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL = 143;
+    BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY = 144;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -3385,6 +3539,18 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_EXIT" ];
     xatu.eth.v1.BlockAccessListSummary eth_v2_beacon_block_access_list_summary = 260
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST_SUMMARY" ];
+
+    // Gloas beacon state snapshots.
+    PtcMemberData eth_v1_beacon_state_ptc_member = 261
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_PTC_MEMBER" ];
+    BuilderData eth_v1_beacon_state_builder = 262
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_BUILDER" ];
+    BuilderPendingPaymentData eth_v1_beacon_state_builder_pending_payment = 263
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT" ];
+    BuilderPendingWithdrawalData eth_v1_beacon_state_builder_pending_withdrawal = 264
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL" ];
+    ExecutionPayloadAvailabilityData eth_v1_beacon_state_execution_payload_availability = 265
+        [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY" ];
   };
 }
 

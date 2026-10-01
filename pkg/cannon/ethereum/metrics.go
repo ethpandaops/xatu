@@ -1,6 +1,10 @@
 package ethereum
 
-import "github.com/prometheus/client_golang/prometheus"
+import (
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+)
 
 type Metrics struct {
 	beacon string
@@ -14,6 +18,10 @@ type Metrics struct {
 	blockCacheMiss *prometheus.CounterVec
 	// PreloadBlockQueueSize is the number of blocks in the preload queue.
 	preloadBlockQueueSize *prometheus.GaugeVec
+	// BeaconStateCacheHit is the number of times a beacon state was served from the cache.
+	beaconStateCacheHit *prometheus.CounterVec
+	// BeaconStateFetchDuration is the time taken to download and decode a beacon state.
+	beaconStateFetchDuration *prometheus.HistogramVec
 }
 
 func NewMetrics(namespace, beaconNodeName string) *Metrics {
@@ -46,6 +54,17 @@ func NewMetrics(namespace, beaconNodeName string) *Metrics {
 			Name:      "preload_block_queue_size",
 			Help:      "The number of blocks in the preload queue",
 		}, []string{"network", "beacon"}),
+		beaconStateCacheHit: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "beacon_state_cache_hit_total",
+			Help:      "The number of times a beacon state was served from the cache",
+		}, []string{"network", "beacon"}),
+		beaconStateFetchDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: namespace,
+			Name:      "beacon_state_fetch_duration_seconds",
+			Help:      "The time taken to download and decode a beacon state",
+			Buckets:   []float64{1, 2, 5, 10, 20, 30, 60, 120, 300},
+		}, []string{"network", "beacon"}),
 	}
 
 	prometheus.MustRegister(m.blocksFetched)
@@ -53,6 +72,8 @@ func NewMetrics(namespace, beaconNodeName string) *Metrics {
 	prometheus.MustRegister(m.blockCacheHit)
 	prometheus.MustRegister(m.blockCacheMiss)
 	prometheus.MustRegister(m.preloadBlockQueueSize)
+	prometheus.MustRegister(m.beaconStateCacheHit)
+	prometheus.MustRegister(m.beaconStateFetchDuration)
 
 	return m
 }
@@ -75,4 +96,12 @@ func (m *Metrics) IncBlockCacheMiss(network string) {
 
 func (m *Metrics) SetPreloadBlockQueueSize(network string, size int) {
 	m.preloadBlockQueueSize.WithLabelValues(network, m.beacon).Set(float64(size))
+}
+
+func (m *Metrics) IncBeaconStateCacheHit(network string) {
+	m.beaconStateCacheHit.WithLabelValues(network, m.beacon).Inc()
+}
+
+func (m *Metrics) ObserveBeaconStateFetch(network string, d time.Duration) {
+	m.beaconStateFetchDuration.WithLabelValues(network, m.beacon).Observe(d.Seconds())
 }

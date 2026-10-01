@@ -3606,6 +3606,221 @@ func (m *CannonLocationEthV1BeaconStatePendingConsolidation) MarshalToSizedBuffe
 	return len(dAtA) - i, nil
 }
 
+func (m *CannonLocationEthV1BeaconStatePtcMember) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CannonLocationEthV1BeaconStatePtcMember) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *CannonLocationEthV1BeaconStatePtcMember) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.BackfillingCheckpointMarker != nil {
+		size, err := m.BackfillingCheckpointMarker.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilder) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilder) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilder) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.BackfillingCheckpointMarker != nil {
+		size, err := m.BackfillingCheckpointMarker.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilderPendingPayment) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilderPendingPayment) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilderPendingPayment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.BackfillingCheckpointMarker != nil {
+		size, err := m.BackfillingCheckpointMarker.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilderPendingWithdrawal) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilderPendingWithdrawal) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilderPendingWithdrawal) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.BackfillingCheckpointMarker != nil {
+		size, err := m.BackfillingCheckpointMarker.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CannonLocationEthV1BeaconStateExecutionPayloadAvailability) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CannonLocationEthV1BeaconStateExecutionPayloadAvailability) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *CannonLocationEthV1BeaconStateExecutionPayloadAvailability) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.BackfillingCheckpointMarker != nil {
+		size, err := m.BackfillingCheckpointMarker.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *CannonLocation) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -4641,6 +4856,111 @@ func (m *CannonLocation_EthV2BeaconBlockAccessListSummary) MarshalToSizedBufferV
 		dAtA[i] = 0x3
 		i--
 		dAtA[i] = 0x9a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CannonLocation_EthV1BeaconStatePtcMember) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *CannonLocation_EthV1BeaconStatePtcMember) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStatePtcMember != nil {
+		size, err := m.EthV1BeaconStatePtcMember.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x3
+		i--
+		dAtA[i] = 0xa2
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CannonLocation_EthV1BeaconStateBuilder) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *CannonLocation_EthV1BeaconStateBuilder) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStateBuilder != nil {
+		size, err := m.EthV1BeaconStateBuilder.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x3
+		i--
+		dAtA[i] = 0xaa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CannonLocation_EthV1BeaconStateBuilderPendingPayment) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *CannonLocation_EthV1BeaconStateBuilderPendingPayment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStateBuilderPendingPayment != nil {
+		size, err := m.EthV1BeaconStateBuilderPendingPayment.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x3
+		i--
+		dAtA[i] = 0xb2
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CannonLocation_EthV1BeaconStateBuilderPendingWithdrawal) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *CannonLocation_EthV1BeaconStateBuilderPendingWithdrawal) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStateBuilderPendingWithdrawal != nil {
+		size, err := m.EthV1BeaconStateBuilderPendingWithdrawal.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x3
+		i--
+		dAtA[i] = 0xba
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CannonLocation_EthV1BeaconStateExecutionPayloadAvailability) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *CannonLocation_EthV1BeaconStateExecutionPayloadAvailability) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStateExecutionPayloadAvailability != nil {
+		size, err := m.EthV1BeaconStateExecutionPayloadAvailability.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x3
+		i--
+		dAtA[i] = 0xc2
 	}
 	return len(dAtA) - i, nil
 }
@@ -6958,6 +7278,116 @@ func CannonLocationEthV1BeaconStatePendingConsolidationFromVTPool() *CannonLocat
 	return vtprotoPool_CannonLocationEthV1BeaconStatePendingConsolidation.Get().(*CannonLocationEthV1BeaconStatePendingConsolidation)
 }
 
+var vtprotoPool_CannonLocationEthV1BeaconStatePtcMember = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV1BeaconStatePtcMember{}
+	},
+}
+
+func (m *CannonLocationEthV1BeaconStatePtcMember) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV1BeaconStatePtcMember) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV1BeaconStatePtcMember.Put(m)
+	}
+}
+func CannonLocationEthV1BeaconStatePtcMemberFromVTPool() *CannonLocationEthV1BeaconStatePtcMember {
+	return vtprotoPool_CannonLocationEthV1BeaconStatePtcMember.Get().(*CannonLocationEthV1BeaconStatePtcMember)
+}
+
+var vtprotoPool_CannonLocationEthV1BeaconStateBuilder = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV1BeaconStateBuilder{}
+	},
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilder) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV1BeaconStateBuilder) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV1BeaconStateBuilder.Put(m)
+	}
+}
+func CannonLocationEthV1BeaconStateBuilderFromVTPool() *CannonLocationEthV1BeaconStateBuilder {
+	return vtprotoPool_CannonLocationEthV1BeaconStateBuilder.Get().(*CannonLocationEthV1BeaconStateBuilder)
+}
+
+var vtprotoPool_CannonLocationEthV1BeaconStateBuilderPendingPayment = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV1BeaconStateBuilderPendingPayment{}
+	},
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilderPendingPayment) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV1BeaconStateBuilderPendingPayment) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV1BeaconStateBuilderPendingPayment.Put(m)
+	}
+}
+func CannonLocationEthV1BeaconStateBuilderPendingPaymentFromVTPool() *CannonLocationEthV1BeaconStateBuilderPendingPayment {
+	return vtprotoPool_CannonLocationEthV1BeaconStateBuilderPendingPayment.Get().(*CannonLocationEthV1BeaconStateBuilderPendingPayment)
+}
+
+var vtprotoPool_CannonLocationEthV1BeaconStateBuilderPendingWithdrawal = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV1BeaconStateBuilderPendingWithdrawal{}
+	},
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilderPendingWithdrawal) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV1BeaconStateBuilderPendingWithdrawal) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV1BeaconStateBuilderPendingWithdrawal.Put(m)
+	}
+}
+func CannonLocationEthV1BeaconStateBuilderPendingWithdrawalFromVTPool() *CannonLocationEthV1BeaconStateBuilderPendingWithdrawal {
+	return vtprotoPool_CannonLocationEthV1BeaconStateBuilderPendingWithdrawal.Get().(*CannonLocationEthV1BeaconStateBuilderPendingWithdrawal)
+}
+
+var vtprotoPool_CannonLocationEthV1BeaconStateExecutionPayloadAvailability = sync.Pool{
+	New: func() interface{} {
+		return &CannonLocationEthV1BeaconStateExecutionPayloadAvailability{}
+	},
+}
+
+func (m *CannonLocationEthV1BeaconStateExecutionPayloadAvailability) ResetVT() {
+	if m != nil {
+		m.BackfillingCheckpointMarker.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *CannonLocationEthV1BeaconStateExecutionPayloadAvailability) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_CannonLocationEthV1BeaconStateExecutionPayloadAvailability.Put(m)
+	}
+}
+func CannonLocationEthV1BeaconStateExecutionPayloadAvailabilityFromVTPool() *CannonLocationEthV1BeaconStateExecutionPayloadAvailability {
+	return vtprotoPool_CannonLocationEthV1BeaconStateExecutionPayloadAvailability.Get().(*CannonLocationEthV1BeaconStateExecutionPayloadAvailability)
+}
+
 var vtprotoPool_CannonLocation = sync.Pool{
 	New: func() interface{} {
 		return &CannonLocation{}
@@ -7109,6 +7539,21 @@ func (m *CannonLocation) ResetVT() {
 		}
 		if oneof, ok := m.Data.(*CannonLocation_EthV2BeaconBlockAccessListSummary); ok {
 			oneof.EthV2BeaconBlockAccessListSummary.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconStatePtcMember); ok {
+			oneof.EthV1BeaconStatePtcMember.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconStateBuilder); ok {
+			oneof.EthV1BeaconStateBuilder.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconStateBuilderPendingPayment); ok {
+			oneof.EthV1BeaconStateBuilderPendingPayment.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconStateBuilderPendingWithdrawal); ok {
+			oneof.EthV1BeaconStateBuilderPendingWithdrawal.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconStateExecutionPayloadAvailability); ok {
+			oneof.EthV1BeaconStateExecutionPayloadAvailability.ReturnToVTPool()
 		}
 		m.Reset()
 	}
@@ -8646,6 +9091,76 @@ func (m *CannonLocationEthV1BeaconStatePendingConsolidation) SizeVT() (n int) {
 	return n
 }
 
+func (m *CannonLocationEthV1BeaconStatePtcMember) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BackfillingCheckpointMarker != nil {
+		l = m.BackfillingCheckpointMarker.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilder) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BackfillingCheckpointMarker != nil {
+		l = m.BackfillingCheckpointMarker.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilderPendingPayment) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BackfillingCheckpointMarker != nil {
+		l = m.BackfillingCheckpointMarker.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *CannonLocationEthV1BeaconStateBuilderPendingWithdrawal) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BackfillingCheckpointMarker != nil {
+		l = m.BackfillingCheckpointMarker.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *CannonLocationEthV1BeaconStateExecutionPayloadAvailability) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BackfillingCheckpointMarker != nil {
+		l = m.BackfillingCheckpointMarker.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
 func (m *CannonLocation) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -9238,6 +9753,66 @@ func (m *CannonLocation_EthV2BeaconBlockAccessListSummary) SizeVT() (n int) {
 	_ = l
 	if m.EthV2BeaconBlockAccessListSummary != nil {
 		l = m.EthV2BeaconBlockAccessListSummary.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *CannonLocation_EthV1BeaconStatePtcMember) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStatePtcMember != nil {
+		l = m.EthV1BeaconStatePtcMember.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *CannonLocation_EthV1BeaconStateBuilder) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStateBuilder != nil {
+		l = m.EthV1BeaconStateBuilder.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *CannonLocation_EthV1BeaconStateBuilderPendingPayment) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStateBuilderPendingPayment != nil {
+		l = m.EthV1BeaconStateBuilderPendingPayment.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *CannonLocation_EthV1BeaconStateBuilderPendingWithdrawal) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStateBuilderPendingWithdrawal != nil {
+		l = m.EthV1BeaconStateBuilderPendingWithdrawal.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *CannonLocation_EthV1BeaconStateExecutionPayloadAvailability) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStateExecutionPayloadAvailability != nil {
+		l = m.EthV1BeaconStateExecutionPayloadAvailability.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -17328,6 +17903,441 @@ func (m *CannonLocationEthV1BeaconStatePendingConsolidation) UnmarshalVT(dAtA []
 	}
 	return nil
 }
+func (m *CannonLocationEthV1BeaconStatePtcMember) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CannonLocationEthV1BeaconStatePtcMember: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CannonLocationEthV1BeaconStatePtcMember: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BackfillingCheckpointMarker", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.BackfillingCheckpointMarker == nil {
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
+			}
+			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CannonLocationEthV1BeaconStateBuilder) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CannonLocationEthV1BeaconStateBuilder: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CannonLocationEthV1BeaconStateBuilder: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BackfillingCheckpointMarker", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.BackfillingCheckpointMarker == nil {
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
+			}
+			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CannonLocationEthV1BeaconStateBuilderPendingPayment) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CannonLocationEthV1BeaconStateBuilderPendingPayment: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CannonLocationEthV1BeaconStateBuilderPendingPayment: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BackfillingCheckpointMarker", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.BackfillingCheckpointMarker == nil {
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
+			}
+			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CannonLocationEthV1BeaconStateBuilderPendingWithdrawal) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CannonLocationEthV1BeaconStateBuilderPendingWithdrawal: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CannonLocationEthV1BeaconStateBuilderPendingWithdrawal: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BackfillingCheckpointMarker", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.BackfillingCheckpointMarker == nil {
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
+			}
+			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CannonLocationEthV1BeaconStateExecutionPayloadAvailability) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CannonLocationEthV1BeaconStateExecutionPayloadAvailability: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CannonLocationEthV1BeaconStateExecutionPayloadAvailability: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BackfillingCheckpointMarker", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.BackfillingCheckpointMarker == nil {
+				m.BackfillingCheckpointMarker = BackfillingCheckpointMarkerFromVTPool()
+			}
+			if err := m.BackfillingCheckpointMarker.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -19374,6 +20384,211 @@ func (m *CannonLocation) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Data = &CannonLocation_EthV2BeaconBlockAccessListSummary{EthV2BeaconBlockAccessListSummary: v}
+			}
+			iNdEx = postIndex
+		case 52:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStatePtcMember", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconStatePtcMember); ok {
+				if err := oneof.EthV1BeaconStatePtcMember.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := CannonLocationEthV1BeaconStatePtcMemberFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &CannonLocation_EthV1BeaconStatePtcMember{EthV1BeaconStatePtcMember: v}
+			}
+			iNdEx = postIndex
+		case 53:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStateBuilder", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconStateBuilder); ok {
+				if err := oneof.EthV1BeaconStateBuilder.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := CannonLocationEthV1BeaconStateBuilderFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &CannonLocation_EthV1BeaconStateBuilder{EthV1BeaconStateBuilder: v}
+			}
+			iNdEx = postIndex
+		case 54:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStateBuilderPendingPayment", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconStateBuilderPendingPayment); ok {
+				if err := oneof.EthV1BeaconStateBuilderPendingPayment.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := CannonLocationEthV1BeaconStateBuilderPendingPaymentFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &CannonLocation_EthV1BeaconStateBuilderPendingPayment{EthV1BeaconStateBuilderPendingPayment: v}
+			}
+			iNdEx = postIndex
+		case 55:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStateBuilderPendingWithdrawal", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconStateBuilderPendingWithdrawal); ok {
+				if err := oneof.EthV1BeaconStateBuilderPendingWithdrawal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := CannonLocationEthV1BeaconStateBuilderPendingWithdrawalFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &CannonLocation_EthV1BeaconStateBuilderPendingWithdrawal{EthV1BeaconStateBuilderPendingWithdrawal: v}
+			}
+			iNdEx = postIndex
+		case 56:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStateExecutionPayloadAvailability", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*CannonLocation_EthV1BeaconStateExecutionPayloadAvailability); ok {
+				if err := oneof.EthV1BeaconStateExecutionPayloadAvailability.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := CannonLocationEthV1BeaconStateExecutionPayloadAvailabilityFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &CannonLocation_EthV1BeaconStateExecutionPayloadAvailability{EthV1BeaconStateExecutionPayloadAvailability: v}
 			}
 			iNdEx = postIndex
 		default:

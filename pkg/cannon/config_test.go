@@ -58,3 +58,46 @@ func TestConfig_Validate_RejectsXatuServerOutput(t *testing.T) {
 		require.NoError(t, mk(output.SinkTypeKafka).Validate())
 	})
 }
+
+// TestConfig_Validate_BlockAccessListBatchCap asserts an unusable
+// maxRowsPerBatch is rejected at startup rather than silently ignored.
+func TestConfig_Validate_BlockAccessListBatchCap(t *testing.T) {
+	mk := func(maxRows int) *Config {
+		cfg := &Config{
+			Name:        "test",
+			Ethereum:    ethereum.Config{Beacon: ethereum.BeaconConfig{Address: "http://localhost:5052"}},
+			Coordinator: coordinator.Config{Address: "localhost:8080"},
+			Outputs:     []output.Config{{Name: "out", SinkType: output.SinkTypeClickhouse}},
+		}
+
+		cfg.Derivers.Consensus.BlockAccessListConfig.Enabled = true
+		cfg.Derivers.Consensus.BlockAccessListConfig.MaxRowsPerBatch = maxRows
+
+		return cfg
+	}
+
+	tests := []struct {
+		name    string
+		maxRows int
+		wantErr bool
+	}{
+		{name: "positive", maxRows: 50000},
+		{name: "zero", maxRows: 0, wantErr: true},
+		{name: "negative", maxRows: -1, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := mk(tt.maxRows).Validate()
+			if !tt.wantErr {
+				require.NoError(t, err)
+
+				return
+			}
+
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "consensus.blockAccessList")
+			assert.Contains(t, err.Error(), "maxRowsPerBatch")
+		})
+	}
+}

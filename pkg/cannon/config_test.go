@@ -101,3 +101,39 @@ func TestConfig_Validate_BlockAccessListBatchCap(t *testing.T) {
 		})
 	}
 }
+
+// TestConfig_GloasDerivers asserts the Gloas derivers are on by default and
+// can be toggled independently through the shipped config keys.
+func TestConfig_GloasDerivers(t *testing.T) {
+	t.Run("enabled by default", func(t *testing.T) {
+		config := &Config{}
+		require.NoError(t, defaults.Set(config))
+
+		consensus := config.Derivers.Consensus
+		assert.True(t, consensus.ExecutionRequestBuilderDepositConfig.Enabled)
+		assert.True(t, consensus.ExecutionRequestBuilderExitConfig.Enabled)
+		assert.True(t, consensus.BlockAccessListSummaryConfig.Enabled)
+	})
+
+	t.Run("summary runs without the raw block access list deriver", func(t *testing.T) {
+		config := &Config{}
+		require.NoError(t, defaults.Set(config))
+
+		type plain Config
+
+		require.NoError(t, yaml.Unmarshal([]byte(`
+derivers:
+  consensus:
+    blockAccessList: { enabled: false }
+    blockAccessListSummary: { enabled: true }
+    executionRequestBuilderDeposit: { enabled: false }
+    executionRequestBuilderExit: { enabled: false }
+`), (*plain)(config)))
+
+		consensus := config.Derivers.Consensus
+		assert.False(t, consensus.BlockAccessListConfig.Enabled)
+		assert.True(t, consensus.BlockAccessListSummaryConfig.Enabled)
+		assert.False(t, consensus.ExecutionRequestBuilderDepositConfig.Enabled)
+		assert.False(t, consensus.ExecutionRequestBuilderExitConfig.Enabled)
+	})
+}

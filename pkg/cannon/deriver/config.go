@@ -1,6 +1,8 @@
 package deriver
 
 import (
+	"fmt"
+
 	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver/execution"
@@ -52,5 +54,9 @@ type ConsensusConfig struct {
 }
 
 func (c *Config) Validate() error {
+	if err := c.Consensus.BlockAccessListConfig.Validate(); err != nil {
+		return fmt.Errorf("consensus.blockAccessList: %w", err)
+	}
+
 	return nil
 }

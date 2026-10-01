@@ -31,6 +31,23 @@ const (
 type BlockAccessListDeriverConfig struct {
 	Enabled  bool                                 `yaml:"enabled" default:"true"`
 	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
+	// MaxRowsPerBatch caps the number of events (one ClickHouse row each) that
+	// are handed to the outputs in a single call. An epoch is streamed to the
+	// outputs in batches of at most this size rather than all at once.
+	MaxRowsPerBatch int `yaml:"maxRowsPerBatch" default:"50000"`
+}
+
+// Validate checks the deriver configuration for errors.
+func (c *BlockAccessListDeriverConfig) Validate() error {
+	if !c.Enabled {
+		return nil
+	}
+
+	if c.MaxRowsPerBatch < 1 {
+		return errors.New("maxRowsPerBatch must be greater than zero")
+	}
+
+	return nil
 }
 
 // BlockAccessListDeriver extracts block access list data from Gloas beacon blocks.
@@ -44,9 +61,11 @@ type BlockAccessListDeriver struct {
 	onEventsCallbacks []func(ctx context.Context, events []*xatu.DecoratedEvent) error
 	beacon            *ethereum.BeaconNode
 	clientMeta        *xatu.ClientMeta
+	streamer          *epochStreamer
 }
 
-// NewBlockAccessListDeriver creates a new BlockAccessListDeriver.
+// NewBlockAccessListDeriver creates a new BlockAccessListDeriver. The config
+// is expected to have had its defaults applied.
 func NewBlockAccessListDeriver(
 	log observability.ContextualLogger,
 	config *BlockAccessListDeriverConfig,
@@ -54,7 +73,7 @@ func NewBlockAccessListDeriver(
 	beacon *ethereum.BeaconNode,
 	clientMeta *xatu.ClientMeta,
 ) *BlockAccessListDeriver {
-	return &BlockAccessListDeriver{
+	b := &BlockAccessListDeriver{
 		log: log.WithFields(logrus.Fields{
 			moduleLogField: "cannon/event/beacon/eth/v2/block_access_list",
 			typeLogField:   BlockAccessListDeriverName.String(),
@@ -64,6 +83,10 @@ func NewBlockAccessListDeriver(
 		beacon:     beacon,
 		clientMeta: clientMeta,
 	}
+
+	b.streamer = newEpochStreamer(config.MaxRowsPerBatch, b.processSlot, b.sendEvents)
+
+	return b
 }
 
 // CannonType returns the cannon type for this deriver.
@@ -144,21 +167,16 @@ func (b *BlockAccessListDeriver) run(rctx context.Context) {
 					return "", err
 				}
 
-				// Process the epoch
-				events, err := b.processEpoch(ctx, position.Next)
-				if err != nil {
-					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
-
-					return "", err
-				}
-
 				// Look ahead
 				b.lookAhead(ctx, position.LookAheads)
 
-				for _, fn := range b.onEventsCallbacks {
-					if errr := fn(ctx, events); errr != nil {
-						return "", errors.Wrapf(errr, "failed to send events")
-					}
+				// Derive the epoch and send its events in bounded batches. This
+				// only returns nil once every batch has been accepted.
+				if err := b.processEpoch(ctx, position.Next); err != nil {
+					b.log.WithError(err).WithField("epoch", position.Next).WithContext(ctx).
+						Error("Failed to process epoch")
+
+					return "", err
 				}
 
 				// Update our location
@@ -166,6 +184,8 @@ func (b *BlockAccessListDeriver) run(rctx context.Context) {
 					position.Direction); err != nil {
 					return "", err
 				}
+
+				b.streamer.reset()
 
 				bo.Reset()
 
@@ -189,7 +209,7 @@ func (b *BlockAccessListDeriver) run(rctx context.Context) {
 func (b *BlockAccessListDeriver) processEpoch(
 	ctx context.Context,
 	epoch phase0.Epoch,
-) ([]*xatu.DecoratedEvent, error) {
+) error {
 	ctx, span := observability.Tracer().Start(ctx,
 		"BlockAccessListDeriver.processEpoch",
 		//nolint:gosec // epoch value will never overflow int64
@@ -199,23 +219,29 @@ func (b *BlockAccessListDeriver) processEpoch(
 
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to obtain spec")
+		return errors.Wrap(err, "failed to obtain spec")
 	}
 
-	allEvents := make([]*xatu.DecoratedEvent, 0, sp.SlotsPerEpoch)
+	slotsPerEpoch := uint64(sp.SlotsPerEpoch)
+	firstSlot := phase0.Slot(uint64(epoch) * slotsPerEpoch)
 
-	for i := uint64(0); i <= uint64(sp.SlotsPerEpoch-1); i++ {
-		slot := phase0.Slot(i + uint64(epoch)*uint64(sp.SlotsPerEpoch))
+	return b.streamer.stream(ctx, epoch, firstSlot, slotsPerEpoch)
+}
 
-		events, err := b.processSlot(ctx, slot)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to process slot %d", slot)
+// sendEvents hands a batch of events to every registered callback.
+func (b *BlockAccessListDeriver) sendEvents(
+	ctx context.Context,
+	events []*xatu.DecoratedEvent,
+) error {
+	b.log.WithField("rows", len(events)).WithContext(ctx).Debug("Sending BAL batch")
+
+	for _, fn := range b.onEventsCallbacks {
+		if err := fn(ctx, events); err != nil {
+			return errors.Wrap(err, "failed to send events")
 		}
-
-		allEvents = append(allEvents, events...)
 	}
 
-	return allEvents, nil
+	return nil
 }
 
 func (b *BlockAccessListDeriver) processSlot(

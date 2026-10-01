@@ -5,11 +5,13 @@
 // Unlike the other sinks (xatu, kafka, http, stdout), this sink does NOT
 // use processor.BatchItemProcessor. Each call to HandleNewDecoratedEvents
 // flushes the entire input slice as one columnar INSERT per affected
-// table. This preserves cannon's per-epoch atomicity: one deriver
-// callback delivers one full epoch, which maps to one CH INSERT per
-// table covering exactly that epoch. The deriver only advances its
-// coordinator checkpoint after this call returns nil — so checkpoint
-// progress is gated on CH ack, not on a queued-for-batching ack.
+// table. For most derivers one callback delivers one full epoch, which
+// maps to one CH INSERT per table covering exactly that epoch. Derivers
+// whose epochs can be too large for a single INSERT (block access lists)
+// deliver an epoch as several bounded callbacks instead. Either way the
+// deriver only advances its coordinator checkpoint after every call has
+// returned nil — so checkpoint progress is gated on CH ack, not on a
+// queued-for-batching ack.
 //
 // As a consequence, the output.Config.ShippingMethod field is ignored
 // for this sink type. A non-Sync setting logs a warning at construction.

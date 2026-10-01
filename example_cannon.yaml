@@ -93,6 +93,13 @@ derivers:
     beaconStatePendingDeposit:           { enabled: false }
     beaconStatePendingPartialWithdrawal: { enabled: false }
     beaconStatePendingConsolidation:     { enabled: false }
+    # ── Gloas (EIP-7928) block access lists ──
+    # Busy networks produce tens of thousands of rows per slot, so an epoch is
+    # sent to the outputs in batches of at most maxRowsPerBatch rows. The
+    # checkpoint only advances once every batch of the epoch has been accepted.
+    blockAccessList:
+      enabled: true
+      maxRowsPerBatch: 50000
 
   # ── Execution layer — canonical_execution_* datasets via cryo ──
   # maxRangeSize is tuned from benchmarking at block 20M: throughput rises with

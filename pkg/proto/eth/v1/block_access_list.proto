@@ -69,3 +69,45 @@ message BlockAccessListChange {
   // new_value contains the new value for any change type
   google.protobuf.StringValue new_value = 5 [ json_name = "new_value" ];
 }
+
+// BlockAccessListSummary aggregates one block access list into per-block
+// statistics. Counts cover the whole block; "changes" are records of state
+// that the block modified, "reads" are slots that were only read.
+message BlockAccessListSummary {
+  // accounts_touched is the number of distinct addresses in the access list,
+  // including accounts that were only read or touched.
+  google.protobuf.UInt32Value accounts_touched = 1
+      [ json_name = "accounts_touched" ];
+  // storage_slots_changed is the number of distinct (address, slot) pairs
+  // that were written at least once.
+  google.protobuf.UInt32Value storage_slots_changed = 2
+      [ json_name = "storage_slots_changed" ];
+  // storage_changes is the number of individual storage write records
+  // (one per slot and block access index).
+  google.protobuf.UInt32Value storage_changes = 3
+      [ json_name = "storage_changes" ];
+  // storage_reads is the number of distinct (address, slot) pairs that were
+  // read without being written.
+  google.protobuf.UInt32Value storage_reads = 4
+      [ json_name = "storage_reads" ];
+  // balance_changes is the number of balance change records.
+  google.protobuf.UInt32Value balance_changes = 5
+      [ json_name = "balance_changes" ];
+  // nonce_changes is the number of nonce change records.
+  google.protobuf.UInt32Value nonce_changes = 6
+      [ json_name = "nonce_changes" ];
+  // code_changes is the number of code change records.
+  google.protobuf.UInt32Value code_changes = 7
+      [ json_name = "code_changes" ];
+  // total_changes is storage_changes + balance_changes + nonce_changes +
+  // code_changes.
+  google.protobuf.UInt32Value total_changes = 8
+      [ json_name = "total_changes" ];
+  // bal_size_bytes is the length of the RLP encoded access list as carried in
+  // the execution payload.
+  google.protobuf.UInt32Value bal_size_bytes = 9
+      [ json_name = "bal_size_bytes" ];
+  // bal_hash is the keccak256 hash of the RLP encoded access list as carried
+  // in the execution payload (hex encoded with 0x prefix).
+  google.protobuf.StringValue bal_hash = 10 [ json_name = "bal_hash" ];
+}

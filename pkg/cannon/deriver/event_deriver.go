@@ -48,3 +48,6 @@ var _ EventDeriver = &v1.FinalityCheckpointDeriver{}
 var _ EventDeriver = &v1.BeaconStatePendingDepositDeriver{}
 var _ EventDeriver = &v1.BeaconStatePendingPartialWithdrawalDeriver{}
 var _ EventDeriver = &v1.BeaconStatePendingConsolidationDeriver{}
+var _ EventDeriver = &v2.ExecutionRequestBuilderDepositDeriver{}
+var _ EventDeriver = &v2.ExecutionRequestBuilderExitDeriver{}
+var _ EventDeriver = &v2.BlockAccessListSummaryDeriver{}

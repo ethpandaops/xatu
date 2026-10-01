@@ -100,6 +100,12 @@ derivers:
     blockAccessList:
       enabled: true
       maxRowsPerBatch: 50000
+    # One summary row per block (counts, size and hash of the access list),
+    # derived independently of blockAccessList.
+    blockAccessListSummary: { enabled: true }
+    # ── Gloas (EIP-8282) builder execution requests (from the payload envelope) ──
+    executionRequestBuilderDeposit: { enabled: true }
+    executionRequestBuilderExit:    { enabled: true }
 
   # ── Execution layer — canonical_execution_* datasets via cryo ──
   # maxRangeSize is tuned from benchmarking at block 20M: throughput rises with

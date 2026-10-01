@@ -1203,6 +1203,58 @@ message ClientMeta {
     string block_hash = 3;
   }
 
+  // AdditionalEthV2BeaconBlockAccessListSummaryData contains additional data
+  // on the per-block block access list summary derived from beacon blocks.
+  message AdditionalEthV2BeaconBlockAccessListSummaryData {
+    // Block contains the information about the block that we are deriving the
+    // access list summary from.
+    BlockIdentifier block = 1;
+    // Execution block number from the execution payload.
+    google.protobuf.UInt64Value block_number = 2 [ json_name = "block_number" ];
+    // Execution block hash from the execution payload (hex encoded).
+    string block_hash = 3 [ json_name = "block_hash" ];
+  }
+
+  // AdditionalEthV2BeaconBlockExecutionRequestBuilderDepositData contains
+  // additional data on EIP-8282 execution request builder deposits derived
+  // from beacon blocks.
+  message AdditionalEthV2BeaconBlockExecutionRequestBuilderDepositData {
+    // Block contains the information about the block that we are deriving the
+    // execution request builder deposit from.
+    BlockIdentifier block = 1;
+
+    // PositionInBlock is the index of the builder deposit within the block's
+    // builder deposit requests.
+    google.protobuf.UInt64Value position_in_block = 2
+        [ json_name = "position_in_block" ];
+
+    // Execution block number from the execution payload.
+    google.protobuf.UInt64Value block_number = 3 [ json_name = "block_number" ];
+
+    // Execution block hash from the execution payload (hex encoded).
+    string block_hash = 4 [ json_name = "block_hash" ];
+  }
+
+  // AdditionalEthV2BeaconBlockExecutionRequestBuilderExitData contains
+  // additional data on EIP-8282 execution request builder exits derived from
+  // beacon blocks.
+  message AdditionalEthV2BeaconBlockExecutionRequestBuilderExitData {
+    // Block contains the information about the block that we are deriving the
+    // execution request builder exit from.
+    BlockIdentifier block = 1;
+
+    // PositionInBlock is the index of the builder exit within the block's
+    // builder exit requests.
+    google.protobuf.UInt64Value position_in_block = 2
+        [ json_name = "position_in_block" ];
+
+    // Execution block number from the execution payload.
+    google.protobuf.UInt64Value block_number = 3 [ json_name = "block_number" ];
+
+    // Execution block hash from the execution payload (hex encoded).
+    string block_hash = 4 [ json_name = "block_hash" ];
+  }
+
   // EIP-7732 ePBS Additional Data messages
 
   // AdditionalEthV1EventsExecutionPayloadData contains additional data about
@@ -2295,6 +2347,11 @@ message ClientMeta {
     // AdditionalEthV2BeaconBlockAccessListData contains additional data on
     // block access list entries derived from beacon blocks.
     AdditionalEthV2BeaconBlockAccessListData eth_v2_beacon_block_access_list = 124 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST" ];
+
+    // EIP-8282 builder execution requests and the per-block BAL summary.
+    AdditionalEthV2BeaconBlockExecutionRequestBuilderDepositData eth_v2_beacon_block_execution_request_builder_deposit = 125 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_DEPOSIT" ];
+    AdditionalEthV2BeaconBlockExecutionRequestBuilderExitData eth_v2_beacon_block_execution_request_builder_exit = 126 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_EXIT" ];
+    AdditionalEthV2BeaconBlockAccessListSummaryData eth_v2_beacon_block_access_list_summary = 127 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST_SUMMARY" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2575,6 +2632,11 @@ message Event {
     // BEACON_API_ETH_V1_EVENTS_HEAD_V2 is the schema rev of the v1 topic.
     BEACON_API_ETH_V1_EVENTS_HEAD_V3 = 135;
     BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION = 136;
+
+    // EIP-8282 builder execution requests and the per-block BAL summary.
+    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_DEPOSIT = 137;
+    BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_EXIT = 138;
+    BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST_SUMMARY = 139;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -3315,6 +3377,14 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V1_EVENTS_HEAD_V3" ];
     xatu.eth.v1.PayloadAttestationMessage eth_v1_events_payload_attestation = 257
         [ json_name = "BEACON_API_ETH_V1_EVENTS_PAYLOAD_ATTESTATION" ];
+
+    // EIP-8282 builder execution requests and the per-block BAL summary.
+    xatu.eth.v1.GloasBuilderDepositRequest eth_v2_beacon_block_execution_request_builder_deposit = 258
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_DEPOSIT" ];
+    xatu.eth.v1.GloasBuilderExitRequest eth_v2_beacon_block_execution_request_builder_exit = 259
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_EXECUTION_REQUEST_BUILDER_EXIT" ];
+    xatu.eth.v1.BlockAccessListSummary eth_v2_beacon_block_access_list_summary = 260
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST_SUMMARY" ];
   };
 }
 

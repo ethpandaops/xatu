@@ -47,6 +47,13 @@ type ConsensusConfig struct {
 	BeaconStatePendingPartialWithdrawalConfig v1.BeaconStatePendingPartialWithdrawalDeriverConfig `yaml:"beaconStatePendingPartialWithdrawal"`
 	BeaconStatePendingConsolidationConfig     v1.BeaconStatePendingConsolidationDeriverConfig     `yaml:"beaconStatePendingConsolidation"`
 
+	// Gloas beacon state derivers (EIP-7732). They share one state download per epoch.
+	BeaconStatePtcMemberConfig                    v1.BeaconStatePtcMemberDeriverConfig                    `yaml:"beaconStatePtcMember"`
+	BeaconStateBuilderConfig                      v1.BeaconStateBuilderDeriverConfig                      `yaml:"beaconStateBuilder"`
+	BeaconStateBuilderPendingPaymentConfig        v1.BeaconStateBuilderPendingPaymentDeriverConfig        `yaml:"beaconStateBuilderPendingPayment"`
+	BeaconStateBuilderPendingWithdrawalConfig     v1.BeaconStateBuilderPendingWithdrawalDeriverConfig     `yaml:"beaconStateBuilderPendingWithdrawal"`
+	BeaconStateExecutionPayloadAvailabilityConfig v1.BeaconStateExecutionPayloadAvailabilityDeriverConfig `yaml:"beaconStateExecutionPayloadAvailability"`
+
 	// EIP-7732 ePBS + EIP-7928 BAL derivers (Gloas).
 	BlockAccessListConfig     v2.BlockAccessListDeriverConfig     `yaml:"blockAccessList"`
 	PayloadAttestationConfig  v2.PayloadAttestationDeriverConfig  `yaml:"payloadAttestation"`

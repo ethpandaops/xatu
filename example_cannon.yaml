@@ -93,6 +93,15 @@ derivers:
     beaconStatePendingDeposit:           { enabled: false }
     beaconStatePendingPartialWithdrawal: { enabled: false }
     beaconStatePendingConsolidation:     { enabled: false }
+    # ── Gloas (EIP-7732) beacon state ──
+    # These read the full beacon state at the first slot of each finalized epoch
+    # (the debug state endpoint, SSZ) and share one download per epoch. Expect a
+    # state-sized transfer and a transient memory spike while it is decoded.
+    beaconStatePtcMember:                    { enabled: true }   # 16384 rows/epoch: every slot's ordered PTC
+    beaconStateBuilder:                      { enabled: true }   # one row per registered builder per epoch
+    beaconStateBuilderPendingPayment:        { enabled: true }   # non-empty entries only
+    beaconStateBuilderPendingWithdrawal:     { enabled: true }
+    beaconStateExecutionPayloadAvailability: { enabled: true }   # 32 rows/epoch, lags the state by two epochs
     # ── Gloas (EIP-7928) block access lists ──
     # Busy networks produce tens of thousands of rows per slot, so an epoch is
     # sent to the outputs in batches of at most maxRowsPerBatch rows. The

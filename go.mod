@@ -260,7 +260,7 @@ require (
 	github.com/pion/transport/v3 v3.0.7 // indirect
 	github.com/pion/turn/v4 v4.0.2 // indirect
 	github.com/pion/webrtc/v4 v4.1.2 // indirect
-	github.com/pk910/dynamic-ssz v1.3.3-0.20260812091520-ef568569f9c1 // indirect
+	github.com/pk910/dynamic-ssz v1.3.3-0.20260812091520-ef568569f9c1
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/prometheus/common v0.70.1 // indirect

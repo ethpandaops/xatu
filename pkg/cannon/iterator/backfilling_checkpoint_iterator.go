@@ -451,6 +451,16 @@ func (c *BackfillingCheckpoint) GetMarker(location *xatu.CannonLocation) (*xatu.
 		marker = location.GetEthV1BeaconStatePendingPartialWithdrawal().GetBackfillingCheckpointMarker()
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION:
 		marker = location.GetEthV1BeaconStatePendingConsolidation().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PTC_MEMBER:
+		marker = location.GetEthV1BeaconStatePtcMember().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_BUILDER:
+		marker = location.GetEthV1BeaconStateBuilder().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT:
+		marker = location.GetEthV1BeaconStateBuilderPendingPayment().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL:
+		marker = location.GetEthV1BeaconStateBuilderPendingWithdrawal().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY:
+		marker = location.GetEthV1BeaconStateExecutionPayloadAvailability().GetBackfillingCheckpointMarker()
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST:
 		marker = location.GetEthV2BeaconBlockAccessList().GetBackfillingCheckpointMarker()
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION:
@@ -661,6 +671,36 @@ func (c *BackfillingCheckpoint) createLocationFromEpochNumber(finalized, backfil
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION:
 		location.Data = &xatu.CannonLocation_EthV1BeaconStatePendingConsolidation{
 			EthV1BeaconStatePendingConsolidation: &xatu.CannonLocationEthV1BeaconStatePendingConsolidation{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PTC_MEMBER:
+		location.Data = &xatu.CannonLocation_EthV1BeaconStatePtcMember{
+			EthV1BeaconStatePtcMember: &xatu.CannonLocationEthV1BeaconStatePtcMember{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_BUILDER:
+		location.Data = &xatu.CannonLocation_EthV1BeaconStateBuilder{
+			EthV1BeaconStateBuilder: &xatu.CannonLocationEthV1BeaconStateBuilder{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT:
+		location.Data = &xatu.CannonLocation_EthV1BeaconStateBuilderPendingPayment{
+			EthV1BeaconStateBuilderPendingPayment: &xatu.CannonLocationEthV1BeaconStateBuilderPendingPayment{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL:
+		location.Data = &xatu.CannonLocation_EthV1BeaconStateBuilderPendingWithdrawal{
+			EthV1BeaconStateBuilderPendingWithdrawal: &xatu.CannonLocationEthV1BeaconStateBuilderPendingWithdrawal{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY:
+		location.Data = &xatu.CannonLocation_EthV1BeaconStateExecutionPayloadAvailability{
+			EthV1BeaconStateExecutionPayloadAvailability: &xatu.CannonLocationEthV1BeaconStateExecutionPayloadAvailability{
 				BackfillingCheckpointMarker: marker,
 			},
 		}

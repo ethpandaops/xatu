@@ -250,6 +250,16 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_PENDING_PARTIAL_WITHDRAWAL", msg.GetEthV1BeaconStatePendingPartialWithdrawal())
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION:
 		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_PENDING_CONSOLIDATION", msg.GetEthV1BeaconStatePendingConsolidation())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PTC_MEMBER:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_PTC_MEMBER", msg.GetEthV1BeaconStatePtcMember())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_BUILDER:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_BUILDER", msg.GetEthV1BeaconStateBuilder())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT", msg.GetEthV1BeaconStateBuilderPendingPayment())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL", msg.GetEthV1BeaconStateBuilderPendingWithdrawal())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY", msg.GetEthV1BeaconStateExecutionPayloadAvailability())
 	case xatu.CannonType_EXECUTION_CANONICAL_BLOCK:
 		l.Type = "EXECUTION_CANONICAL_BLOCK"
 
@@ -633,6 +643,56 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV1BeaconStatePendingConsolidation{EthV1BeaconStatePendingConsolidation: data}
+	case "BEACON_API_ETH_V1_BEACON_STATE_PTC_MEMBER":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_PTC_MEMBER
+
+		data := &xatu.CannonLocationEthV1BeaconStatePtcMember{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconStatePtcMember{EthV1BeaconStatePtcMember: data}
+	case "BEACON_API_ETH_V1_BEACON_STATE_BUILDER":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_BUILDER
+
+		data := &xatu.CannonLocationEthV1BeaconStateBuilder{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconStateBuilder{EthV1BeaconStateBuilder: data}
+	case "BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT
+
+		data := &xatu.CannonLocationEthV1BeaconStateBuilderPendingPayment{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconStateBuilderPendingPayment{EthV1BeaconStateBuilderPendingPayment: data}
+	case "BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL
+
+		data := &xatu.CannonLocationEthV1BeaconStateBuilderPendingWithdrawal{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconStateBuilderPendingWithdrawal{EthV1BeaconStateBuilderPendingWithdrawal: data}
+	case "BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY
+
+		data := &xatu.CannonLocationEthV1BeaconStateExecutionPayloadAvailability{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconStateExecutionPayloadAvailability{EthV1BeaconStateExecutionPayloadAvailability: data}
 	case "EXECUTION_CANONICAL_BLOCK":
 		msg.Type = xatu.CannonType_EXECUTION_CANONICAL_BLOCK
 

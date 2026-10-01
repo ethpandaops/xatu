@@ -137,3 +137,19 @@ derivers:
 		assert.False(t, consensus.ExecutionRequestBuilderExitConfig.Enabled)
 	})
 }
+
+// TestConfig_GloasStateDeriversDefaultToEnabled pins the opt-out default of the
+// Gloas beacon state derivers: they stay idle until the fork activates, so the
+// operator only has to disable them to skip the state downloads.
+func TestConfig_GloasStateDeriversDefaultToEnabled(t *testing.T) {
+	config := &Config{}
+	require.NoError(t, defaults.Set(config))
+
+	consensus := config.Derivers.Consensus
+
+	assert.True(t, consensus.BeaconStatePtcMemberConfig.Enabled)
+	assert.True(t, consensus.BeaconStateBuilderConfig.Enabled)
+	assert.True(t, consensus.BeaconStateBuilderPendingPaymentConfig.Enabled)
+	assert.True(t, consensus.BeaconStateBuilderPendingWithdrawalConfig.Enabled)
+	assert.True(t, consensus.BeaconStateExecutionPayloadAvailabilityConfig.Enabled)
+}

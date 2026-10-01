@@ -1505,6 +1505,356 @@ func (m *PendingConsolidationData) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
+func (m *PtcMemberData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PtcMemberData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *PtcMemberData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.ValidatorIndex != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.ValidatorIndex).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Position != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.Position).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BuilderData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BuilderData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *BuilderData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Status) > 0 {
+		i -= len(m.Status)
+		copy(dAtA[i:], m.Status)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Status)))
+		i--
+		dAtA[i] = 0x42
+	}
+	if m.WithdrawableEpoch != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.WithdrawableEpoch).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if m.DepositEpoch != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.DepositEpoch).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.Balance != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.Balance).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.ExecutionAddress) > 0 {
+		i -= len(m.ExecutionAddress)
+		copy(dAtA[i:], m.ExecutionAddress)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ExecutionAddress)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.Version != nil {
+		size, err := (*wrapperspb.UInt32Value)(m.Version).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Pubkey) > 0 {
+		i -= len(m.Pubkey)
+		copy(dAtA[i:], m.Pubkey)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Pubkey)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Index != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.Index).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BuilderPendingPaymentData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BuilderPendingPaymentData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *BuilderPendingPaymentData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.ProposerIndex != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.ProposerIndex).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.BuilderIndex != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.BuilderIndex).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.Amount != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.Amount).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.FeeRecipient) > 0 {
+		i -= len(m.FeeRecipient)
+		copy(dAtA[i:], m.FeeRecipient)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.FeeRecipient)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Weight != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.Weight).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.PaymentIndex != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.PaymentIndex).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BuilderPendingWithdrawalData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BuilderPendingWithdrawalData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *BuilderPendingWithdrawalData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.BuilderIndex != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.BuilderIndex).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Amount != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.Amount).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.FeeRecipient) > 0 {
+		i -= len(m.FeeRecipient)
+		copy(dAtA[i:], m.FeeRecipient)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.FeeRecipient)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ExecutionPayloadAvailabilityData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ExecutionPayloadAvailabilityData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ExecutionPayloadAvailabilityData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Available != nil {
+		size, err := (*wrapperspb.BoolValue)(m.Available).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *BlockIdentifier) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -4929,6 +5279,296 @@ func (m *ClientMeta_AdditionalEthV1BeaconStatePendingConsolidationData) MarshalT
 	}
 	if m.Epoch != nil {
 		size, err := m.Epoch.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStatePtcMemberData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStatePtcMemberData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStatePtcMemberData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.StateId) > 0 {
+		i -= len(m.StateId)
+		copy(dAtA[i:], m.StateId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.StateId)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Epoch != nil {
+		size, err := m.Epoch.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Slot != nil {
+		size, err := m.Slot.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.StateId) > 0 {
+		i -= len(m.StateId)
+		copy(dAtA[i:], m.StateId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.StateId)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Epoch != nil {
+		size, err := m.Epoch.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.StateId) > 0 {
+		i -= len(m.StateId)
+		copy(dAtA[i:], m.StateId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.StateId)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Slot != nil {
+		size, err := m.Slot.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Epoch != nil {
+		size, err := m.Epoch.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.PositionInQueue != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.PositionInQueue).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.StateId) > 0 {
+		i -= len(m.StateId)
+		copy(dAtA[i:], m.StateId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.StateId)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Epoch != nil {
+		size, err := m.Epoch.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.StateId) > 0 {
+		i -= len(m.StateId)
+		copy(dAtA[i:], m.StateId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.StateId)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Epoch != nil {
+		size, err := m.Epoch.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Slot != nil {
+		size, err := m.Slot.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -13526,6 +14166,111 @@ func (m *ClientMeta_EthV2BeaconBlockAccessListSummary) MarshalToSizedBufferVT(dA
 	}
 	return len(dAtA) - i, nil
 }
+func (m *ClientMeta_EthV1BeaconStatePtcMember) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_EthV1BeaconStatePtcMember) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStatePtcMember != nil {
+		size, err := m.EthV1BeaconStatePtcMember.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x8
+		i--
+		dAtA[i] = 0x82
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ClientMeta_EthV1BeaconStateBuilder) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_EthV1BeaconStateBuilder) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStateBuilder != nil {
+		size, err := m.EthV1BeaconStateBuilder.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x8
+		i--
+		dAtA[i] = 0x8a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ClientMeta_EthV1BeaconStateBuilderPendingPayment) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_EthV1BeaconStateBuilderPendingPayment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStateBuilderPendingPayment != nil {
+		size, err := m.EthV1BeaconStateBuilderPendingPayment.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x8
+		i--
+		dAtA[i] = 0x92
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ClientMeta_EthV1BeaconStateBuilderPendingWithdrawal) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_EthV1BeaconStateBuilderPendingWithdrawal) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStateBuilderPendingWithdrawal != nil {
+		size, err := m.EthV1BeaconStateBuilderPendingWithdrawal.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x8
+		i--
+		dAtA[i] = 0x9a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ClientMeta_EthV1BeaconStateExecutionPayloadAvailability) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_EthV1BeaconStateExecutionPayloadAvailability) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStateExecutionPayloadAvailability != nil {
+		size, err := m.EthV1BeaconStateExecutionPayloadAvailability.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x8
+		i--
+		dAtA[i] = 0xa2
+	}
+	return len(dAtA) - i, nil
+}
 func (m *ServerMeta_Event) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -21747,6 +22492,111 @@ func (m *DecoratedEvent_EthV2BeaconBlockAccessListSummary) MarshalToSizedBufferV
 	}
 	return len(dAtA) - i, nil
 }
+func (m *DecoratedEvent_EthV1BeaconStatePtcMember) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *DecoratedEvent_EthV1BeaconStatePtcMember) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStatePtcMember != nil {
+		size, err := m.EthV1BeaconStatePtcMember.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x10
+		i--
+		dAtA[i] = 0xaa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *DecoratedEvent_EthV1BeaconStateBuilder) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *DecoratedEvent_EthV1BeaconStateBuilder) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStateBuilder != nil {
+		size, err := m.EthV1BeaconStateBuilder.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x10
+		i--
+		dAtA[i] = 0xb2
+	}
+	return len(dAtA) - i, nil
+}
+func (m *DecoratedEvent_EthV1BeaconStateBuilderPendingPayment) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *DecoratedEvent_EthV1BeaconStateBuilderPendingPayment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStateBuilderPendingPayment != nil {
+		size, err := m.EthV1BeaconStateBuilderPendingPayment.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x10
+		i--
+		dAtA[i] = 0xba
+	}
+	return len(dAtA) - i, nil
+}
+func (m *DecoratedEvent_EthV1BeaconStateBuilderPendingWithdrawal) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *DecoratedEvent_EthV1BeaconStateBuilderPendingWithdrawal) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStateBuilderPendingWithdrawal != nil {
+		size, err := m.EthV1BeaconStateBuilderPendingWithdrawal.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x10
+		i--
+		dAtA[i] = 0xc2
+	}
+	return len(dAtA) - i, nil
+}
+func (m *DecoratedEvent_EthV1BeaconStateExecutionPayloadAvailability) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *DecoratedEvent_EthV1BeaconStateExecutionPayloadAvailability) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconStateExecutionPayloadAvailability != nil {
+		size, err := m.EthV1BeaconStateExecutionPayloadAvailability.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x10
+		i--
+		dAtA[i] = 0xca
+	}
+	return len(dAtA) - i, nil
+}
 
 var vtprotoPool_CreateEventsRequest = sync.Pool{
 	New: func() interface{} {
@@ -22280,6 +23130,111 @@ func (m *PendingConsolidationData) ReturnToVTPool() {
 }
 func PendingConsolidationDataFromVTPool() *PendingConsolidationData {
 	return vtprotoPool_PendingConsolidationData.Get().(*PendingConsolidationData)
+}
+
+var vtprotoPool_PtcMemberData = sync.Pool{
+	New: func() interface{} {
+		return &PtcMemberData{}
+	},
+}
+
+func (m *PtcMemberData) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *PtcMemberData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_PtcMemberData.Put(m)
+	}
+}
+func PtcMemberDataFromVTPool() *PtcMemberData {
+	return vtprotoPool_PtcMemberData.Get().(*PtcMemberData)
+}
+
+var vtprotoPool_BuilderData = sync.Pool{
+	New: func() interface{} {
+		return &BuilderData{}
+	},
+}
+
+func (m *BuilderData) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *BuilderData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BuilderData.Put(m)
+	}
+}
+func BuilderDataFromVTPool() *BuilderData {
+	return vtprotoPool_BuilderData.Get().(*BuilderData)
+}
+
+var vtprotoPool_BuilderPendingPaymentData = sync.Pool{
+	New: func() interface{} {
+		return &BuilderPendingPaymentData{}
+	},
+}
+
+func (m *BuilderPendingPaymentData) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *BuilderPendingPaymentData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BuilderPendingPaymentData.Put(m)
+	}
+}
+func BuilderPendingPaymentDataFromVTPool() *BuilderPendingPaymentData {
+	return vtprotoPool_BuilderPendingPaymentData.Get().(*BuilderPendingPaymentData)
+}
+
+var vtprotoPool_BuilderPendingWithdrawalData = sync.Pool{
+	New: func() interface{} {
+		return &BuilderPendingWithdrawalData{}
+	},
+}
+
+func (m *BuilderPendingWithdrawalData) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *BuilderPendingWithdrawalData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BuilderPendingWithdrawalData.Put(m)
+	}
+}
+func BuilderPendingWithdrawalDataFromVTPool() *BuilderPendingWithdrawalData {
+	return vtprotoPool_BuilderPendingWithdrawalData.Get().(*BuilderPendingWithdrawalData)
+}
+
+var vtprotoPool_ExecutionPayloadAvailabilityData = sync.Pool{
+	New: func() interface{} {
+		return &ExecutionPayloadAvailabilityData{}
+	},
+}
+
+func (m *ExecutionPayloadAvailabilityData) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *ExecutionPayloadAvailabilityData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ExecutionPayloadAvailabilityData.Put(m)
+	}
+}
+func ExecutionPayloadAvailabilityDataFromVTPool() *ExecutionPayloadAvailabilityData {
+	return vtprotoPool_ExecutionPayloadAvailabilityData.Get().(*ExecutionPayloadAvailabilityData)
 }
 
 var vtprotoPool_BlockIdentifier = sync.Pool{
@@ -23492,6 +24447,119 @@ func (m *ClientMeta_AdditionalEthV1BeaconStatePendingConsolidationData) ReturnTo
 }
 func ClientMeta_AdditionalEthV1BeaconStatePendingConsolidationDataFromVTPool() *ClientMeta_AdditionalEthV1BeaconStatePendingConsolidationData {
 	return vtprotoPool_ClientMeta_AdditionalEthV1BeaconStatePendingConsolidationData.Get().(*ClientMeta_AdditionalEthV1BeaconStatePendingConsolidationData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1BeaconStatePtcMemberData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1BeaconStatePtcMemberData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStatePtcMemberData) ResetVT() {
+	if m != nil {
+		m.Slot.ReturnToVTPool()
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1BeaconStatePtcMemberData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1BeaconStatePtcMemberData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1BeaconStatePtcMemberDataFromVTPool() *ClientMeta_AdditionalEthV1BeaconStatePtcMemberData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1BeaconStatePtcMemberData.Get().(*ClientMeta_AdditionalEthV1BeaconStatePtcMemberData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1BeaconStateBuilderData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1BeaconStateBuilderData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1BeaconStateBuilderData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1BeaconStateBuilderDataFromVTPool() *ClientMeta_AdditionalEthV1BeaconStateBuilderData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1BeaconStateBuilderData.Get().(*ClientMeta_AdditionalEthV1BeaconStateBuilderData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Slot.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentDataFromVTPool() *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData.Get().(*ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData) ResetVT() {
+	if m != nil {
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalDataFromVTPool() *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData.Get().(*ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData) ResetVT() {
+	if m != nil {
+		m.Slot.ReturnToVTPool()
+		m.Epoch.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityDataFromVTPool() *ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData {
+	return vtprotoPool_ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData.Get().(*ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData)
 }
 
 var vtprotoPool_ClientMeta_AdditionalMempoolTransactionData = sync.Pool{
@@ -25758,6 +26826,21 @@ func (m *ClientMeta) ResetVT() {
 		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockAccessListSummary); ok {
 			oneof.EthV2BeaconBlockAccessListSummary.ReturnToVTPool()
 		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconStatePtcMember); ok {
+			oneof.EthV1BeaconStatePtcMember.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconStateBuilder); ok {
+			oneof.EthV1BeaconStateBuilder.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconStateBuilderPendingPayment); ok {
+			oneof.EthV1BeaconStateBuilderPendingPayment.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconStateBuilderPendingWithdrawal); ok {
+			oneof.EthV1BeaconStateBuilderPendingWithdrawal.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconStateExecutionPayloadAvailability); ok {
+			oneof.EthV1BeaconStateExecutionPayloadAvailability.ReturnToVTPool()
+		}
 		m.Reset()
 	}
 }
@@ -27418,6 +28501,21 @@ func (m *DecoratedEvent) ResetVT() {
 		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockAccessListSummary); ok {
 			oneof.EthV2BeaconBlockAccessListSummary.ReturnToVTPool()
 		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconStatePtcMember); ok {
+			oneof.EthV1BeaconStatePtcMember.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconStateBuilder); ok {
+			oneof.EthV1BeaconStateBuilder.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconStateBuilderPendingPayment); ok {
+			oneof.EthV1BeaconStateBuilderPendingPayment.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconStateBuilderPendingWithdrawal); ok {
+			oneof.EthV1BeaconStateBuilderPendingWithdrawal.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconStateExecutionPayloadAvailability); ok {
+			oneof.EthV1BeaconStateExecutionPayloadAvailability.ReturnToVTPool()
+		}
 		m.Reset()
 	}
 }
@@ -27969,6 +29067,136 @@ func (m *PendingConsolidationData) SizeVT() (n int) {
 	}
 	if m.TargetIndex != nil {
 		l = (*wrapperspb.UInt64Value)(m.TargetIndex).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *PtcMemberData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Position != nil {
+		l = (*wrapperspb.UInt64Value)(m.Position).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.ValidatorIndex != nil {
+		l = (*wrapperspb.UInt64Value)(m.ValidatorIndex).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *BuilderData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Index != nil {
+		l = (*wrapperspb.UInt64Value)(m.Index).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Pubkey)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Version != nil {
+		l = (*wrapperspb.UInt32Value)(m.Version).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.ExecutionAddress)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Balance != nil {
+		l = (*wrapperspb.UInt64Value)(m.Balance).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.DepositEpoch != nil {
+		l = (*wrapperspb.UInt64Value)(m.DepositEpoch).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.WithdrawableEpoch != nil {
+		l = (*wrapperspb.UInt64Value)(m.WithdrawableEpoch).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Status)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *BuilderPendingPaymentData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.PaymentIndex != nil {
+		l = (*wrapperspb.UInt64Value)(m.PaymentIndex).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Weight != nil {
+		l = (*wrapperspb.UInt64Value)(m.Weight).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.FeeRecipient)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Amount != nil {
+		l = (*wrapperspb.UInt64Value)(m.Amount).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.BuilderIndex != nil {
+		l = (*wrapperspb.UInt64Value)(m.BuilderIndex).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.ProposerIndex != nil {
+		l = (*wrapperspb.UInt64Value)(m.ProposerIndex).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *BuilderPendingWithdrawalData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.FeeRecipient)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Amount != nil {
+		l = (*wrapperspb.UInt64Value)(m.Amount).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.BuilderIndex != nil {
+		l = (*wrapperspb.UInt64Value)(m.BuilderIndex).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *ExecutionPayloadAvailabilityData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Available != nil {
+		l = (*wrapperspb.BoolValue)(m.Available).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -29244,6 +30472,112 @@ func (m *ClientMeta_AdditionalEthV1BeaconStatePendingConsolidationData) SizeVT()
 	}
 	if m.PositionInQueue != nil {
 		l = (*wrapperspb.UInt64Value)(m.PositionInQueue).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStatePtcMemberData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Slot != nil {
+		l = m.Slot.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Epoch != nil {
+		l = m.Epoch.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.StateId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Epoch != nil {
+		l = m.Epoch.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.StateId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Epoch != nil {
+		l = m.Epoch.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Slot != nil {
+		l = m.Slot.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.StateId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Epoch != nil {
+		l = m.Epoch.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.StateId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.PositionInQueue != nil {
+		l = (*wrapperspb.UInt64Value)(m.PositionInQueue).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Slot != nil {
+		l = m.Slot.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Epoch != nil {
+		l = m.Epoch.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.StateId)
+	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -32936,6 +34270,66 @@ func (m *ClientMeta_EthV2BeaconBlockAccessListSummary) SizeVT() (n int) {
 	_ = l
 	if m.EthV2BeaconBlockAccessListSummary != nil {
 		l = m.EthV2BeaconBlockAccessListSummary.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *ClientMeta_EthV1BeaconStatePtcMember) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStatePtcMember != nil {
+		l = m.EthV1BeaconStatePtcMember.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *ClientMeta_EthV1BeaconStateBuilder) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStateBuilder != nil {
+		l = m.EthV1BeaconStateBuilder.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *ClientMeta_EthV1BeaconStateBuilderPendingPayment) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStateBuilderPendingPayment != nil {
+		l = m.EthV1BeaconStateBuilderPendingPayment.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *ClientMeta_EthV1BeaconStateBuilderPendingWithdrawal) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStateBuilderPendingWithdrawal != nil {
+		l = m.EthV1BeaconStateBuilderPendingWithdrawal.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *ClientMeta_EthV1BeaconStateExecutionPayloadAvailability) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStateExecutionPayloadAvailability != nil {
+		l = m.EthV1BeaconStateExecutionPayloadAvailability.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36882,6 +38276,66 @@ func (m *DecoratedEvent_EthV2BeaconBlockAccessListSummary) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *DecoratedEvent_EthV1BeaconStatePtcMember) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStatePtcMember != nil {
+		l = m.EthV1BeaconStatePtcMember.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *DecoratedEvent_EthV1BeaconStateBuilder) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStateBuilder != nil {
+		l = m.EthV1BeaconStateBuilder.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *DecoratedEvent_EthV1BeaconStateBuilderPendingPayment) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStateBuilderPendingPayment != nil {
+		l = m.EthV1BeaconStateBuilderPendingPayment.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *DecoratedEvent_EthV1BeaconStateBuilderPendingWithdrawal) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStateBuilderPendingWithdrawal != nil {
+		l = m.EthV1BeaconStateBuilderPendingWithdrawal.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *DecoratedEvent_EthV1BeaconStateExecutionPayloadAvailability) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconStateExecutionPayloadAvailability != nil {
+		l = m.EthV1BeaconStateExecutionPayloadAvailability.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
 func (m *CreateEventsRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -40196,6 +41650,961 @@ func (m *PendingConsolidationData) UnmarshalVT(dAtA []byte) error {
 				m.TargetIndex = &wrapperspb1.UInt64Value{}
 			}
 			if err := (*wrapperspb.UInt64Value)(m.TargetIndex).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PtcMemberData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PtcMemberData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PtcMemberData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Position", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Position == nil {
+				m.Position = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.Position).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValidatorIndex", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ValidatorIndex == nil {
+				m.ValidatorIndex = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.ValidatorIndex).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BuilderData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BuilderData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BuilderData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Index", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Index == nil {
+				m.Index = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.Index).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pubkey", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Pubkey = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Version == nil {
+				m.Version = &wrapperspb1.UInt32Value{}
+			}
+			if err := (*wrapperspb.UInt32Value)(m.Version).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExecutionAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Balance", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Balance == nil {
+				m.Balance = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.Balance).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DepositEpoch", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.DepositEpoch == nil {
+				m.DepositEpoch = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.DepositEpoch).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WithdrawableEpoch", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.WithdrawableEpoch == nil {
+				m.WithdrawableEpoch = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.WithdrawableEpoch).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Status = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BuilderPendingPaymentData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BuilderPendingPaymentData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BuilderPendingPaymentData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PaymentIndex", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.PaymentIndex == nil {
+				m.PaymentIndex = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.PaymentIndex).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Weight", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Weight == nil {
+				m.Weight = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.Weight).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FeeRecipient", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FeeRecipient = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Amount == nil {
+				m.Amount = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.Amount).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BuilderIndex", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.BuilderIndex == nil {
+				m.BuilderIndex = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.BuilderIndex).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProposerIndex", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ProposerIndex == nil {
+				m.ProposerIndex = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.ProposerIndex).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BuilderPendingWithdrawalData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BuilderPendingWithdrawalData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BuilderPendingWithdrawalData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FeeRecipient", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FeeRecipient = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Amount == nil {
+				m.Amount = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.Amount).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BuilderIndex", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.BuilderIndex == nil {
+				m.BuilderIndex = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.BuilderIndex).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ExecutionPayloadAvailabilityData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ExecutionPayloadAvailabilityData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ExecutionPayloadAvailabilityData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Available", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Available == nil {
+				m.Available = &wrapperspb1.BoolValue{}
+			}
+			if err := (*wrapperspb.BoolValue)(m.Available).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -49305,6 +51714,745 @@ func (m *ClientMeta_AdditionalEthV1BeaconStatePendingConsolidationData) Unmarsha
 			if err := (*wrapperspb.UInt64Value)(m.PositionInQueue).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ClientMeta_AdditionalEthV1BeaconStatePtcMemberData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV1BeaconStatePtcMemberData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV1BeaconStatePtcMemberData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Slot", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Slot == nil {
+				m.Slot = SlotV2FromVTPool()
+			}
+			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Epoch == nil {
+				m.Epoch = EpochV2FromVTPool()
+			}
+			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StateId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StateId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV1BeaconStateBuilderData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV1BeaconStateBuilderData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Epoch == nil {
+				m.Epoch = EpochV2FromVTPool()
+			}
+			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StateId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StateId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Epoch == nil {
+				m.Epoch = EpochV2FromVTPool()
+			}
+			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Slot", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Slot == nil {
+				m.Slot = SlotV2FromVTPool()
+			}
+			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StateId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StateId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Epoch == nil {
+				m.Epoch = EpochV2FromVTPool()
+			}
+			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StateId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StateId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PositionInQueue", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.PositionInQueue == nil {
+				m.PositionInQueue = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.PositionInQueue).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Slot", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Slot == nil {
+				m.Slot = SlotV2FromVTPool()
+			}
+			if err := m.Slot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Epoch == nil {
+				m.Epoch = EpochV2FromVTPool()
+			}
+			if err := m.Epoch.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StateId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StateId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -69530,6 +72678,211 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 				m.AdditionalData = &ClientMeta_EthV2BeaconBlockAccessListSummary{EthV2BeaconBlockAccessListSummary: v}
 			}
 			iNdEx = postIndex
+		case 128:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStatePtcMember", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconStatePtcMember); ok {
+				if err := oneof.EthV1BeaconStatePtcMember.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := ClientMeta_AdditionalEthV1BeaconStatePtcMemberDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.AdditionalData = &ClientMeta_EthV1BeaconStatePtcMember{EthV1BeaconStatePtcMember: v}
+			}
+			iNdEx = postIndex
+		case 129:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStateBuilder", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconStateBuilder); ok {
+				if err := oneof.EthV1BeaconStateBuilder.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := ClientMeta_AdditionalEthV1BeaconStateBuilderDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.AdditionalData = &ClientMeta_EthV1BeaconStateBuilder{EthV1BeaconStateBuilder: v}
+			}
+			iNdEx = postIndex
+		case 130:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStateBuilderPendingPayment", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconStateBuilderPendingPayment); ok {
+				if err := oneof.EthV1BeaconStateBuilderPendingPayment.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := ClientMeta_AdditionalEthV1BeaconStateBuilderPendingPaymentDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.AdditionalData = &ClientMeta_EthV1BeaconStateBuilderPendingPayment{EthV1BeaconStateBuilderPendingPayment: v}
+			}
+			iNdEx = postIndex
+		case 131:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStateBuilderPendingWithdrawal", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconStateBuilderPendingWithdrawal); ok {
+				if err := oneof.EthV1BeaconStateBuilderPendingWithdrawal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := ClientMeta_AdditionalEthV1BeaconStateBuilderPendingWithdrawalDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.AdditionalData = &ClientMeta_EthV1BeaconStateBuilderPendingWithdrawal{EthV1BeaconStateBuilderPendingWithdrawal: v}
+			}
+			iNdEx = postIndex
+		case 132:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStateExecutionPayloadAvailability", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconStateExecutionPayloadAvailability); ok {
+				if err := oneof.EthV1BeaconStateExecutionPayloadAvailability.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := ClientMeta_AdditionalEthV1BeaconStateExecutionPayloadAvailabilityDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.AdditionalData = &ClientMeta_EthV1BeaconStateExecutionPayloadAvailability{EthV1BeaconStateExecutionPayloadAvailability: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -88605,6 +91958,211 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					}
 				}
 				m.Data = &DecoratedEvent_EthV2BeaconBlockAccessListSummary{EthV2BeaconBlockAccessListSummary: v}
+			}
+			iNdEx = postIndex
+		case 261:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStatePtcMember", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconStatePtcMember); ok {
+				if err := oneof.EthV1BeaconStatePtcMember.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := PtcMemberDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &DecoratedEvent_EthV1BeaconStatePtcMember{EthV1BeaconStatePtcMember: v}
+			}
+			iNdEx = postIndex
+		case 262:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStateBuilder", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconStateBuilder); ok {
+				if err := oneof.EthV1BeaconStateBuilder.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := BuilderDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &DecoratedEvent_EthV1BeaconStateBuilder{EthV1BeaconStateBuilder: v}
+			}
+			iNdEx = postIndex
+		case 263:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStateBuilderPendingPayment", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconStateBuilderPendingPayment); ok {
+				if err := oneof.EthV1BeaconStateBuilderPendingPayment.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := BuilderPendingPaymentDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &DecoratedEvent_EthV1BeaconStateBuilderPendingPayment{EthV1BeaconStateBuilderPendingPayment: v}
+			}
+			iNdEx = postIndex
+		case 264:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStateBuilderPendingWithdrawal", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconStateBuilderPendingWithdrawal); ok {
+				if err := oneof.EthV1BeaconStateBuilderPendingWithdrawal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := BuilderPendingWithdrawalDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &DecoratedEvent_EthV1BeaconStateBuilderPendingWithdrawal{EthV1BeaconStateBuilderPendingWithdrawal: v}
+			}
+			iNdEx = postIndex
+		case 265:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconStateExecutionPayloadAvailability", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconStateExecutionPayloadAvailability); ok {
+				if err := oneof.EthV1BeaconStateExecutionPayloadAvailability.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := ExecutionPayloadAvailabilityDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &DecoratedEvent_EthV1BeaconStateExecutionPayloadAvailability{EthV1BeaconStateExecutionPayloadAvailability: v}
 			}
 			iNdEx = postIndex
 		default:

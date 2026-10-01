@@ -966,11 +966,17 @@ func (w *MempoolWatcher) addPendingTransaction(txHash string, txData json.RawMes
 	w.pendingTxsMutex.Lock()
 	record, exists := w.pendingTxs[txHash]
 
+	// Captured before record.TxData is mutated below, so the requeue check
+	// after the lock is released reflects whether this call is the one that
+	// gave the record its data, not the state after that happened.
+	gainedData := false
+
 	if exists {
 		// Already in pending map, but we might need to update the TxData if we didn't have it before.
 		// Tx's added to our map via the socket don't come with the TxData, so we need to fetch it.
 		if record.TxData == nil && txData != nil {
 			record.TxData = txData
+			gainedData = true
 		}
 
 		// If this transaction was previously marked for pruning, receiving it again from any
@@ -1007,8 +1013,9 @@ func (w *MempoolWatcher) addPendingTransaction(txHash string, txData json.RawMes
 	}
 	w.pendingTxsMutex.Unlock()
 
-	// Add to processing queue (only if not already in the queue).
-	if !exists || (exists && record.TxData == nil && txData != nil) {
+	// Add to processing queue: either it's new, or it just gained the data
+	// it was missing.
+	if !exists || gainedData {
 		// Clone the record to avoid any potential race conditions.
 		recordCopy := &PendingTxRecord{
 			Hash:             record.Hash,

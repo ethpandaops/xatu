@@ -223,8 +223,8 @@ github.com/ethpandaops/ethereum-package-go v0.10.0 h1:q/TTZGWMjZmcuweASv14TEXxdP
 github.com/ethpandaops/ethereum-package-go v0.10.0/go.mod h1:t/JxwHlHCATh0FfQTiE5+kn1yg6wQ3NJtiBQ0n5MW84=
 github.com/ethpandaops/ethwallclock v0.4.0 h1:+sgnhf4pk6hLPukP076VxkiLloE4L0Yk1yat+ZyHh1g=
 github.com/ethpandaops/ethwallclock v0.4.0/go.mod h1:y0Cu+mhGLlem19vnAV2x0hpFS5KZ7oOi2SWYayv9l24=
-github.com/ethpandaops/go-eth2-client v0.1.9-0.20261007031214-2c54670fb67d h1:AksD3gmKVSlHOsnpkoi6dEvvjz+OCV4orolMa9FtmAE=
-github.com/ethpandaops/go-eth2-client v0.1.9-0.20261007031214-2c54670fb67d/go.mod h1:sIVbaug0GsltsJS+hj8ID4dmWBIt8TXoNIesvuBCGt0=
+github.com/ethpandaops/go-eth2-client v0.1.9-0.20261007031839-0b35f0981d55 h1:W1Tc0Vd2JTQheYcKhTQJUzjJgdSqq9GTd1aTfj2f8jE=
+github.com/ethpandaops/go-eth2-client v0.1.9-0.20261007031839-0b35f0981d55/go.mod h1:sIVbaug0GsltsJS+hj8ID4dmWBIt8TXoNIesvuBCGt0=
 github.com/failsafe-go/failsafe-go v0.9.6 h1:vPSH2cry0Ee5cnR9wc9qshCDO6jdrMA9elBJNwyo4Uk=
 github.com/failsafe-go/failsafe-go v0.9.6/go.mod h1:IeRpglkcwzKagjDMh90ZhN2l4Ovt3+jemQBUbThag54=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=

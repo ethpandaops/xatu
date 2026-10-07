@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	ssz "github.com/ferranbt/fastssz"
 	"github.com/golang/snappy"
 	"github.com/google/uuid"
@@ -24,6 +25,7 @@ type ValidatorBlock struct {
 	log        observability.ContextualLogger
 	snapshot   *ValidatorBlockDataSnapshot
 	event      *api.VersionedProposal
+	envelope   *gloas.ExecutionPayloadEnvelope
 	beacon     *ethereum.BeaconNode
 	clientMeta *xatu.ClientMeta
 	id         uuid.UUID
@@ -34,8 +36,11 @@ type ValidatorBlockDataSnapshot struct {
 	RequestDuration time.Duration
 }
 
+// NewValidatorBlock creates a validator block event. From Gloas the payload is
+// not in the block; envelope carries it when the beacon node built it, else nil.
 func NewValidatorBlock(
 	log observability.ContextualLogger, event *api.VersionedProposal,
+	envelope *gloas.ExecutionPayloadEnvelope,
 	snapshot *ValidatorBlockDataSnapshot,
 	beacon *ethereum.BeaconNode,
 	clientMeta *xatu.ClientMeta,
@@ -43,6 +48,7 @@ func NewValidatorBlock(
 	return &ValidatorBlock{
 		log:        log.WithField("event", "BEACON_API_ETH_V3_VALIDATOR_BLOCK"),
 		event:      event,
+		envelope:   envelope,
 		snapshot:   snapshot,
 		beacon:     beacon,
 		clientMeta: clientMeta,
@@ -206,14 +212,21 @@ func (e *ValidatorBlock) getAdditionalData() (*xatu.ClientMeta_AdditionalEthV3Va
 
 		addTxData(fuluTxs)
 	case spec.DataVersionGloas:
-		// EIP-7732: the proposed Gloas block body has no inline ExecutionPayload —
-		// transactions arrive separately via the ExecutionPayloadEnvelope after the
-		// builder reveals it. At validator-proposal time the envelope isn't published
-		// yet, so block size is the body-only size and tx-related counts stay zero
-		// (cannon's envelope-sourced derivers fill in tx data downstream).
+		// EIP-7732: the block body has no execution payload, so block size is the
+		// body alone. Transactions come from the envelope when the beacon node
+		// built the payload; a builder's payload is not visible at proposal time.
 		totalBytes, totalBytesCompressed, err = computeBlockSize(e.event.Gloas.Body)
 		if err != nil {
 			e.log.WithError(err).Warn("Failed to compute gloas block size")
+		}
+
+		if e.envelope != nil && e.envelope.Payload != nil {
+			gloasTxs := make([][]byte, len(e.envelope.Payload.Transactions))
+			for i, tx := range e.envelope.Payload.Transactions {
+				gloasTxs[i] = tx
+			}
+
+			addTxData(gloasTxs)
 		}
 
 	default:

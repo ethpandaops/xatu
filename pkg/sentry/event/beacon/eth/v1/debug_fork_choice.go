@@ -27,7 +27,10 @@ type ForkChoice struct {
 }
 
 type ForkChoiceSnapshot struct {
-	Event           *eth2v1.ForkChoice
+	Event *eth2v1.ForkChoice
+	// EventV2 is set instead of Event when the beacon node serves the
+	// Gloas-aware GET /eth/v2/debug/fork_choice.
+	EventV2         *eth2v1.ForkChoiceV2
 	RequestSlot     phase0.Slot
 	RequestEpoch    phase0.Epoch
 	RequestAt       time.Time
@@ -82,6 +85,10 @@ func (f *ForkChoice) ShouldIgnore(ctx context.Context) (bool, error) {
 }
 
 func (f *ForkChoice) GetData() (*xatuethv1.ForkChoiceV2, error) {
+	if f.snapshot.EventV2 != nil {
+		return xatuethv1.NewForkChoiceV2FromGoEth2ClientV2(f.snapshot.EventV2)
+	}
+
 	return xatuethv1.NewForkChoiceV2FromGoEth2ClientV1(f.snapshot.Event)
 }
 

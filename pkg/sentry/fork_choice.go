@@ -2,9 +2,13 @@ package sentry
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"time"
 
 	"github.com/ethpandaops/ethwallclock"
+	eth2client "github.com/ethpandaops/go-eth2-client"
+	"github.com/ethpandaops/go-eth2-client/api"
 	eth2v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/go-co-op/gocron/v2"
@@ -154,7 +158,7 @@ func (s *Sentry) fetchDebugForkChoice(ctx context.Context) (*v1.ForkChoice, erro
 		RequestEpoch: phase0.Epoch(epoch.Number()),
 	}
 
-	forkChoice, err := s.beacon.Node().FetchForkChoice(ctx)
+	forkChoice, forkChoiceV2, err := s.fetchForkChoice(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -166,6 +170,7 @@ func (s *Sentry) fetchDebugForkChoice(ctx context.Context) (*v1.ForkChoice, erro
 
 	snapshot.RequestDuration = time.Since(startedAt)
 	snapshot.Event = forkChoice
+	snapshot.EventV2 = forkChoiceV2
 
 	fc := v1.NewForkChoice(s.log, snapshot, s.beacon, meta)
 
@@ -198,4 +203,52 @@ func (s *Sentry) fetchDecoratedDebugForkChoice(ctx context.Context) error {
 	}
 
 	return s.handleNewDecoratedEvent(ctx, decoratedEvent)
+}
+
+// forkChoiceV2RetryInterval is how long to use the v1 fork choice endpoint
+// before checking whether a beacon node has started supporting v2.
+const forkChoiceV2RetryInterval = time.Hour
+
+// fetchForkChoice fetches the beacon node's fork choice, preferring the
+// Gloas-aware GET /eth/v2/debug/fork_choice (one node per block root and
+// payload status) and falling back to v1 for nodes that do not support it.
+// Exactly one of the returned fork choices is set.
+func (s *Sentry) fetchForkChoice(ctx context.Context) (*eth2v1.ForkChoice, *eth2v1.ForkChoiceV2, error) {
+	if provider, isProvider := s.beacon.Node().Service().(eth2client.ForkChoiceV2Provider); isProvider &&
+		time.Now().UnixNano() >= s.forkChoiceV2RetryAt.Load() {
+		rsp, err := provider.ForkChoiceV2(ctx, &api.ForkChoiceOpts{})
+		if err == nil {
+			return nil, rsp.Data, nil
+		}
+
+		if isUnsupportedEndpoint(err) {
+			s.log.WithError(err).Debug("Beacon node does not support the v2 fork choice endpoint, falling back to v1")
+			s.forkChoiceV2RetryAt.Store(time.Now().Add(forkChoiceV2RetryInterval).UnixNano())
+		} else {
+			s.log.WithError(err).Warn("Failed to fetch v2 fork choice, falling back to v1")
+		}
+	}
+
+	forkChoice, err := s.beacon.Node().FetchForkChoice(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return forkChoice, nil, nil
+}
+
+// isUnsupportedEndpoint reports whether err is a beacon node rejecting an
+// endpoint it does not implement.
+func isUnsupportedEndpoint(err error) bool {
+	var apiErr *api.Error
+	if !errors.As(err, &apiErr) {
+		return false
+	}
+
+	switch apiErr.StatusCode {
+	case http.StatusBadRequest, http.StatusNotFound, http.StatusMethodNotAllowed, http.StatusNotImplemented:
+		return true
+	default:
+		return false
+	}
 }

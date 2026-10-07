@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ethpandaops/go-eth2-client/spec"
+
 	"github.com/ethpandaops/xatu/pkg/observability"
 	v2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -84,6 +86,15 @@ func (b *ValidatorBlock) Filter(_ context.Context) bool {
 		}
 
 		hash = fuluBlock.FuluBlock.GetStateRoot()
+	case spec.DataVersionGloas.String():
+		gloasBlock, ok := data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_GloasBlock)
+		if !ok {
+			b.log.Error("failed to cast message to GloasBlock")
+
+			return true
+		}
+
+		hash = gloasBlock.GloasBlock.GetStateRoot()
 	default:
 		b.log.Error(fmt.Errorf("unknown version: %s", version))
 

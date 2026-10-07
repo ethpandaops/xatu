@@ -55,6 +55,12 @@ type TraceEventFuluBlock struct {
 	Block *ethtypes.SignedBeaconBlockFulu
 }
 
+// TraceEventGloasBlock represents a Gloas beacon block event.
+type TraceEventGloasBlock struct {
+	TraceEventPayloadMetaData
+	Block *ethtypes.SignedBeaconBlockGloas
+}
+
 // TraceEventAttestation represents an attestation event.
 type TraceEventAttestation struct {
 	TraceEventPayloadMetaData
@@ -83,6 +89,12 @@ type TraceEventSignedAggregateAttestationAndProof struct {
 type TraceEventSignedAggregateAttestationAndProofElectra struct {
 	TraceEventPayloadMetaData
 	SignedAggregateAttestationAndProofElectra *ethtypes.SignedAggregateAttestationAndProofElectra
+}
+
+// TraceEventSignedAggregateAttestationAndProofGloas represents a Gloas signed aggregate attestation and proof event.
+type TraceEventSignedAggregateAttestationAndProofGloas struct {
+	TraceEventPayloadMetaData
+	SignedAggregateAttestationAndProofGloas *ethtypes.SignedAggregateAttestationAndProofGloas
 }
 
 // TraceEventSignedContributionAndProof represents a signed contribution and proof event.

@@ -7,6 +7,9 @@ import (
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/bellatrix"
+	"github.com/ethpandaops/go-eth2-client/spec/deneb"
+	"github.com/ethpandaops/go-eth2-client/spec/electra"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -22,6 +25,7 @@ type mockCeilingBeaconNode struct {
 	finality    *apiv1.Finality
 	finalityErr error
 	blocks      map[string]*spec.VersionedSignedBeaconBlock
+	envelopes   map[string]*gloas.SignedExecutionPayloadEnvelope
 	requested   []string
 }
 
@@ -40,6 +44,10 @@ func (m *mockCeilingBeaconNode) GetBeaconBlock(_ context.Context, identifier str
 	return block, nil
 }
 
+func (m *mockCeilingBeaconNode) GetExecutionPayloadEnvelope(_ context.Context, blockID string) (*gloas.SignedExecutionPayloadEnvelope, error) {
+	return m.envelopes[blockID], nil
+}
+
 func bellatrixBlock(executionBlockNumber uint64) *spec.VersionedSignedBeaconBlock {
 	return &spec.VersionedSignedBeaconBlock{
 		Version: spec.DataVersionBellatrix,
@@ -51,6 +59,51 @@ func bellatrixBlock(executionBlockNumber uint64) *spec.VersionedSignedBeaconBloc
 					},
 				},
 			},
+		},
+	}
+}
+
+func fuluBlock(executionBlockNumber uint64, executionBlockHash phase0.Hash32) *spec.VersionedSignedBeaconBlock {
+	return &spec.VersionedSignedBeaconBlock{
+		Version: spec.DataVersionFulu,
+		Fulu: &electra.SignedBeaconBlock{
+			Message: &electra.BeaconBlock{
+				Body: &electra.BeaconBlockBody{
+					ExecutionPayload: &deneb.ExecutionPayload{
+						BlockNumber: executionBlockNumber,
+						BlockHash:   executionBlockHash,
+					},
+				},
+			},
+		},
+	}
+}
+
+// gloasBlock returns a Gloas block whose bid builds on parentHash and promises
+// a payload with blockHash.
+func gloasBlock(parentRoot phase0.Root, parentHash, blockHash phase0.Hash32) *spec.VersionedSignedBeaconBlock {
+	return &spec.VersionedSignedBeaconBlock{
+		Version: spec.DataVersionGloas,
+		Gloas: &gloas.SignedBeaconBlock{
+			Message: &gloas.BeaconBlock{
+				ParentRoot: parentRoot,
+				Body: &gloas.BeaconBlockBody{
+					SignedExecutionPayloadBid: &gloas.SignedExecutionPayloadBid{
+						Message: &gloas.ExecutionPayloadBid{
+							ParentBlockHash: parentHash,
+							BlockHash:       blockHash,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func envelope(executionBlockNumber uint64) *gloas.SignedExecutionPayloadEnvelope {
+	return &gloas.SignedExecutionPayloadEnvelope{
+		Message: &gloas.ExecutionPayloadEnvelope{
+			Payload: &gloas.ExecutionPayload{BlockNumber: executionBlockNumber},
 		},
 	}
 }
@@ -146,6 +199,86 @@ func TestBackfillingBlock_FetchExecutionCeiling_Errors(t *testing.T) {
 
 			_, err := b.fetchExecutionCeiling(context.Background())
 			assert.Error(t, err)
+		})
+	}
+}
+
+func TestBackfillingBlock_FetchExecutionCeiling_Gloas(t *testing.T) {
+	finalizedRoot := phase0.Root{0x0f}
+	parentRoot := phase0.Root{0x0e}
+	grandparentRoot := phase0.Root{0x0d}
+
+	finalHash := phase0.Hash32{0xa1}
+	withheldHash := phase0.Hash32{0xa2}
+	finalizedHash := phase0.Hash32{0xa3}
+
+	root := xatuethv1.RootAsString
+
+	tests := []struct {
+		name      string
+		blocks    map[string]*spec.VersionedSignedBeaconBlock
+		envelopes map[string]*gloas.SignedExecutionPayloadEnvelope
+		want      uint64
+		wantErr   string
+	}{
+		{
+			name: "parent revealed the payload the finalized block builds on",
+			blocks: map[string]*spec.VersionedSignedBeaconBlock{
+				root(finalizedRoot): gloasBlock(parentRoot, finalHash, finalizedHash),
+				root(parentRoot):    gloasBlock(grandparentRoot, phase0.Hash32{0xa0}, finalHash),
+			},
+			envelopes: map[string]*gloas.SignedExecutionPayloadEnvelope{
+				root(finalizedRoot): envelope(501),
+				root(parentRoot):    envelope(500),
+			},
+			want: 500,
+		},
+		{
+			name: "walks past a withheld payload to the last pre-gloas block",
+			blocks: map[string]*spec.VersionedSignedBeaconBlock{
+				root(finalizedRoot):   gloasBlock(parentRoot, finalHash, finalizedHash),
+				root(parentRoot):      gloasBlock(grandparentRoot, finalHash, withheldHash),
+				root(grandparentRoot): fuluBlock(400, finalHash),
+			},
+			want: 400,
+		},
+		{
+			name: "revealed payload without an envelope",
+			blocks: map[string]*spec.VersionedSignedBeaconBlock{
+				root(finalizedRoot): gloasBlock(parentRoot, finalHash, finalizedHash),
+				root(parentRoot):    gloasBlock(grandparentRoot, phase0.Hash32{0xa0}, finalHash),
+			},
+			wantErr: "has no execution payload envelope",
+		},
+		{
+			name: "pre-gloas ancestor carries a different payload",
+			blocks: map[string]*spec.VersionedSignedBeaconBlock{
+				root(finalizedRoot): gloasBlock(parentRoot, finalHash, finalizedHash),
+				root(parentRoot):    fuluBlock(400, withheldHash),
+			},
+			wantErr: "expected",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := &mockCeilingBeaconNode{
+				finality:  finalityWithRoot(finalizedRoot),
+				blocks:    tt.blocks,
+				envelopes: tt.envelopes,
+			}
+
+			b := &BackfillingBlock{beaconNode: mock}
+
+			ceiling, err := b.fetchExecutionCeiling(context.Background())
+			if tt.wantErr != "" {
+				require.ErrorContains(t, err, tt.wantErr)
+
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, ceiling)
 		})
 	}
 }

@@ -216,7 +216,16 @@ func (b *BeaconBlobDeriver) processSlot(ctx context.Context, slot phase0.Slot) (
 	)
 	defer span.End()
 
-	blobs, err := b.beacon.Node().FetchBeaconBlockBlobs(ctx, xatuethv1.SlotAsString(slot))
+	block, err := b.beacon.GetBeaconBlock(ctx, xatuethv1.SlotAsString(slot))
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get beacon block for slot %d", slot)
+	}
+
+	if block == nil {
+		return []*xatu.DecoratedEvent{}, nil
+	}
+
+	blobs, err := b.beacon.GetBlobSidecars(ctx, block, xatuethv1.SlotAsString(slot))
 	if err != nil {
 		var apiErr *api.Error
 		if errors.As(err, &apiErr) {

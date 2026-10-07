@@ -243,7 +243,7 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	blobSidecars := []*deneb.BlobSidecar{}
 
 	if block.Version >= spec.DataVersionDeneb {
-		sidecars, errr := b.beacon.Node().FetchBeaconBlockBlobs(ctx, xatuethv1.SlotAsString(slot))
+		sidecars, errr := b.beacon.GetBlobSidecars(ctx, block, xatuethv1.SlotAsString(slot))
 		if errr != nil {
 			// From Gloas (EIP-7732) blobs are only obtainable by reconstruction
 			// from data columns, which not all clients serve reliably. Blob size

@@ -1,0 +1,166 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+
+message CanonicalBeaconBlockAccessList {
+  uint32 updated_date_time = 11;
+  uint32 slot = 12;
+  uint32 slot_start_date_time = 13;
+  uint32 epoch = 14;
+  uint32 epoch_start_date_time = 15;
+  string block_root = 16;
+  uint64 block_number = 17;
+  string block_hash = 18;
+  string address = 19;
+  string change_type = 20;
+  uint32 block_access_index = 21;
+  google.protobuf.StringValue storage_key = 22;
+  google.protobuf.StringValue new_value = 23;
+  string meta_client_name = 24;
+  string meta_client_id = 25;
+  string meta_client_version = 26;
+  string meta_client_implementation = 27;
+  string meta_client_os = 28;
+  google.protobuf.StringValue meta_client_ip = 29;
+  string meta_client_geo_city = 30;
+  string meta_client_geo_country = 31;
+  string meta_client_geo_country_code = 32;
+  string meta_client_geo_continent_code = 33;
+  google.protobuf.DoubleValue meta_client_geo_longitude = 34;
+  google.protobuf.DoubleValue meta_client_geo_latitude = 35;
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 36;
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 37;
+  int32 meta_network_id = 38;
+  string meta_network_name = 39;
+  string meta_consensus_version = 40;
+  string meta_consensus_version_major = 41;
+  string meta_consensus_version_minor = 42;
+  string meta_consensus_version_patch = 43;
+  string meta_consensus_implementation = 44;
+  map<string, string> meta_labels = 45;
+}
+
+// Request for listing canonical_beacon_block_access_list records
+message ListCanonicalBeaconBlockAccessListRequest {
+  // Filter by slot_start_date_time (PRIMARY KEY - required)
+  UInt32Filter slot_start_date_time = 1;
+
+  // Filter by meta_network_name (ORDER BY column 2 - optional)
+  StringFilter meta_network_name = 2;
+
+  // Filter by block_hash (ORDER BY column 3 - optional)
+  StringFilter block_hash = 3;
+
+  // Filter by address (ORDER BY column 4 - optional)
+  StringFilter address = 4;
+
+  // Filter by change_type (ORDER BY column 5 - optional)
+  StringFilter change_type = 5;
+
+  // Filter by storage_key (ORDER BY column 6 - optional)
+  NullableStringFilter storage_key = 6;
+
+  // Filter by block_access_index (ORDER BY column 7 - optional)
+  UInt32Filter block_access_index = 7;
+
+  // Filter by updated_date_time (optional)
+  UInt32Filter updated_date_time = 8;
+  // Filter by slot (optional)
+  UInt32Filter slot = 9;
+  // Filter by epoch (optional)
+  UInt32Filter epoch = 10;
+  // Filter by epoch_start_date_time (optional)
+  UInt32Filter epoch_start_date_time = 11;
+  // Filter by block_root (optional)
+  StringFilter block_root = 12;
+  // Filter by block_number (optional)
+  UInt64Filter block_number = 13;
+  // Filter by new_value (optional)
+  NullableStringFilter new_value = 14;
+  // Filter by meta_client_name (optional)
+  StringFilter meta_client_name = 15;
+  // Filter by meta_client_id (optional)
+  StringFilter meta_client_id = 16;
+  // Filter by meta_client_version (optional)
+  StringFilter meta_client_version = 17;
+  // Filter by meta_client_implementation (optional)
+  StringFilter meta_client_implementation = 18;
+  // Filter by meta_client_os (optional)
+  StringFilter meta_client_os = 19;
+  // Filter by meta_client_ip (optional)
+  NullableStringFilter meta_client_ip = 20;
+  // Filter by meta_client_geo_city (optional)
+  StringFilter meta_client_geo_city = 21;
+  // Filter by meta_client_geo_country (optional)
+  StringFilter meta_client_geo_country = 22;
+  // Filter by meta_client_geo_country_code (optional)
+  StringFilter meta_client_geo_country_code = 23;
+  // Filter by meta_client_geo_continent_code (optional)
+  StringFilter meta_client_geo_continent_code = 24;
+  // Filter by meta_client_geo_longitude (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 25;
+  // Filter by meta_client_geo_latitude (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 26;
+  // Filter by meta_client_geo_autonomous_system_number (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 27;
+  // Filter by meta_client_geo_autonomous_system_organization (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 28;
+  // Filter by meta_network_id (optional)
+  Int32Filter meta_network_id = 29;
+  // Filter by meta_consensus_version (optional)
+  StringFilter meta_consensus_version = 30;
+  // Filter by meta_consensus_version_major (optional)
+  StringFilter meta_consensus_version_major = 31;
+  // Filter by meta_consensus_version_minor (optional)
+  StringFilter meta_consensus_version_minor = 32;
+  // Filter by meta_consensus_version_patch (optional)
+  StringFilter meta_consensus_version_patch = 33;
+  // Filter by meta_consensus_implementation (optional)
+  StringFilter meta_consensus_implementation = 34;
+  // Filter by meta_labels (optional)
+  MapStringStringFilter meta_labels = 35;
+
+  // The maximum number of canonical_beacon_block_access_list to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 36;
+  // A page token, received from a previous `ListCanonicalBeaconBlockAccessList` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 37;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 38;
+}
+
+// Response for listing canonical_beacon_block_access_list records
+message ListCanonicalBeaconBlockAccessListResponse {
+  // The list of canonical_beacon_block_access_list.
+  repeated CanonicalBeaconBlockAccessList canonical_beacon_block_access_list = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_beacon_block_access_list record by primary key
+message GetCanonicalBeaconBlockAccessListRequest {
+  uint32 slot_start_date_time = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_beacon_block_access_list record
+message GetCanonicalBeaconBlockAccessListResponse {
+  CanonicalBeaconBlockAccessList item = 1;
+}
+
+// Query canonical_beacon_block_access_list data
+service CanonicalBeaconBlockAccessListService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalBeaconBlockAccessListRequest) returns (ListCanonicalBeaconBlockAccessListResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalBeaconBlockAccessListRequest) returns (GetCanonicalBeaconBlockAccessListResponse);
+}

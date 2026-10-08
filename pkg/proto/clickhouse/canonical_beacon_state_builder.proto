@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains the Gloas builder registry snapshot for a canonical beacon state epoch.
+
+message CanonicalBeaconStateBuilder {
+  // When this row was last updated
+  uint32 updated_date_time = 11;
+  // The epoch number the builder registry snapshot is for
+  uint32 epoch = 12;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 13;
+  // The state ID the registry was read from
+  string state_id = 14;
+  // The index of the builder in the registry
+  uint64 builder_index = 15;
+  // The public key of the builder
+  string pubkey = 16;
+  // The builder version byte
+  uint32 version = 17;
+  // The execution address of the builder
+  string execution_address = 18;
+  // The builder balance in gwei
+  uint64 balance = 19;
+  // The epoch in which the builder was added to the registry
+  uint64 deposit_epoch = 20;
+  // The epoch from which the builder can be withdrawn, FAR_FUTURE_EPOCH while no exit was initiated
+  uint64 withdrawable_epoch = 21;
+  // The builder status (pending, active or exited) evaluated against the finalized checkpoint of the state
+  string status = 22;
+  // Ethereum network name
+  string meta_network_name = 23;
+}
+
+// Request for listing canonical_beacon_state_builder records
+message ListCanonicalBeaconStateBuilderRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (ORDER BY column 2 - optional)
+  UInt32Filter epoch_start_date_time = 2;
+
+  // Filter by epoch - The epoch number the builder registry snapshot is for (ORDER BY column 3 - optional)
+  UInt32Filter epoch = 3;
+
+  // Filter by builder_index - The index of the builder in the registry (ORDER BY column 4 - optional)
+  UInt64Filter builder_index = 4;
+
+  // Filter by updated_date_time - When this row was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by state_id - The state ID the registry was read from (optional)
+  StringFilter state_id = 6;
+  // Filter by pubkey - The public key of the builder (optional)
+  StringFilter pubkey = 7;
+  // Filter by version - The builder version byte (optional)
+  UInt32Filter version = 8;
+  // Filter by execution_address - The execution address of the builder (optional)
+  StringFilter execution_address = 9;
+  // Filter by balance - The builder balance in gwei (optional)
+  UInt64Filter balance = 10;
+  // Filter by deposit_epoch - The epoch in which the builder was added to the registry (optional)
+  UInt64Filter deposit_epoch = 11;
+  // Filter by withdrawable_epoch - The epoch from which the builder can be withdrawn, FAR_FUTURE_EPOCH while no exit was initiated (optional)
+  UInt64Filter withdrawable_epoch = 12;
+  // Filter by status - The builder status (pending, active or exited) evaluated against the finalized checkpoint of the state (optional)
+  StringFilter status = 13;
+
+  // The maximum number of canonical_beacon_state_builder to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 14;
+  // A page token, received from a previous `ListCanonicalBeaconStateBuilder` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 15;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 16;
+}
+
+// Response for listing canonical_beacon_state_builder records
+message ListCanonicalBeaconStateBuilderResponse {
+  // The list of canonical_beacon_state_builder.
+  repeated CanonicalBeaconStateBuilder canonical_beacon_state_builder = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_beacon_state_builder record by primary key
+message GetCanonicalBeaconStateBuilderRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_beacon_state_builder record
+message GetCanonicalBeaconStateBuilderResponse {
+  CanonicalBeaconStateBuilder item = 1;
+}
+
+// Query canonical_beacon_state_builder data
+service CanonicalBeaconStateBuilderService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalBeaconStateBuilderRequest) returns (ListCanonicalBeaconStateBuilderResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalBeaconStateBuilderRequest) returns (GetCanonicalBeaconStateBuilderResponse);
+}

@@ -32,6 +32,8 @@ message CanonicalBeaconBlockWithdrawal {
   string withdrawal_amount = 21;
   // Ethereum network name
   string meta_network_name = 22;
+  // Classification of the withdrawal recipient (Gloas+: validator|builder, pre-Gloas: empty)
+  string withdrawal_type = 23;
 }
 
 // Request for listing canonical_beacon_block_withdrawal records
@@ -65,18 +67,20 @@ message ListCanonicalBeaconBlockWithdrawalRequest {
   StringFilter withdrawal_address = 11;
   // Filter by withdrawal_amount - The amount of the withdrawal from the withdrawal data (optional)
   StringFilter withdrawal_amount = 12;
+  // Filter by withdrawal_type - Classification of the withdrawal recipient (Gloas+: validator|builder, pre-Gloas: empty) (optional)
+  StringFilter withdrawal_type = 13;
 
   // The maximum number of canonical_beacon_block_withdrawal to return.
   // If unspecified, at most 100 items will be returned.
   // The maximum value is 10000; values above 10000 will be coerced to 10000.
-  int32 page_size = 13;
+  int32 page_size = 14;
   // A page token, received from a previous `ListCanonicalBeaconBlockWithdrawal` call.
   // Provide this to retrieve the subsequent page.
-  string page_token = 14;
+  string page_token = 15;
   // The order of results. Format: comma-separated list of fields.
   // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
   // If unspecified, results will be returned in the default order.
-  string order_by = 15;
+  string order_by = 16;
 }
 
 // Response for listing canonical_beacon_block_withdrawal records

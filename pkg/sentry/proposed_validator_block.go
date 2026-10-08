@@ -8,6 +8,8 @@ import (
 	"github.com/ethpandaops/ethwallclock"
 	eth2client "github.com/ethpandaops/go-eth2-client"
 	"github.com/ethpandaops/go-eth2-client/api"
+	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/go-co-op/gocron/v2"
 
@@ -76,43 +78,32 @@ func (s *Sentry) scheduleValidatorBlockFetchingAtSlotTime(ctx context.Context, a
 	})
 }
 
+// infinityRandaoReveal is the BLS point at infinity, the randao reveal beacon
+// nodes expect when randao verification is skipped.
+var infinityRandaoReveal = phase0.BLSSignature{0xc0}
+
 func (s *Sentry) fetchValidatorBlock(ctx context.Context, slot phase0.Slot) (*v3.ValidatorBlock, error) {
 	snapshot := &v3.ValidatorBlockDataSnapshot{RequestAt: time.Now()}
 
-	provider, ok := s.beacon.Node().Service().(eth2client.ProposalProvider)
-	if !ok {
-		s.log.WithContext(ctx).Error("Beacon node service client is not ProposalProvider")
-
-		return nil, fmt.Errorf("unexpected service client type, expected: eth2client.ProposalProvider, got %T", s.beacon.Node().Service())
-	}
-
-	// Percentage multiplier to apply to the builder's payload value when choosing between a builder payload header
-	// and payload from the paired execution node.
-	// See https://ethereum.github.io/beacon-APIs/#/Validator/produceBlockV3
-	boostFactor := uint64(0)
-
-	// RandaoReveal must be set to the point at infinity (0xc0..00) if we're skipping Randao verification.
-	rsp, err := provider.Proposal(ctx, &api.ProposalOpts{
-		Slot: slot,
-		RandaoReveal: phase0.BLSSignature{
-			0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		},
-		SkipRandaoVerification: true,
-		BuilderBoostFactor:     &boostFactor,
-	})
+	postGloas, err := s.gloasActiveAt(slot)
 	if err != nil {
-		s.log.WithError(err).WithContext(ctx).Error("Failed to get proposal")
-
 		return nil, err
 	}
 
-	proposedBlock, err := getVersionedProposalData(rsp)
+	var (
+		proposedBlock *api.VersionedProposal
+		envelope      *gloas.ExecutionPayloadEnvelope
+	)
+
+	if postGloas {
+		proposedBlock, envelope, err = s.produceBlockV4(ctx, slot, &infinityRandaoReveal)
+	} else {
+		proposedBlock, err = s.produceBlockV3(ctx, slot)
+	}
+
 	if err != nil {
+		s.log.WithError(err).WithContext(ctx).Error("Failed to get proposal")
+
 		return nil, err
 	}
 
@@ -123,7 +114,45 @@ func (s *Sentry) fetchValidatorBlock(ctx context.Context, slot phase0.Slot) (*v3
 
 	snapshot.RequestDuration = time.Since(snapshot.RequestAt)
 
-	return v3.NewValidatorBlock(s.log, proposedBlock, snapshot, s.beacon, meta), nil
+	return v3.NewValidatorBlock(s.log, proposedBlock, envelope, snapshot, s.beacon, meta), nil
+}
+
+func (s *Sentry) produceBlockV3(ctx context.Context, slot phase0.Slot) (*api.VersionedProposal, error) {
+	provider, ok := s.beacon.Node().Service().(eth2client.ProposalProvider)
+	if !ok {
+		return nil, fmt.Errorf("unexpected service client type, expected: eth2client.ProposalProvider, got %T", s.beacon.Node().Service())
+	}
+
+	// Percentage multiplier to apply to the builder's payload value when choosing between a builder payload header
+	// and payload from the paired execution node.
+	// See https://ethereum.github.io/beacon-APIs/#/Validator/produceBlockV3
+	boostFactor := uint64(0)
+
+	rsp, err := provider.Proposal(ctx, &api.ProposalOpts{
+		Slot:                   slot,
+		RandaoReveal:           infinityRandaoReveal,
+		SkipRandaoVerification: true,
+		BuilderBoostFactor:     &boostFactor,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return getVersionedProposalData(rsp)
+}
+
+func (s *Sentry) gloasActiveAt(slot phase0.Slot) (bool, error) {
+	sp, err := s.beacon.Node().Spec()
+	if err != nil {
+		return false, fmt.Errorf("failed to get spec: %w", err)
+	}
+
+	fork, err := sp.ForkEpochs.CurrentFork(phase0.Epoch(uint64(slot) / uint64(sp.SlotsPerEpoch)))
+	if err != nil {
+		return false, fmt.Errorf("failed to get fork at slot %d: %w", slot, err)
+	}
+
+	return fork.Name >= spec.DataVersionGloas, nil
 }
 
 func (s *Sentry) fetchDecoratedValidatorBlock(ctx context.Context, slot phase0.Slot) error {

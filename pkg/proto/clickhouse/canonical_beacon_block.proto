@@ -49,22 +49,32 @@ message CanonicalBeaconBlock {
   google.protobuf.UInt64Value execution_payload_blob_gas_used = 29;
   // Excess gas used for blobs in execution payload
   google.protobuf.UInt64Value execution_payload_excess_blob_gas = 30;
+  google.protobuf.UInt64Value execution_payload_slot_number = 31;
+  google.protobuf.StringValue execution_payload_block_access_list_root = 32;
+  // Builder index from the bid (Gloas+)
+  google.protobuf.UInt64Value builder_index = 33;
+  // Bid value in Gwei (Gloas+)
+  google.protobuf.UInt64Value bid_value = 34;
+  // Execution payment in Gwei (Gloas+)
+  google.protobuf.UInt64Value execution_payment = 35;
+  // Whether execution payload was delivered (Gloas+)
+  google.protobuf.BoolValue payload_present = 36;
   // Gas limit for execution payload
-  google.protobuf.UInt64Value execution_payload_gas_limit = 31;
+  google.protobuf.UInt64Value execution_payload_gas_limit = 37;
   // Gas used for execution payload
-  google.protobuf.UInt64Value execution_payload_gas_used = 32;
+  google.protobuf.UInt64Value execution_payload_gas_used = 38;
   // The state root of the execution payload
-  google.protobuf.StringValue execution_payload_state_root = 33;
+  google.protobuf.StringValue execution_payload_state_root = 39;
   // The parent hash of the execution payload
-  google.protobuf.StringValue execution_payload_parent_hash = 34;
+  google.protobuf.StringValue execution_payload_parent_hash = 40;
   // The transaction count of the execution payload
-  google.protobuf.UInt32Value execution_payload_transactions_count = 35;
+  google.protobuf.UInt32Value execution_payload_transactions_count = 41;
   // The transaction total bytes of the execution payload
-  google.protobuf.UInt32Value execution_payload_transactions_total_bytes = 36;
+  google.protobuf.UInt32Value execution_payload_transactions_total_bytes = 42;
   // The transaction total bytes of the execution payload when compressed using snappy
-  google.protobuf.UInt32Value execution_payload_transactions_total_bytes_compressed = 37;
+  google.protobuf.UInt32Value execution_payload_transactions_total_bytes_compressed = 43;
   // Ethereum network name
-  string meta_network_name = 38;
+  string meta_network_name = 44;
 }
 
 // Request for listing canonical_beacon_block records
@@ -113,32 +123,44 @@ message ListCanonicalBeaconBlockRequest {
   NullableUInt64Filter execution_payload_blob_gas_used = 20;
   // Filter by execution_payload_excess_blob_gas - Excess gas used for blobs in execution payload (optional)
   NullableUInt64Filter execution_payload_excess_blob_gas = 21;
+  // Filter by execution_payload_slot_number (optional)
+  NullableUInt64Filter execution_payload_slot_number = 22;
+  // Filter by execution_payload_block_access_list_root (optional)
+  NullableStringFilter execution_payload_block_access_list_root = 23;
+  // Filter by builder_index - Builder index from the bid (Gloas+) (optional)
+  NullableUInt64Filter builder_index = 24;
+  // Filter by bid_value - Bid value in Gwei (Gloas+) (optional)
+  NullableUInt64Filter bid_value = 25;
+  // Filter by execution_payment - Execution payment in Gwei (Gloas+) (optional)
+  NullableUInt64Filter execution_payment = 26;
+  // Filter by payload_present - Whether execution payload was delivered (Gloas+) (optional)
+  NullableBoolFilter payload_present = 27;
   // Filter by execution_payload_gas_limit - Gas limit for execution payload (optional)
-  NullableUInt64Filter execution_payload_gas_limit = 22;
+  NullableUInt64Filter execution_payload_gas_limit = 28;
   // Filter by execution_payload_gas_used - Gas used for execution payload (optional)
-  NullableUInt64Filter execution_payload_gas_used = 23;
+  NullableUInt64Filter execution_payload_gas_used = 29;
   // Filter by execution_payload_state_root - The state root of the execution payload (optional)
-  NullableStringFilter execution_payload_state_root = 24;
+  NullableStringFilter execution_payload_state_root = 30;
   // Filter by execution_payload_parent_hash - The parent hash of the execution payload (optional)
-  NullableStringFilter execution_payload_parent_hash = 25;
+  NullableStringFilter execution_payload_parent_hash = 31;
   // Filter by execution_payload_transactions_count - The transaction count of the execution payload (optional)
-  NullableUInt32Filter execution_payload_transactions_count = 26;
+  NullableUInt32Filter execution_payload_transactions_count = 32;
   // Filter by execution_payload_transactions_total_bytes - The transaction total bytes of the execution payload (optional)
-  NullableUInt32Filter execution_payload_transactions_total_bytes = 27;
+  NullableUInt32Filter execution_payload_transactions_total_bytes = 33;
   // Filter by execution_payload_transactions_total_bytes_compressed - The transaction total bytes of the execution payload when compressed using snappy (optional)
-  NullableUInt32Filter execution_payload_transactions_total_bytes_compressed = 28;
+  NullableUInt32Filter execution_payload_transactions_total_bytes_compressed = 34;
 
   // The maximum number of canonical_beacon_block to return.
   // If unspecified, at most 100 items will be returned.
   // The maximum value is 10000; values above 10000 will be coerced to 10000.
-  int32 page_size = 29;
+  int32 page_size = 35;
   // A page token, received from a previous `ListCanonicalBeaconBlock` call.
   // Provide this to retrieve the subsequent page.
-  string page_token = 30;
+  string page_token = 36;
   // The order of results. Format: comma-separated list of fields.
   // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
   // If unspecified, results will be returned in the default order.
-  string order_by = 31;
+  string order_by = 37;
 }
 
 // Response for listing canonical_beacon_block records

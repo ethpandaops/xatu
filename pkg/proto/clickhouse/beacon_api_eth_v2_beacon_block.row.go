@@ -37,6 +37,11 @@ type BeaconApiEthV2BeaconBlockRow struct {
 	ExecutionPayloadBaseFeePerGas *string `ch:"execution_payload_base_fee_per_gas" json:"execution_payload_base_fee_per_gas"`
 	ExecutionPayloadBlobGasUsed *uint64 `ch:"execution_payload_blob_gas_used" json:"execution_payload_blob_gas_used"`
 	ExecutionPayloadExcessBlobGas *uint64 `ch:"execution_payload_excess_blob_gas" json:"execution_payload_excess_blob_gas"`
+	ExecutionPayloadSlotNumber *uint64 `ch:"execution_payload_slot_number" json:"execution_payload_slot_number"`
+	BuilderIndex *uint64 `ch:"builder_index" json:"builder_index"`
+	BidValue *uint64 `ch:"bid_value" json:"bid_value"`
+	ExecutionPayment *uint64 `ch:"execution_payment" json:"execution_payment"`
+	PayloadPresent *bool `ch:"payload_present" json:"payload_present"`
 	ExecutionPayloadGasLimit *uint64 `ch:"execution_payload_gas_limit" json:"execution_payload_gas_limit"`
 	ExecutionPayloadGasUsed *uint64 `ch:"execution_payload_gas_used" json:"execution_payload_gas_used"`
 	ExecutionPayloadStateRoot *string `ch:"execution_payload_state_root" json:"execution_payload_state_root"`
@@ -120,6 +125,21 @@ func (r *BeaconApiEthV2BeaconBlockRow) ToProto() *BeaconApiEthV2BeaconBlock {
 	}
 	if r.ExecutionPayloadExcessBlobGas != nil {
 		p.ExecutionPayloadExcessBlobGas = wrapperspb.UInt64(*r.ExecutionPayloadExcessBlobGas)
+	}
+	if r.ExecutionPayloadSlotNumber != nil {
+		p.ExecutionPayloadSlotNumber = wrapperspb.UInt64(*r.ExecutionPayloadSlotNumber)
+	}
+	if r.BuilderIndex != nil {
+		p.BuilderIndex = wrapperspb.UInt64(*r.BuilderIndex)
+	}
+	if r.BidValue != nil {
+		p.BidValue = wrapperspb.UInt64(*r.BidValue)
+	}
+	if r.ExecutionPayment != nil {
+		p.ExecutionPayment = wrapperspb.UInt64(*r.ExecutionPayment)
+	}
+	if r.PayloadPresent != nil {
+		p.PayloadPresent = wrapperspb.Bool(*r.PayloadPresent)
 	}
 	if r.ExecutionPayloadGasLimit != nil {
 		p.ExecutionPayloadGasLimit = wrapperspb.UInt64(*r.ExecutionPayloadGasLimit)

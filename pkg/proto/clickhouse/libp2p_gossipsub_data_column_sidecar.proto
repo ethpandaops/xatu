@@ -35,7 +35,7 @@ message Libp2pGossipsubDataColumnSidecar {
   uint32 proposer_index = 22;
   // Column index associated with the record
   uint64 column_index = 23;
-  // Number of KZG commitments associated with the record
+  // Number of KZG commitments associated with the record. 0 on Gloas, where the sidecar no longer carries the block header
   uint32 kzg_commitments_count = 24;
   string beacon_block_root = 25;
   // Parent root of the beacon block
@@ -127,7 +127,7 @@ message ListLibp2pGossipsubDataColumnSidecarRequest {
   UInt32Filter proposer_index = 16;
   // Filter by column_index - Column index associated with the record (optional)
   UInt64Filter column_index = 17;
-  // Filter by kzg_commitments_count - Number of KZG commitments associated with the record (optional)
+  // Filter by kzg_commitments_count - Number of KZG commitments associated with the record. 0 on Gloas, where the sidecar no longer carries the block header (optional)
   UInt32Filter kzg_commitments_count = 18;
   // Filter by beacon_block_root (optional)
   StringFilter beacon_block_root = 19;

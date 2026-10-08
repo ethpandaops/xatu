@@ -51,7 +51,7 @@ message CanonicalBeaconBlock {
   google.protobuf.UInt64Value execution_payload_excess_blob_gas = 30;
   google.protobuf.UInt64Value execution_payload_slot_number = 31;
   google.protobuf.StringValue execution_payload_block_access_list_root = 32;
-  // Builder index from the bid (Gloas+)
+  // Builder index from the bid (Gloas+). NULL for self-built payloads (BUILDER_INDEX_SELF_BUILD) and before Gloas
   google.protobuf.UInt64Value builder_index = 33;
   // Bid value in Gwei (Gloas+)
   google.protobuf.UInt64Value bid_value = 34;
@@ -127,7 +127,7 @@ message ListCanonicalBeaconBlockRequest {
   NullableUInt64Filter execution_payload_slot_number = 22;
   // Filter by execution_payload_block_access_list_root (optional)
   NullableStringFilter execution_payload_block_access_list_root = 23;
-  // Filter by builder_index - Builder index from the bid (Gloas+) (optional)
+  // Filter by builder_index - Builder index from the bid (Gloas+). NULL for self-built payloads (BUILDER_INDEX_SELF_BUILD) and before Gloas (optional)
   NullableUInt64Filter builder_index = 24;
   // Filter by bid_value - Bid value in Gwei (Gloas+) (optional)
   NullableUInt64Filter bid_value = 25;

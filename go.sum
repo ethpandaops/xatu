@@ -225,6 +225,8 @@ github.com/ethpandaops/ethwallclock v0.4.0 h1:+sgnhf4pk6hLPukP076VxkiLloE4L0Yk1y
 github.com/ethpandaops/ethwallclock v0.4.0/go.mod h1:y0Cu+mhGLlem19vnAV2x0hpFS5KZ7oOi2SWYayv9l24=
 github.com/ethpandaops/go-eth2-client v0.1.10-0.20261008034357-9de0cf34adeb h1:nERZqyCYV2zMfdUSc5dchwGoUuv61rDVHsu39o2YftY=
 github.com/ethpandaops/go-eth2-client v0.1.10-0.20261008034357-9de0cf34adeb/go.mod h1:sIVbaug0GsltsJS+hj8ID4dmWBIt8TXoNIesvuBCGt0=
+github.com/ethpandaops/go-eth2-client v0.1.10-0.20261008041707-7a87b26e60b5 h1:5EeGn0zDLncslF81vyNR8PxAwcsTWyxZ7RvE4l7TE7A=
+github.com/ethpandaops/go-eth2-client v0.1.10-0.20261008041707-7a87b26e60b5/go.mod h1:sIVbaug0GsltsJS+hj8ID4dmWBIt8TXoNIesvuBCGt0=
 github.com/failsafe-go/failsafe-go v0.9.6 h1:vPSH2cry0Ee5cnR9wc9qshCDO6jdrMA9elBJNwyo4Uk=
 github.com/failsafe-go/failsafe-go v0.9.6/go.mod h1:IeRpglkcwzKagjDMh90ZhN2l4Ovt3+jemQBUbThag54=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=

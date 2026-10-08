@@ -44,6 +44,8 @@ type BeaconApiEthV1EventsBlockRow struct {
 	MetaConsensusVersionMinor string `ch:"meta_consensus_version_minor" json:"meta_consensus_version_minor"`
 	MetaConsensusVersionPatch string `ch:"meta_consensus_version_patch" json:"meta_consensus_version_patch"`
 	MetaConsensusImplementation string `ch:"meta_consensus_implementation" json:"meta_consensus_implementation"`
+	BuilderIndex *uint64 `ch:"builder_index" json:"builder_index"`
+	BlockHash *string `ch:"block_hash" json:"block_hash"`
 }
 
 // TableName returns the ClickHouse table this row maps to.
@@ -95,5 +97,11 @@ func (r *BeaconApiEthV1EventsBlockRow) ToProto() *BeaconApiEthV1EventsBlock {
 	p.MetaConsensusVersionMinor = r.MetaConsensusVersionMinor
 	p.MetaConsensusVersionPatch = r.MetaConsensusVersionPatch
 	p.MetaConsensusImplementation = r.MetaConsensusImplementation
+	if r.BuilderIndex != nil {
+		p.BuilderIndex = wrapperspb.UInt64(*r.BuilderIndex)
+	}
+	if r.BlockHash != nil {
+		p.BlockHash = wrapperspb.String(*r.BlockHash)
+	}
 	return p
 }

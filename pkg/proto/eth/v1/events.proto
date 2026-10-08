@@ -41,6 +41,8 @@ message EventHeadV2 {
 
   string current_duty_dependent_root = 6
       [ json_name = "current_duty_dependent_root" ];
+
+  bool execution_optimistic = 7 [ json_name = "execution_optimistic" ];
 }
 
 // EventHeadV3 carries the beacon-API head_v2 SSE topic (gloas): relative to
@@ -83,6 +85,12 @@ message EventBlockV2 {
   string block = 2;
 
   bool execution_optimistic = 3 [ json_name = "execution_optimistic" ];
+
+  // builder_index and block_hash come from the block's
+  // signed_execution_payload_bid.message. Gloas onwards only; unset before.
+  google.protobuf.UInt64Value builder_index = 4 [ json_name = "builder_index" ];
+
+  string block_hash = 5 [ json_name = "block_hash" ];
 }
 
 message EventChainReorg {
@@ -115,6 +123,8 @@ message EventChainReorgV2 {
   string new_head_state = 6 [ json_name = "new_head_state" ];
 
   google.protobuf.UInt64Value epoch = 7 [ json_name = "epoch" ];
+
+  bool execution_optimistic = 8 [ json_name = "execution_optimistic" ];
 }
 
 message EventFinalizedCheckpoint {
@@ -131,6 +141,8 @@ message EventFinalizedCheckpointV2 {
   string state = 2;
 
   google.protobuf.UInt64Value epoch = 3 [ json_name = "epoch" ];
+
+  bool execution_optimistic = 4 [ json_name = "execution_optimistic" ];
 }
 
 message EventVoluntaryExitMessage {
@@ -211,6 +223,10 @@ message EventFastConfirmation {
   google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
 
   string block = 2;
+
+  // current_slot is the wall-clock slot at which the beacon node ran the fast
+  // confirmation algorithm. Unset for beacon nodes that do not send it.
+  google.protobuf.UInt64Value current_slot = 3 [ json_name = "current_slot" ];
 }
 
 message EventDataColumnSidecar {

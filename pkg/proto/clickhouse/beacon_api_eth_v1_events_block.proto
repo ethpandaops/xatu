@@ -65,6 +65,10 @@ message BeaconApiEthV1EventsBlock {
   string meta_consensus_version_patch = 37;
   // Ethereum consensus client implementation that generated the event
   string meta_consensus_implementation = 38;
+  // Index of the builder whose execution payload bid the block commits to. Null before Gloas or when the beacon node does not send it
+  google.protobuf.UInt64Value builder_index = 39;
+  // Execution block hash from the block's execution payload bid. Null before Gloas or when the beacon node does not send it
+  google.protobuf.StringValue block_hash = 40;
 }
 
 // Request for listing beacon_api_eth_v1_events_block records
@@ -129,18 +133,22 @@ message ListBeaconApiEthV1EventsBlockRequest {
   StringFilter meta_consensus_version_patch = 27;
   // Filter by meta_consensus_implementation - Ethereum consensus client implementation that generated the event (optional)
   StringFilter meta_consensus_implementation = 28;
+  // Filter by builder_index - Index of the builder whose execution payload bid the block commits to. Null before Gloas or when the beacon node does not send it (optional)
+  NullableUInt64Filter builder_index = 29;
+  // Filter by block_hash - Execution block hash from the block's execution payload bid. Null before Gloas or when the beacon node does not send it (optional)
+  NullableStringFilter block_hash = 30;
 
   // The maximum number of beacon_api_eth_v1_events_block to return.
   // If unspecified, at most 100 items will be returned.
   // The maximum value is 10000; values above 10000 will be coerced to 10000.
-  int32 page_size = 29;
+  int32 page_size = 31;
   // A page token, received from a previous `ListBeaconApiEthV1EventsBlock` call.
   // Provide this to retrieve the subsequent page.
-  string page_token = 30;
+  string page_token = 32;
   // The order of results. Format: comma-separated list of fields.
   // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
   // If unspecified, results will be returned in the default order.
-  string order_by = 31;
+  string order_by = 33;
 }
 
 // Response for listing beacon_api_eth_v1_events_block records

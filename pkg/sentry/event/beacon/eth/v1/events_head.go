@@ -61,6 +61,7 @@ func (e *EventsHead) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error)
 				EpochTransition:           e.event.EpochTransition,
 				PreviousDutyDependentRoot: xatuethv1.RootAsString(e.event.PreviousDutyDependentRoot),
 				CurrentDutyDependentRoot:  xatuethv1.RootAsString(e.event.CurrentDutyDependentRoot),
+				ExecutionOptimistic:       e.event.ExecutionOptimistic,
 			},
 		},
 	}

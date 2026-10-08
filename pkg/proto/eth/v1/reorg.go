@@ -26,5 +26,7 @@ func NewReorgEventV2FromGoEth2ClientEvent(e *eth2v1.ChainReorgEvent) *EventChain
 		NewHeadBlock: RootAsString(e.NewHeadBlock),
 		NewHeadState: RootAsString(e.NewHeadState),
 		Depth:        &wrapperspb.UInt64Value{Value: e.Depth},
+
+		ExecutionOptimistic: e.ExecutionOptimistic,
 	}
 }

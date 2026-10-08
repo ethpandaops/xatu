@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains the non-empty Gloas builder pending payments of a canonical beacon state epoch.
+
+message CanonicalBeaconStateBuilderPendingPayment {
+  // When this row was last updated
+  uint32 updated_date_time = 11;
+  // The epoch number the builder pending payments snapshot is for
+  uint32 epoch = 12;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 13;
+  // The state ID the payments were read from
+  string state_id = 14;
+  // The index into builder_pending_payments, below SLOTS_PER_EPOCH for the previous epoch and above for the current epoch
+  uint32 payment_index = 15;
+  // The slot the payment belongs to
+  uint32 slot = 16;
+  // The wall clock time when the slot started
+  uint32 slot_start_date_time = 17;
+  // The attestation weight accumulated for the payment in gwei
+  uint64 weight = 18;
+  // The fee recipient of the payment withdrawal
+  string fee_recipient = 19;
+  // The payment amount in gwei
+  uint64 amount = 20;
+  // The index of the paying builder
+  uint64 builder_index = 21;
+  // The validator index of the slot proposer
+  uint32 proposer_index = 22;
+  // Ethereum network name
+  string meta_network_name = 23;
+}
+
+// Request for listing canonical_beacon_state_builder_pending_payment records
+message ListCanonicalBeaconStateBuilderPendingPaymentRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (ORDER BY column 2 - optional)
+  UInt32Filter epoch_start_date_time = 2;
+
+  // Filter by epoch - The epoch number the builder pending payments snapshot is for (ORDER BY column 3 - optional)
+  UInt32Filter epoch = 3;
+
+  // Filter by payment_index - The index into builder_pending_payments, below SLOTS_PER_EPOCH for the previous epoch and above for the current epoch (ORDER BY column 4 - optional)
+  UInt32Filter payment_index = 4;
+
+  // Filter by updated_date_time - When this row was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by state_id - The state ID the payments were read from (optional)
+  StringFilter state_id = 6;
+  // Filter by slot - The slot the payment belongs to (optional)
+  UInt32Filter slot = 7;
+  // Filter by slot_start_date_time - The wall clock time when the slot started (optional)
+  UInt32Filter slot_start_date_time = 8;
+  // Filter by weight - The attestation weight accumulated for the payment in gwei (optional)
+  UInt64Filter weight = 9;
+  // Filter by fee_recipient - The fee recipient of the payment withdrawal (optional)
+  StringFilter fee_recipient = 10;
+  // Filter by amount - The payment amount in gwei (optional)
+  UInt64Filter amount = 11;
+  // Filter by builder_index - The index of the paying builder (optional)
+  UInt64Filter builder_index = 12;
+  // Filter by proposer_index - The validator index of the slot proposer (optional)
+  UInt32Filter proposer_index = 13;
+
+  // The maximum number of canonical_beacon_state_builder_pending_payment to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 14;
+  // A page token, received from a previous `ListCanonicalBeaconStateBuilderPendingPayment` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 15;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 16;
+}
+
+// Response for listing canonical_beacon_state_builder_pending_payment records
+message ListCanonicalBeaconStateBuilderPendingPaymentResponse {
+  // The list of canonical_beacon_state_builder_pending_payment.
+  repeated CanonicalBeaconStateBuilderPendingPayment canonical_beacon_state_builder_pending_payment = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_beacon_state_builder_pending_payment record by primary key
+message GetCanonicalBeaconStateBuilderPendingPaymentRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_beacon_state_builder_pending_payment record
+message GetCanonicalBeaconStateBuilderPendingPaymentResponse {
+  CanonicalBeaconStateBuilderPendingPayment item = 1;
+}
+
+// Query canonical_beacon_state_builder_pending_payment data
+service CanonicalBeaconStateBuilderPendingPaymentService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalBeaconStateBuilderPendingPaymentRequest) returns (ListCanonicalBeaconStateBuilderPendingPaymentResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalBeaconStateBuilderPendingPaymentRequest) returns (GetCanonicalBeaconStateBuilderPendingPaymentResponse);
+}

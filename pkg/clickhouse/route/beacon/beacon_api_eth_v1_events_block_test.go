@@ -32,8 +32,8 @@ func TestSnapshot_beacon_api_eth_v1_events_block(t *testing.T) {
 			},
 		},
 	}, 1, map[string]any{
-		"slot":              uint32(100),
-		"block":             "0xblockroot",
+		colSlot:             uint32(100),
+		colBlock:            "0xblockroot",
 		"meta_client_name":  "test-client",
 		"meta_network_name": "mainnet",
 	})
@@ -64,9 +64,9 @@ func TestSnapshot_beacon_api_eth_v1_events_block_gloas(t *testing.T) {
 			},
 		},
 	}, 1, map[string]any{
-		"slot":                 uint32(100),
-		"block":                "0xblockroot",
-		"execution_optimistic": true,
+		colSlot:                uint32(100),
+		colBlock:               "0xblockroot",
+		colExecutionOptimistic: true,
 		"builder_index":        uint64(42),
 		"block_hash":           "0xblockhash",
 	})

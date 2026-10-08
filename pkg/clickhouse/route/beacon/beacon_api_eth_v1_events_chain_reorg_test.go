@@ -27,17 +27,17 @@ func TestSnapshot_beacon_api_eth_v1_events_chain_reorg(t *testing.T) {
 		}),
 		Data: &xatu.DecoratedEvent_EthV1EventsChainReorgV2{
 			EthV1EventsChainReorgV2: &ethv1.EventChainReorgV2{
-				Slot:  wrapperspb.UInt64(100),
-				Depth: wrapperspb.UInt64(3),
+				Slot:                wrapperspb.UInt64(100),
+				Depth:               wrapperspb.UInt64(3),
 				Epoch:               wrapperspb.UInt64(3),
 				ExecutionOptimistic: true,
 			},
 		},
 	}, 1, map[string]any{
-		"slot":                 uint32(100),
+		colSlot:                uint32(100),
 		"depth":                uint16(3),
-		"execution_optimistic": true,
-		"meta_client_name":  "test-client",
-		"meta_network_name": "mainnet",
+		colExecutionOptimistic: true,
+		"meta_client_name":     "test-client",
+		"meta_network_name":    "mainnet",
 	})
 }

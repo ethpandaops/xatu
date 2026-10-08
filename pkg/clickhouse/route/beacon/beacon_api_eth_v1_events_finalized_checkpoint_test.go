@@ -26,18 +26,16 @@ func TestSnapshot_beacon_api_eth_v1_events_finalized_checkpoint(t *testing.T) {
 		}),
 		Data: &xatu.DecoratedEvent_EthV1EventsFinalizedCheckpointV2{
 			EthV1EventsFinalizedCheckpointV2: &ethv1.EventFinalizedCheckpointV2{
-				Block:               "0xfcblock",
-				State:               "0xfcstate",
-				Epoch:               wrapperspb.UInt64(3),
-				ExecutionOptimistic: true,
+				Block: "0xfcblock",
+				State: "0xfcstate",
+				Epoch: wrapperspb.UInt64(3),
 			},
 		},
 	}, 1, map[string]any{
-		colBlock:               "0xfcblock",
-		"state":                "0xfcstate",
-		"epoch":                uint32(3),
-		colExecutionOptimistic: true,
-		"meta_client_name":     "test-client",
-		"meta_network_name":    "mainnet",
+		"block":             "0xfcblock",
+		"state":             "0xfcstate",
+		"epoch":             uint32(3),
+		"meta_client_name":  "test-client",
+		"meta_network_name": "mainnet",
 	})
 }

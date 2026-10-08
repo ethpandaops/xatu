@@ -27,19 +27,17 @@ func TestSnapshot_beacon_api_eth_v1_events_head(t *testing.T) {
 		}),
 		Data: &xatu.DecoratedEvent_EthV1EventsHeadV2{
 			EthV1EventsHeadV2: &ethv1.EventHeadV2{
-				Slot:                wrapperspb.UInt64(100),
-				Block:               "0xblock1",
-				State:               "0xstate1",
-				EpochTransition:     true,
-				ExecutionOptimistic: true,
+				Slot:            wrapperspb.UInt64(100),
+				Block:           "0xblock1",
+				State:           "0xstate1",
+				EpochTransition: true,
 			},
 		},
 	}, 1, map[string]any{
-		colSlot:                uint32(100),
-		colBlock:               "0xblock1",
-		"epoch_transition":     true,
-		colExecutionOptimistic: true,
-		"meta_client_name":     "test-client",
-		"meta_network_name":    "mainnet",
+		"slot":              uint32(100),
+		"block":             "0xblock1",
+		"epoch_transition":  true,
+		"meta_client_name":  "test-client",
+		"meta_network_name": "mainnet",
 	})
 }

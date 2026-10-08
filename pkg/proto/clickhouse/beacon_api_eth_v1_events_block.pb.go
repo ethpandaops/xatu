@@ -82,7 +82,7 @@ type BeaconApiEthV1EventsBlock struct {
 	MetaConsensusVersionPatch string `protobuf:"bytes,37,opt,name=meta_consensus_version_patch,json=metaConsensusVersionPatch,proto3" json:"meta_consensus_version_patch,omitempty"`
 	// Ethereum consensus client implementation that generated the event
 	MetaConsensusImplementation string `protobuf:"bytes,38,opt,name=meta_consensus_implementation,json=metaConsensusImplementation,proto3" json:"meta_consensus_implementation,omitempty"`
-	// Index of the builder whose execution payload bid the block commits to. Null before Gloas or when the beacon node does not send it
+	// Index of the builder whose execution payload bid the block commits to. Null for self-built payloads (BUILDER_INDEX_SELF_BUILD), before Gloas, or when the beacon node does not send it
 	BuilderIndex *wrapperspb.UInt64Value `protobuf:"bytes,39,opt,name=builder_index,json=builderIndex,proto3" json:"builder_index,omitempty"`
 	// Execution block hash from the block's execution payload bid. Null before Gloas or when the beacon node does not send it
 	BlockHash *wrapperspb.StringValue `protobuf:"bytes,40,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`
@@ -392,7 +392,7 @@ type ListBeaconApiEthV1EventsBlockRequest struct {
 	MetaConsensusVersionPatch *StringFilter `protobuf:"bytes,27,opt,name=meta_consensus_version_patch,json=metaConsensusVersionPatch,proto3" json:"meta_consensus_version_patch,omitempty"`
 	// Filter by meta_consensus_implementation - Ethereum consensus client implementation that generated the event (optional)
 	MetaConsensusImplementation *StringFilter `protobuf:"bytes,28,opt,name=meta_consensus_implementation,json=metaConsensusImplementation,proto3" json:"meta_consensus_implementation,omitempty"`
-	// Filter by builder_index - Index of the builder whose execution payload bid the block commits to. Null before Gloas or when the beacon node does not send it (optional)
+	// Filter by builder_index - Index of the builder whose execution payload bid the block commits to. Null for self-built payloads (BUILDER_INDEX_SELF_BUILD), before Gloas, or when the beacon node does not send it (optional)
 	BuilderIndex *NullableUInt64Filter `protobuf:"bytes,29,opt,name=builder_index,json=builderIndex,proto3" json:"builder_index,omitempty"`
 	// Filter by block_hash - Execution block hash from the block's execution payload bid. Null before Gloas or when the beacon node does not send it (optional)
 	BlockHash *NullableStringFilter `protobuf:"bytes,30,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`

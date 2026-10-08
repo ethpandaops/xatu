@@ -85,9 +85,10 @@ func (b *beaconApiEthV1EventsBlockBatch) appendPayload(event *xatu.DecoratedEven
 	b.Block.Append([]byte(blockV2.GetBlock()))
 	b.ExecutionOptimistic.Append(blockV2.GetExecutionOptimistic())
 
-	// builder_index and block_hash are only sent from Gloas onwards.
+	// builder_index and block_hash are only sent from Gloas onwards. A
+	// self-built payload's BUILDER_INDEX_SELF_BUILD sentinel is stored as NULL.
 	if builderIndex := blockV2.GetBuilderIndex(); builderIndex != nil {
-		b.BuilderIndex.Append(proto.NewNullable(builderIndex.GetValue()))
+		b.BuilderIndex.Append(route.NullableBuilderIndex(builderIndex.GetValue()))
 	} else {
 		b.BuilderIndex.Append(proto.Nullable[uint64]{})
 	}

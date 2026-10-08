@@ -68,7 +68,7 @@ type BeaconApiEthV2BeaconBlock struct {
 	// Excess gas used for blobs in execution payload
 	ExecutionPayloadExcessBlobGas *wrapperspb.UInt64Value `protobuf:"bytes,31,opt,name=execution_payload_excess_blob_gas,json=executionPayloadExcessBlobGas,proto3" json:"execution_payload_excess_blob_gas,omitempty"`
 	ExecutionPayloadSlotNumber    *wrapperspb.UInt64Value `protobuf:"bytes,32,opt,name=execution_payload_slot_number,json=executionPayloadSlotNumber,proto3" json:"execution_payload_slot_number,omitempty"`
-	// Builder index from the bid (Gloas+)
+	// Builder index from the bid (Gloas+). NULL for self-built payloads (BUILDER_INDEX_SELF_BUILD) and before Gloas
 	BuilderIndex *wrapperspb.UInt64Value `protobuf:"bytes,33,opt,name=builder_index,json=builderIndex,proto3" json:"builder_index,omitempty"`
 	// Bid value in Gwei (Gloas+)
 	BidValue *wrapperspb.UInt64Value `protobuf:"bytes,34,opt,name=bid_value,json=bidValue,proto3" json:"bid_value,omitempty"`
@@ -580,7 +580,7 @@ type ListBeaconApiEthV2BeaconBlockRequest struct {
 	ExecutionPayloadExcessBlobGas *NullableUInt64Filter `protobuf:"bytes,23,opt,name=execution_payload_excess_blob_gas,json=executionPayloadExcessBlobGas,proto3" json:"execution_payload_excess_blob_gas,omitempty"`
 	// Filter by execution_payload_slot_number (optional)
 	ExecutionPayloadSlotNumber *NullableUInt64Filter `protobuf:"bytes,24,opt,name=execution_payload_slot_number,json=executionPayloadSlotNumber,proto3" json:"execution_payload_slot_number,omitempty"`
-	// Filter by builder_index - Builder index from the bid (Gloas+) (optional)
+	// Filter by builder_index - Builder index from the bid (Gloas+). NULL for self-built payloads (BUILDER_INDEX_SELF_BUILD) and before Gloas (optional)
 	BuilderIndex *NullableUInt64Filter `protobuf:"bytes,25,opt,name=builder_index,json=builderIndex,proto3" json:"builder_index,omitempty"`
 	// Filter by bid_value - Bid value in Gwei (Gloas+) (optional)
 	BidValue *NullableUInt64Filter `protobuf:"bytes,26,opt,name=bid_value,json=bidValue,proto3" json:"bid_value,omitempty"`

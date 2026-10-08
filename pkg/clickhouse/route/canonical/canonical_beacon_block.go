@@ -431,8 +431,9 @@ func (b *canonicalBeaconBlockBatch) appendEpbsFromBid(bid *ethv1.SignedExecution
 
 	msg := bid.GetMessage()
 
+	// A self-built payload's BUILDER_INDEX_SELF_BUILD sentinel is stored as NULL.
 	if v := msg.GetBuilderIndex(); v != nil {
-		b.BuilderIndex.Append(proto.NewNullable[uint64](v.GetValue()))
+		b.BuilderIndex.Append(route.NullableBuilderIndex(v.GetValue()))
 	} else {
 		b.BuilderIndex.Append(proto.Nullable[uint64]{})
 	}

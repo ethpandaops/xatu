@@ -162,7 +162,8 @@ func (f *ForkChoiceNodeV2) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceN
 
 	// Round-trip the EIP-7732 payload_status and the other v2 fork choice
 	// fields into extra_data so downstream consumers that only inspect
-	// extra_data still see them.
+	// extra_data still see them. The decoded values take precedence over any
+	// the client put in extra_data under the same keys.
 	if ps := f.GetPayloadStatus(); ps != nil {
 		extraData["payload_status"] = ps.GetValue()
 	}
@@ -176,7 +177,7 @@ func (f *ForkChoiceNodeV2) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceN
 		"payload_availability_yes_count":      f.GetPayloadAvailabilityYesCount(),
 		"payload_data_availability_yes_count": f.GetPayloadDataAvailabilityYesCount(),
 	} {
-		if _, exists := extraData[key]; !exists && value != nil {
+		if value != nil {
 			extraData[key] = value.GetValue()
 		}
 	}
@@ -185,10 +186,10 @@ func (f *ForkChoiceNodeV2) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceN
 		"justified_checkpoint": f.GetJustifiedCheckpoint(),
 		"finalized_checkpoint": f.GetFinalizedCheckpoint(),
 	} {
-		if _, exists := extraData[key]; !exists && checkpoint != nil {
+		if checkpoint != nil {
 			extraData[key] = map[string]any{
-				"epoch": strconv.FormatUint(checkpoint.GetEpoch().GetValue(), 10),
-				"root":  checkpoint.GetRoot(),
+				checkpointEpochKey: strconv.FormatUint(checkpoint.GetEpoch().GetValue(), 10),
+				checkpointRootKey:  checkpoint.GetRoot(),
 			}
 		}
 	}
@@ -419,6 +420,12 @@ func NewForkChoiceNodeV2FromGoEth2ClientV2(node *eth2v1.ForkChoiceNodeV2) (*Fork
 
 	return out, nil
 }
+
+// Keys of a checkpoint in the beacon API's JSON encoding.
+const (
+	checkpointEpochKey = "epoch"
+	checkpointRootKey  = "root"
+)
 
 // newCheckpointV2 converts a go-eth2-client checkpoint.
 func newCheckpointV2(checkpoint phase0.Checkpoint) *CheckpointV2 {

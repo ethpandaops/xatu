@@ -73,7 +73,8 @@ type Sentry struct {
 	latestForkChoiceMu sync.RWMutex
 
 	// forkChoiceV2RetryAt is when to next try the v2 fork choice endpoint, in
-	// unix nanoseconds, after the beacon node reported it as unsupported.
+	// unix nanoseconds, after the beacon node showed it cannot serve v2 (no
+	// endpoint, or a response that does not follow the spec).
 	forkChoiceV2RetryAt atomic.Int64
 
 	preset *Preset

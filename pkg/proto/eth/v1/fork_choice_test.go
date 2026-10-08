@@ -8,6 +8,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func payloadStatusPtr(s eth2v1.ForkChoicePayloadStatus) *eth2v1.ForkChoicePayloadStatus {
@@ -138,4 +139,40 @@ func TestNewForkChoiceV2FromGoEth2ClientV1KeepsStoreExtraData(t *testing.T) {
 	fc, err = NewForkChoiceV2FromGoEth2ClientV1(&eth2v1.ForkChoice{ForkChoiceNodes: []*eth2v1.ForkChoiceNode{}})
 	require.NoError(t, err)
 	assert.Empty(t, fc.GetExtraData())
+}
+
+// Decoded v2 values take precedence over a client's extra_data under the same keys.
+func TestForkChoiceV2RoundTripDecodedValuesWin(t *testing.T) {
+	forkChoice := testForkChoiceV2()
+	forkChoice.ForkChoiceNodes[0].ExtraData = map[string]any{
+		"payload_status":         "FULL",
+		"payload_attester_count": "7",
+		"justified_checkpoint":   "client value",
+	}
+
+	fc, err := NewForkChoiceV2FromGoEth2ClientV2(forkChoice)
+	require.NoError(t, err)
+
+	v1, err := fc.AsGoEth2ClientV1ForkChoice()
+	require.NoError(t, err)
+
+	extra := v1.ForkChoiceNodes[0].ExtraData
+	assert.Equal(t, uint32(2), extra["payload_status"])
+	assert.Equal(t, uint64(512), extra["payload_attester_count"])
+	assert.Equal(t, map[string]any{checkpointEpochKey: "3", checkpointRootKey: RootAsString(phase0.Root{0xa})}, extra["justified_checkpoint"])
+}
+
+// A v1 node without extra data is encoded as JSON null; converting it back must not panic.
+func TestForkChoiceNodeV2NullExtraData(t *testing.T) {
+	fc, err := NewForkChoiceV2FromGoEth2ClientV1(&eth2v1.ForkChoice{
+		ForkChoiceNodes: []*eth2v1.ForkChoiceNode{{Slot: 1, Validity: eth2v1.ForkChoiceNodeValidityValid}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "null", fc.GetForkChoiceNodes()[0].GetExtraData())
+
+	fc.GetForkChoiceNodes()[0].PayloadStatus = &wrapperspb.UInt32Value{Value: 1}
+
+	v1, err := fc.AsGoEth2ClientV1ForkChoice()
+	require.NoError(t, err)
+	assert.Equal(t, map[string]any{"payload_status": uint32(1)}, v1.ForkChoiceNodes[0].ExtraData)
 }

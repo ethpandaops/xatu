@@ -27,6 +27,12 @@ message ForkChoiceV2 {
 
   repeated ForkChoiceNodeV2 fork_choice_nodes = 3
       [ json_name = "fork_choice_nodes" ];
+
+  // Client-specific values of the fork-choice store (e.g. the unrealized
+  // justified checkpoint, proposer boost root), as a JSON object. From the
+  // response's top-level extra_data on both the v1 and v2 debug fork choice
+  // endpoints.
+  string extra_data = 4 [ json_name = "extra_data" ];
 }
 
 message ForkChoiceNode {
@@ -76,4 +82,32 @@ message ForkChoiceNodeV2 {
   // Pre-Gloas nodes leave this unset. consensus-specs PR #5094 narrowed the
   // scope to per-node tracking (no Store-level payload_states mirror).
   google.protobuf.UInt32Value payload_status = 10 [ json_name = "payload_status" ];
+
+  // The fields below come from GET /eth/v2/debug/fork_choice
+  // (ethereum/beacon-APIs#615), which returns one node per (block_root,
+  // payload_status) pair. Unset for nodes fetched from the v1 endpoint, and
+  // for values a client does not provide.
+
+  // EIP-7732 ePBS: payload status of the parent fork-choice node, using the
+  // payload_status enum (0 = EMPTY, 1 = FULL, 2 = PENDING). For a pending
+  // node, whether its block was built on the parent block's empty or full
+  // payload; for empty and full nodes, pending.
+  google.protobuf.UInt32Value parent_payload_status = 11
+      [ json_name = "parent_payload_status" ];
+
+  // Payload Timeliness Committee votes for the block's payload: positions
+  // with a recorded vote, voting the payload timely, and voting its blob
+  // data available.
+  google.protobuf.UInt64Value payload_attester_count = 12
+      [ json_name = "payload_attester_count" ];
+  google.protobuf.UInt64Value payload_availability_yes_count = 13
+      [ json_name = "payload_availability_yes_count" ];
+  google.protobuf.UInt64Value payload_data_availability_yes_count = 14
+      [ json_name = "payload_data_availability_yes_count" ];
+
+  // Justified and finalized checkpoints recorded for the node, from GET
+  // /eth/v2/debug/fork_choice. justified_epoch and finalized_epoch carry the
+  // same epochs, so readers of v1 nodes need not change.
+  CheckpointV2 justified_checkpoint = 15 [ json_name = "justified_checkpoint" ];
+  CheckpointV2 finalized_checkpoint = 16 [ json_name = "finalized_checkpoint" ];
 }

@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -70,6 +71,11 @@ type Sentry struct {
 
 	latestForkChoice   *v1.ForkChoice
 	latestForkChoiceMu sync.RWMutex
+
+	// forkChoiceV2RetryAt is when to next try the v2 fork choice endpoint, in
+	// unix nanoseconds, after the beacon node showed it cannot serve v2 (no
+	// endpoint, or a response that does not follow the spec).
+	forkChoiceV2RetryAt atomic.Int64
 
 	preset *Preset
 

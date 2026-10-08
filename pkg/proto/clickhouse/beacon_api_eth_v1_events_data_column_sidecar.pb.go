@@ -44,7 +44,7 @@ type BeaconApiEthV1EventsDataColumnSidecar struct {
 	BlockRoot string `protobuf:"bytes,18,opt,name=block_root,json=blockRoot,proto3" json:"block_root,omitempty"`
 	// The index of column in the beacon API event stream payload
 	ColumnIndex uint64 `protobuf:"varint,19,opt,name=column_index,json=columnIndex,proto3" json:"column_index,omitempty"`
-	// Number of KZG commitments associated with the record
+	// Number of KZG commitments associated with the record. 0 when the beacon node omits kzg_commitments (beacon-APIs #583)
 	KzgCommitmentsCount uint32 `protobuf:"varint,20,opt,name=kzg_commitments_count,json=kzgCommitmentsCount,proto3" json:"kzg_commitments_count,omitempty"`
 	// Name of the client that generated the event
 	MetaClientName string `protobuf:"bytes,21,opt,name=meta_client_name,json=metaClientName,proto3" json:"meta_client_name,omitempty"`
@@ -349,7 +349,7 @@ type ListBeaconApiEthV1EventsDataColumnSidecarRequest struct {
 	Epoch *UInt32Filter `protobuf:"bytes,10,opt,name=epoch,proto3" json:"epoch,omitempty"`
 	// Filter by epoch_start_date_time - The wall clock time when the epoch started (optional)
 	EpochStartDateTime *UInt32Filter `protobuf:"bytes,11,opt,name=epoch_start_date_time,json=epochStartDateTime,proto3" json:"epoch_start_date_time,omitempty"`
-	// Filter by kzg_commitments_count - Number of KZG commitments associated with the record (optional)
+	// Filter by kzg_commitments_count - Number of KZG commitments associated with the record. 0 when the beacon node omits kzg_commitments (beacon-APIs #583) (optional)
 	KzgCommitmentsCount *UInt32Filter `protobuf:"bytes,12,opt,name=kzg_commitments_count,json=kzgCommitmentsCount,proto3" json:"kzg_commitments_count,omitempty"`
 	// Filter by meta_client_version - Version of the client that generated the event (optional)
 	MetaClientVersion *StringFilter `protobuf:"bytes,13,opt,name=meta_client_version,json=metaClientVersion,proto3" json:"meta_client_version,omitempty"`

@@ -826,6 +826,74 @@ func BuildListBeaconApiEthV1EventsBlockQuery(req *ListBeaconApiEthV1EventsBlockR
 		}
 	}
 
+	// Add filter for column: builder_index
+	if req.BuilderIndex != nil {
+		switch filter := req.BuilderIndex.Filter.(type) {
+		case *NullableUInt64Filter_Eq:
+			qb.AddCondition("builder_index", "=", filter.Eq)
+		case *NullableUInt64Filter_Ne:
+			qb.AddCondition("builder_index", "!=", filter.Ne)
+		case *NullableUInt64Filter_Lt:
+			qb.AddCondition("builder_index", "<", filter.Lt)
+		case *NullableUInt64Filter_Lte:
+			qb.AddCondition("builder_index", "<=", filter.Lte)
+		case *NullableUInt64Filter_Gt:
+			qb.AddCondition("builder_index", ">", filter.Gt)
+		case *NullableUInt64Filter_Gte:
+			qb.AddCondition("builder_index", ">=", filter.Gte)
+		case *NullableUInt64Filter_Between:
+			qb.AddBetweenCondition("builder_index", filter.Between.Min, filter.Between.Max.GetValue())
+		case *NullableUInt64Filter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("builder_index", UInt64SliceToInterface(filter.In.Values))
+			}
+		case *NullableUInt64Filter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("builder_index", UInt64SliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableUInt64Filter_IsNull:
+			qb.AddIsNullCondition("builder_index")
+		case *NullableUInt64Filter_IsNotNull:
+			qb.AddIsNotNullCondition("builder_index")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: block_hash
+	if req.BlockHash != nil {
+		switch filter := req.BlockHash.Filter.(type) {
+		case *NullableStringFilter_Eq:
+			qb.AddCondition("block_hash", "=", filter.Eq)
+		case *NullableStringFilter_Ne:
+			qb.AddCondition("block_hash", "!=", filter.Ne)
+		case *NullableStringFilter_Contains:
+			qb.AddLikeCondition("block_hash", "%" + filter.Contains + "%")
+		case *NullableStringFilter_StartsWith:
+			qb.AddLikeCondition("block_hash", filter.StartsWith + "%")
+		case *NullableStringFilter_EndsWith:
+			qb.AddLikeCondition("block_hash", "%" + filter.EndsWith)
+		case *NullableStringFilter_Like:
+			qb.AddLikeCondition("block_hash", filter.Like)
+		case *NullableStringFilter_NotLike:
+			qb.AddNotLikeCondition("block_hash", filter.NotLike)
+		case *NullableStringFilter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("block_hash", StringSliceToInterface(filter.In.Values))
+			}
+		case *NullableStringFilter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("block_hash", StringSliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableStringFilter_IsNull:
+			qb.AddIsNullCondition("block_hash")
+		case *NullableStringFilter_IsNotNull:
+			qb.AddIsNotNullCondition("block_hash")
+		default:
+			// Unsupported filter type
+		}
+	}
+
 	// Handle pagination per AIP-132
 	// Validate page size
 	if req.PageSize < 0 {
@@ -851,7 +919,7 @@ func BuildListBeaconApiEthV1EventsBlockQuery(req *ListBeaconApiEthV1EventsBlockR
 	// Handle custom ordering if provided
 	var orderByClause string
 	if req.OrderBy != "" {
-		validFields := []string{"updated_date_time", "event_date_time", "slot", "slot_start_date_time", "propagation_slot_start_diff", "block", "epoch", "epoch_start_date_time", "execution_optimistic", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation"}
+		validFields := []string{"updated_date_time", "event_date_time", "slot", "slot_start_date_time", "propagation_slot_start_diff", "block", "epoch", "epoch_start_date_time", "execution_optimistic", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation", "builder_index", "block_hash"}
 		orderFields, err := ParseOrderBy(req.OrderBy, validFields)
 		if err != nil {
 			return SQLQuery{}, fmt.Errorf("invalid order_by: %w", err)
@@ -863,7 +931,7 @@ func BuildListBeaconApiEthV1EventsBlockQuery(req *ListBeaconApiEthV1EventsBlockR
 	}
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "propagation_slot_start_diff", "NULLIF(`block`, repeat('\x00', 66)) AS `block`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "execution_optimistic", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "propagation_slot_start_diff", "NULLIF(`block`, repeat('\x00', 66)) AS `block`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "execution_optimistic", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation", "builder_index", "NULLIF(`block_hash`, repeat('\x00', 66)) AS `block_hash`"}
 
 	return BuildParameterizedQuery("beacon_api_eth_v1_events_block", columns, qb, orderByClause, limit, offset, options...)
 }
@@ -883,7 +951,7 @@ func BuildGetBeaconApiEthV1EventsBlockQuery(req *GetBeaconApiEthV1EventsBlockReq
 	orderByClause := " ORDER BY meta_network_name, slot_start_date_time, meta_client_name, block"
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "propagation_slot_start_diff", "NULLIF(`block`, repeat('\x00', 66)) AS `block`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "execution_optimistic", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "propagation_slot_start_diff", "NULLIF(`block`, repeat('\x00', 66)) AS `block`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "execution_optimistic", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation", "builder_index", "NULLIF(`block_hash`, repeat('\x00', 66)) AS `block_hash`"}
 
 	// Return single record
 	return BuildParameterizedQuery("beacon_api_eth_v1_events_block", columns, qb, orderByClause, 1, 0, options...)

@@ -41,6 +41,8 @@ type beaconApiEthV1EventsBlockBatch struct {
 	MetaConsensusVersionMinor                 proto.ColStr
 	MetaConsensusVersionPatch                 proto.ColStr
 	MetaConsensusImplementation               proto.ColStr
+	BuilderIndex                              *proto.ColNullable[uint64]
+	BlockHash                                 *proto.ColNullable[[]byte]
 	rows                                      int
 }
 
@@ -53,6 +55,8 @@ func newbeaconApiEthV1EventsBlockBatch() *beaconApiEthV1EventsBlockBatch {
 		MetaClientGeoLatitude:               new(proto.ColFloat64).Nullable(),
 		MetaClientGeoAutonomousSystemNumber: new(proto.ColUInt32).Nullable(),
 		MetaClientGeoAutonomousSystemOrganization: new(proto.ColStr).Nullable(),
+		BuilderIndex: new(proto.ColUInt64).Nullable(),
+		BlockHash:    route.NewNullableFixedStr(66),
 	}
 }
 
@@ -136,6 +140,8 @@ func (b *beaconApiEthV1EventsBlockBatch) Input() proto.Input {
 		{Name: "meta_consensus_version_minor", Data: &b.MetaConsensusVersionMinor},
 		{Name: "meta_consensus_version_patch", Data: &b.MetaConsensusVersionPatch},
 		{Name: "meta_consensus_implementation", Data: &b.MetaConsensusImplementation},
+		{Name: "builder_index", Data: b.BuilderIndex},
+		{Name: "block_hash", Data: b.BlockHash},
 	}
 }
 
@@ -168,6 +174,8 @@ func (b *beaconApiEthV1EventsBlockBatch) Reset() {
 	b.MetaConsensusVersionMinor.Reset()
 	b.MetaConsensusVersionPatch.Reset()
 	b.MetaConsensusImplementation.Reset()
+	b.BuilderIndex.Reset()
+	b.BlockHash.Reset()
 	b.rows = 0
 }
 
@@ -176,7 +184,7 @@ func (b *beaconApiEthV1EventsBlockBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 28)
+		row := make(map[string]any, 30)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["slot"] = b.Slot.Row(i)
@@ -225,6 +233,16 @@ func (b *beaconApiEthV1EventsBlockBatch) Snapshot() []map[string]any {
 		row["meta_consensus_version_minor"] = b.MetaConsensusVersionMinor.Row(i)
 		row["meta_consensus_version_patch"] = b.MetaConsensusVersionPatch.Row(i)
 		row["meta_consensus_implementation"] = b.MetaConsensusImplementation.Row(i)
+		if v := b.BuilderIndex.Row(i); v.Set {
+			row["builder_index"] = v.Value
+		} else {
+			row["builder_index"] = nil
+		}
+		if v := b.BlockHash.Row(i); v.Set {
+			row["block_hash"] = string(v.Value)
+		} else {
+			row["block_hash"] = nil
+		}
 		out[i] = row
 	}
 

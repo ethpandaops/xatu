@@ -27,7 +27,7 @@ message BeaconApiEthV1EventsDataColumnSidecar {
   string block_root = 18;
   // The index of column in the beacon API event stream payload
   uint64 column_index = 19;
-  // Number of KZG commitments associated with the record
+  // Number of KZG commitments associated with the record. 0 when the beacon node omits kzg_commitments (beacon-APIs #583)
   uint32 kzg_commitments_count = 20;
   // Name of the client that generated the event
   string meta_client_name = 21;
@@ -98,7 +98,7 @@ message ListBeaconApiEthV1EventsDataColumnSidecarRequest {
   UInt32Filter epoch = 10;
   // Filter by epoch_start_date_time - The wall clock time when the epoch started (optional)
   UInt32Filter epoch_start_date_time = 11;
-  // Filter by kzg_commitments_count - Number of KZG commitments associated with the record (optional)
+  // Filter by kzg_commitments_count - Number of KZG commitments associated with the record. 0 when the beacon node omits kzg_commitments (beacon-APIs #583) (optional)
   UInt32Filter kzg_commitments_count = 12;
   // Filter by meta_client_version - Version of the client that generated the event (optional)
   StringFilter meta_client_version = 13;

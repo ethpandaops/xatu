@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ClickHouse/ch-go/proto"
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -83,6 +84,20 @@ func (b *beaconApiEthV1EventsBlockBatch) appendPayload(event *xatu.DecoratedEven
 
 	b.Block.Append([]byte(blockV2.GetBlock()))
 	b.ExecutionOptimistic.Append(blockV2.GetExecutionOptimistic())
+
+	// builder_index and block_hash are only sent from Gloas onwards. A
+	// self-built payload's BUILDER_INDEX_SELF_BUILD sentinel is stored as NULL.
+	if builderIndex := blockV2.GetBuilderIndex(); builderIndex != nil {
+		b.BuilderIndex.Append(route.NullableBuilderIndex(builderIndex.GetValue()))
+	} else {
+		b.BuilderIndex.Append(proto.Nullable[uint64]{})
+	}
+
+	if blockHash := blockV2.GetBlockHash(); blockHash != "" {
+		b.BlockHash.Append(proto.NewNullable[[]byte]([]byte(blockHash)))
+	} else {
+		b.BlockHash.Append(proto.Nullable[[]byte]{})
+	}
 }
 
 func (b *beaconApiEthV1EventsBlockBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

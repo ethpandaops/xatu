@@ -833,10 +833,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 			event := v1.NewEventsFastConfirmation(
 				s.log,
-				&v1.FastConfirmationData{
-					Slot:  uint64(ev.Slot),
-					Block: xatuethv1.RootAsString(ev.Block),
-				},
+				newFastConfirmationData(ev),
 				now,
 				s.beacon,
 				s.duplicateCache.BeaconETHV1EventsFastConfirmation,
@@ -1123,4 +1120,20 @@ func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 	}
 
 	return nil
+}
+
+// newFastConfirmationData converts a fast_confirmation SSE event. current_slot
+// is only sent by beacon nodes that implement beacon-APIs #616.
+func newFastConfirmationData(ev *eth2v1.FastConfirmationEvent) *v1.FastConfirmationData {
+	data := &v1.FastConfirmationData{
+		Slot:  uint64(ev.Slot),
+		Block: xatuethv1.RootAsString(ev.Block),
+	}
+
+	if ev.CurrentSlot != nil {
+		currentSlot := uint64(*ev.CurrentSlot)
+		data.CurrentSlot = &currentSlot
+	}
+
+	return data
 }

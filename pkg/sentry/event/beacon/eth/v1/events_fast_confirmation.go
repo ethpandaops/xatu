@@ -20,6 +20,11 @@ import (
 type FastConfirmationData struct {
 	Slot  uint64
 	Block string
+	// CurrentSlot is the wall-clock slot the beacon node ran the algorithm at
+	// (nil when the beacon node does not send it). It is excluded from the
+	// duplicate hash: the event fires on every run, so only the first run that
+	// confirms a block is kept, and its current_slot gives the confirmation delay.
+	CurrentSlot *uint64 `hash:"ignore"`
 }
 
 type EventsFastConfirmation struct {
@@ -47,6 +52,11 @@ func NewEventsFastConfirmation(log logrus.FieldLogger, event *FastConfirmationDa
 }
 
 func (e *EventsFastConfirmation) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
+	var currentSlot *wrapperspb.UInt64Value
+	if e.event.CurrentSlot != nil {
+		currentSlot = &wrapperspb.UInt64Value{Value: *e.event.CurrentSlot}
+	}
+
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_FAST_CONFIRMATION,
@@ -58,8 +68,9 @@ func (e *EventsFastConfirmation) Decorate(ctx context.Context) (*xatu.DecoratedE
 		},
 		Data: &xatu.DecoratedEvent_EthV1EventsFastConfirmation{
 			EthV1EventsFastConfirmation: &xatuethv1.EventFastConfirmation{
-				Slot:  &wrapperspb.UInt64Value{Value: e.event.Slot},
-				Block: e.event.Block,
+				Slot:        &wrapperspb.UInt64Value{Value: e.event.Slot},
+				Block:       e.event.Block,
+				CurrentSlot: currentSlot,
 			},
 		},
 	}

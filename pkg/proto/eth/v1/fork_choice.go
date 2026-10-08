@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"strconv"
 
 	eth2v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
@@ -177,6 +178,18 @@ func (f *ForkChoiceNodeV2) AsGoEth2ClientV1ForkChoiceNode() (*eth2v1.ForkChoiceN
 	} {
 		if _, exists := extraData[key]; !exists && value != nil {
 			extraData[key] = value.GetValue()
+		}
+	}
+
+	for key, checkpoint := range map[string]*CheckpointV2{
+		"justified_checkpoint": f.GetJustifiedCheckpoint(),
+		"finalized_checkpoint": f.GetFinalizedCheckpoint(),
+	} {
+		if _, exists := extraData[key]; !exists && checkpoint != nil {
+			extraData[key] = map[string]any{
+				"epoch": strconv.FormatUint(checkpoint.GetEpoch().GetValue(), 10),
+				"root":  checkpoint.GetRoot(),
+			}
 		}
 	}
 
@@ -361,21 +374,16 @@ func NewForkChoiceV2FromGoEth2ClientV2(f *eth2v1.ForkChoiceV2) (*ForkChoiceV2, e
 	}
 
 	return &ForkChoiceV2{
-		FinalizedCheckpoint: &CheckpointV2{
-			Root:  RootAsString(f.FinalizedCheckpoint.Root),
-			Epoch: &wrapperspb.UInt64Value{Value: uint64(f.FinalizedCheckpoint.Epoch)},
-		},
-		JustifiedCheckpoint: &CheckpointV2{
-			Root:  RootAsString(f.JustifiedCheckpoint.Root),
-			Epoch: &wrapperspb.UInt64Value{Value: uint64(f.JustifiedCheckpoint.Epoch)},
-		},
-		ForkChoiceNodes: nodes,
-		ExtraData:       extraData,
+		FinalizedCheckpoint: newCheckpointV2(f.FinalizedCheckpoint),
+		JustifiedCheckpoint: newCheckpointV2(f.JustifiedCheckpoint),
+		ForkChoiceNodes:     nodes,
+		ExtraData:           extraData,
 	}, nil
 }
 
 // NewForkChoiceNodeV2FromGoEth2ClientV2 converts a v2 debug fork choice node.
-// Values the client does not provide are left unset.
+// The node's checkpoints are kept both as checkpoints and, like v1 nodes, as
+// justified_epoch and finalized_epoch.
 func NewForkChoiceNodeV2FromGoEth2ClientV2(node *eth2v1.ForkChoiceNodeV2) (*ForkChoiceNodeV2, error) {
 	extraData, err := json.Marshal(node.ExtraData)
 	if err != nil {
@@ -386,21 +394,17 @@ func NewForkChoiceNodeV2FromGoEth2ClientV2(node *eth2v1.ForkChoiceNodeV2) (*Fork
 		Slot:                            &wrapperspb.UInt64Value{Value: uint64(node.Slot)},
 		BlockRoot:                       RootAsString(node.BlockRoot),
 		ParentRoot:                      RootAsString(node.ParentRoot),
-		Weight:                          &wrapperspb.UInt64Value{Value: node.Weight},
+		JustifiedEpoch:                  &wrapperspb.UInt64Value{Value: uint64(node.JustifiedCheckpoint.Epoch)},
+		FinalizedEpoch:                  &wrapperspb.UInt64Value{Value: uint64(node.FinalizedCheckpoint.Epoch)},
+		JustifiedCheckpoint:             newCheckpointV2(node.JustifiedCheckpoint),
+		FinalizedCheckpoint:             newCheckpointV2(node.FinalizedCheckpoint),
+		Weight:                          &wrapperspb.UInt64Value{Value: uint64(node.Weight)},
 		Validity:                        node.Validity.String(),
 		ExecutionBlockHash:              RootAsString(phase0.Root(node.ExecutionBlockHash)),
 		ExtraData:                       string(extraData),
-		PayloadAttesterCount:            optionalUint64Value(node.PayloadAttesterCount),
-		PayloadAvailabilityYesCount:     optionalUint64Value(node.PayloadAvailabilityYesCount),
-		PayloadDataAvailabilityYesCount: optionalUint64Value(node.PayloadDataAvailabilityYesCount),
-	}
-
-	if node.JustifiedEpoch != nil {
-		out.JustifiedEpoch = &wrapperspb.UInt64Value{Value: uint64(*node.JustifiedEpoch)}
-	}
-
-	if node.FinalizedEpoch != nil {
-		out.FinalizedEpoch = &wrapperspb.UInt64Value{Value: uint64(*node.FinalizedEpoch)}
+		PayloadAttesterCount:            &wrapperspb.UInt64Value{Value: node.PayloadAttesterCount},
+		PayloadAvailabilityYesCount:     &wrapperspb.UInt64Value{Value: node.PayloadAvailabilityYesCount},
+		PayloadDataAvailabilityYesCount: &wrapperspb.UInt64Value{Value: node.PayloadDataAvailabilityYesCount},
 	}
 
 	if v, ok := payloadStatusValue(node.PayloadStatus); ok {
@@ -416,6 +420,14 @@ func NewForkChoiceNodeV2FromGoEth2ClientV2(node *eth2v1.ForkChoiceNodeV2) (*Fork
 	return out, nil
 }
 
+// newCheckpointV2 converts a go-eth2-client checkpoint.
+func newCheckpointV2(checkpoint phase0.Checkpoint) *CheckpointV2 {
+	return &CheckpointV2{
+		Root:  RootAsString(checkpoint.Root),
+		Epoch: &wrapperspb.UInt64Value{Value: uint64(checkpoint.Epoch)},
+	}
+}
+
 // payloadStatusValue maps a beacon API payload status onto the spec's
 // PayloadStatus enum (PAYLOAD_STATUS_EMPTY = 0, FULL = 1, PENDING = 2).
 func payloadStatusValue(status eth2v1.ForkChoicePayloadStatus) (uint32, bool) {
@@ -429,14 +441,6 @@ func payloadStatusValue(status eth2v1.ForkChoicePayloadStatus) (uint32, bool) {
 	default:
 		return 0, false
 	}
-}
-
-func optionalUint64Value(value *uint64) *wrapperspb.UInt64Value {
-	if value == nil {
-		return nil
-	}
-
-	return &wrapperspb.UInt64Value{Value: *value}
 }
 
 // marshalExtraData encodes a fork choice store's extra data, leaving it empty

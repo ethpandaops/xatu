@@ -104,4 +104,10 @@ message ForkChoiceNodeV2 {
       [ json_name = "payload_availability_yes_count" ];
   google.protobuf.UInt64Value payload_data_availability_yes_count = 14
       [ json_name = "payload_data_availability_yes_count" ];
+
+  // Justified and finalized checkpoints recorded for the node, from GET
+  // /eth/v2/debug/fork_choice. justified_epoch and finalized_epoch carry the
+  // same epochs, so readers of v1 nodes need not change.
+  CheckpointV2 justified_checkpoint = 15 [ json_name = "justified_checkpoint" ];
+  CheckpointV2 finalized_checkpoint = 16 [ json_name = "finalized_checkpoint" ];
 }

@@ -702,6 +702,192 @@ func BuildListCanonicalBeaconBlockQuery(req *ListCanonicalBeaconBlockRequest, op
 		}
 	}
 
+	// Add filter for column: execution_payload_slot_number
+	if req.ExecutionPayloadSlotNumber != nil {
+		switch filter := req.ExecutionPayloadSlotNumber.Filter.(type) {
+		case *NullableUInt64Filter_Eq:
+			qb.AddCondition("execution_payload_slot_number", "=", filter.Eq)
+		case *NullableUInt64Filter_Ne:
+			qb.AddCondition("execution_payload_slot_number", "!=", filter.Ne)
+		case *NullableUInt64Filter_Lt:
+			qb.AddCondition("execution_payload_slot_number", "<", filter.Lt)
+		case *NullableUInt64Filter_Lte:
+			qb.AddCondition("execution_payload_slot_number", "<=", filter.Lte)
+		case *NullableUInt64Filter_Gt:
+			qb.AddCondition("execution_payload_slot_number", ">", filter.Gt)
+		case *NullableUInt64Filter_Gte:
+			qb.AddCondition("execution_payload_slot_number", ">=", filter.Gte)
+		case *NullableUInt64Filter_Between:
+			qb.AddBetweenCondition("execution_payload_slot_number", filter.Between.Min, filter.Between.Max.GetValue())
+		case *NullableUInt64Filter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("execution_payload_slot_number", UInt64SliceToInterface(filter.In.Values))
+			}
+		case *NullableUInt64Filter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("execution_payload_slot_number", UInt64SliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableUInt64Filter_IsNull:
+			qb.AddIsNullCondition("execution_payload_slot_number")
+		case *NullableUInt64Filter_IsNotNull:
+			qb.AddIsNotNullCondition("execution_payload_slot_number")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: execution_payload_block_access_list_root
+	if req.ExecutionPayloadBlockAccessListRoot != nil {
+		switch filter := req.ExecutionPayloadBlockAccessListRoot.Filter.(type) {
+		case *NullableStringFilter_Eq:
+			qb.AddCondition("execution_payload_block_access_list_root", "=", filter.Eq)
+		case *NullableStringFilter_Ne:
+			qb.AddCondition("execution_payload_block_access_list_root", "!=", filter.Ne)
+		case *NullableStringFilter_Contains:
+			qb.AddLikeCondition("execution_payload_block_access_list_root", "%" + filter.Contains + "%")
+		case *NullableStringFilter_StartsWith:
+			qb.AddLikeCondition("execution_payload_block_access_list_root", filter.StartsWith + "%")
+		case *NullableStringFilter_EndsWith:
+			qb.AddLikeCondition("execution_payload_block_access_list_root", "%" + filter.EndsWith)
+		case *NullableStringFilter_Like:
+			qb.AddLikeCondition("execution_payload_block_access_list_root", filter.Like)
+		case *NullableStringFilter_NotLike:
+			qb.AddNotLikeCondition("execution_payload_block_access_list_root", filter.NotLike)
+		case *NullableStringFilter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("execution_payload_block_access_list_root", StringSliceToInterface(filter.In.Values))
+			}
+		case *NullableStringFilter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("execution_payload_block_access_list_root", StringSliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableStringFilter_IsNull:
+			qb.AddIsNullCondition("execution_payload_block_access_list_root")
+		case *NullableStringFilter_IsNotNull:
+			qb.AddIsNotNullCondition("execution_payload_block_access_list_root")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: builder_index
+	if req.BuilderIndex != nil {
+		switch filter := req.BuilderIndex.Filter.(type) {
+		case *NullableUInt64Filter_Eq:
+			qb.AddCondition("builder_index", "=", filter.Eq)
+		case *NullableUInt64Filter_Ne:
+			qb.AddCondition("builder_index", "!=", filter.Ne)
+		case *NullableUInt64Filter_Lt:
+			qb.AddCondition("builder_index", "<", filter.Lt)
+		case *NullableUInt64Filter_Lte:
+			qb.AddCondition("builder_index", "<=", filter.Lte)
+		case *NullableUInt64Filter_Gt:
+			qb.AddCondition("builder_index", ">", filter.Gt)
+		case *NullableUInt64Filter_Gte:
+			qb.AddCondition("builder_index", ">=", filter.Gte)
+		case *NullableUInt64Filter_Between:
+			qb.AddBetweenCondition("builder_index", filter.Between.Min, filter.Between.Max.GetValue())
+		case *NullableUInt64Filter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("builder_index", UInt64SliceToInterface(filter.In.Values))
+			}
+		case *NullableUInt64Filter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("builder_index", UInt64SliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableUInt64Filter_IsNull:
+			qb.AddIsNullCondition("builder_index")
+		case *NullableUInt64Filter_IsNotNull:
+			qb.AddIsNotNullCondition("builder_index")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: bid_value
+	if req.BidValue != nil {
+		switch filter := req.BidValue.Filter.(type) {
+		case *NullableUInt64Filter_Eq:
+			qb.AddCondition("bid_value", "=", filter.Eq)
+		case *NullableUInt64Filter_Ne:
+			qb.AddCondition("bid_value", "!=", filter.Ne)
+		case *NullableUInt64Filter_Lt:
+			qb.AddCondition("bid_value", "<", filter.Lt)
+		case *NullableUInt64Filter_Lte:
+			qb.AddCondition("bid_value", "<=", filter.Lte)
+		case *NullableUInt64Filter_Gt:
+			qb.AddCondition("bid_value", ">", filter.Gt)
+		case *NullableUInt64Filter_Gte:
+			qb.AddCondition("bid_value", ">=", filter.Gte)
+		case *NullableUInt64Filter_Between:
+			qb.AddBetweenCondition("bid_value", filter.Between.Min, filter.Between.Max.GetValue())
+		case *NullableUInt64Filter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("bid_value", UInt64SliceToInterface(filter.In.Values))
+			}
+		case *NullableUInt64Filter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("bid_value", UInt64SliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableUInt64Filter_IsNull:
+			qb.AddIsNullCondition("bid_value")
+		case *NullableUInt64Filter_IsNotNull:
+			qb.AddIsNotNullCondition("bid_value")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: execution_payment
+	if req.ExecutionPayment != nil {
+		switch filter := req.ExecutionPayment.Filter.(type) {
+		case *NullableUInt64Filter_Eq:
+			qb.AddCondition("execution_payment", "=", filter.Eq)
+		case *NullableUInt64Filter_Ne:
+			qb.AddCondition("execution_payment", "!=", filter.Ne)
+		case *NullableUInt64Filter_Lt:
+			qb.AddCondition("execution_payment", "<", filter.Lt)
+		case *NullableUInt64Filter_Lte:
+			qb.AddCondition("execution_payment", "<=", filter.Lte)
+		case *NullableUInt64Filter_Gt:
+			qb.AddCondition("execution_payment", ">", filter.Gt)
+		case *NullableUInt64Filter_Gte:
+			qb.AddCondition("execution_payment", ">=", filter.Gte)
+		case *NullableUInt64Filter_Between:
+			qb.AddBetweenCondition("execution_payment", filter.Between.Min, filter.Between.Max.GetValue())
+		case *NullableUInt64Filter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("execution_payment", UInt64SliceToInterface(filter.In.Values))
+			}
+		case *NullableUInt64Filter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("execution_payment", UInt64SliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableUInt64Filter_IsNull:
+			qb.AddIsNullCondition("execution_payment")
+		case *NullableUInt64Filter_IsNotNull:
+			qb.AddIsNotNullCondition("execution_payment")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: payload_present
+	if req.PayloadPresent != nil {
+		switch filter := req.PayloadPresent.Filter.(type) {
+		case *NullableBoolFilter_Eq:
+			qb.AddCondition("payload_present", "=", filter.Eq)
+		case *NullableBoolFilter_Ne:
+			qb.AddCondition("payload_present", "!=", filter.Ne)
+		case *NullableBoolFilter_IsNull:
+			qb.AddIsNullCondition("payload_present")
+		case *NullableBoolFilter_IsNotNull:
+			qb.AddIsNotNullCondition("payload_present")
+		default:
+			// Unsupported filter type
+		}
+	}
+
 	// Add filter for column: execution_payload_gas_limit
 	if req.ExecutionPayloadGasLimit != nil {
 		switch filter := req.ExecutionPayloadGasLimit.Filter.(type) {
@@ -965,7 +1151,7 @@ func BuildListCanonicalBeaconBlockQuery(req *ListCanonicalBeaconBlockRequest, op
 	// Handle custom ordering if provided
 	var orderByClause string
 	if req.OrderBy != "" {
-		validFields := []string{"updated_date_time", "slot", "slot_start_date_time", "epoch", "epoch_start_date_time", "block_root", "block_version", "block_total_bytes", "block_total_bytes_compressed", "parent_root", "state_root", "proposer_index", "eth1_data_block_hash", "eth1_data_deposit_root", "execution_payload_block_hash", "execution_payload_block_number", "execution_payload_fee_recipient", "execution_payload_base_fee_per_gas", "execution_payload_blob_gas_used", "execution_payload_excess_blob_gas", "execution_payload_gas_limit", "execution_payload_gas_used", "execution_payload_state_root", "execution_payload_parent_hash", "execution_payload_transactions_count", "execution_payload_transactions_total_bytes", "execution_payload_transactions_total_bytes_compressed", "meta_network_name"}
+		validFields := []string{"updated_date_time", "slot", "slot_start_date_time", "epoch", "epoch_start_date_time", "block_root", "block_version", "block_total_bytes", "block_total_bytes_compressed", "parent_root", "state_root", "proposer_index", "eth1_data_block_hash", "eth1_data_deposit_root", "execution_payload_block_hash", "execution_payload_block_number", "execution_payload_fee_recipient", "execution_payload_base_fee_per_gas", "execution_payload_blob_gas_used", "execution_payload_excess_blob_gas", "execution_payload_slot_number", "execution_payload_block_access_list_root", "builder_index", "bid_value", "execution_payment", "payload_present", "execution_payload_gas_limit", "execution_payload_gas_used", "execution_payload_state_root", "execution_payload_parent_hash", "execution_payload_transactions_count", "execution_payload_transactions_total_bytes", "execution_payload_transactions_total_bytes_compressed", "meta_network_name"}
 		orderFields, err := ParseOrderBy(req.OrderBy, validFields)
 		if err != nil {
 			return SQLQuery{}, fmt.Errorf("invalid order_by: %w", err)
@@ -977,7 +1163,7 @@ func BuildListCanonicalBeaconBlockQuery(req *ListCanonicalBeaconBlockRequest, op
 	}
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "block_total_bytes", "block_total_bytes_compressed", "NULLIF(`parent_root`, repeat('\x00', 66)) AS `parent_root`", "NULLIF(`state_root`, repeat('\x00', 66)) AS `state_root`", "proposer_index", "NULLIF(`eth1_data_block_hash`, repeat('\x00', 66)) AS `eth1_data_block_hash`", "NULLIF(`eth1_data_deposit_root`, repeat('\x00', 66)) AS `eth1_data_deposit_root`", "NULLIF(`execution_payload_block_hash`, repeat('\x00', 66)) AS `execution_payload_block_hash`", "execution_payload_block_number", "execution_payload_fee_recipient", "toString(`execution_payload_base_fee_per_gas`) AS `execution_payload_base_fee_per_gas`", "execution_payload_blob_gas_used", "execution_payload_excess_blob_gas", "execution_payload_gas_limit", "execution_payload_gas_used", "NULLIF(`execution_payload_state_root`, repeat('\x00', 66)) AS `execution_payload_state_root`", "NULLIF(`execution_payload_parent_hash`, repeat('\x00', 66)) AS `execution_payload_parent_hash`", "execution_payload_transactions_count", "execution_payload_transactions_total_bytes", "execution_payload_transactions_total_bytes_compressed", "meta_network_name"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "block_total_bytes", "block_total_bytes_compressed", "NULLIF(`parent_root`, repeat('\x00', 66)) AS `parent_root`", "NULLIF(`state_root`, repeat('\x00', 66)) AS `state_root`", "proposer_index", "NULLIF(`eth1_data_block_hash`, repeat('\x00', 66)) AS `eth1_data_block_hash`", "NULLIF(`eth1_data_deposit_root`, repeat('\x00', 66)) AS `eth1_data_deposit_root`", "NULLIF(`execution_payload_block_hash`, repeat('\x00', 66)) AS `execution_payload_block_hash`", "execution_payload_block_number", "execution_payload_fee_recipient", "toString(`execution_payload_base_fee_per_gas`) AS `execution_payload_base_fee_per_gas`", "execution_payload_blob_gas_used", "execution_payload_excess_blob_gas", "execution_payload_slot_number", "NULLIF(`execution_payload_block_access_list_root`, repeat('\x00', 66)) AS `execution_payload_block_access_list_root`", "builder_index", "bid_value", "execution_payment", "payload_present", "execution_payload_gas_limit", "execution_payload_gas_used", "NULLIF(`execution_payload_state_root`, repeat('\x00', 66)) AS `execution_payload_state_root`", "NULLIF(`execution_payload_parent_hash`, repeat('\x00', 66)) AS `execution_payload_parent_hash`", "execution_payload_transactions_count", "execution_payload_transactions_total_bytes", "execution_payload_transactions_total_bytes_compressed", "meta_network_name"}
 
 	return BuildParameterizedQuery("canonical_beacon_block", columns, qb, orderByClause, limit, offset, options...)
 }
@@ -997,7 +1183,7 @@ func BuildGetCanonicalBeaconBlockQuery(req *GetCanonicalBeaconBlockRequest, opti
 	orderByClause := " ORDER BY meta_network_name, slot_start_date_time"
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "block_total_bytes", "block_total_bytes_compressed", "NULLIF(`parent_root`, repeat('\x00', 66)) AS `parent_root`", "NULLIF(`state_root`, repeat('\x00', 66)) AS `state_root`", "proposer_index", "NULLIF(`eth1_data_block_hash`, repeat('\x00', 66)) AS `eth1_data_block_hash`", "NULLIF(`eth1_data_deposit_root`, repeat('\x00', 66)) AS `eth1_data_deposit_root`", "NULLIF(`execution_payload_block_hash`, repeat('\x00', 66)) AS `execution_payload_block_hash`", "execution_payload_block_number", "execution_payload_fee_recipient", "toString(`execution_payload_base_fee_per_gas`) AS `execution_payload_base_fee_per_gas`", "execution_payload_blob_gas_used", "execution_payload_excess_blob_gas", "execution_payload_gas_limit", "execution_payload_gas_used", "NULLIF(`execution_payload_state_root`, repeat('\x00', 66)) AS `execution_payload_state_root`", "NULLIF(`execution_payload_parent_hash`, repeat('\x00', 66)) AS `execution_payload_parent_hash`", "execution_payload_transactions_count", "execution_payload_transactions_total_bytes", "execution_payload_transactions_total_bytes_compressed", "meta_network_name"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "block_total_bytes", "block_total_bytes_compressed", "NULLIF(`parent_root`, repeat('\x00', 66)) AS `parent_root`", "NULLIF(`state_root`, repeat('\x00', 66)) AS `state_root`", "proposer_index", "NULLIF(`eth1_data_block_hash`, repeat('\x00', 66)) AS `eth1_data_block_hash`", "NULLIF(`eth1_data_deposit_root`, repeat('\x00', 66)) AS `eth1_data_deposit_root`", "NULLIF(`execution_payload_block_hash`, repeat('\x00', 66)) AS `execution_payload_block_hash`", "execution_payload_block_number", "execution_payload_fee_recipient", "toString(`execution_payload_base_fee_per_gas`) AS `execution_payload_base_fee_per_gas`", "execution_payload_blob_gas_used", "execution_payload_excess_blob_gas", "execution_payload_slot_number", "NULLIF(`execution_payload_block_access_list_root`, repeat('\x00', 66)) AS `execution_payload_block_access_list_root`", "builder_index", "bid_value", "execution_payment", "payload_present", "execution_payload_gas_limit", "execution_payload_gas_used", "NULLIF(`execution_payload_state_root`, repeat('\x00', 66)) AS `execution_payload_state_root`", "NULLIF(`execution_payload_parent_hash`, repeat('\x00', 66)) AS `execution_payload_parent_hash`", "execution_payload_transactions_count", "execution_payload_transactions_total_bytes", "execution_payload_transactions_total_bytes_compressed", "meta_network_name"}
 
 	// Return single record
 	return BuildParameterizedQuery("canonical_beacon_block", columns, qb, orderByClause, 1, 0, options...)

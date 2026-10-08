@@ -22,6 +22,7 @@ type CanonicalBeaconBlockWithdrawalRow struct {
 	WithdrawalAddress *string `ch:"withdrawal_address" json:"withdrawal_address"`
 	WithdrawalAmount string `ch:"withdrawal_amount" json:"withdrawal_amount"`
 	MetaNetworkName string `ch:"meta_network_name" json:"meta_network_name"`
+	WithdrawalType string `ch:"withdrawal_type" json:"withdrawal_type"`
 }
 
 // TableName returns the ClickHouse table this row maps to.
@@ -49,5 +50,6 @@ func (r *CanonicalBeaconBlockWithdrawalRow) ToProto() *CanonicalBeaconBlockWithd
 	}
 	p.WithdrawalAmount = r.WithdrawalAmount
 	p.MetaNetworkName = r.MetaNetworkName
+	p.WithdrawalType = r.WithdrawalType
 	return p
 }

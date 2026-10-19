@@ -26,17 +26,17 @@ func NewMetrics(namespace string) *Metrics {
 		lookups: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "lookups_total",
-			Help:      "Archive lookups for a slot by result (hit, not_covered, unavailable, error)",
+			Help:      "Era archive lookups for a slot by result (hit, not_covered, not_canonical, beacon_missing, beacon_error, unavailable, error)",
 		}, []string{labelNetwork, "result"}),
 		fetches: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "fetches_total",
-			Help:      "Bundle fetches by mode (bundle, range) and result (ok, error)",
+			Help:      "Era fetches by mode (era, range) and result (ok, error)",
 		}, []string{labelNetwork, "mode", "result"}),
 		fetchDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: namespace,
 			Name:      "fetch_duration_seconds",
-			Help:      "Time to download and decode a bundle or bundle range",
+			Help:      "Time to download and decode a whole era or an era range",
 			Buckets:   []float64{0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30, 60, 120},
 		}, []string{labelNetwork, "mode"}),
 		fetchedBytes: prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -47,12 +47,12 @@ func NewMetrics(namespace string) *Metrics {
 		blocks: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "blocks_decoded_total",
-			Help:      "Beacon blocks decoded from archive bundles",
+			Help:      "Beacon blocks decoded from era files",
 		}, []string{labelNetwork}),
 		envelopes: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "envelopes_decoded_total",
-			Help:      "Execution payload envelopes decoded from archive bundles",
+			Help:      "Execution payload envelopes decoded from era envelope sidecars",
 		}, []string{labelNetwork}),
 	}
 

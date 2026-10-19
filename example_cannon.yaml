@@ -36,19 +36,33 @@ ethereum:
     # blockCacheTtl: 1h
     # blockPreloadWorkers: 5
     # blockPreloadQueueSize: 5000
-  # Serve finalized blocks from block-archiver bundles (one download per bundle
-  # of slots) and fall back to the beacon node for slots no bundle covers.
-  # Size beacon.blockCacheSize to hold a few bundles (spans are ~1000 slots), or
-  # set rangeSlots to fetch smaller windows with HTTP Range requests.
+  # Serve finalized blocks from standard CL era files (e2store .era, one per
+  # 8192 slots on mainnet presets) and Gloas execution payload envelopes from
+  # per-era sidecars (mainnet-01886-653d1f74.era pairs with
+  # mainnet-01886-653d1f74.envelopes.e2s) where published. Everything else (the
+  # current unfinished era, eras without a sidecar for envelopes, any archive
+  # error) falls back to the beacon node. Works against any host serving era
+  # files with a listing, e.g. https://<network>.era.nimbus.team, or
+  # block-archiver's verified mirrors with
+  #   url: https://<archive>/era/<network>
+  #   listingUrl: https://<archive>/api/v1/era?network=<network>
+  # Every fetched window is tied to the beacon node by one block header request,
+  # matching the root and signature of one of its blocks.
+  # rangeSlots fetches aligned windows (at most 8192 slots) with HTTP Range reads
+  # of the era's slot index; a 256-slot mainnet window is ~25MB to download and
+  # ~70MB decoded. 0 reads each era's whole block section instead: ~600MB per
+  # mainnet era, peaking near 3GiB of memory per in-flight fetch and keeping
+  # ~1.4GiB of decoded blocks, as the block cache grows to hold one fetch.
   # blockArchive:
   #   enabled: false
-  #   address: https://block-archiver.analytics.production.platform.ethpandaops.io
-  #   network: ""                # defaults to the beacon node's network name
+  #   url: https://mainnet.era.nimbus.team
+  #   listingUrl: ""             # defaults to url; any HTML index or JSON naming the files, paged JSON is followed
+  #   network: ""                # era file name prefix; defaults to the beacon node's network name
   #   headers: {}
-  #   timeout: 2m
-  #   coverageTtl: 1m
+  #   timeout: 5m
+  #   listingTtl: 5m
   #   maxConcurrentFetches: 2
-  #   rangeSlots: 0
+  #   rangeSlots: 256
   execution:
     address: http://localhost:8545   # EL archive node; cryo --rpc (creds may be embedded: https://user:pass@host)
 

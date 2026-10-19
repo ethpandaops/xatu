@@ -35,6 +35,9 @@ const (
 	maxBootstrapBodies   = 64
 	maxBootstrapReceipts = 64
 	statusCacheTTL       = 10 * time.Second
+
+	// hoodiAmsterdamTime is Hoodi's Amsterdam activation (eth-clients/hoodi#31).
+	hoodiAmsterdamTime uint64 = 1793036568
 )
 
 // Bootstrap serves devp2p Status / headers / bodies / receipts to an eth peer
@@ -471,10 +474,23 @@ func bootstrapNetwork(networkID uint64) (*params.ChainConfig, *types.Block, *big
 	case 11155111:
 		return params.SepoliaChainConfig, core.DefaultSepoliaGenesisBlock().ToBlock(), copyBigInt(params.SepoliaChainConfig.TerminalTotalDifficulty), nil
 	case 560048:
-		return params.HoodiChainConfig, core.DefaultHoodiGenesisBlock().ToBlock(), copyBigInt(params.HoodiChainConfig.TerminalTotalDifficulty), nil
+		return hoodiChainConfig(), core.DefaultHoodiGenesisBlock().ToBlock(), copyBigInt(params.HoodiChainConfig.TerminalTotalDifficulty), nil
 	default:
 		return nil, nil, nil, fmt.Errorf("unsupported bootstrap RPC network id: %d", networkID)
 	}
+}
+
+// hoodiChainConfig returns go-ethereum's Hoodi config with Amsterdam scheduled when it lacks it.
+func hoodiChainConfig() *params.ChainConfig {
+	if params.HoodiChainConfig.AmsterdamTime != nil {
+		return params.HoodiChainConfig
+	}
+
+	config := *params.HoodiChainConfig
+	amsterdamTime := hoodiAmsterdamTime
+	config.AmsterdamTime = &amsterdamTime
+
+	return &config
 }
 
 func copyBigInt(v *big.Int) *big.Int {

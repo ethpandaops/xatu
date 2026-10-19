@@ -1855,6 +1855,56 @@ func (m *ExecutionPayloadAvailabilityData) MarshalToSizedBufferVT(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
+func (m *BeaconBlockGraffitiData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BeaconBlockGraffitiData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *BeaconBlockGraffitiData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Graffiti) > 0 {
+		i -= len(m.Graffiti)
+		copy(dAtA[i:], m.Graffiti)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Graffiti)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.ProposerIndex != nil {
+		size, err := (*wrapperspb.UInt64Value)(m.ProposerIndex).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *BlockIdentifier) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -6491,6 +6541,49 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockAccessListSummaryData) MarshalToSi
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
+	}
+	if m.Block != nil {
+		size, err := m.Block.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockGraffitiData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockGraffitiData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockGraffitiData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Block != nil {
 		size, err := m.Block.MarshalToSizedBufferVT(dAtA[:i])
@@ -14268,6 +14361,27 @@ func (m *ClientMeta_EthV1BeaconStateExecutionPayloadAvailability) MarshalToSized
 		dAtA[i] = 0x8
 		i--
 		dAtA[i] = 0xa2
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ClientMeta_EthV2BeaconBlockGraffiti) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_EthV2BeaconBlockGraffiti) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV2BeaconBlockGraffiti != nil {
+		size, err := m.EthV2BeaconBlockGraffiti.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x8
+		i--
+		dAtA[i] = 0xaa
 	}
 	return len(dAtA) - i, nil
 }
@@ -22597,6 +22711,27 @@ func (m *DecoratedEvent_EthV1BeaconStateExecutionPayloadAvailability) MarshalToS
 	}
 	return len(dAtA) - i, nil
 }
+func (m *DecoratedEvent_EthV2BeaconBlockGraffiti) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *DecoratedEvent_EthV2BeaconBlockGraffiti) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV2BeaconBlockGraffiti != nil {
+		size, err := m.EthV2BeaconBlockGraffiti.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x10
+		i--
+		dAtA[i] = 0xd2
+	}
+	return len(dAtA) - i, nil
+}
 
 var vtprotoPool_CreateEventsRequest = sync.Pool{
 	New: func() interface{} {
@@ -23235,6 +23370,27 @@ func (m *ExecutionPayloadAvailabilityData) ReturnToVTPool() {
 }
 func ExecutionPayloadAvailabilityDataFromVTPool() *ExecutionPayloadAvailabilityData {
 	return vtprotoPool_ExecutionPayloadAvailabilityData.Get().(*ExecutionPayloadAvailabilityData)
+}
+
+var vtprotoPool_BeaconBlockGraffitiData = sync.Pool{
+	New: func() interface{} {
+		return &BeaconBlockGraffitiData{}
+	},
+}
+
+func (m *BeaconBlockGraffitiData) ResetVT() {
+	if m != nil {
+		m.Reset()
+	}
+}
+func (m *BeaconBlockGraffitiData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BeaconBlockGraffitiData.Put(m)
+	}
+}
+func BeaconBlockGraffitiDataFromVTPool() *BeaconBlockGraffitiData {
+	return vtprotoPool_BeaconBlockGraffitiData.Get().(*BeaconBlockGraffitiData)
 }
 
 var vtprotoPool_BlockIdentifier = sync.Pool{
@@ -24848,6 +25004,28 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockAccessListSummaryData) ReturnToVTP
 }
 func ClientMeta_AdditionalEthV2BeaconBlockAccessListSummaryDataFromVTPool() *ClientMeta_AdditionalEthV2BeaconBlockAccessListSummaryData {
 	return vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockAccessListSummaryData.Get().(*ClientMeta_AdditionalEthV2BeaconBlockAccessListSummaryData)
+}
+
+var vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockGraffitiData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalEthV2BeaconBlockGraffitiData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockGraffitiData) ResetVT() {
+	if m != nil {
+		m.Block.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalEthV2BeaconBlockGraffitiData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockGraffitiData.Put(m)
+	}
+}
+func ClientMeta_AdditionalEthV2BeaconBlockGraffitiDataFromVTPool() *ClientMeta_AdditionalEthV2BeaconBlockGraffitiData {
+	return vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockGraffitiData.Get().(*ClientMeta_AdditionalEthV2BeaconBlockGraffitiData)
 }
 
 var vtprotoPool_ClientMeta_AdditionalEthV2BeaconBlockExecutionRequestBuilderDepositData = sync.Pool{
@@ -26841,6 +27019,9 @@ func (m *ClientMeta) ResetVT() {
 		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconStateExecutionPayloadAvailability); ok {
 			oneof.EthV1BeaconStateExecutionPayloadAvailability.ReturnToVTPool()
 		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockGraffiti); ok {
+			oneof.EthV2BeaconBlockGraffiti.ReturnToVTPool()
+		}
 		m.Reset()
 	}
 }
@@ -28516,6 +28697,9 @@ func (m *DecoratedEvent) ResetVT() {
 		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconStateExecutionPayloadAvailability); ok {
 			oneof.EthV1BeaconStateExecutionPayloadAvailability.ReturnToVTPool()
 		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockGraffiti); ok {
+			oneof.EthV2BeaconBlockGraffiti.ReturnToVTPool()
+		}
 		m.Reset()
 	}
 }
@@ -29197,6 +29381,24 @@ func (m *ExecutionPayloadAvailabilityData) SizeVT() (n int) {
 	_ = l
 	if m.Available != nil {
 		l = (*wrapperspb.BoolValue)(m.Available).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *BeaconBlockGraffitiData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ProposerIndex != nil {
+		l = (*wrapperspb.UInt64Value)(m.ProposerIndex).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Graffiti)
+	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -30945,6 +31147,20 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockAccessListSummaryData) SizeVT() (n
 	}
 	l = len(m.BlockHash)
 	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *ClientMeta_AdditionalEthV2BeaconBlockGraffitiData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Block != nil {
+		l = m.Block.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -34330,6 +34546,18 @@ func (m *ClientMeta_EthV1BeaconStateExecutionPayloadAvailability) SizeVT() (n in
 	_ = l
 	if m.EthV1BeaconStateExecutionPayloadAvailability != nil {
 		l = m.EthV1BeaconStateExecutionPayloadAvailability.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *ClientMeta_EthV2BeaconBlockGraffiti) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV2BeaconBlockGraffiti != nil {
+		l = m.EthV2BeaconBlockGraffiti.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -38332,6 +38560,18 @@ func (m *DecoratedEvent_EthV1BeaconStateExecutionPayloadAvailability) SizeVT() (
 	_ = l
 	if m.EthV1BeaconStateExecutionPayloadAvailability != nil {
 		l = m.EthV1BeaconStateExecutionPayloadAvailability.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *DecoratedEvent_EthV2BeaconBlockGraffiti) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV2BeaconBlockGraffiti != nil {
+		l = m.EthV2BeaconBlockGraffiti.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -42607,6 +42847,125 @@ func (m *ExecutionPayloadAvailabilityData) UnmarshalVT(dAtA []byte) error {
 			if err := (*wrapperspb.BoolValue)(m.Available).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BeaconBlockGraffitiData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BeaconBlockGraffitiData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BeaconBlockGraffitiData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProposerIndex", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ProposerIndex == nil {
+				m.ProposerIndex = &wrapperspb1.UInt64Value{}
+			}
+			if err := (*wrapperspb.UInt64Value)(m.ProposerIndex).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Graffiti", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Graffiti = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -55072,6 +55431,93 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockAccessListSummaryData) UnmarshalVT
 				return io.ErrUnexpectedEOF
 			}
 			m.BlockHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ClientMeta_AdditionalEthV2BeaconBlockGraffitiData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV2BeaconBlockGraffitiData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalEthV2BeaconBlockGraffitiData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Block", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Block == nil {
+				m.Block = BlockIdentifierFromVTPool()
+			}
+			if err := m.Block.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -72881,6 +73327,47 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.AdditionalData = &ClientMeta_EthV1BeaconStateExecutionPayloadAvailability{EthV1BeaconStateExecutionPayloadAvailability: v}
+			}
+			iNdEx = postIndex
+		case 133:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV2BeaconBlockGraffiti", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.AdditionalData.(*ClientMeta_EthV2BeaconBlockGraffiti); ok {
+				if err := oneof.EthV2BeaconBlockGraffiti.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := ClientMeta_AdditionalEthV2BeaconBlockGraffitiDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.AdditionalData = &ClientMeta_EthV2BeaconBlockGraffiti{EthV2BeaconBlockGraffiti: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -92163,6 +92650,47 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Data = &DecoratedEvent_EthV1BeaconStateExecutionPayloadAvailability{EthV1BeaconStateExecutionPayloadAvailability: v}
+			}
+			iNdEx = postIndex
+		case 266:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV2BeaconBlockGraffiti", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*DecoratedEvent_EthV2BeaconBlockGraffiti); ok {
+				if err := oneof.EthV2BeaconBlockGraffiti.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := BeaconBlockGraffitiDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &DecoratedEvent_EthV2BeaconBlockGraffiti{EthV2BeaconBlockGraffiti: v}
 			}
 			iNdEx = postIndex
 		default:

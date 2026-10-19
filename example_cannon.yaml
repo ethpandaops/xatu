@@ -75,6 +75,7 @@ derivers:
       enabled: true
       iterator:
         backfill: { enabled: false, toEpoch: 0 }
+    beaconBlockGraffiti:   { enabled: true }    # proposer index + raw graffiti, 1 row/block
     # ── Electra execution requests (extracted from the beacon block) ──
     executionRequestDeposit:       { enabled: true }
     executionRequestWithdrawal:    { enabled: true }

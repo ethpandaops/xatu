@@ -241,6 +241,8 @@ enum CannonType {
   BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT = 51;
   BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL = 52;
   BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY = 53;
+
+  BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI = 54;
 }
 
 message BackfillingCheckpointMarker {
@@ -441,6 +443,10 @@ message CannonLocationEthV1BeaconStateExecutionPayloadAvailability {
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
 }
 
+message CannonLocationEthV2BeaconBlockGraffiti {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
 message CannonLocation {
   string network_id = 1;
   CannonType type = 2;
@@ -566,6 +572,9 @@ message CannonLocation {
         [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL" ];
     CannonLocationEthV1BeaconStateExecutionPayloadAvailability eth_v1_beacon_state_execution_payload_availability = 56
         [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY" ];
+
+    CannonLocationEthV2BeaconBlockGraffiti eth_v2_beacon_block_graffiti = 57
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI" ];
   }
 }
 

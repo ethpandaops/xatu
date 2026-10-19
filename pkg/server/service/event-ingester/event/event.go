@@ -141,6 +141,8 @@ var (
 	TypeBeaconEthV2BeaconBlockExecutionRequestBuilderExit    Type = v2.BeaconBlockExecutionRequestBuilderExitType
 	TypeBeaconEthV2BeaconBlockAccessListSummary              Type = v2.BeaconBlockAccessListSummaryType
 
+	TypeBeaconEthV2BeaconBlockGraffiti Type = v2.BeaconBlockGraffitiType
+
 	// EIP-7732 ePBS: Sentry SSE events
 	TypeBeaconETHV1EventsExecutionPayload          Type = v1.EventsExecutionPayloadType
 	TypeBeaconETHV1EventsExecutionPayloadGossip    Type = v1.EventsExecutionPayloadGossipType
@@ -361,6 +363,9 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	})
 	router.RegisterHandler(TypeBeaconEthV2BeaconBlockAccessListSummary, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v2.NewBeaconBlockAccessListSummary(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV2BeaconBlockGraffiti, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v2.NewBeaconBlockGraffiti(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconEthV2BeaconBlockExecutionRequestBuilderDeposit, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v2.NewBeaconBlockExecutionRequestBuilderDeposit(router.log, event), nil

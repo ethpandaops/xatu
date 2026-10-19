@@ -250,6 +250,8 @@ jobs:
               enabled: true
             beaconBlock:
               enabled: true
+            beaconBlockGraffiti:
+              enabled: true
             beaconBlobSidecar:
               enabled: true
             proposerDuty:

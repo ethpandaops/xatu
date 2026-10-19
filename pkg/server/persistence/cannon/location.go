@@ -260,6 +260,8 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL", msg.GetEthV1BeaconStateBuilderPendingWithdrawal())
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY:
 		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY", msg.GetEthV1BeaconStateExecutionPayloadAvailability())
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI:
+		return l.marshalLocationData("BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI", msg.GetEthV2BeaconBlockGraffiti())
 	case xatu.CannonType_EXECUTION_CANONICAL_BLOCK:
 		l.Type = "EXECUTION_CANONICAL_BLOCK"
 
@@ -693,6 +695,16 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV1BeaconStateExecutionPayloadAvailability{EthV1BeaconStateExecutionPayloadAvailability: data}
+	case "BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI
+
+		data := &xatu.CannonLocationEthV2BeaconBlockGraffiti{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV2BeaconBlockGraffiti{EthV2BeaconBlockGraffiti: data}
 	case "EXECUTION_CANONICAL_BLOCK":
 		msg.Type = xatu.CannonType_EXECUTION_CANONICAL_BLOCK
 

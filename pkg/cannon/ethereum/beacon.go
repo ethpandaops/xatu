@@ -3,6 +3,7 @@ package ethereum
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -22,14 +23,23 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/singleflight"
 
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/blockarchive"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/services"
 	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
+// blockArchive serves finalized blocks in bulk; found is false for slots it does not cover.
+type blockArchive interface {
+	Blocks(ctx context.Context, slot phase0.Slot) (blocks blockarchive.Blocks, found bool, err error)
+}
+
 type BeaconNode struct {
 	config *Config
 	log    observability.ContextualLogger
+
+	// archive is nil unless ethereum.blockArchive is enabled.
+	archive blockArchive
 
 	beacon  beacon.Node
 	metrics *Metrics
@@ -106,7 +116,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 	sem := make(chan struct{}, config.Beacon.BlockPreloadWorkers)
 	validatorsSem := make(chan struct{}, 1)
 
-	return &BeaconNode{
+	b := &BeaconNode{
 		config:            config,
 		log:               log.WithField("module", "cannon/ethereum/beacon"),
 		beacon:            node,
@@ -137,7 +147,23 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 		),
 		stateSem: make(chan struct{}, 1),
 		metrics:  NewMetrics(namespace, name),
-	}, nil
+	}
+
+	if config.BlockArchive.Enabled {
+		b.archive = blockarchive.New(&config.BlockArchive, log, b.archiveNetwork, b.sszCodec,
+			blockarchive.NewMetrics(namespace+"_ethereum"))
+	}
+
+	return b, nil
+}
+
+// archiveNetwork is the network name the block archive is queried with.
+func (b *BeaconNode) archiveNetwork() string {
+	if b.config.BlockArchive.Network != "" {
+		return b.config.BlockArchive.Network
+	}
+
+	return string(b.Metadata().Network.Name)
 }
 
 func (b *BeaconNode) Start(ctx context.Context) error {
@@ -325,6 +351,12 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 
 	// Use singleflight to ensure we only make one request for a block at a time.
 	x, err, shared := b.sfGroup.Do(identifier, func() (any, error) {
+		if block, ok := b.blockFromArchive(ctx, identifier); ok {
+			span.AddEvent("Block served from block archive.")
+
+			return block, nil
+		}
+
 		span.AddEvent("Acquiring semaphore...")
 
 		// Acquire a semaphore before proceeding.
@@ -359,6 +391,39 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 	span.AddEvent("Block fetching complete.", trace.WithAttributes(attribute.Bool("shared", shared)))
 
 	return x.(*spec.VersionedSignedBeaconBlock), nil
+}
+
+// blockFromArchive serves a slot identifier from the block archive, caching
+// every block of the fetched range. ok is false when the archive is disabled,
+// the identifier is not a slot, the slot is not bundled, or the archive fails;
+// the caller then asks the beacon node.
+func (b *BeaconNode) blockFromArchive(ctx context.Context, identifier string) (block *spec.VersionedSignedBeaconBlock, ok bool) {
+	if b.archive == nil {
+		return nil, false
+	}
+
+	slot, err := strconv.ParseUint(identifier, 10, 64)
+	if err != nil {
+		return nil, false
+	}
+
+	blocks, found, err := b.archive.Blocks(ctx, phase0.Slot(slot))
+	if err != nil {
+		b.log.WithError(err).WithField("slot", slot).WithContext(ctx).Warn("Block archive fetch failed, falling back to beacon node")
+
+		return nil, false
+	}
+
+	block, inRange := blocks[phase0.Slot(slot)]
+	if !found || !inRange {
+		return nil, false
+	}
+
+	for s, blk := range blocks {
+		b.blockCache.Set(strconv.FormatUint(uint64(s), 10), blk, time.Hour)
+	}
+
+	return block, true
 }
 
 func (b *BeaconNode) LazyLoadBeaconBlock(identifier string) {

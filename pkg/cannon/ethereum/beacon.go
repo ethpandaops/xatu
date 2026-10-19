@@ -160,7 +160,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 	}
 
 	if config.BlockArchive.Enabled {
-		b.archive = blockarchive.New(&config.BlockArchive, log, b.archiveNetwork, b.archiveChain, b.archiveCanonicalRoot,
+		b.archive = blockarchive.New(&config.BlockArchive, log, b.archiveNetwork, b.archiveChain, b.archiveCanonicalBlock,
 			blockarchive.NewMetrics(namespace+"_ethereum"))
 	}
 
@@ -201,28 +201,28 @@ func (b *BeaconNode) archiveChain(ctx context.Context) (*blockarchive.Chain, err
 	}, nil
 }
 
-// archiveCanonicalRoot is the beacon node's block root at slot, which each era window is tied to.
-func (b *BeaconNode) archiveCanonicalRoot(ctx context.Context, slot phase0.Slot) (phase0.Root, bool, error) {
+// archiveCanonicalBlock is the beacon node's block root and signature at slot, which each era window is tied to.
+func (b *BeaconNode) archiveCanonicalBlock(ctx context.Context, slot phase0.Slot) (blockarchive.BlockID, bool, error) {
 	provider, ok := b.beacon.Service().(client.BeaconBlockHeadersProvider)
 	if !ok {
-		return phase0.Root{}, false, errors.New("beacon block headers provider not available")
+		return blockarchive.BlockID{}, false, errors.New("beacon block headers provider not available")
 	}
 
 	resp, err := provider.BeaconBlockHeader(ctx, &api.BeaconBlockHeaderOpts{Block: strconv.FormatUint(uint64(slot), 10)})
 	if err != nil {
 		var apiErr *api.Error
 		if errors.As(err, &apiErr) && apiErr.StatusCode == 404 {
-			return phase0.Root{}, false, nil
+			return blockarchive.BlockID{}, false, nil
 		}
 
-		return phase0.Root{}, false, errors.Wrapf(err, "failed to fetch block header at slot %d", slot)
+		return blockarchive.BlockID{}, false, errors.Wrapf(err, "failed to fetch block header at slot %d", slot)
 	}
 
-	if resp == nil || resp.Data == nil {
-		return phase0.Root{}, false, errors.Errorf("empty block header response at slot %d", slot)
+	if resp == nil || resp.Data == nil || resp.Data.Header == nil {
+		return blockarchive.BlockID{}, false, errors.Errorf("empty block header response at slot %d", slot)
 	}
 
-	return resp.Data.Root, true, nil
+	return blockarchive.BlockID{Root: resp.Data.Root, Signature: resp.Data.Header.Signature}, true, nil
 }
 
 func (b *BeaconNode) Start(ctx context.Context) error {

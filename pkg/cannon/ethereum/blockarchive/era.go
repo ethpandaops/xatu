@@ -151,36 +151,37 @@ func decodeParallel[In, Out any](in map[uint64]In, fn func(slot uint64, v In) (O
 	return out, nil
 }
 
-// decodedBlock is a block decoded from an era file with its root.
+// decodedBlock is a block decoded from an era file with its root and signature.
 type decodedBlock struct {
 	block *spec.VersionedSignedBeaconBlock
 	root  phase0.Root
+	sig   phase0.BLSSignature
 }
 
 // decodeBlocks decodes and hashes compressed block entries, checking each block's slot matches its index slot.
-func decodeBlocks(chain *Chain, raw map[uint64][]byte) (map[uint64]decodedBlock, error) {
-	return decodeParallel(raw, func(slot uint64, data []byte) (decodedBlock, error) {
+func decodeBlocks(chain *Chain, raw map[uint64][]byte) (map[uint64]*decodedBlock, error) {
+	return decodeParallel(raw, func(slot uint64, data []byte) (*decodedBlock, error) {
 		block, err := decodeBlock(chain, slot, data)
 		if err != nil {
-			return decodedBlock{}, err
+			return nil, err
 		}
 
-		message, err := blockMessage(block)
+		message, sig, err := blockParts(block)
 		if err != nil {
-			return decodedBlock{}, err
+			return nil, err
 		}
 
 		root, err := chain.Codec.HashTreeRoot(message)
 		if err != nil {
-			return decodedBlock{}, fmt.Errorf("failed to hash block: %w", err)
+			return nil, fmt.Errorf("failed to hash block: %w", err)
 		}
 
-		return decodedBlock{block: block, root: root}, nil
+		return &decodedBlock{block: block, root: root, sig: sig}, nil
 	})
 }
 
 // checkLinks checks each decoded block's parent root is the root of the decoded block before it.
-func checkLinks(blocks map[uint64]decodedBlock) error {
+func checkLinks(blocks map[uint64]*decodedBlock) error {
 	slots := make([]uint64, 0, len(blocks))
 	for slot := range blocks {
 		slots = append(slots, slot)
@@ -225,55 +226,49 @@ func decodeBlock(chain *Chain, slot uint64, compressed []byte) (*spec.VersionedS
 	return block, nil
 }
 
-// blockMessage returns the BeaconBlock a signed block wraps.
-func blockMessage(block *spec.VersionedSignedBeaconBlock) (any, error) {
-	var message any
-
+// blockParts returns the BeaconBlock a signed block wraps and its signature.
+func blockParts(block *spec.VersionedSignedBeaconBlock) (message any, signature phase0.BLSSignature, err error) {
 	switch block.Version {
 	case spec.DataVersionPhase0:
 		if block.Phase0 != nil && block.Phase0.Message != nil {
-			message = block.Phase0.Message
+			return block.Phase0.Message, block.Phase0.Signature, nil
 		}
 	case spec.DataVersionAltair:
 		if block.Altair != nil && block.Altair.Message != nil {
-			message = block.Altair.Message
+			return block.Altair.Message, block.Altair.Signature, nil
 		}
 	case spec.DataVersionBellatrix:
 		if block.Bellatrix != nil && block.Bellatrix.Message != nil {
-			message = block.Bellatrix.Message
+			return block.Bellatrix.Message, block.Bellatrix.Signature, nil
 		}
 	case spec.DataVersionCapella:
 		if block.Capella != nil && block.Capella.Message != nil {
-			message = block.Capella.Message
+			return block.Capella.Message, block.Capella.Signature, nil
 		}
 	case spec.DataVersionDeneb:
 		if block.Deneb != nil && block.Deneb.Message != nil {
-			message = block.Deneb.Message
+			return block.Deneb.Message, block.Deneb.Signature, nil
 		}
 	case spec.DataVersionElectra:
 		if block.Electra != nil && block.Electra.Message != nil {
-			message = block.Electra.Message
+			return block.Electra.Message, block.Electra.Signature, nil
 		}
 	case spec.DataVersionFulu:
 		if block.Fulu != nil && block.Fulu.Message != nil {
-			message = block.Fulu.Message
+			return block.Fulu.Message, block.Fulu.Signature, nil
 		}
 	case spec.DataVersionGloas:
 		if block.Gloas != nil && block.Gloas.Message != nil {
-			message = block.Gloas.Message
+			return block.Gloas.Message, block.Gloas.Signature, nil
 		}
 	case spec.DataVersionHeze:
 		if block.Heze != nil && block.Heze.Message != nil {
-			message = block.Heze.Message
+			return block.Heze.Message, block.Heze.Signature, nil
 		}
 	default:
 	}
 
-	if message == nil {
-		return nil, fmt.Errorf("%s block has no message", block.Version)
-	}
-
-	return message, nil
+	return nil, signature, fmt.Errorf("%s block has no message", block.Version)
 }
 
 // unmarshalBlock decodes a SignedBeaconBlock of fork v as go-eth2-client decodes SSZ API responses.

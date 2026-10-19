@@ -46,6 +46,7 @@ func testChain() *Chain {
 type testBlock struct {
 	slot     uint64
 	root     phase0.Root
+	sig      phase0.BLSSignature
 	ssz      []byte
 	envelope []byte
 }
@@ -110,7 +111,7 @@ func phase0Block(t *testing.T, slot uint64, parent phase0.Root) testBlock {
 		},
 	}
 
-	return encodeTestBlock(t, slot, msg, &phase0.SignedBeaconBlock{Message: msg})
+	return encodeTestBlock(t, slot, msg, &phase0.SignedBeaconBlock{Message: msg, Signature: testSig(slot)})
 }
 
 func altairBlock(t *testing.T, slot uint64, parent phase0.Root) testBlock {
@@ -127,7 +128,7 @@ func altairBlock(t *testing.T, slot uint64, parent phase0.Root) testBlock {
 		},
 	}
 
-	return encodeTestBlock(t, slot, msg, &altair.SignedBeaconBlock{Message: msg})
+	return encodeTestBlock(t, slot, msg, &altair.SignedBeaconBlock{Message: msg, Signature: testSig(slot)})
 }
 
 // gloasBlock builds a Gloas block bidding testHash(slot) on parentHash, with its envelope when applied.
@@ -151,13 +152,17 @@ func gloasBlock(t *testing.T, slot uint64, parent phase0.Root, parentHash phase0
 		},
 	}
 
-	b := encodeTestBlock(t, slot, msg, &gloas.SignedBeaconBlock{Message: msg})
+	b := encodeTestBlock(t, slot, msg, &gloas.SignedBeaconBlock{Message: msg, Signature: testSig(slot)})
 
 	if applied {
 		b.envelope = testEnvelope(t, b.root, testHash(slot))
 	}
 
 	return b
+}
+
+func testSig(slot uint64) phase0.BLSSignature {
+	return phase0.BLSSignature{0x5a, byte(slot >> 8), byte(slot)}
 }
 
 func testHash(slot uint64) phase0.Hash32 {
@@ -182,35 +187,35 @@ func testEnvelope(t *testing.T, root phase0.Root, hash phase0.Hash32) []byte {
 	return ssz
 }
 
-// fakeBeacon answers block roots by slot for the blocks it is given, like the beacon node's headers endpoint.
+// fakeBeacon answers blocks by slot for the blocks it is given, like the beacon node's headers endpoint.
 type fakeBeacon struct {
-	roots    map[uint64]phase0.Root
+	blocks   map[uint64]BlockID
 	err      error
 	requests atomic.Int64
 }
 
 func newFakeBeacon(chains ...[]testBlock) *fakeBeacon {
-	f := &fakeBeacon{roots: make(map[uint64]phase0.Root)}
+	f := &fakeBeacon{blocks: make(map[uint64]BlockID)}
 
 	for _, blocks := range chains {
 		for _, b := range blocks {
-			f.roots[b.slot] = b.root
+			f.blocks[b.slot] = BlockID{Root: b.root, Signature: b.sig}
 		}
 	}
 
 	return f
 }
 
-func (f *fakeBeacon) root(_ context.Context, slot phase0.Slot) (phase0.Root, bool, error) {
+func (f *fakeBeacon) block(_ context.Context, slot phase0.Slot) (BlockID, bool, error) {
 	f.requests.Add(1)
 
 	if f.err != nil {
-		return phase0.Root{}, false, f.err
+		return BlockID{}, false, f.err
 	}
 
-	root, ok := f.roots[uint64(slot)]
+	id, ok := f.blocks[uint64(slot)]
 
-	return root, ok, nil
+	return id, ok, nil
 }
 
 func encodeTestBlock(t *testing.T, slot uint64, message, signed any) testBlock {
@@ -222,7 +227,7 @@ func encodeTestBlock(t *testing.T, slot uint64, message, signed any) testBlock {
 	root, err := dynssz.GetGlobalDynSsz().HashTreeRoot(message)
 	require.NoError(t, err)
 
-	return testBlock{slot: slot, root: root, ssz: ssz}
+	return testBlock{slot: slot, root: root, sig: testSig(slot), ssz: ssz}
 }
 
 func snappyFramed(t *testing.T, data []byte) []byte {

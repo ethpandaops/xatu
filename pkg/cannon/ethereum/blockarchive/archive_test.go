@@ -19,6 +19,7 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/beacon/pkg/human"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -134,7 +135,7 @@ func newTestArchive(t *testing.T, cfg *Config, beacon *fakeBeacon) *Archive {
 
 	chain := func(context.Context) (*Chain, error) { return testChain(), nil }
 
-	return New(cfg, logrus.New(), func() string { return testNetwork }, chain, beacon.root, testMetrics())
+	return New(cfg, logrus.New(), func() string { return testNetwork }, chain, beacon.block, testMetrics())
 }
 
 func eraName(era uint64) string {
@@ -367,48 +368,90 @@ func TestArchiveServerErrorSkipsArchive(t *testing.T) {
 	assert.True(t, a.isUnavailable())
 }
 
-func TestArchiveNotCanonicalWindowIsSkipped(t *testing.T) {
+func lookups(t *testing.T, result string) float64 {
+	t.Helper()
+
+	m := &dto.Metric{}
+	require.NoError(t, testMetrics().lookups.WithLabelValues(testNetwork, result).Write(m))
+
+	return m.GetCounter().GetValue()
+}
+
+func TestArchiveWindowDisagreeingWithBeaconIsSkipped(t *testing.T) {
 	blocks := testBlocksAt(t, 16, 17, 20, 21)
 	fork := linkedBlocks(t, phase0.Root{0x02}, []uint64{16, 17, 20, 21}, nil)
 
-	for name, beacon := range map[string]*fakeBeacon{
-		"other root": newFakeBeacon(blocks[:2], fork[2:]),
-		"no block":   newFakeBeacon(blocks[:2]),
-	} {
+	resigned := newFakeBeacon(blocks)
+	id := resigned.blocks[20]
+	id.Signature[95] ^= 0xff
+	resigned.blocks[20] = id
+
+	tests := map[string]struct {
+		beacon *fakeBeacon
+		result string
+	}{
+		"other root":      {newFakeBeacon(blocks[:2], fork[2:]), resultNotCanonical},
+		"other signature": {resigned, resultNotCanonical},
+		"no block":        {newFakeBeacon(blocks[:2]), resultNoBeacon},
+	}
+
+	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			fake := newFakeServer(map[string][]byte{eraName(2): encodeEra(t, 2, blocks, eraOptions{})})
-			a := newTestArchive(t, testConfig(serve(t, fake), 4), beacon)
+			a := newTestArchive(t, testConfig(serve(t, fake), 4), tc.beacon)
+			before := lookups(t, tc.result)
 
-			// Window 16..19 is tied to the beacon node by block 20, which it disagrees on.
+			// Window 16..19 is tied to the beacon node by block 20.
 			slots, found, err := a.Slots(context.Background(), 17)
 			require.NoError(t, err)
 			assert.False(t, found)
 			assert.Nil(t, slots)
 
-			ranges, requests := fake.ranges.Load(), beacon.requests.Load()
+			ranges, requests := fake.ranges.Load(), tc.beacon.requests.Load()
 
 			_, found, err = a.Slots(context.Background(), 16)
 			require.NoError(t, err)
 			assert.False(t, found)
 			assert.Equal(t, ranges, fake.ranges.Load(), "the window is skipped, not fetched again")
-			assert.Equal(t, requests, beacon.requests.Load())
+			assert.Equal(t, requests, tc.beacon.requests.Load())
+			assert.InDelta(t, before+2, lookups(t, tc.result), 0)
 			assert.False(t, a.isUnavailable())
+
+			item := a.skipped.Get(windowKey(eraName(2), 16, 19))
+			require.NotNil(t, item)
+			assert.WithinDuration(t, time.Now().Add(time.Minute), item.ExpiresAt(), 5*time.Second, "skipped for listingTtl")
 		})
 	}
 }
 
-func TestArchiveBeaconErrorIsNotCached(t *testing.T) {
+func TestArchiveBeaconErrorBacksOff(t *testing.T) {
 	blocks := testBlocksAt(t, 16)
 	fake := newFakeServer(map[string][]byte{eraName(2): encodeEra(t, 2, blocks, eraOptions{})})
 	beacon := newFakeBeacon(blocks)
 	beacon.err = errors.New("beacon node down")
 	a := newTestArchive(t, testConfig(serve(t, fake), 0), beacon)
+	before := lookups(t, resultBeaconError)
 
 	_, found, err := a.Slots(context.Background(), 16)
 	require.ErrorContains(t, err, "beacon node down")
 	assert.False(t, found)
 	assert.False(t, a.isUnavailable(), "a beacon failure is not the archive's")
 	assert.Equal(t, int64(1), fake.ranges.Load(), "the window is not downloaded before the beacon answers")
+
+	// Within the back-off the window's lookups fall back quietly, without another beacon request.
+	_, found, err = a.Slots(context.Background(), 17)
+	require.NoError(t, err)
+	assert.False(t, found)
+	assert.Equal(t, int64(1), beacon.requests.Load())
+	assert.InDelta(t, before+2, lookups(t, resultBeaconError), 0)
+
+	key := windowKey(eraName(2), 16, 31)
+	item := a.skipped.Get(key)
+	require.NotNil(t, item)
+	assert.WithinDuration(t, time.Now().Add(beaconRetryAfter), item.ExpiresAt(), time.Second, "held off only briefly")
+
+	// Once the back-off lapses the window is tried again.
+	a.skipped.Delete(key)
 
 	beacon.err = nil
 
@@ -755,7 +798,7 @@ func TestArchiveChainErrorFallsBack(t *testing.T) {
 	require.NoError(t, cfg.Validate())
 
 	chain := func(context.Context) (*Chain, error) { return nil, errors.New("beacon not ready") }
-	a := New(cfg, logrus.New(), func() string { return testNetwork }, chain, newFakeBeacon().root, testMetrics())
+	a := New(cfg, logrus.New(), func() string { return testNetwork }, chain, newFakeBeacon().block, testMetrics())
 
 	_, found, err := a.Slots(context.Background(), 16)
 	require.ErrorContains(t, err, "beacon not ready")

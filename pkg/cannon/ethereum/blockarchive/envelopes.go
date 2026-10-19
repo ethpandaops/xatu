@@ -41,7 +41,7 @@ func parseEnvelopeTail(tail []byte, size int64, era, slotsPerEra uint64) (*fileI
 // decodeEnvelopes returns each Gloas+ block's verified envelope, or nil when a later bid proves it withheld, else omits it.
 func decodeEnvelopes(
 	chain *Chain,
-	blocks map[uint64]decodedBlock,
+	blocks map[uint64]*decodedBlock,
 	raw map[uint64][]byte,
 	next *decodedBlock,
 ) (map[uint64]*gloas.SignedExecutionPayloadEnvelope, error) {
@@ -87,7 +87,7 @@ func hasEnvelopes(v spec.DataVersion) bool {
 }
 
 // decodeEnvelope decodes a block's envelope and checks it commits to the block and its bid.
-func decodeEnvelope(chain *Chain, b decodedBlock, compressed []byte) (*gloas.SignedExecutionPayloadEnvelope, error) {
+func decodeEnvelope(chain *Chain, b *decodedBlock, compressed []byte) (*gloas.SignedExecutionPayloadEnvelope, error) {
 	ssz, err := decompress(compressed)
 	if err != nil {
 		return nil, err
@@ -138,7 +138,7 @@ func bidHashes(block *spec.VersionedSignedBeaconBlock) (parent, hash phase0.Hash
 
 // checkPayloads checks each payload status against the next bid, returning withheld slots with no next block to prove them.
 func checkPayloads(
-	blocks map[uint64]decodedBlock,
+	blocks map[uint64]*decodedBlock,
 	envelopes map[uint64]*gloas.SignedExecutionPayloadEnvelope,
 	next *decodedBlock,
 ) (unproven []uint64, err error) {
@@ -153,8 +153,7 @@ func checkPayloads(
 		successor := next
 
 		if i+1 < len(slots) {
-			b := blocks[slots[i+1]]
-			successor = &b
+			successor = blocks[slots[i+1]]
 		}
 
 		if successor == nil {

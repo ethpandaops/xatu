@@ -26,11 +26,17 @@ const (
 	maxListingPages    = 1000
 	indexCacheSize     = 16
 	windowMemoSize     = 64
+	skippedCacheSize   = 1024
 	modeEra            = "era"
 	modeRange          = "range"
 	resultHit          = "hit"
 	resultUncovered    = "not_covered"
 	resultNotCanonical = "not_canonical"
+	resultNoBeacon     = "beacon_missing"
+	resultBeaconError  = "beacon_error"
+	skippedFile        = "file"
+	// beaconRetryAfter holds off a window after a failed beacon lookup, so an outage costs one request per window.
+	beaconRetryAfter = 10 * time.Second
 )
 
 var (
@@ -42,7 +48,18 @@ var (
 	errUnreachable = errors.New("archive unreachable")
 	// errNotCanonical marks a window that disagrees with the beacon node's chain; only that window is skipped.
 	errNotCanonical = errors.New("era window is not the beacon node's canonical chain")
+	// errBeacon marks a failed beacon node lookup; the window is retried after beaconRetryAfter.
+	errBeacon = errors.New("beacon node lookup failed")
 )
+
+// beaconMissingError is a window whose anchor block the beacon node does not have, such as one without history.
+type beaconMissingError struct {
+	slot uint64
+}
+
+func (e *beaconMissingError) Error() string {
+	return fmt.Sprintf("beacon node has no block at slot %d", e.slot)
+}
 
 // Slot is one slot of a fetched era range.
 type Slot struct {
@@ -57,8 +74,14 @@ type Slot struct {
 // Slots maps the slots of a fetched era range the archive answers for to their contents.
 type Slots map[phase0.Slot]Slot
 
-// CanonicalRoot returns the beacon node's block root at slot; found is false for a slot without a block.
-type CanonicalRoot func(ctx context.Context, slot phase0.Slot) (root phase0.Root, found bool, err error)
+// BlockID identifies a signed beacon block.
+type BlockID struct {
+	Root      phase0.Root
+	Signature phase0.BLSSignature
+}
+
+// CanonicalBlock returns the beacon node's block at slot; found is false for a slot without a block.
+type CanonicalBlock func(ctx context.Context, slot phase0.Slot) (id BlockID, found bool, err error)
 
 // Archive serves finalized blocks from CL era files and Gloas envelopes from per-era sidecars.
 type Archive struct {
@@ -69,7 +92,7 @@ type Archive struct {
 	listingURL string
 	network    func() string
 	chainFn    func(context.Context) (*Chain, error)
-	canonical  CanonicalRoot
+	canonical  CanonicalBlock
 	metrics    *Metrics
 
 	fetchGroup   singleflight.Group
@@ -82,9 +105,10 @@ type Archive struct {
 	eras        map[uint64]eraFile
 	listed      time.Time
 	unavailable time.Time
-	skipped     *ttlcache.Cache[string, struct{}]
-	indexes     *ttlcache.Cache[string, *fileIndex]
-	windows     *ttlcache.Cache[string, *windowMemo]
+	// skipped holds skipped files and windows, with the lookup result a skipped window reports.
+	skipped *ttlcache.Cache[string, string]
+	indexes *ttlcache.Cache[string, *fileIndex]
+	windows *ttlcache.Cache[string, *windowMemo]
 }
 
 // New creates an Archive; network, chain and canonical are resolved per request, after beacon metadata is ready.
@@ -93,7 +117,7 @@ func New(
 	log observability.ContextualLogger,
 	network func() string,
 	chain func(context.Context) (*Chain, error),
-	canonical CanonicalRoot,
+	canonical CanonicalBlock,
 	metrics *Metrics,
 ) *Archive {
 	base := strings.TrimRight(cfg.URL, "/")
@@ -115,8 +139,9 @@ func New(
 		metrics:    metrics,
 		sem:        make(chan struct{}, cfg.MaxConcurrentFetches),
 		skipped: ttlcache.New(
-			ttlcache.WithTTL[string, struct{}](cfg.ListingTTL.Duration),
-			ttlcache.WithDisableTouchOnHit[string, struct{}](),
+			ttlcache.WithTTL[string, string](cfg.ListingTTL.Duration),
+			ttlcache.WithCapacity[string, string](skippedCacheSize),
+			ttlcache.WithDisableTouchOnHit[string, string](),
 		),
 		indexes: ttlcache.New(
 			ttlcache.WithCapacity[string, *fileIndex](indexCacheSize),
@@ -156,8 +181,8 @@ func (a *Archive) Slots(ctx context.Context, slot phase0.Slot) (slots Slots, fou
 	first, last := a.window(chain, era, uint64(slot))
 	key := windowKey(file.name, first, last)
 
-	if a.skipped.Has(key) {
-		a.metrics.lookup(network, resultNotCanonical)
+	if item := a.skipped.Get(key); item != nil {
+		a.metrics.lookup(network, item.Value())
 
 		return nil, false, nil
 	}
@@ -201,14 +226,28 @@ func (a *Archive) Slots(ctx context.Context, slot phase0.Slot) (slots Slots, fou
 
 // failed records a failed window fetch and returns the error the caller should see.
 func (a *Archive) failed(ctx context.Context, network string, file eraFile, key string, err error) error {
+	var missing *beaconMissingError
+
 	switch {
+	case errors.As(err, &missing):
+		a.skipped.Set(key, resultNoBeacon, ttlcache.DefaultTTL)
+		a.metrics.lookup(network, resultNoBeacon)
+		a.log.WithField("window", key).WithField("slot", missing.slot).WithContext(ctx).
+			Warn("Beacon node has no block at the era window's anchor slot, serving the window from the beacon node")
+
+		return nil
 	case errors.Is(err, errNotCanonical):
-		a.skipped.Set(key, struct{}{}, ttlcache.DefaultTTL)
+		a.skipped.Set(key, resultNotCanonical, ttlcache.DefaultTTL)
 		a.metrics.lookup(network, resultNotCanonical)
 		a.log.WithError(err).WithField("window", key).WithContext(ctx).
 			Warn("Era window disagrees with the beacon node, serving it from the beacon node")
 
 		return nil
+	case errors.Is(err, errBeacon):
+		a.skipped.Set(key, resultBeaconError, beaconRetryAfter)
+		a.metrics.lookup(network, resultBeaconError)
+
+		return err
 	case errors.Is(err, errCorrupt), errors.Is(err, errMissing):
 		a.skip(file.name)
 	case errors.Is(err, errUnreachable):
@@ -326,7 +365,7 @@ func (a *Archive) isUnavailable() bool {
 
 // skip stops using a file for ListingTTL and forgets its index, so a replaced file is read afresh.
 func (a *Archive) skip(name string) {
-	a.skipped.Set(name, struct{}{}, ttlcache.DefaultTTL)
+	a.skipped.Set(name, skippedFile, ttlcache.DefaultTTL)
 	a.indexes.Delete(name)
 }
 
@@ -502,11 +541,11 @@ func (a *Archive) loadRange(ctx context.Context, chain *Chain, era uint64, file 
 
 	want, found, err := a.canonical(ctx, phase0.Slot(p.anchor))
 	if err != nil {
-		return nil, 0, fmt.Errorf("beacon node block root at slot %d: %w", p.anchor, err)
+		return nil, 0, fmt.Errorf("%w: block at slot %d: %w", errBeacon, p.anchor, err)
 	}
 
 	if !found {
-		return nil, 0, fmt.Errorf("%w: %s has a block at slot %d, the beacon node none", errNotCanonical, file.name, p.anchor)
+		return nil, 0, &beaconMissingError{slot: p.anchor}
 	}
 
 	raw, size, err := a.entries(ctx, file.name, idx, typeCompressedSignedBeaconBlock, p.readFirst, p.readLast)
@@ -523,20 +562,27 @@ func (a *Archive) loadRange(ctx context.Context, chain *Chain, era uint64, file 
 		return nil, size, fmt.Errorf("%w: %s: %w", errCorrupt, file.name, err)
 	}
 
-	if got := decoded[p.anchor].root; got != want {
-		return nil, size, fmt.Errorf("%w: %s has block %#x at slot %d, the beacon node %#x", errNotCanonical, file.name, got, p.anchor, want)
+	got, ok := decoded[p.anchor]
+	if !ok {
+		return nil, size, fmt.Errorf("%w: %s: no block at indexed slot %d", errCorrupt, file.name, p.anchor)
 	}
 
-	blocks := make(map[uint64]decodedBlock, len(decoded))
+	if got.root != want.Root || got.sig != want.Signature {
+		return nil, size, fmt.Errorf("%w: %s has block %#x signed %#x at slot %d, the beacon node %#x signed %#x",
+			errNotCanonical, file.name, got.root, got.sig, p.anchor, want.Root, want.Signature)
+	}
+
+	blocks := make(map[uint64]*decodedBlock, len(decoded))
 	slots := make(Slots, p.hi-p.lo+1)
 
 	for s := p.lo; s <= p.hi; s++ {
-		b, ok := decoded[s]
-		if ok {
-			blocks[s] = b
+		var block *spec.VersionedSignedBeaconBlock
+
+		if b, ok := decoded[s]; ok {
+			blocks[s], block = b, b.block
 		}
 
-		slots[phase0.Slot(s)] = Slot{Block: b.block}
+		slots[phase0.Slot(s)] = Slot{Block: block}
 	}
 
 	if file.envelopes == "" || !hasEnvelopes(chain.forkAt(p.hi)) {
@@ -544,10 +590,8 @@ func (a *Archive) loadRange(ctx context.Context, chain *Chain, era uint64, file 
 	}
 
 	var next *decodedBlock
-
 	if p.succ {
-		b := decoded[p.readLast]
-		next = &b
+		next = decoded[p.readLast]
 	}
 
 	envelopes, n, err := a.loadEnvelopes(ctx, chain, era, file.envelopes, blocks, next, first, last)
@@ -573,7 +617,7 @@ func (a *Archive) loadEnvelopes(
 	chain *Chain,
 	era uint64,
 	name string,
-	blocks map[uint64]decodedBlock,
+	blocks map[uint64]*decodedBlock,
 	next *decodedBlock,
 	first, last uint64,
 ) (envelopes map[uint64]*gloas.SignedExecutionPayloadEnvelope, size int64, err error) {

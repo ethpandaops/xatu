@@ -46,7 +46,8 @@ ethereum:
   # block-archiver's verified mirrors with
   #   url: https://<archive>/era/<network>
   #   listingUrl: https://<archive>/api/v1/era?network=<network>
-  # Every fetched window is tied to the beacon node by one block header request.
+  # Every fetched window is tied to the beacon node by one block header request,
+  # matching the root and signature of one of its blocks.
   # rangeSlots fetches aligned windows (at most 8192 slots) with HTTP Range reads
   # of the era's slot index; a 256-slot mainnet window is ~25MB to download and
   # ~70MB decoded. 0 reads each era's whole block section instead: ~600MB per

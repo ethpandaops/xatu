@@ -112,7 +112,7 @@ func TestCheckLinks(t *testing.T) {
 	blocks := testBlocksAt(t, 16, 17, 20, 24)
 	other := linkedBlocks(t, phase0.Root{0x02}, []uint64{17}, nil)
 
-	decode := func(bs ...testBlock) map[uint64]decodedBlock {
+	decode := func(bs ...testBlock) map[uint64]*decodedBlock {
 		raw := make(map[uint64][]byte, len(bs))
 		for _, b := range bs {
 			raw[b.slot] = snappyFramed(t, b.ssz)

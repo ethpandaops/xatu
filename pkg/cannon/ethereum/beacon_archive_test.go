@@ -33,8 +33,8 @@ type fakeBeaconNode struct {
 	mu        sync.Mutex
 	fetched   []string
 	envelopes []string
-	// headers are the block roots the node has, by slot.
-	headers map[string]phase0.Root
+	// headers are the blocks the node has, by slot.
+	headers map[string]blockarchive.BlockID
 }
 
 // fakeEnvelopeService answers envelope requests the way the beacon API does for a revealed payload.
@@ -56,12 +56,15 @@ func (f *fakeEnvelopeService) SignedExecutionPayloadEnvelope(_ context.Context, 
 }
 
 func (f *fakeEnvelopeService) BeaconBlockHeader(_ context.Context, opts *api.BeaconBlockHeaderOpts) (*api.Response[*apiv1.BeaconBlockHeader], error) {
-	root, ok := f.node.headers[opts.Block]
+	id, ok := f.node.headers[opts.Block]
 	if !ok {
 		return nil, &api.Error{StatusCode: 404}
 	}
 
-	return &api.Response[*apiv1.BeaconBlockHeader]{Data: &apiv1.BeaconBlockHeader{Root: root}}, nil
+	return &api.Response[*apiv1.BeaconBlockHeader]{Data: &apiv1.BeaconBlockHeader{
+		Root:   id.Root,
+		Header: &phase0.SignedBeaconBlockHeader{Message: &phase0.BeaconBlockHeader{}, Signature: id.Signature},
+	}}, nil
 }
 
 func (f *fakeEnvelopeService) AgnosticSignedExecutionPayloadEnvelope(context.Context, *api.SignedExecutionPayloadEnvelopeOpts) (*api.Response[*all.SignedExecutionPayloadEnvelope], error) {
@@ -258,16 +261,17 @@ func TestGetBeaconBlockCachesRangeForUnprovenSlot(t *testing.T) {
 	assert.Equal(t, []string{"102"}, node.fetched)
 }
 
-func TestArchiveCanonicalRoot(t *testing.T) {
+func TestArchiveCanonicalBlock(t *testing.T) {
 	b, node := newArchiveTestNode(nil)
-	node.headers = map[string]phase0.Root{"100": {0x01}}
+	want := blockarchive.BlockID{Root: phase0.Root{0x01}, Signature: phase0.BLSSignature{0x02}}
+	node.headers = map[string]blockarchive.BlockID{"100": want}
 
-	root, found, err := b.archiveCanonicalRoot(context.Background(), 100)
+	id, found, err := b.archiveCanonicalBlock(context.Background(), 100)
 	require.NoError(t, err)
 	assert.True(t, found)
-	assert.Equal(t, phase0.Root{0x01}, root)
+	assert.Equal(t, want, id)
 
-	_, found, err = b.archiveCanonicalRoot(context.Background(), 101)
+	_, found, err = b.archiveCanonicalBlock(context.Background(), 101)
 	require.NoError(t, err)
 	assert.False(t, found, "a slot without a block")
 }

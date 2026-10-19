@@ -9,13 +9,13 @@ import (
 	"github.com/golang/snappy"
 )
 
-// e2store entry types, see https://github.com/eth-clients/e2store-format-specs.
+// e2store entry types as the little-endian uint16 of their two type bytes, see https://github.com/eth-clients/e2store-format-specs.
 const (
 	typeVersion                     uint16 = 0x3265
 	typeCompressedSignedBeaconBlock uint16 = 0x0001
 	typeCompressedBeaconState       uint16 = 0x0002
 	typeSlotIndex                   uint16 = 0x3269
-	// typeCompressedEnvelope is a snappy-framed SSZ SignedExecutionPayloadEnvelope in block-archiver's envelope sidecar.
+	// typeCompressedEnvelope (type bytes 0x80 0x01) is a snappy-framed SSZ SignedExecutionPayloadEnvelope in block-archiver's sidecar.
 	typeCompressedEnvelope uint16 = 0x0180
 
 	entryHeaderSize = 8

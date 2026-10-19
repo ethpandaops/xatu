@@ -23,6 +23,7 @@ const (
 	// listingTimeout bounds a listing request so a slow archive falls back to the beacon node quickly.
 	listingTimeout  = 30 * time.Second
 	maxListingSize  = 64 << 20
+	maxListingPages = 1000
 	indexCacheSize  = 16
 	modeEra         = "era"
 	modeRange       = "range"
@@ -280,33 +281,41 @@ func (a *Archive) lookup(ctx context.Context, network string, era uint64) (file 
 	return file, nil
 }
 
-// refresh fetches the listing and replaces the known era files.
+// refresh fetches every page of the listing and replaces the known era files.
 func (a *Archive) refresh(ctx context.Context, network string) error {
 	ctx, cancel := context.WithTimeout(ctx, listingTimeout)
 	defer cancel()
 
-	resp, err := a.get(ctx, a.listingURL, "")
-	if err != nil {
-		return fmt.Errorf("era listing: %w", err)
-	}
-	defer resp.Body.Close()
+	found := newListing(network)
+	target := a.listingURL
+	pages := 0
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("era listing: unexpected status %d", resp.StatusCode)
+	for target != "" {
+		if pages == maxListingPages {
+			return fmt.Errorf("era listing: more than %d pages", maxListingPages)
+		}
+
+		body, err := a.listingPage(ctx, target)
+		if err != nil {
+			return fmt.Errorf("era listing: %w", err)
+		}
+
+		pages++
+
+		found.add(body)
+
+		if target, err = nextPage(target, body); err != nil {
+			return fmt.Errorf("era listing: %w", err)
+		}
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxListingSize))
-	if err != nil {
-		return fmt.Errorf("era listing: %w", err)
-	}
-
-	eras := parseListing(body, network)
+	eras := found.files()
 
 	a.mu.Lock()
 	a.eras, a.listed = eras, time.Now()
 	a.mu.Unlock()
 
-	log := a.log.WithField("network", network).WithField("eras", len(eras)).WithContext(ctx)
+	log := a.log.WithField("network", network).WithField("eras", len(eras)).WithField("pages", pages).WithContext(ctx)
 	if len(eras) == 0 {
 		log.Warn("Era listing names no era files for the network")
 	} else {
@@ -314,6 +323,20 @@ func (a *Archive) refresh(ctx context.Context, network string) error {
 	}
 
 	return nil
+}
+
+func (a *Archive) listingPage(ctx context.Context, target string) ([]byte, error) {
+	resp, err := a.get(ctx, target, "")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status %d from %s", resp.StatusCode, target)
+	}
+
+	return io.ReadAll(io.LimitReader(resp.Body, maxListingSize))
 }
 
 // load downloads and decodes slots first..last of an era.

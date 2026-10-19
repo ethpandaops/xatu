@@ -32,6 +32,28 @@ func TestReadEntries(t *testing.T) {
 	assert.Empty(t, empty)
 }
 
+func TestEntryTypeBytes(t *testing.T) {
+	tests := map[string]struct {
+		header []byte
+		typ    uint16
+	}{
+		"Version":                     {[]byte{0x65, 0x32}, typeVersion},
+		"CompressedSignedBeaconBlock": {[]byte{0x01, 0x00}, typeCompressedSignedBeaconBlock},
+		"CompressedBeaconState":       {[]byte{0x02, 0x00}, typeCompressedBeaconState},
+		"SlotIndex":                   {[]byte{0x69, 0x32}, typeSlotIndex},
+		"envelope sidecar entry":      {[]byte{0x80, 0x01}, typeCompressedEnvelope},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			entries, err := readEntries(append(tc.header, 0, 0, 0, 0, 0, 0), 0)
+			require.NoError(t, err)
+			require.Len(t, entries, 1)
+			assert.Equal(t, tc.typ, entries[0].typ)
+		})
+	}
+}
+
 func TestReadEntriesRejectsMalformed(t *testing.T) {
 	reserved := e2Entry(typeVersion, nil)
 	reserved[6] = 1

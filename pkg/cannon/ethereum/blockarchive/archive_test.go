@@ -3,10 +3,12 @@ package blockarchive
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -397,26 +399,107 @@ func TestArchiveCorruptSidecarIsSkipped(t *testing.T) {
 	assert.False(t, has, "the sidecar is skipped after failing to verify")
 }
 
-func TestArchiveSeparateListingURL(t *testing.T) {
-	fake := newFakeServer(map[string][]byte{eraName(2): encodeEra(t, 2, testBlocksAt(t, 16), eraOptions{})})
+// blockArchiverAPI serves eras 1..lastEra the way block-archiver's /api/v1/era?network= lists them, paged oldest first.
+func blockArchiverAPI(lastEra uint64, sidecars map[uint64]bool, requests *atomic.Int64) http.HandlerFunc {
+	type file struct {
+		File string `json:"file"`
+		URL  string `json:"url"`
+	}
+
+	type era struct {
+		Era   uint64           `json:"era"`
+		Files map[string]*file `json:"files"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+
+		limit, offset := 100, 0
+		if v, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil {
+			limit = max(1, min(1000, v))
+		}
+
+		if v, err := strconv.Atoi(r.URL.Query().Get("offset")); err == nil {
+			offset = v
+		}
+
+		eras := []era{}
+
+		for n := uint64(offset) + 1; r.URL.Query().Get("network") == testNetwork && n <= lastEra && len(eras) < limit; n++ {
+			e := era{Era: n, Files: map[string]*file{"era": {eraName(n), "/era/" + testNetwork + "/" + eraName(n)}, "envelopes": nil}}
+			if sidecars[n] {
+				e.Files["envelopes"] = &file{sidecarName(n), "/era/" + testNetwork + "/" + sidecarName(n)}
+			}
+
+			eras = append(eras, e)
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]any{"network": testNetwork, "eras": eras, "limit": limit, "offset": offset})
+	}
+}
+
+func TestArchiveBlockArchiverListing(t *testing.T) {
+	blocks := gloasChain(t, []uint64{36, 37, 38, 40}, map[uint64]bool{38: true})
+	fake := newFakeServer(map[string][]byte{
+		eraName(2):     encodeEra(t, 2, testBlocksAt(t, 16), eraOptions{}),
+		eraName(3):     encodeEra(t, 3, blocks, eraOptions{}),
+		sidecarName(3): encodeSidecar(t, 3, blocks),
+	})
+
+	var listings atomic.Int64
 
 	mux := http.NewServeMux()
-	mux.Handle("/era/", fake)
-	mux.HandleFunc("/api/v1/eras", func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = fmt.Fprintf(w, `{"eras":[{"network":%q,"file":%q}]}`, testNetwork, eraName(2))
-	})
+	mux.HandleFunc("/api/v1/era", blockArchiverAPI(250, map[uint64]bool{3: true}, &listings))
+	mux.Handle("/era/"+testNetwork+"/", http.StripPrefix("/era/"+testNetwork, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = "/era" + r.URL.Path
+		fake.ServeHTTP(w, r)
+	})))
 
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
 	cfg := testConfig(srv.URL, 0)
-	cfg.ListingURL = srv.URL + "/api/v1/eras"
+	cfg.URL = srv.URL + "/era/" + testNetwork
+	cfg.ListingURL = srv.URL + "/api/v1/era?network=" + testNetwork
+	a := newTestArchive(t, cfg)
+
+	slots, found, err := a.Slots(context.Background(), 36)
+	require.NoError(t, err)
+	require.True(t, found)
+	assert.Equal(t, int64(3), listings.Load(), "eras 1..250 take three pages of 100")
+	assert.Equal(t, int64(0), fake.listings.Load())
+
+	require.NotNil(t, slots[36].Envelope)
+	assert.True(t, slots[38].EnvelopeKnown)
+	assert.Nil(t, slots[38].Envelope, "withheld payload")
+
+	file, err := a.lookup(context.Background(), testNetwork, 250)
+	require.NoError(t, err)
+	assert.Equal(t, eraFile{name: eraName(250)}, file, "the last page is listed")
+
+	has, err := a.HasEnvelopes(context.Background(), 16)
+	require.NoError(t, err)
+	assert.False(t, has, "era 2 has no sidecar")
+}
+
+func TestArchiveListingPagesAreBounded(t *testing.T) {
+	var listings atomic.Int64
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		listings.Add(1)
+
+		_, _ = fmt.Fprintf(w, `{"eras": [{"era": 2, "files": {"era": {"file": %q}}}], "limit": 1, "offset": 0}`, eraName(2))
+	}))
+	defer srv.Close()
+
+	cfg := testConfig(srv.URL, 0)
+	cfg.ListingURL = srv.URL + "/api/v1/era"
 	a := newTestArchive(t, cfg)
 
 	_, found, err := a.Slots(context.Background(), 16)
-	require.NoError(t, err)
-	assert.True(t, found)
-	assert.Equal(t, int64(0), fake.listings.Load())
+	require.ErrorContains(t, err, "pages")
+	assert.False(t, found)
+	assert.Equal(t, int64(maxListingPages), listings.Load())
 }
 
 func TestArchiveChainErrorFallsBack(t *testing.T) {

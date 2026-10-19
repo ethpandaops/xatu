@@ -38,17 +38,21 @@ ethereum:
     # blockPreloadQueueSize: 5000
   # Serve finalized blocks from standard CL era files (e2store .era, one per
   # 8192 slots on mainnet presets) and Gloas execution payload envelopes from
-  # per-era <era>.envelopes.e2s sidecars where published. Everything else (the
+  # per-era sidecars (mainnet-01886-653d1f74.era pairs with
+  # mainnet-01886-653d1f74.envelopes.e2s) where published. Everything else (the
   # current unfinished era, eras without a sidecar for envelopes, any archive
   # error) falls back to the beacon node. Works against any host serving era
-  # files with a listing, e.g. https://<network>.era.nimbus.team.
+  # files with a listing, e.g. https://<network>.era.nimbus.team, or
+  # block-archiver's verified mirrors with
+  #   url: https://<archive>/era/<network>
+  #   listingUrl: https://<archive>/api/v1/era?network=<network>&limit=1000
   # rangeSlots fetches aligned windows with HTTP Range reads of the era's slot
   # index; 0 downloads whole eras (~600MB of mainnet blocks each). The block
   # cache is grown to hold one fetch.
   # blockArchive:
   #   enabled: false
   #   url: https://mainnet.era.nimbus.team
-  #   listingUrl: ""             # defaults to url; any HTML index or JSON naming the files
+  #   listingUrl: ""             # defaults to url; any HTML index or JSON naming the files, paged JSON is followed
   #   network: ""                # era file name prefix; defaults to the beacon node's network name
   #   headers: {}
   #   timeout: 5m

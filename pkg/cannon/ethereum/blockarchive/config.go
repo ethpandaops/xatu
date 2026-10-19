@@ -14,7 +14,7 @@ type Config struct {
 	Enabled bool `yaml:"enabled" default:"false"`
 	// URL is the directory serving the era files, fetched as <url>/<file>.
 	URL string `yaml:"url"`
-	// ListingURL is any body naming the era files and sidecars (HTML index or JSON); defaults to URL.
+	// ListingURL is any body naming the era files and sidecars (HTML index, JSON or paged JSON); defaults to URL.
 	ListingURL string `yaml:"listingUrl"`
 	// Network is the era file name prefix; defaults to the beacon node's network name.
 	Network string `yaml:"network"`

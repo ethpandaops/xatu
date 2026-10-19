@@ -53,9 +53,9 @@ Cannon requires a single `yaml` config file. An example file can be found [here]
 | ethereum.blockCacheTtl | string | `1h` | The maximum duration to cache blocks                                                                                                       |
 | ethereum.blockPreloadWorkers | int | `5` | The number of workers to use for preloading blocks                                                                                         |
 | ethereum.blockPreloadQueueSize | int | `5000` | The maximum number of blocks to queue for preloading                                                                                       |
-| ethereum.blockArchive.enabled | bool | `false` | Serve finalized beacon blocks from standard CL era files and Gloas execution payload envelopes from per-era `<era>.envelopes.e2s` sidecars, falling back to the beacon node for slots no listed era covers (including the current era), envelopes of eras without a sidecar, and archive errors |
-| ethereum.blockArchive.url | string |  | The directory serving the era files (fetched as `<url>/<file>`), e.g. `https://mainnet.era.nimbus.team` |
-| ethereum.blockArchive.listingUrl | string |  | The listing of era files and sidecars; any HTML directory index or JSON naming the files works. Defaults to `url` |
+| ethereum.blockArchive.enabled | bool | `false` | Serve finalized beacon blocks from standard CL era files and Gloas execution payload envelopes from per-era `<era basename>.envelopes.e2s` sidecars, falling back to the beacon node for slots no listed era covers (including the current era), envelopes of eras without a sidecar, and archive errors |
+| ethereum.blockArchive.url | string |  | The directory serving the era files (fetched as `<url>/<file>`), e.g. `https://mainnet.era.nimbus.team` or block-archiver's `https://<archive>/era/<network>` |
+| ethereum.blockArchive.listingUrl | string |  | The listing of era files and sidecars; any HTML directory index or JSON naming the files works, and a paged JSON listing (`eras`, `limit`, `offset`) such as block-archiver's `https://<archive>/api/v1/era?network=<network>&limit=1000` is read page by page. Defaults to `url` |
 | ethereum.blockArchive.network | string |  | The network name era files are named with; defaults to the beacon node's network |
 | ethereum.blockArchive.headers | object |  | A key value map of headers to send to the archive |
 | ethereum.blockArchive.timeout | string | `5m` | Timeout for one fetch from the archive, including a whole era download |

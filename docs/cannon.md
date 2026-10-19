@@ -53,14 +53,15 @@ Cannon requires a single `yaml` config file. An example file can be found [here]
 | ethereum.blockCacheTtl | string | `1h` | The maximum duration to cache blocks                                                                                                       |
 | ethereum.blockPreloadWorkers | int | `5` | The number of workers to use for preloading blocks                                                                                         |
 | ethereum.blockPreloadQueueSize | int | `5000` | The maximum number of blocks to queue for preloading                                                                                       |
-| ethereum.blockArchive.enabled | bool | `false` | Serve finalized beacon blocks and Gloas execution payload envelopes from block-archiver bundles, falling back to the beacon node for slots no bundle covers |
-| ethereum.blockArchive.address | string |  | The block-archiver HTTP base URL |
-| ethereum.blockArchive.network | string |  | The archive's network name; defaults to the beacon node's network |
+| ethereum.blockArchive.enabled | bool | `false` | Serve finalized beacon blocks from standard CL era files and Gloas execution payload envelopes from per-era `<era>.envelopes.e2s` sidecars, falling back to the beacon node for slots no listed era covers (including the current era), envelopes of eras without a sidecar, and archive errors |
+| ethereum.blockArchive.url | string |  | The directory serving the era files (fetched as `<url>/<file>`), e.g. `https://mainnet.era.nimbus.team` |
+| ethereum.blockArchive.listingUrl | string |  | The listing of era files and sidecars; any HTML directory index or JSON naming the files works. Defaults to `url` |
+| ethereum.blockArchive.network | string |  | The network name era files are named with; defaults to the beacon node's network |
 | ethereum.blockArchive.headers | object |  | A key value map of headers to send to the archive |
-| ethereum.blockArchive.timeout | string | `2m` | Timeout for one fetch from the archive, including a full bundle download |
-| ethereum.blockArchive.coverageTtl | string | `1m` | How long bundle coverage, not-bundled answers and archive failures are trusted |
+| ethereum.blockArchive.timeout | string | `5m` | Timeout for one fetch from the archive, including a whole era download |
+| ethereum.blockArchive.listingTtl | string | `5m` | How long the listing, archive failures and files that failed to verify are trusted |
 | ethereum.blockArchive.maxConcurrentFetches | int | `2` | The maximum number of parallel archive fetches |
-| ethereum.blockArchive.rangeSlots | int | `0` | When set, fetch aligned windows of this many slots with HTTP Range requests instead of whole bundles |
+| ethereum.blockArchive.rangeSlots | int | `256` | Fetch aligned windows of this many slots with HTTP Range requests; `0` downloads whole eras. The block cache is grown to hold one fetch |
 | coordinator.address | string |  | The address of the [Xatu server](./server.md)                                                                                              |
 | coordinator.tls | bool |  | Server requires TLS                                                                                                                        |
 | coordinator.headers | object |  | A key value map of headers to append to requests                                                                                           |

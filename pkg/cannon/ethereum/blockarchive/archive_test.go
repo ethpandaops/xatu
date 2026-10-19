@@ -3,11 +3,11 @@ package blockarchive
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -16,281 +16,423 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/beacon/pkg/human"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	dynssz "github.com/pk910/dynamic-ssz"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v3"
 )
 
-const testNetwork = "testnet"
-
 var testMetrics = sync.OnceValue(func() *Metrics { return NewMetrics("xatu_cannon_test") })
 
-// fakeArchive serves one bundle the way block-archiver does.
-type fakeArchive struct {
-	start, end, span uint64
-	body             []byte
-	dataOffset       int64
-	ignoreRange      bool
-	failLookups      atomic.Bool
+// fakeServer serves era files and sidecars under /era/ with a directory listing, like a Nimbus era host.
+type fakeServer struct {
+	files       map[string][]byte
+	listing     string
+	ignoreRange bool
+	failListing atomic.Bool
 
-	lookups   atomic.Int64
+	listings  atomic.Int64
 	downloads atomic.Int64
 	ranges    atomic.Int64
+	requested sync.Map
 }
 
-func newFakeArchive(t *testing.T, start, end uint64, blocks []testBlock) *fakeArchive {
-	t.Helper()
+func newFakeServer(files map[string][]byte) *fakeServer {
+	f := &fakeServer{files: files}
 
-	body := encodeBundle(t, start, end, blocks)
-	_, dataOffset, err := readIndex(bytes.NewReader(body))
-	require.NoError(t, err)
+	var b strings.Builder
 
-	return &fakeArchive{start: start, end: end, span: end - start + 1, body: body, dataOffset: dataOffset}
+	b.WriteString("<html><body><pre>\n")
+
+	for name := range files {
+		fmt.Fprintf(&b, "<a href=%q>%s</a>\n", name, name)
+	}
+
+	b.WriteString("</pre></body></html>\n")
+	f.listing = b.String()
+
+	return f
 }
 
-func (f *fakeArchive) url() string {
-	return fmt.Sprintf("/bundles/testnet/%d/%010d.bundle", f.span, f.start)
-}
+func (f *fakeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/era/" {
+		f.listings.Add(1)
 
-func (f *fakeArchive) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.URL.Path {
-	case "/api/v1/bundles":
-		f.lookups.Add(1)
-
-		if f.failLookups.Load() {
+		if f.failListing.Load() {
 			http.Error(w, "down", http.StatusBadGateway)
 
 			return
 		}
 
-		slot, _ := strconv.ParseUint(r.URL.Query().Get("slot"), 10, 64)
-		resp := map[string]any{
-			"bundles":  []any{},
-			"coverage": map[string]any{"min_slot": f.start, "max_slot": f.end, "span": f.span},
-		}
+		_, _ = w.Write([]byte(f.listing))
 
-		if r.URL.Query().Get("network") == testNetwork && slot >= f.start && slot <= f.end {
-			resp["bundles"] = []any{map[string]any{
-				"start_slot": f.start, "end_slot": f.end, "span": f.span, "url": f.url(),
-				"size_bytes": len(f.body), "data_offset": f.dataOffset,
-			}}
-		}
-
-		_ = json.NewEncoder(w).Encode(resp)
-	case f.url():
-		if r.Header.Get("Range") != "" && !f.ignoreRange {
-			f.ranges.Add(1)
-			http.ServeContent(w, r, "", time.Time{}, bytes.NewReader(f.body))
-
-			return
-		}
-
-		f.downloads.Add(1)
-		_, _ = w.Write(f.body)
-	default:
-		http.NotFound(w, r)
+		return
 	}
+
+	name := strings.TrimPrefix(r.URL.Path, "/era/")
+
+	body, ok := f.files[name]
+	if !ok {
+		http.NotFound(w, r)
+
+		return
+	}
+
+	f.requested.Store(name, true)
+
+	if r.Header.Get("Range") != "" && !f.ignoreRange {
+		f.ranges.Add(1)
+		http.ServeContent(w, r, "", time.Time{}, bytes.NewReader(body))
+
+		return
+	}
+
+	f.downloads.Add(1)
+	w.Header().Set("Content-Length", fmt.Sprint(len(body)))
+	_, _ = w.Write(body)
 }
 
-func newTestArchive(t *testing.T, srv *httptest.Server, rangeSlots uint64) *Archive {
-	t.Helper()
+func (f *fakeServer) wasRequested(name string) bool {
+	_, ok := f.requested.Load(name)
 
-	cfg := &Config{
+	return ok
+}
+
+func testConfig(srvURL string, rangeSlots uint64) *Config {
+	return &Config{
 		Enabled:              true,
-		Address:              srv.URL,
+		URL:                  srvURL + "/era",
 		Timeout:              human.Duration{Duration: 10 * time.Second},
-		CoverageTTL:          human.Duration{Duration: time.Minute},
+		ListingTTL:           human.Duration{Duration: time.Minute},
 		MaxConcurrentFetches: 2,
 		RangeSlots:           rangeSlots,
 	}
-	require.NoError(t, cfg.Validate())
-
-	codec := func(context.Context) (*dynssz.DynSsz, error) { return dynssz.GetGlobalDynSsz(), nil }
-
-	return New(cfg, logrus.New(), func() string { return testNetwork }, codec, testMetrics())
 }
 
-func testBlocks(t *testing.T) []testBlock {
+func newTestArchive(t *testing.T, cfg *Config) *Archive {
 	t.Helper()
 
-	return []testBlock{phase0Block(t, 1000), phase0Block(t, 1001), altairBlock(t, 1003), altairBlock(t, 1006)}
+	require.NoError(t, cfg.Validate())
+
+	chain := func(context.Context) (*Chain, error) { return testChain(), nil }
+
+	return New(cfg, logrus.New(), func() string { return testNetwork }, chain, testMetrics())
 }
 
-func TestArchiveWholeBundle(t *testing.T) {
-	fake := newFakeArchive(t, 1000, 1007, testBlocks(t))
+func eraName(era uint64) string {
+	return fmt.Sprintf("%s-%05d-%08x.era", testNetwork, era, era)
+}
+
+func sidecarName(era uint64) string {
+	return strings.TrimSuffix(eraName(era), ".era") + ".envelopes.e2s"
+}
+
+func assertSlots(t *testing.T, slots Slots, first, last uint64, present ...uint64) {
+	t.Helper()
+
+	require.Len(t, slots, int(last-first+1))
+
+	want := make(map[uint64]bool, len(present))
+	for _, s := range present {
+		want[s] = true
+	}
+
+	for s := first; s <= last; s++ {
+		content, ok := slots[phase0.Slot(s)]
+		require.True(t, ok, "slot %d present in range", s)
+
+		if !want[s] {
+			assert.Nil(t, content.Block, "slot %d is missed", s)
+
+			continue
+		}
+
+		require.NotNil(t, content.Block, "slot %d", s)
+
+		got, err := content.Block.Slot()
+		require.NoError(t, err)
+		assert.Equal(t, phase0.Slot(s), got)
+	}
+}
+
+func TestArchiveWholeEra(t *testing.T) {
+	fake := newFakeServer(map[string][]byte{
+		eraName(2): encodeEra(t, 2, testBlocksAt(t, 16, 17, 23, 24, 30), eraOptions{nimbusMissed: true}),
+	})
 
 	srv := httptest.NewServer(fake)
 	defer srv.Close()
 
-	a := newTestArchive(t, srv, 0)
+	a := newTestArchive(t, testConfig(srv.URL, 0))
 
-	slots, found, err := a.Slots(context.Background(), 1003)
+	slots, found, err := a.Slots(context.Background(), 23)
 	require.NoError(t, err)
 	require.True(t, found)
-	require.Len(t, slots, 8)
+	assertSlots(t, slots, 16, 31, 16, 17, 23, 24, 30)
 
-	for slot := phase0.Slot(1000); slot <= 1007; slot++ {
-		switch slot {
-		case 1000, 1001, 1003, 1006:
-			require.NotNil(t, slots[slot].Block, "slot %d", slot)
-
-			got, serr := slots[slot].Block.Slot()
-			require.NoError(t, serr)
-			assert.Equal(t, slot, got)
-		default:
-			v, ok := slots[slot]
-			assert.True(t, ok, "missed slot %d present", slot)
-			assert.Nil(t, v.Block, "missed slot %d is nil", slot)
-		}
-	}
-
-	// A second slot of the same bundle reuses the cached descriptor.
-	_, found, err = a.Slots(context.Background(), 1005)
+	// Another slot of the era reuses the listing and the cached index.
+	_, found, err = a.Slots(context.Background(), 31)
 	require.NoError(t, err)
 	require.True(t, found)
-	assert.Equal(t, int64(1), fake.lookups.Load())
-	assert.Equal(t, int64(2), fake.downloads.Load())
-	assert.Equal(t, int64(0), fake.ranges.Load())
+
+	assert.Equal(t, int64(1), fake.listings.Load())
+	assert.Equal(t, int64(3), fake.ranges.Load(), "one index read, then one block-section read per fetch")
+	assert.Equal(t, int64(0), fake.downloads.Load())
 }
 
 func TestArchiveRangeWindows(t *testing.T) {
 	for _, ignoreRange := range []bool{false, true} {
 		t.Run(fmt.Sprintf("ignoreRange=%v", ignoreRange), func(t *testing.T) {
-			fake := newFakeArchive(t, 1000, 1007, testBlocks(t))
+			fake := newFakeServer(map[string][]byte{
+				eraName(2): encodeEra(t, 2, testBlocksAt(t, 16, 17, 20, 22, 27), eraOptions{unknownEntries: true}),
+			})
 			fake.ignoreRange = ignoreRange
 
 			srv := httptest.NewServer(fake)
 			defer srv.Close()
 
-			a := newTestArchive(t, srv, 4)
+			a := newTestArchive(t, testConfig(srv.URL, 4))
 
-			slots, found, err := a.Slots(context.Background(), 1006)
+			slots, found, err := a.Slots(context.Background(), 22)
 			require.NoError(t, err)
 			require.True(t, found)
-			require.Len(t, slots, 4)
-			assert.NotNil(t, slots[1006].Block)
-			assert.Nil(t, slots[1004].Block)
-			assert.Nil(t, slots[1007].Block)
+			assertSlots(t, slots, 20, 23, 20, 22)
 
-			slots, found, err = a.Slots(context.Background(), 1001)
+			slots, found, err = a.Slots(context.Background(), 17)
 			require.NoError(t, err)
 			require.True(t, found)
-			require.Len(t, slots, 4)
-			assert.NotNil(t, slots[1000].Block)
-			assert.NotNil(t, slots[1003].Block)
-			assert.Nil(t, slots[1002].Block)
+			assertSlots(t, slots, 16, 19, 16, 17)
+
+			// A window of only missed slots needs no block read.
+			slots, found, err = a.Slots(context.Background(), 29)
+			require.NoError(t, err)
+			require.True(t, found)
+			assertSlots(t, slots, 28, 31)
 
 			if ignoreRange {
 				assert.Equal(t, int64(0), fake.ranges.Load())
+				assert.Equal(t, int64(3), fake.downloads.Load())
 			} else {
-				// One index fetch, then one range per window.
-				assert.Equal(t, int64(3), fake.ranges.Load())
+				assert.Equal(t, int64(3), fake.ranges.Load(), "one index read, then one range per window with blocks")
 				assert.Equal(t, int64(0), fake.downloads.Load())
 			}
 		})
 	}
 }
 
-func TestArchiveGloasEnvelopes(t *testing.T) {
-	for _, rangeSlots := range []uint64{0, 2} {
+func TestArchiveNotCovered(t *testing.T) {
+	fake := newFakeServer(map[string][]byte{
+		eraName(2): encodeEra(t, 2, testBlocksAt(t, 16), eraOptions{}),
+	})
+
+	srv := httptest.NewServer(fake)
+	defer srv.Close()
+
+	a := newTestArchive(t, testConfig(srv.URL, 0))
+
+	// The current era has no file yet, and neither do eras missing from the listing.
+	for _, slot := range []phase0.Slot{40, 5, 100} {
+		_, found, err := a.Slots(context.Background(), slot)
+		require.NoError(t, err)
+		assert.False(t, found, "slot %d", slot)
+	}
+
+	_, found, err := a.Slots(context.Background(), 16)
+	require.NoError(t, err)
+	assert.True(t, found)
+	assert.Equal(t, int64(1), fake.listings.Load(), "the listing is trusted for ListingTTL")
+}
+
+func TestArchiveListingFailureIsSkippedForListingTTL(t *testing.T) {
+	fake := newFakeServer(map[string][]byte{
+		eraName(2): encodeEra(t, 2, testBlocksAt(t, 16), eraOptions{}),
+	})
+	fake.failListing.Store(true)
+
+	srv := httptest.NewServer(fake)
+	defer srv.Close()
+
+	a := newTestArchive(t, testConfig(srv.URL, 0))
+
+	_, found, err := a.Slots(context.Background(), 16)
+	require.Error(t, err)
+	assert.False(t, found)
+
+	_, found, err = a.Slots(context.Background(), 17)
+	require.NoError(t, err)
+	assert.False(t, found)
+	assert.Equal(t, int64(1), fake.listings.Load())
+}
+
+func TestArchiveCorruptEraIsSkipped(t *testing.T) {
+	// Slot 17's block sits where the index expects slot 18's.
+	blocks := testBlocksAt(t, 16, 17)
+	blocks[1].slot = 18
+
+	fake := newFakeServer(map[string][]byte{
+		eraName(2): encodeEra(t, 2, blocks, eraOptions{}),
+		eraName(3): encodeEra(t, 3, testBlocksAt(t, 32), eraOptions{}),
+	})
+
+	srv := httptest.NewServer(fake)
+	defer srv.Close()
+
+	a := newTestArchive(t, testConfig(srv.URL, 0))
+
+	_, found, err := a.Slots(context.Background(), 16)
+	require.ErrorContains(t, err, "decodes to slot 17")
+	require.ErrorIs(t, err, errCorrupt)
+	assert.False(t, found)
+
+	// Only the corrupt era is skipped; the archive stays available.
+	assert.False(t, a.isUnavailable())
+
+	_, found, err = a.Slots(context.Background(), 20)
+	require.NoError(t, err)
+	assert.False(t, found)
+
+	_, found, err = a.Slots(context.Background(), 32)
+	require.NoError(t, err)
+	assert.True(t, found)
+}
+
+func TestArchiveEnvelopes(t *testing.T) {
+	for _, rangeSlots := range []uint64{0, 4} {
 		t.Run(fmt.Sprintf("rangeSlots=%d", rangeSlots), func(t *testing.T) {
-			blocks := gloasChain(t, []uint64{2000, 2001, 2002}, map[uint64]bool{2001: true})
-			fake := newFakeArchive(t, 2000, 2003, blocks)
+			// Era 3 is slots 32..47 with gloas from slot 36; slot 38's payload is withheld and slot 39 is missed.
+			pre := testBlocksAt(t, 32, 35)
+			post := gloasChain(t, []uint64{36, 37, 38, 40, 41}, map[uint64]bool{38: true})
+			blocks := append(pre, post...)
+
+			fake := newFakeServer(map[string][]byte{
+				eraName(3):     encodeEra(t, 3, blocks, eraOptions{}),
+				sidecarName(3): encodeSidecar(t, 3, blocks),
+			})
 
 			srv := httptest.NewServer(fake)
 			defer srv.Close()
 
-			a := newTestArchive(t, srv, rangeSlots)
+			a := newTestArchive(t, testConfig(srv.URL, rangeSlots))
 
-			slots, found, err := a.Slots(context.Background(), 2000)
+			for slot, want := range map[phase0.Slot]bool{32: false, 36: true, 47: true} {
+				has, err := a.HasEnvelopes(context.Background(), slot)
+				require.NoError(t, err)
+				assert.Equal(t, want, has, "slot %d", slot)
+			}
+
+			slots, found, err := a.Slots(context.Background(), 37)
 			require.NoError(t, err)
 			require.True(t, found)
-			require.NotNil(t, slots[2000].Envelope)
-			assert.Equal(t, testHash(2000), slots[2000].Envelope.Message.Payload.BlockHash)
-			assert.Nil(t, slots[2001].Envelope, "withheld payload has no envelope")
-			assert.NotNil(t, slots[2001].Block)
 
-			slots, found, err = a.Slots(context.Background(), 2002)
+			require.True(t, slots[37].EnvelopeKnown)
+			require.NotNil(t, slots[37].Envelope)
+			assert.Equal(t, testHash(37), slots[37].Envelope.Message.Payload.BlockHash)
+			assert.True(t, slots[36].EnvelopeKnown)
+
+			slots, found, err = a.Slots(context.Background(), 38)
 			require.NoError(t, err)
 			require.True(t, found)
-			require.NotNil(t, slots[2002].Envelope)
-			assert.Nil(t, slots[2003].Block)
+
+			assert.True(t, slots[38].EnvelopeKnown)
+			assert.Nil(t, slots[38].Envelope, "a withheld payload has no envelope")
+			assert.NotNil(t, slots[38].Block)
+			assert.False(t, slots[39].EnvelopeKnown, "a missed slot has no envelope")
+
+			slots, found, err = a.Slots(context.Background(), 35)
+			require.NoError(t, err)
+			require.True(t, found)
+			assert.False(t, slots[35].EnvelopeKnown, "pre-gloas blocks have no envelope")
+			assert.NotNil(t, slots[35].Block)
 		})
 	}
 }
 
-func TestArchiveNotCovered(t *testing.T) {
-	fake := newFakeArchive(t, 1000, 1007, testBlocks(t))
+func TestArchiveWithoutSidecarServesBlocksOnly(t *testing.T) {
+	blocks := gloasChain(t, []uint64{36, 37}, nil)
+
+	fake := newFakeServer(map[string][]byte{eraName(3): encodeEra(t, 3, blocks, eraOptions{})})
 
 	srv := httptest.NewServer(fake)
 	defer srv.Close()
 
-	a := newTestArchive(t, srv, 0)
+	a := newTestArchive(t, testConfig(srv.URL, 0))
 
-	_, found, err := a.Slots(context.Background(), 1003)
+	has, err := a.HasEnvelopes(context.Background(), 36)
+	require.NoError(t, err)
+	assert.False(t, has)
+
+	slots, found, err := a.Slots(context.Background(), 36)
 	require.NoError(t, err)
 	require.True(t, found)
-
-	// Above coverage: answered from cached coverage without asking the archive.
-	_, found, err = a.Slots(context.Background(), 5000)
-	require.NoError(t, err)
-	assert.False(t, found)
-	assert.Equal(t, int64(1), fake.lookups.Load())
-
-	// Below coverage: asked once, then negatively cached.
-	_, found, err = a.Slots(context.Background(), 10)
-	require.NoError(t, err)
-	assert.False(t, found)
-
-	_, found, err = a.Slots(context.Background(), 11)
-	require.NoError(t, err)
-	assert.False(t, found)
-	assert.Equal(t, int64(2), fake.lookups.Load())
+	assert.NotNil(t, slots[36].Block)
+	assert.False(t, slots[36].EnvelopeKnown)
+	assert.False(t, slots[37].EnvelopeKnown)
 }
 
-func TestArchiveFailureIsSkippedForCoverageTTL(t *testing.T) {
-	fake := newFakeArchive(t, 1000, 1007, testBlocks(t))
-	fake.failLookups.Store(true)
+func TestArchiveCorruptSidecarIsSkipped(t *testing.T) {
+	blocks := gloasChain(t, []uint64{36, 37, 38}, nil)
+	// The sidecar claims slot 37's payload was withheld, which slot 38's bid contradicts.
+	sidecarBlocks := append([]testBlock(nil), blocks...)
+	sidecarBlocks[1].envelope = nil
+
+	fake := newFakeServer(map[string][]byte{
+		eraName(3):     encodeEra(t, 3, blocks, eraOptions{}),
+		sidecarName(3): encodeSidecar(t, 3, sidecarBlocks),
+	})
 
 	srv := httptest.NewServer(fake)
 	defer srv.Close()
 
-	a := newTestArchive(t, srv, 0)
+	a := newTestArchive(t, testConfig(srv.URL, 0))
 
-	_, found, err := a.Slots(context.Background(), 1003)
+	slots, found, err := a.Slots(context.Background(), 36)
+	require.NoError(t, err)
+	require.True(t, found, "blocks are still served")
+	assert.NotNil(t, slots[37].Block)
+	assert.False(t, slots[37].EnvelopeKnown)
+	assert.True(t, fake.wasRequested(sidecarName(3)))
+
+	has, err := a.HasEnvelopes(context.Background(), 36)
+	require.NoError(t, err)
+	assert.False(t, has, "the sidecar is skipped after failing to verify")
+}
+
+func TestArchiveSeparateListingURL(t *testing.T) {
+	fake := newFakeServer(map[string][]byte{eraName(2): encodeEra(t, 2, testBlocksAt(t, 16), eraOptions{})})
+
+	mux := http.NewServeMux()
+	mux.Handle("/era/", fake)
+	mux.HandleFunc("/api/v1/eras", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprintf(w, `{"eras":[{"network":%q,"file":%q}]}`, testNetwork, eraName(2))
+	})
+
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	cfg := testConfig(srv.URL, 0)
+	cfg.ListingURL = srv.URL + "/api/v1/eras"
+	a := newTestArchive(t, cfg)
+
+	_, found, err := a.Slots(context.Background(), 16)
+	require.NoError(t, err)
+	assert.True(t, found)
+	assert.Equal(t, int64(0), fake.listings.Load())
+}
+
+func TestArchiveChainErrorFallsBack(t *testing.T) {
+	cfg := testConfig("http://127.0.0.1:1", 0)
+	require.NoError(t, cfg.Validate())
+
+	chain := func(context.Context) (*Chain, error) { return nil, errors.New("beacon not ready") }
+	a := New(cfg, logrus.New(), func() string { return testNetwork }, chain, testMetrics())
+
+	_, found, err := a.Slots(context.Background(), 16)
+	require.ErrorContains(t, err, "beacon not ready")
+	assert.False(t, found)
+
+	has, err := a.HasEnvelopes(context.Background(), 16)
 	require.Error(t, err)
-	assert.False(t, found)
-
-	_, found, err = a.Slots(context.Background(), 1004)
-	require.NoError(t, err)
-	assert.False(t, found)
-	assert.Equal(t, int64(1), fake.lookups.Load())
-}
-
-func TestArchiveCorruptBundleErrors(t *testing.T) {
-	blocks := testBlocks(t)
-	blocks[1].root = "0x" + fmt.Sprintf("%064x", 42)
-	fake := newFakeArchive(t, 1000, 1007, blocks)
-
-	srv := httptest.NewServer(fake)
-	defer srv.Close()
-
-	a := newTestArchive(t, srv, 0)
-
-	_, found, err := a.Slots(context.Background(), 1000)
-	require.ErrorContains(t, err, "does not match index root")
-	require.ErrorIs(t, err, errCorruptBundle)
-	assert.False(t, found)
-
-	// Only the corrupt bundle is skipped; the archive stays available.
-	assert.False(t, a.isUnavailable())
-
-	_, found, err = a.Slots(context.Background(), 1001)
-	require.NoError(t, err)
-	assert.False(t, found)
-	assert.Equal(t, int64(1), fake.downloads.Load())
+	assert.False(t, has)
 }
 
 func TestConfigDefaultsAndYAML(t *testing.T) {
@@ -298,24 +440,47 @@ func TestConfigDefaultsAndYAML(t *testing.T) {
 	require.NoError(t, defaults.Set(cfg))
 
 	assert.False(t, cfg.Enabled)
-	assert.Equal(t, 2*time.Minute, cfg.Timeout.Duration)
-	assert.Equal(t, time.Minute, cfg.CoverageTTL.Duration)
+	assert.Equal(t, 5*time.Minute, cfg.Timeout.Duration)
+	assert.Equal(t, 5*time.Minute, cfg.ListingTTL.Duration)
 	assert.Equal(t, 2, cfg.MaxConcurrentFetches)
-	assert.Equal(t, uint64(0), cfg.RangeSlots)
+	assert.Equal(t, uint64(256), cfg.RangeSlots)
+	assert.Equal(t, uint64(256), cfg.MaxFetchSlots())
 
-	require.NoError(t, yaml.Unmarshal([]byte("enabled: true\naddress: http://archive\nrangeSlots: 32\ntimeout: 30s\n"), cfg))
+	require.NoError(t, yaml.Unmarshal([]byte("enabled: true\nurl: https://mainnet.era.nimbus.team\nrangeSlots: 0\ntimeout: 30s\n"), cfg))
 	require.NoError(t, cfg.Validate())
-	assert.Equal(t, uint64(32), cfg.RangeSlots)
+	assert.Equal(t, uint64(0), cfg.RangeSlots)
+	assert.Equal(t, uint64(8192), cfg.MaxFetchSlots(), "whole eras are at most a mainnet-preset era")
 	assert.Equal(t, 30*time.Second, cfg.Timeout.Duration)
-	assert.Equal(t, time.Minute, cfg.CoverageTTL.Duration)
+	assert.Equal(t, 5*time.Minute, cfg.ListingTTL.Duration)
 }
 
 func TestConfigValidate(t *testing.T) {
-	require.NoError(t, (&Config{}).Validate())
-	require.Error(t, (&Config{Enabled: true}).Validate())
-	require.Error(t, (&Config{Enabled: true, Address: "http://x"}).Validate())
-	require.NoError(t, (&Config{
-		Enabled: true, Address: "http://x", MaxConcurrentFetches: 1,
-		Timeout: human.Duration{Duration: time.Second}, CoverageTTL: human.Duration{Duration: time.Second},
-	}).Validate())
+	valid := func() *Config {
+		return &Config{
+			Enabled: true, URL: "http://x", MaxConcurrentFetches: 1,
+			Timeout: human.Duration{Duration: time.Second}, ListingTTL: human.Duration{Duration: time.Second},
+		}
+	}
+
+	require.NoError(t, (&Config{}).Validate(), "a disabled config needs nothing")
+	require.NoError(t, valid().Validate())
+
+	tests := map[string]func(*Config){
+		"missing url":        func(c *Config) { c.URL = "" },
+		"relative url":       func(c *Config) { c.URL = "/era" },
+		"bad listing url":    func(c *Config) { c.ListingURL = "ftp://x/list" },
+		"no fetches":         func(c *Config) { c.MaxConcurrentFetches = 0 },
+		"no timeout":         func(c *Config) { c.Timeout.Duration = 0 },
+		"no listing ttl":     func(c *Config) { c.ListingTTL.Duration = 0 },
+		"negative timeout":   func(c *Config) { c.Timeout.Duration = -time.Second },
+		"listing url scheme": func(c *Config) { c.ListingURL = "archive/list" },
+	}
+
+	for name, mutate := range tests {
+		t.Run(name, func(t *testing.T) {
+			cfg := valid()
+			mutate(cfg)
+			require.Error(t, cfg.Validate())
+		})
+	}
 }

@@ -32,6 +32,7 @@ import (
 // blockArchive serves finalized blocks and envelopes in bulk; found is false for slots it does not cover.
 type blockArchive interface {
 	Slots(ctx context.Context, slot phase0.Slot) (slots blockarchive.Slots, found bool, err error)
+	HasEnvelopes(ctx context.Context, slot phase0.Slot) (bool, error)
 }
 
 type BeaconNode struct {
@@ -116,10 +117,13 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 	sem := make(chan struct{}, config.Beacon.BlockPreloadWorkers)
 	validatorsSem := make(chan struct{}, 1)
 
+	blockCacheSize := config.Beacon.BlockCacheSize
 	envelopeCacheSize := uint64(256)
+
 	if config.BlockArchive.Enabled {
-		// A bundle range's envelopes are cached together, like its blocks.
-		envelopeCacheSize = max(envelopeCacheSize, config.Beacon.BlockCacheSize)
+		// A fetched era range is cached whole, blocks and envelopes alike, so it must fit.
+		blockCacheSize = max(blockCacheSize, config.BlockArchive.MaxFetchSlots())
+		envelopeCacheSize = max(envelopeCacheSize, blockCacheSize)
 	}
 
 	b := &BeaconNode{
@@ -131,7 +135,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 		validatorsSfGroup: &singleflight.Group{},
 		blockCache: ttlcache.New(
 			ttlcache.WithTTL[string, *spec.VersionedSignedBeaconBlock](config.Beacon.BlockCacheTTL.Duration),
-			ttlcache.WithCapacity[string, *spec.VersionedSignedBeaconBlock](config.Beacon.BlockCacheSize),
+			ttlcache.WithCapacity[string, *spec.VersionedSignedBeaconBlock](blockCacheSize),
 		),
 		blockPreloadChan: make(chan string, config.Beacon.BlockPreloadQueueSize),
 		blockPreloadSem:  sem,
@@ -156,7 +160,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 	}
 
 	if config.BlockArchive.Enabled {
-		b.archive = blockarchive.New(&config.BlockArchive, log, b.archiveNetwork, b.sszCodec,
+		b.archive = blockarchive.New(&config.BlockArchive, log, b.archiveNetwork, b.archiveChain,
 			blockarchive.NewMetrics(namespace+"_ethereum"))
 	}
 
@@ -170,6 +174,31 @@ func (b *BeaconNode) archiveNetwork() string {
 	}
 
 	return string(b.Metadata().Network.Name)
+}
+
+// archiveChain is the network configuration era files are decoded with.
+func (b *BeaconNode) archiveChain(ctx context.Context) (*blockarchive.Chain, error) {
+	codec, err := b.sszCodec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	sp, err := b.beacon.Spec()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain spec")
+	}
+
+	slotsPerEra, ok := sp.FullSpec["SLOTS_PER_HISTORICAL_ROOT"].(uint64)
+	if !ok {
+		return nil, errors.New("spec has no SLOTS_PER_HISTORICAL_ROOT")
+	}
+
+	return &blockarchive.Chain{
+		Codec:         codec,
+		SlotsPerEpoch: uint64(sp.SlotsPerEpoch),
+		SlotsPerEra:   slotsPerEra,
+		Forks:         sp.ForkEpochs,
+	}, nil
 }
 
 func (b *BeaconNode) Start(ctx context.Context) error {
@@ -411,15 +440,36 @@ func (b *BeaconNode) blockFromArchive(ctx context.Context, identifier string) (b
 
 // envelopeFromArchive is blockFromArchive for envelopes; a nil envelope with ok means the payload was withheld.
 func (b *BeaconNode) envelopeFromArchive(ctx context.Context, identifier string) (envelope *gloas.SignedExecutionPayloadEnvelope, ok bool) {
+	if b.archive == nil {
+		return nil, false
+	}
+
+	slot, err := strconv.ParseUint(identifier, 10, 64)
+	if err != nil {
+		return nil, false
+	}
+
+	// Only eras with an envelope sidecar answer for envelopes; skip the era fetch otherwise.
+	has, err := b.archive.HasEnvelopes(ctx, phase0.Slot(slot))
+	if err != nil {
+		b.log.WithError(err).WithField("slot", slot).WithContext(ctx).Warn("Block archive lookup failed, falling back to beacon node")
+
+		return nil, false
+	}
+
+	if !has {
+		return nil, false
+	}
+
 	content, ok := b.archiveSlot(ctx, identifier)
-	if !ok || content.Block == nil || content.Block.Version < spec.DataVersionGloas {
+	if !ok || !content.EnvelopeKnown {
 		return nil, false
 	}
 
 	return content.Envelope, true
 }
 
-// archiveSlot fetches the bundle range holding a slot identifier and caches its blocks and Gloas+ envelopes.
+// archiveSlot fetches the era range holding a slot identifier and caches its blocks and known Gloas+ envelopes.
 func (b *BeaconNode) archiveSlot(ctx context.Context, identifier string) (content blockarchive.Slot, ok bool) {
 	if b.archive == nil {
 		return content, false
@@ -446,7 +496,7 @@ func (b *BeaconNode) archiveSlot(ctx context.Context, identifier string) (conten
 		key := strconv.FormatUint(uint64(s), 10)
 		b.blockCache.Set(key, c.Block, time.Hour)
 
-		if c.Block != nil && c.Block.Version >= spec.DataVersionGloas {
+		if c.EnvelopeKnown {
 			b.envelopeCache.Set(key, c.Envelope, time.Hour)
 		}
 	}

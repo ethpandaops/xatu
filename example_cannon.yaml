@@ -36,19 +36,25 @@ ethereum:
     # blockCacheTtl: 1h
     # blockPreloadWorkers: 5
     # blockPreloadQueueSize: 5000
-  # Serve finalized blocks from block-archiver bundles (one download per bundle
-  # of slots) and fall back to the beacon node for slots no bundle covers.
-  # Size beacon.blockCacheSize to hold a few bundles (spans are ~1000 slots), or
-  # set rangeSlots to fetch smaller windows with HTTP Range requests.
+  # Serve finalized blocks from standard CL era files (e2store .era, one per
+  # 8192 slots on mainnet presets) and Gloas execution payload envelopes from
+  # per-era <era>.envelopes.e2s sidecars where published. Everything else (the
+  # current unfinished era, eras without a sidecar for envelopes, any archive
+  # error) falls back to the beacon node. Works against any host serving era
+  # files with a listing, e.g. https://<network>.era.nimbus.team.
+  # rangeSlots fetches aligned windows with HTTP Range reads of the era's slot
+  # index; 0 downloads whole eras (~600MB of mainnet blocks each). The block
+  # cache is grown to hold one fetch.
   # blockArchive:
   #   enabled: false
-  #   address: https://block-archiver.analytics.production.platform.ethpandaops.io
-  #   network: ""                # defaults to the beacon node's network name
+  #   url: https://mainnet.era.nimbus.team
+  #   listingUrl: ""             # defaults to url; any HTML index or JSON naming the files
+  #   network: ""                # era file name prefix; defaults to the beacon node's network name
   #   headers: {}
-  #   timeout: 2m
-  #   coverageTtl: 1m
+  #   timeout: 5m
+  #   listingTtl: 5m
   #   maxConcurrentFetches: 2
-  #   rangeSlots: 0
+  #   rangeSlots: 256
   execution:
     address: http://localhost:8545   # EL archive node; cryo --rpc (creds may be embedded: https://user:pass@host)
 

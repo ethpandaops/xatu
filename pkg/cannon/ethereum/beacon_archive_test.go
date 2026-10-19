@@ -71,8 +71,18 @@ func (f *fakeBeaconNode) FetchBlock(_ context.Context, id string) (*spec.Version
 
 type fakeBlockArchive struct {
 	slots blockarchive.Slots
-	err   error
-	calls int
+	// sidecar is whether the slots' era has a published envelope sidecar.
+	sidecar bool
+	err     error
+	calls   int
+}
+
+func (f *fakeBlockArchive) HasEnvelopes(context.Context, phase0.Slot) (bool, error) {
+	if f.err != nil {
+		return false, f.err
+	}
+
+	return f.sidecar, nil
 }
 
 func (f *fakeBlockArchive) Slots(_ context.Context, slot phase0.Slot) (slots blockarchive.Slots, found bool, err error) {
@@ -144,7 +154,7 @@ func newArchiveTestNode(archive blockArchive) (*BeaconNode, *fakeBeaconNode) {
 	}, node
 }
 
-func TestGetBeaconBlockServesBundleAndCachesNeighbours(t *testing.T) {
+func TestGetBeaconBlockServesEraAndCachesNeighbours(t *testing.T) {
 	archive := &fakeBlockArchive{slots: blocksOnly(map[phase0.Slot]*spec.VersionedSignedBeaconBlock{
 		100: testVersionedBlock(100),
 		101: nil,
@@ -176,7 +186,7 @@ func TestGetBeaconBlockFallsBackToBeacon(t *testing.T) {
 		wantArchive int
 	}{
 		{
-			name:        "slot not bundled",
+			name:        "slot not in a listed era",
 			archive:     &fakeBlockArchive{slots: blockarchive.Slots{100: {Block: testVersionedBlock(100)}}},
 			identifier:  "5000",
 			wantArchive: 1,
@@ -225,15 +235,23 @@ func TestGetBeaconBlockWithoutArchive(t *testing.T) {
 }
 
 func gloasArchive() *fakeBlockArchive {
-	return &fakeBlockArchive{slots: blockarchive.Slots{
-		100: {Block: testGloasBlock(100), Envelope: testEnvelope(100)},
-		101: {Block: testGloasBlock(101)},
+	return &fakeBlockArchive{sidecar: true, slots: blockarchive.Slots{
+		100: {Block: testGloasBlock(100), Envelope: testEnvelope(100), EnvelopeKnown: true},
+		101: {Block: testGloasBlock(101), EnvelopeKnown: true},
 		102: {},
 		103: {Block: testVersionedBlock(103)},
 	}}
 }
 
-func TestGetExecutionPayloadEnvelopeServesBundle(t *testing.T) {
+// sidecarlessArchive serves the gloas blocks of an era that has no envelope sidecar yet.
+func sidecarlessArchive() *fakeBlockArchive {
+	return &fakeBlockArchive{slots: blockarchive.Slots{
+		100: {Block: testGloasBlock(100)},
+		101: {Block: testGloasBlock(101)},
+	}}
+}
+
+func TestGetExecutionPayloadEnvelopeServesEra(t *testing.T) {
 	archive := gloasArchive()
 	b, node := newArchiveTestNode(archive)
 
@@ -277,8 +295,9 @@ func TestGetExecutionPayloadEnvelopeFallsBackToBeacon(t *testing.T) {
 	}{
 		{name: "missed slot", archive: gloasArchive(), identifier: "102", wantArchive: 1},
 		{name: "pre-gloas block", archive: gloasArchive(), identifier: "103", wantArchive: 1},
-		{name: "slot not bundled", archive: gloasArchive(), identifier: "5000", wantArchive: 1},
-		{name: "archive error", archive: &fakeBlockArchive{err: errors.New("archive down")}, identifier: "100", wantArchive: 1},
+		{name: "slot not in a listed era", archive: gloasArchive(), identifier: "5000", wantArchive: 1},
+		{name: "archive error", archive: &fakeBlockArchive{err: errors.New("archive down")}, identifier: "100"},
+		{name: "era without sidecar", archive: sidecarlessArchive(), identifier: "100"},
 		{name: "root identifier", archive: gloasArchive(), identifier: "0x0000000000000000000000000000000000000000000000000000000000000001"},
 		{name: "archive disabled", identifier: "100"},
 	}
@@ -298,4 +317,23 @@ func TestGetExecutionPayloadEnvelopeFallsBackToBeacon(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetBeaconBlockSkipsEnvelopesWithoutSidecar(t *testing.T) {
+	archive := sidecarlessArchive()
+	b, node := newArchiveTestNode(archive)
+
+	block, err := b.GetBeaconBlock(context.Background(), "100")
+	require.NoError(t, err)
+	assert.Same(t, archive.slots[100].Block, block)
+
+	// The era's blocks are cached, but its envelopes still come from the beacon node.
+	envelope, err := b.GetExecutionPayloadEnvelope(context.Background(), "101")
+	require.NoError(t, err)
+	require.NotNil(t, envelope)
+	assert.Equal(t, uint64(999), envelope.Message.Payload.SlotNumber)
+
+	assert.Equal(t, 1, archive.calls)
+	assert.Equal(t, []string{"101"}, node.envelopes)
+	assert.Empty(t, node.fetched)
 }

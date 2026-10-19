@@ -321,72 +321,65 @@ func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.Ve
 
 	extra.Version = block.Version.String()
 
-	var txCount int
-
-	var txSize int
-
-	var transactionsBytes []byte
-
-	addTxData := func(txs [][]byte) {
-		txCount = len(txs)
-
-		for _, tx := range txs {
-			txSize += len(tx)
-			transactionsBytes = append(transactionsBytes, tx...)
-		}
-	}
-
-	blockMessage, err := getBlockMessage(block)
-	if err != nil {
+	if err := setBlockSizes(extra, block); err != nil {
 		return nil, err
 	}
-
-	sszData, err := ssz.MarshalSSZ(blockMessage)
-	if err != nil {
-		return nil, err
-	}
-
-	dataSize := len(sszData)
-	compressedData := snappy.Encode(nil, sszData)
-	compressedDataSize := len(compressedData)
-
-	blockRoot, err := block.Root()
-	if err != nil {
-		return nil, err
-	}
-
-	extra.BlockRoot = fmt.Sprintf("%#x", blockRoot)
-
-	// Gloas (EIP-7732) block bodies carry no transactions — they live in the
-	// execution payload envelope, covered by the execution transaction deriver.
-	// The body-level transaction stats are legitimately zero from Gloas onwards.
-	if block.Version < spec.DataVersionGloas {
-		transactions, err := block.ExecutionTransactions()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get execution transactions")
-		}
-
-		txs := make([][]byte, len(transactions))
-		for i, tx := range transactions {
-			txs[i] = tx
-		}
-
-		addTxData(txs)
-	}
-
-	compressedTransactions := snappy.Encode(nil, transactionsBytes)
-	compressedTxSize := len(compressedTransactions)
-
-	extra.TotalBytes = wrapperspb.UInt64(uint64(dataSize))
-	extra.TotalBytesCompressed = wrapperspb.UInt64(uint64(compressedDataSize))
-	extra.TransactionsCount = wrapperspb.UInt64(uint64(txCount))
-	extra.TransactionsTotalBytes = wrapperspb.UInt64(uint64(txSize))
-	extra.TransactionsTotalBytesCompressed = wrapperspb.UInt64(uint64(compressedTxSize))
 
 	// Always set to true when derived from the cannon.
 	extra.FinalizedWhenRequested = true
 
 	return extra, nil
+}
+
+// setBlockSizes sets a block's root and encoded sizes and, for blocks with an execution payload, its transaction stats.
+func setBlockSizes(extra *xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, block *spec.VersionedSignedBeaconBlock) error {
+	blockMessage, err := getBlockMessage(block)
+	if err != nil {
+		return err
+	}
+
+	sszData, err := ssz.MarshalSSZ(blockMessage)
+	if err != nil {
+		return err
+	}
+
+	blockRoot, err := block.Root()
+	if err != nil {
+		return err
+	}
+
+	extra.BlockRoot = fmt.Sprintf("%#x", blockRoot)
+	extra.TotalBytes = wrapperspb.UInt64(uint64(len(sszData)))
+	extra.TotalBytesCompressed = wrapperspb.UInt64(uint64(len(snappy.Encode(nil, sszData))))
+
+	// Phase0 and Altair blocks have no execution payload, so their transaction stats stay unset.
+	if block.Version < spec.DataVersionBellatrix {
+		return nil
+	}
+
+	var transactionsBytes []byte
+
+	txCount := 0
+
+	// Gloas (EIP-7732) bodies carry no transactions; they ride the payload envelope.
+	if block.Version < spec.DataVersionGloas {
+		transactions, err := block.ExecutionTransactions()
+		if err != nil {
+			return errors.Wrap(err, "failed to get execution transactions")
+		}
+
+		txCount = len(transactions)
+
+		for _, tx := range transactions {
+			transactionsBytes = append(transactionsBytes, tx...)
+		}
+	}
+
+	extra.TransactionsCount = wrapperspb.UInt64(uint64(txCount))
+	extra.TransactionsTotalBytes = wrapperspb.UInt64(uint64(len(transactionsBytes)))
+	extra.TransactionsTotalBytesCompressed = wrapperspb.UInt64(uint64(len(snappy.Encode(nil, transactionsBytes))))
+
+	return nil
 }
 
 func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, error) {

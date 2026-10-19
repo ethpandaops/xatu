@@ -36,6 +36,19 @@ ethereum:
     # blockCacheTtl: 1h
     # blockPreloadWorkers: 5
     # blockPreloadQueueSize: 5000
+  # Serve finalized blocks from block-archiver bundles (one download per bundle
+  # of slots) and fall back to the beacon node for slots no bundle covers.
+  # Size beacon.blockCacheSize to hold a few bundles (spans are ~1000 slots), or
+  # set rangeSlots to fetch smaller windows with HTTP Range requests.
+  # blockArchive:
+  #   enabled: false
+  #   address: https://block-archiver.analytics.production.platform.ethpandaops.io
+  #   network: ""                # defaults to the beacon node's network name
+  #   headers: {}
+  #   timeout: 2m
+  #   coverageTtl: 1m
+  #   maxConcurrentFetches: 2
+  #   rangeSlots: 0
   execution:
     address: http://localhost:8545   # EL archive node; cryo --rpc (creds may be embedded: https://user:pass@host)
 

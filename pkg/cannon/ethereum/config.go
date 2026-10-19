@@ -2,8 +2,11 @@ package ethereum
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ethpandaops/beacon/pkg/human"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/blockarchive"
 )
 
 // Config is the cannon's Ethereum connection config, grouped by layer.
@@ -18,6 +21,9 @@ type Config struct {
 	// Execution configures the execution-layer node the EL derivers collect from
 	// via cryo. Required only when any execution deriver is enabled.
 	Execution ExecutionConfig `yaml:"execution"`
+	// BlockArchive optionally serves finalized beacon blocks from block-archiver
+	// bundles, falling back to the beacon node for slots it does not cover.
+	BlockArchive blockarchive.Config `yaml:"blockArchive"`
 }
 
 // BeaconConfig configures the beacon node connection plus the beacon-block
@@ -49,6 +55,10 @@ type ExecutionConfig struct {
 func (c *Config) Validate() error {
 	if c.Beacon.Address == "" {
 		return errors.New("ethereum.beacon.address is required")
+	}
+
+	if err := c.BlockArchive.Validate(); err != nil {
+		return fmt.Errorf("ethereum: %w", err)
 	}
 
 	return nil

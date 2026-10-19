@@ -489,23 +489,28 @@ func (c *BackfillingCheckpoint) GetMarker(location *xatu.CannonLocation) (*xatu.
 }
 
 func (c *BackfillingCheckpoint) getEarliestPossibleBackfillEpoch() (phase0.Epoch, error) {
-	// earliestEpochForType is the earliest epoch for the type based on the fork epochs.
-	// For example, the blob_sidecar cannon type will have an earliest epoch of the DENEB fork.
-	if c.activationFork == spec.DataVersionPhase0 {
-		return 0, nil
+	// The earliest epoch for the type is its activation fork, e.g. DENEB for blob sidecars.
+	activationEpoch := phase0.Epoch(0)
+
+	if c.activationFork != spec.DataVersionPhase0 {
+		forkEpoch, err := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(c.activationFork.String())
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to get fork epoch")
+		}
+
+		activationEpoch = forkEpoch.Epoch
 	}
 
-	forkEpoch, err := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(c.activationFork.String())
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to get fork epoch")
+	return backfillTargetEpoch(activationEpoch, c.config.Backfill.ToEpoch), nil
+}
+
+// backfillTargetEpoch is the configured toEpoch, never earlier than the type's activation epoch.
+func backfillTargetEpoch(activationEpoch, toEpoch phase0.Epoch) phase0.Epoch {
+	if toEpoch > activationEpoch {
+		return toEpoch
 	}
 
-	if c.config.Backfill.ToEpoch == 0 {
-		// Use the default starting epoch for the type.
-		return forkEpoch.Epoch, nil
-	}
-
-	return c.config.Backfill.ToEpoch, nil
+	return activationEpoch
 }
 
 func (c *BackfillingCheckpoint) createLocationFromEpochNumber(finalized, backfill phase0.Epoch) (*xatu.CannonLocation, error) {

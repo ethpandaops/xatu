@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/jellydator/ttlcache/v3"
 	dynssz "github.com/pk910/dynamic-ssz"
@@ -39,8 +40,17 @@ const (
 // errCorruptBundle marks a bundle whose contents do not decode or verify; only that bundle is skipped.
 var errCorruptBundle = errors.New("corrupt bundle")
 
-// Blocks maps each slot of a fetched bundle range to its canonical block, nil for a missed slot.
-type Blocks map[phase0.Slot]*spec.VersionedSignedBeaconBlock
+// Slot is one slot of a fetched bundle range.
+type Slot struct {
+	// Block is the canonical block, nil for a missed slot.
+	Block *spec.VersionedSignedBeaconBlock
+	// Envelope is a Gloas+ block's execution payload envelope; nil before
+	// Gloas and when the canonical chain did not apply the payload (withheld).
+	Envelope *gloas.SignedExecutionPayloadEnvelope
+}
+
+// Slots maps each slot of a fetched bundle range to its contents.
+type Slots map[phase0.Slot]Slot
 
 // Descriptor is a published bundle as listed by the archive's /api/v1/bundles.
 //
@@ -73,9 +83,9 @@ type coverage struct {
 	fetched time.Time
 }
 
-// Archive serves finalized beacon blocks from block-archiver bundles. It only
-// answers for slots inside a published bundle; callers fall back to the beacon
-// node otherwise.
+// Archive serves finalized beacon blocks and their execution payload envelopes
+// from block-archiver bundles. It only answers for slots inside a published
+// bundle; callers fall back to the beacon node otherwise.
 type Archive struct {
 	cfg     *Config
 	log     observability.ContextualLogger
@@ -132,11 +142,11 @@ func New(
 	}
 }
 
-// Blocks returns the decoded blocks of the bundle range holding slot: the
-// whole bundle, or its RangeSlots-aligned window when RangeSlots is set. found
-// is false when no published bundle covers slot, or the archive (or this
-// slot's bundle, when it failed to verify) failed within the last CoverageTTL.
-func (a *Archive) Blocks(ctx context.Context, slot phase0.Slot) (blocks Blocks, found bool, err error) {
+// Slots returns the decoded blocks and envelopes of the bundle range holding
+// slot: the whole bundle, or its RangeSlots-aligned window when RangeSlots is
+// set. found is false when no published bundle covers slot, or the archive (or
+// this slot's bundle, when it failed to verify) failed within the last CoverageTTL.
+func (a *Archive) Slots(ctx context.Context, slot phase0.Slot) (slots Slots, found bool, err error) {
 	network := a.network()
 
 	if a.isUnavailable() {
@@ -187,14 +197,14 @@ func (a *Archive) Blocks(ctx context.Context, slot phase0.Slot) (blocks Blocks, 
 		return nil, false, err
 	}
 
-	blocks, ok := v.(Blocks)
+	slots, ok := v.(Slots)
 	if !ok {
 		return nil, false, fmt.Errorf("unexpected bundle result type %T", v)
 	}
 
 	a.metrics.lookup(network, resultHit)
 
-	return blocks, true, nil
+	return slots, true, nil
 }
 
 func (a *Archive) window(desc *Descriptor, slot uint64) (first, last uint64) {
@@ -346,7 +356,7 @@ func (a *Archive) refresh(ctx context.Context, slot uint64) error {
 }
 
 // load downloads and decodes slots first..last of a bundle.
-func (a *Archive) load(ctx context.Context, network string, desc *Descriptor, first, last uint64) (Blocks, error) {
+func (a *Archive) load(ctx context.Context, network string, desc *Descriptor, first, last uint64) (Slots, error) {
 	start := time.Now()
 	mode := modeRange
 
@@ -354,8 +364,8 @@ func (a *Archive) load(ctx context.Context, network string, desc *Descriptor, fi
 		mode = modeBundle
 	}
 
-	blocks, size, err := a.loadRange(ctx, desc, first, last, mode == modeBundle)
-	a.metrics.fetched(network, mode, time.Since(start), size, len(blocks), err)
+	slots, size, err := a.loadRange(ctx, desc, first, last, mode == modeBundle)
+	a.metrics.fetched(network, mode, time.Since(start), size, slots, err)
 
 	if err != nil {
 		return nil, fmt.Errorf("bundle %d..%d: %w", desc.StartSlot, desc.EndSlot, err)
@@ -368,10 +378,10 @@ func (a *Archive) load(ctx context.Context, network string, desc *Descriptor, fi
 		WithContext(ctx).
 		Debug("Loaded blocks from block archive")
 
-	return blocks, nil
+	return slots, nil
 }
 
-func (a *Archive) loadRange(ctx context.Context, desc *Descriptor, first, last uint64, whole bool) (Blocks, int64, error) {
+func (a *Archive) loadRange(ctx context.Context, desc *Descriptor, first, last uint64, whole bool) (Slots, int64, error) {
 	ds, err := a.codec(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -393,12 +403,12 @@ func (a *Archive) loadRange(ctx context.Context, desc *Descriptor, first, last u
 		return nil, int64(len(data)), err
 	}
 
-	blocks, err := decodeEntries(ds, idx.entries(first, last), data, base)
+	slots, err := decodeEntries(ds, idx.entries(first, last), data, base)
 	if err != nil {
 		return nil, int64(len(data)), fmt.Errorf("%w: %w", errCorruptBundle, err)
 	}
 
-	return blocks, int64(len(data)), nil
+	return slots, int64(len(data)), nil
 }
 
 // fetchBundle downloads a whole bundle, returning its index and data section.
@@ -434,8 +444,7 @@ func (a *Archive) fetchBundle(ctx context.Context, desc *Descriptor) (*Index, []
 	return idx, data, nil
 }
 
-// fetchWindow fetches the gzip members of slots first..last with one Range
-// request. base is the data-section offset of the first returned byte.
+// fetchWindow fetches the members of slots first..last with one Range request; base is the first byte's data offset.
 func (a *Archive) fetchWindow(ctx context.Context, desc *Descriptor, first, last uint64) (idx *Index, data []byte, base int64, err error) {
 	ie, err := a.index(ctx, desc)
 	if err != nil {
@@ -453,7 +462,7 @@ func (a *Archive) fetchWindow(ctx context.Context, desc *Descriptor, first, last
 			lo = e.Offset
 		}
 
-		hi = e.Offset + e.Length
+		hi = e.end()
 	}
 
 	if lo < 0 {
@@ -550,10 +559,18 @@ func (a *Archive) get(ctx context.Context, target, byteRange string) (*http.Resp
 	return a.client.Do(req)
 }
 
-// decodeEntries decodes entries in parallel. data holds gzip members starting
-// at data-section offset base.
-func decodeEntries(ds *dynssz.DynSsz, entries []Entry, data []byte, base int64) (Blocks, error) {
-	decoded := make([]*spec.VersionedSignedBeaconBlock, len(entries))
+// decodeEntries decodes entries in parallel from data, which starts at data-section offset base.
+func decodeEntries(ds *dynssz.DynSsz, entries []Entry, data []byte, base int64) (Slots, error) {
+	decoded := make([]Slot, len(entries))
+
+	member := func(slot uint64, offset, length int64) ([]byte, error) {
+		lo, hi := offset-base, offset-base+length
+		if lo < 0 || hi > int64(len(data)) {
+			return nil, fmt.Errorf("slot %d: byte range outside fetched data", slot)
+		}
+
+		return data[lo:hi], nil
+	}
 
 	g := errgroup.Group{}
 	g.SetLimit(runtime.GOMAXPROCS(0))
@@ -564,18 +581,25 @@ func decodeEntries(ds *dynssz.DynSsz, entries []Entry, data []byte, base int64) 
 			continue
 		}
 
-		lo, hi := e.Offset-base, e.Offset-base+e.Length
-		if lo < 0 || hi > int64(len(data)) {
-			return nil, fmt.Errorf("slot %d: byte range outside fetched data", e.Slot)
+		block, err := member(e.Slot, e.Offset, e.Length)
+		if err != nil {
+			return nil, err
+		}
+
+		var envelope []byte
+		if e.Payload == PayloadFull {
+			if envelope, err = member(e.Slot, e.EnvelopeOffset, e.EnvelopeLength); err != nil {
+				return nil, err
+			}
 		}
 
 		g.Go(func() error {
-			block, err := decodeEntry(ds, e, data[lo:hi])
+			slot, err := decodeEntry(ds, e, block, envelope)
 			if err != nil {
 				return err
 			}
 
-			decoded[i] = block
+			decoded[i] = slot
 
 			return nil
 		})
@@ -585,10 +609,14 @@ func decodeEntries(ds *dynssz.DynSsz, entries []Entry, data []byte, base int64) 
 		return nil, err
 	}
 
-	blocks := make(Blocks, len(entries))
+	slots := make(Slots, len(entries))
 	for i := range entries {
-		blocks[phase0.Slot(entries[i].Slot)] = decoded[i]
+		slots[phase0.Slot(entries[i].Slot)] = decoded[i]
 	}
 
-	return blocks, nil
+	if err := checkPayloads(entries, slots); err != nil {
+		return nil, err
+	}
+
+	return slots, nil
 }

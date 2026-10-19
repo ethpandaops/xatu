@@ -29,9 +29,9 @@ import (
 	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
-// blockArchive serves finalized blocks in bulk; found is false for slots it does not cover.
+// blockArchive serves finalized blocks and envelopes in bulk; found is false for slots it does not cover.
 type blockArchive interface {
-	Blocks(ctx context.Context, slot phase0.Slot) (blocks blockarchive.Blocks, found bool, err error)
+	Slots(ctx context.Context, slot phase0.Slot) (slots blockarchive.Slots, found bool, err error)
 }
 
 type BeaconNode struct {
@@ -116,6 +116,12 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 	sem := make(chan struct{}, config.Beacon.BlockPreloadWorkers)
 	validatorsSem := make(chan struct{}, 1)
 
+	envelopeCacheSize := uint64(256)
+	if config.BlockArchive.Enabled {
+		// A bundle range's envelopes are cached together, like its blocks.
+		envelopeCacheSize = max(envelopeCacheSize, config.Beacon.BlockCacheSize)
+	}
+
 	b := &BeaconNode{
 		config:            config,
 		log:               log.WithField("module", "cannon/ethereum/beacon"),
@@ -138,7 +144,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 		envelopeSfGroup:       &singleflight.Group{},
 		envelopeCache: ttlcache.New(
 			ttlcache.WithTTL[string, *gloas.SignedExecutionPayloadEnvelope](config.Beacon.BlockCacheTTL.Duration),
-			ttlcache.WithCapacity[string, *gloas.SignedExecutionPayloadEnvelope](256),
+			ttlcache.WithCapacity[string, *gloas.SignedExecutionPayloadEnvelope](envelopeCacheSize),
 		),
 		stateSfGroup: &singleflight.Group{},
 		stateCache: ttlcache.New(
@@ -393,37 +399,59 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 	return x.(*spec.VersionedSignedBeaconBlock), nil
 }
 
-// blockFromArchive serves a slot identifier from the block archive, caching
-// every block of the fetched range. ok is false when the archive is disabled,
-// the identifier is not a slot, the slot is not bundled, or the archive fails;
-// the caller then asks the beacon node.
+// blockFromArchive serves a slot identifier from the block archive; ok is false when the beacon node must answer.
 func (b *BeaconNode) blockFromArchive(ctx context.Context, identifier string) (block *spec.VersionedSignedBeaconBlock, ok bool) {
-	if b.archive == nil {
+	content, ok := b.archiveSlot(ctx, identifier)
+	if !ok {
 		return nil, false
+	}
+
+	return content.Block, true
+}
+
+// envelopeFromArchive is blockFromArchive for envelopes; a nil envelope with ok means the payload was withheld.
+func (b *BeaconNode) envelopeFromArchive(ctx context.Context, identifier string) (envelope *gloas.SignedExecutionPayloadEnvelope, ok bool) {
+	content, ok := b.archiveSlot(ctx, identifier)
+	if !ok || content.Block == nil || content.Block.Version < spec.DataVersionGloas {
+		return nil, false
+	}
+
+	return content.Envelope, true
+}
+
+// archiveSlot fetches the bundle range holding a slot identifier and caches its blocks and Gloas+ envelopes.
+func (b *BeaconNode) archiveSlot(ctx context.Context, identifier string) (content blockarchive.Slot, ok bool) {
+	if b.archive == nil {
+		return content, false
 	}
 
 	slot, err := strconv.ParseUint(identifier, 10, 64)
 	if err != nil {
-		return nil, false
+		return content, false
 	}
 
-	blocks, found, err := b.archive.Blocks(ctx, phase0.Slot(slot))
+	slots, found, err := b.archive.Slots(ctx, phase0.Slot(slot))
 	if err != nil {
 		b.log.WithError(err).WithField("slot", slot).WithContext(ctx).Warn("Block archive fetch failed, falling back to beacon node")
 
-		return nil, false
+		return content, false
 	}
 
-	block, inRange := blocks[phase0.Slot(slot)]
+	content, inRange := slots[phase0.Slot(slot)]
 	if !found || !inRange {
-		return nil, false
+		return content, false
 	}
 
-	for s, blk := range blocks {
-		b.blockCache.Set(strconv.FormatUint(uint64(s), 10), blk, time.Hour)
+	for s, c := range slots {
+		key := strconv.FormatUint(uint64(s), 10)
+		b.blockCache.Set(key, c.Block, time.Hour)
+
+		if c.Block != nil && c.Block.Version >= spec.DataVersionGloas {
+			b.envelopeCache.Set(key, c.Envelope, time.Hour)
+		}
 	}
 
-	return block, true
+	return content, true
 }
 
 func (b *BeaconNode) LazyLoadBeaconBlock(identifier string) {
@@ -538,6 +566,12 @@ func (b *BeaconNode) GetExecutionPayloadEnvelope(
 	span.SetAttributes(attribute.Bool("cached", false))
 
 	x, err, shared := b.envelopeSfGroup.Do(blockID, func() (any, error) {
+		if envelope, ok := b.envelopeFromArchive(ctx, blockID); ok {
+			span.AddEvent("Envelope served from block archive.")
+
+			return envelope, nil
+		}
+
 		provider, err := b.getExecutionPayloadProvider()
 		if err != nil {
 			return nil, err

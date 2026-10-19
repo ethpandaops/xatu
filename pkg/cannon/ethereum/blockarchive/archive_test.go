@@ -126,28 +126,28 @@ func TestArchiveWholeBundle(t *testing.T) {
 
 	a := newTestArchive(t, srv, 0)
 
-	blocks, found, err := a.Blocks(context.Background(), 1003)
+	slots, found, err := a.Slots(context.Background(), 1003)
 	require.NoError(t, err)
 	require.True(t, found)
-	require.Len(t, blocks, 8)
+	require.Len(t, slots, 8)
 
 	for slot := phase0.Slot(1000); slot <= 1007; slot++ {
 		switch slot {
 		case 1000, 1001, 1003, 1006:
-			require.NotNil(t, blocks[slot], "slot %d", slot)
+			require.NotNil(t, slots[slot].Block, "slot %d", slot)
 
-			got, serr := blocks[slot].Slot()
+			got, serr := slots[slot].Block.Slot()
 			require.NoError(t, serr)
 			assert.Equal(t, slot, got)
 		default:
-			v, ok := blocks[slot]
+			v, ok := slots[slot]
 			assert.True(t, ok, "missed slot %d present", slot)
-			assert.Nil(t, v, "missed slot %d is nil", slot)
+			assert.Nil(t, v.Block, "missed slot %d is nil", slot)
 		}
 	}
 
 	// A second slot of the same bundle reuses the cached descriptor.
-	_, found, err = a.Blocks(context.Background(), 1005)
+	_, found, err = a.Slots(context.Background(), 1005)
 	require.NoError(t, err)
 	require.True(t, found)
 	assert.Equal(t, int64(1), fake.lookups.Load())
@@ -166,21 +166,21 @@ func TestArchiveRangeWindows(t *testing.T) {
 
 			a := newTestArchive(t, srv, 4)
 
-			blocks, found, err := a.Blocks(context.Background(), 1006)
+			slots, found, err := a.Slots(context.Background(), 1006)
 			require.NoError(t, err)
 			require.True(t, found)
-			require.Len(t, blocks, 4)
-			assert.NotNil(t, blocks[1006])
-			assert.Nil(t, blocks[1004])
-			assert.Nil(t, blocks[1007])
+			require.Len(t, slots, 4)
+			assert.NotNil(t, slots[1006].Block)
+			assert.Nil(t, slots[1004].Block)
+			assert.Nil(t, slots[1007].Block)
 
-			blocks, found, err = a.Blocks(context.Background(), 1001)
+			slots, found, err = a.Slots(context.Background(), 1001)
 			require.NoError(t, err)
 			require.True(t, found)
-			require.Len(t, blocks, 4)
-			assert.NotNil(t, blocks[1000])
-			assert.NotNil(t, blocks[1003])
-			assert.Nil(t, blocks[1002])
+			require.Len(t, slots, 4)
+			assert.NotNil(t, slots[1000].Block)
+			assert.NotNil(t, slots[1003].Block)
+			assert.Nil(t, slots[1002].Block)
 
 			if ignoreRange {
 				assert.Equal(t, int64(0), fake.ranges.Load())
@@ -193,6 +193,34 @@ func TestArchiveRangeWindows(t *testing.T) {
 	}
 }
 
+func TestArchiveGloasEnvelopes(t *testing.T) {
+	for _, rangeSlots := range []uint64{0, 2} {
+		t.Run(fmt.Sprintf("rangeSlots=%d", rangeSlots), func(t *testing.T) {
+			blocks := gloasChain(t, []uint64{2000, 2001, 2002}, map[uint64]bool{2001: true})
+			fake := newFakeArchive(t, 2000, 2003, blocks)
+
+			srv := httptest.NewServer(fake)
+			defer srv.Close()
+
+			a := newTestArchive(t, srv, rangeSlots)
+
+			slots, found, err := a.Slots(context.Background(), 2000)
+			require.NoError(t, err)
+			require.True(t, found)
+			require.NotNil(t, slots[2000].Envelope)
+			assert.Equal(t, testHash(2000), slots[2000].Envelope.Message.Payload.BlockHash)
+			assert.Nil(t, slots[2001].Envelope, "withheld payload has no envelope")
+			assert.NotNil(t, slots[2001].Block)
+
+			slots, found, err = a.Slots(context.Background(), 2002)
+			require.NoError(t, err)
+			require.True(t, found)
+			require.NotNil(t, slots[2002].Envelope)
+			assert.Nil(t, slots[2003].Block)
+		})
+	}
+}
+
 func TestArchiveNotCovered(t *testing.T) {
 	fake := newFakeArchive(t, 1000, 1007, testBlocks(t))
 
@@ -201,22 +229,22 @@ func TestArchiveNotCovered(t *testing.T) {
 
 	a := newTestArchive(t, srv, 0)
 
-	_, found, err := a.Blocks(context.Background(), 1003)
+	_, found, err := a.Slots(context.Background(), 1003)
 	require.NoError(t, err)
 	require.True(t, found)
 
 	// Above coverage: answered from cached coverage without asking the archive.
-	_, found, err = a.Blocks(context.Background(), 5000)
+	_, found, err = a.Slots(context.Background(), 5000)
 	require.NoError(t, err)
 	assert.False(t, found)
 	assert.Equal(t, int64(1), fake.lookups.Load())
 
 	// Below coverage: asked once, then negatively cached.
-	_, found, err = a.Blocks(context.Background(), 10)
+	_, found, err = a.Slots(context.Background(), 10)
 	require.NoError(t, err)
 	assert.False(t, found)
 
-	_, found, err = a.Blocks(context.Background(), 11)
+	_, found, err = a.Slots(context.Background(), 11)
 	require.NoError(t, err)
 	assert.False(t, found)
 	assert.Equal(t, int64(2), fake.lookups.Load())
@@ -231,11 +259,11 @@ func TestArchiveFailureIsSkippedForCoverageTTL(t *testing.T) {
 
 	a := newTestArchive(t, srv, 0)
 
-	_, found, err := a.Blocks(context.Background(), 1003)
+	_, found, err := a.Slots(context.Background(), 1003)
 	require.Error(t, err)
 	assert.False(t, found)
 
-	_, found, err = a.Blocks(context.Background(), 1004)
+	_, found, err = a.Slots(context.Background(), 1004)
 	require.NoError(t, err)
 	assert.False(t, found)
 	assert.Equal(t, int64(1), fake.lookups.Load())
@@ -251,7 +279,7 @@ func TestArchiveCorruptBundleErrors(t *testing.T) {
 
 	a := newTestArchive(t, srv, 0)
 
-	_, found, err := a.Blocks(context.Background(), 1000)
+	_, found, err := a.Slots(context.Background(), 1000)
 	require.ErrorContains(t, err, "does not match index root")
 	require.ErrorIs(t, err, errCorruptBundle)
 	assert.False(t, found)
@@ -259,7 +287,7 @@ func TestArchiveCorruptBundleErrors(t *testing.T) {
 	// Only the corrupt bundle is skipped; the archive stays available.
 	assert.False(t, a.isUnavailable())
 
-	_, found, err = a.Blocks(context.Background(), 1001)
+	_, found, err = a.Slots(context.Background(), 1001)
 	require.NoError(t, err)
 	assert.False(t, found)
 	assert.Equal(t, int64(1), fake.downloads.Load())

@@ -25,6 +25,10 @@ event_types:
     table: canonical_beacon_block
     description: "Beacon blocks - one per slot"
 
+  - name: BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI
+    table: canonical_beacon_block_graffiti
+    description: "Graffiti - one per block"
+
   - name: BEACON_API_ETH_V2_BEACON_BLOCK_WITHDRAWAL
     table: canonical_beacon_block_withdrawal
     description: "Withdrawals - multiple per block post-Capella"

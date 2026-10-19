@@ -153,3 +153,18 @@ func TestConfig_GloasStateDeriversDefaultToEnabled(t *testing.T) {
 	assert.True(t, consensus.BeaconStateBuilderPendingWithdrawalConfig.Enabled)
 	assert.True(t, consensus.BeaconStateExecutionPayloadAvailabilityConfig.Enabled)
 }
+
+func TestConfig_BeaconBlockGraffitiDeriver(t *testing.T) {
+	config := &Config{}
+	require.NoError(t, defaults.Set(config))
+	assert.True(t, config.Derivers.Consensus.BeaconBlockGraffitiConfig.Enabled)
+
+	type plain Config
+
+	require.NoError(t, yaml.Unmarshal([]byte(`
+derivers:
+  consensus:
+    beaconBlockGraffiti: { enabled: false }
+`), (*plain)(config)))
+	assert.False(t, config.Derivers.Consensus.BeaconBlockGraffitiConfig.Enabled)
+}

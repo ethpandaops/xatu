@@ -34,6 +34,7 @@ type ConsensusConfig struct {
 	BeaconCommitteeConfig          v1.BeaconCommitteeDeriverConfig          `yaml:"beaconCommittee"`
 	BeaconSyncCommitteeConfig      v1.BeaconSyncCommitteeDeriverConfig      `yaml:"beaconSyncCommittee"`
 	BeaconBlockSyncAggregateConfig v2.BeaconBlockSyncAggregateDeriverConfig `yaml:"beaconBlockSyncAggregate"`
+	BeaconBlockGraffitiConfig      v2.BeaconBlockGraffitiDeriverConfig      `yaml:"beaconBlockGraffiti"`
 
 	ExecutionRequestDepositConfig             v2.ExecutionRequestDepositDeriverConfig             `yaml:"executionRequestDeposit"`
 	ExecutionRequestWithdrawalConfig          v2.ExecutionRequestWithdrawalDeriverConfig          `yaml:"executionRequestWithdrawal"`

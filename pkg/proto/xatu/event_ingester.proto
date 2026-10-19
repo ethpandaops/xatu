@@ -337,6 +337,14 @@ message ExecutionPayloadAvailabilityData {
   google.protobuf.BoolValue available = 1 [ json_name = "available" ];
 }
 
+// BeaconBlockGraffitiData contains the graffiti of a beacon block body.
+message BeaconBlockGraffitiData {
+  // ProposerIndex is the validator index of the block's proposer.
+  google.protobuf.UInt64Value proposer_index = 1 [ json_name = "proposer_index" ];
+  // Graffiti is the raw 32 byte graffiti (hex encoded with 0x prefix).
+  string graffiti = 2 [ json_name = "graffiti" ];
+}
+
 message BlockIdentifier {
   // Epoch contains the epoch information for the block.
   EpochV2 epoch = 1;
@@ -1353,6 +1361,14 @@ message ClientMeta {
     google.protobuf.UInt64Value block_number = 2 [ json_name = "block_number" ];
     // Execution block hash from the execution payload (hex encoded).
     string block_hash = 3 [ json_name = "block_hash" ];
+  }
+
+  // AdditionalEthV2BeaconBlockGraffitiData contains additional data on the
+  // graffiti derived from beacon blocks.
+  message AdditionalEthV2BeaconBlockGraffitiData {
+    // Block contains the information about the block that we are deriving the
+    // graffiti from.
+    BlockIdentifier block = 1;
   }
 
   // AdditionalEthV2BeaconBlockExecutionRequestBuilderDepositData contains
@@ -2499,6 +2515,8 @@ message ClientMeta {
     AdditionalEthV1BeaconStateBuilderPendingPaymentData eth_v1_beacon_state_builder_pending_payment = 130 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT" ];
     AdditionalEthV1BeaconStateBuilderPendingWithdrawalData eth_v1_beacon_state_builder_pending_withdrawal = 131 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL" ];
     AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData eth_v1_beacon_state_execution_payload_availability = 132 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY" ];
+
+    AdditionalEthV2BeaconBlockGraffitiData eth_v2_beacon_block_graffiti = 133 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2791,6 +2809,8 @@ message Event {
     BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_PAYMENT = 142;
     BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL = 143;
     BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY = 144;
+
+    BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI = 145;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -3551,6 +3571,9 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_BUILDER_PENDING_WITHDRAWAL" ];
     ExecutionPayloadAvailabilityData eth_v1_beacon_state_execution_payload_availability = 265
         [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY" ];
+
+    BeaconBlockGraffitiData eth_v2_beacon_block_graffiti = 266
+        [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI" ];
   };
 }
 

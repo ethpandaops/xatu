@@ -461,6 +461,8 @@ func (c *BackfillingCheckpoint) GetMarker(location *xatu.CannonLocation) (*xatu.
 		marker = location.GetEthV1BeaconStateBuilderPendingWithdrawal().GetBackfillingCheckpointMarker()
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY:
 		marker = location.GetEthV1BeaconStateExecutionPayloadAvailability().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI:
+		marker = location.GetEthV2BeaconBlockGraffiti().GetBackfillingCheckpointMarker()
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_ACCESS_LIST:
 		marker = location.GetEthV2BeaconBlockAccessList().GetBackfillingCheckpointMarker()
 	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_PAYLOAD_ATTESTATION:
@@ -701,6 +703,12 @@ func (c *BackfillingCheckpoint) createLocationFromEpochNumber(finalized, backfil
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY:
 		location.Data = &xatu.CannonLocation_EthV1BeaconStateExecutionPayloadAvailability{
 			EthV1BeaconStateExecutionPayloadAvailability: &xatu.CannonLocationEthV1BeaconStateExecutionPayloadAvailability{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI:
+		location.Data = &xatu.CannonLocation_EthV2BeaconBlockGraffiti{
+			EthV2BeaconBlockGraffiti: &xatu.CannonLocationEthV2BeaconBlockGraffiti{
 				BackfillingCheckpointMarker: marker,
 			},
 		}

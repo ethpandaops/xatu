@@ -56,3 +56,4 @@ var _ EventDeriver = &v1.BeaconStateBuilderDeriver{}
 var _ EventDeriver = &v1.BeaconStateBuilderPendingPaymentDeriver{}
 var _ EventDeriver = &v1.BeaconStateBuilderPendingWithdrawalDeriver{}
 var _ EventDeriver = &v1.BeaconStateExecutionPayloadAvailabilityDeriver{}
+var _ EventDeriver = &v2.BeaconBlockGraffitiDeriver{}

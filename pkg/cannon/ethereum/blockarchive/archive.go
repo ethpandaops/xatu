@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	// listingTimeout bounds a listing request so a slow archive falls back to the beacon node quickly.
+	// listingTimeout bounds a listing refresh, every page included, so a slow archive falls back to the beacon node quickly.
 	listingTimeout  = 30 * time.Second
 	maxListingSize  = 64 << 20
 	maxListingPages = 1000

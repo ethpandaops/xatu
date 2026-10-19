@@ -21,8 +21,9 @@ type Config struct {
 	// Execution configures the execution-layer node the EL derivers collect from
 	// via cryo. Required only when any execution deriver is enabled.
 	Execution ExecutionConfig `yaml:"execution"`
-	// BlockArchive optionally serves finalized beacon blocks from block-archiver
-	// bundles, falling back to the beacon node for slots it does not cover.
+	// BlockArchive optionally serves finalized beacon blocks and Gloas execution
+	// payload envelopes from block-archiver bundles, falling back to the beacon
+	// node for slots it does not cover.
 	BlockArchive blockarchive.Config `yaml:"blockArchive"`
 }
 

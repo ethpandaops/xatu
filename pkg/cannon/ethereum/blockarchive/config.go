@@ -6,9 +6,10 @@ import (
 	"github.com/ethpandaops/beacon/pkg/human"
 )
 
-// Config configures serving finalized beacon blocks from block-archiver
-// bundles instead of the beacon node. Slots that no published bundle covers,
-// and any archive error, fall back to the beacon node.
+// Config configures serving finalized beacon blocks and Gloas execution
+// payload envelopes from block-archiver bundles instead of the beacon node.
+// Slots that no published bundle covers, and any archive error, fall back to
+// the beacon node.
 type Config struct {
 	// Enabled turns the archive block source on.
 	Enabled bool `yaml:"enabled" default:"false"`
@@ -19,7 +20,7 @@ type Config struct {
 	Network string `yaml:"network"`
 	// Headers are sent on every archive request (e.g. authorization).
 	Headers map[string]string `yaml:"headers"`
-	// Timeout bounds one block fetch from the archive, including a full bundle download.
+	// Timeout bounds one fetch from the archive, including a full bundle download.
 	Timeout human.Duration `yaml:"timeout" default:"2m"`
 	// CoverageTTL is how long the archive's bundle coverage, "not bundled"
 	// answers and a failed archive are trusted before asking again.

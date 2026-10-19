@@ -15,6 +15,7 @@ type Metrics struct {
 	fetchDuration *prometheus.HistogramVec
 	fetchedBytes  *prometheus.CounterVec
 	blocks        *prometheus.CounterVec
+	envelopes     *prometheus.CounterVec
 }
 
 // NewMetrics creates and registers the archive metrics under namespace.
@@ -48,9 +49,14 @@ func NewMetrics(namespace string) *Metrics {
 			Name:      "blocks_decoded_total",
 			Help:      "Beacon blocks decoded from archive bundles",
 		}, []string{labelNetwork}),
+		envelopes: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "envelopes_decoded_total",
+			Help:      "Execution payload envelopes decoded from archive bundles",
+		}, []string{labelNetwork}),
 	}
 
-	prometheus.MustRegister(m.lookups, m.fetches, m.fetchDuration, m.fetchedBytes, m.blocks)
+	prometheus.MustRegister(m.lookups, m.fetches, m.fetchDuration, m.fetchedBytes, m.blocks, m.envelopes)
 
 	return m
 }
@@ -59,14 +65,27 @@ func (m *Metrics) lookup(network, result string) {
 	m.lookups.WithLabelValues(network, result).Inc()
 }
 
-func (m *Metrics) fetched(network, mode string, d time.Duration, size int64, blocks int, err error) {
+func (m *Metrics) fetched(network, mode string, d time.Duration, size int64, slots Slots, err error) {
 	result := "ok"
 	if err != nil {
 		result = "error"
+	}
+
+	var blocks, envelopes int
+
+	for _, s := range slots {
+		if s.Block != nil {
+			blocks++
+		}
+
+		if s.Envelope != nil {
+			envelopes++
+		}
 	}
 
 	m.fetches.WithLabelValues(network, mode, result).Inc()
 	m.fetchDuration.WithLabelValues(network, mode).Observe(d.Seconds())
 	m.fetchedBytes.WithLabelValues(network).Add(float64(size))
 	m.blocks.WithLabelValues(network).Add(float64(blocks))
+	m.envelopes.WithLabelValues(network).Add(float64(envelopes))
 }

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -34,6 +35,9 @@ const (
 	resultHit       = "hit"
 	resultUncovered = "not_covered"
 )
+
+// errCorruptBundle marks a bundle whose contents do not decode or verify; only that bundle is skipped.
+var errCorruptBundle = errors.New("corrupt bundle")
 
 // Blocks maps each slot of a fetched bundle range to its canonical block, nil for a missed slot.
 type Blocks map[phase0.Slot]*spec.VersionedSignedBeaconBlock
@@ -130,8 +134,8 @@ func New(
 
 // Blocks returns the decoded blocks of the bundle range holding slot: the
 // whole bundle, or its RangeSlots-aligned window when RangeSlots is set. found
-// is false when no published bundle covers slot, or the archive failed within
-// the last CoverageTTL and is being skipped.
+// is false when no published bundle covers slot, or the archive (or this
+// slot's bundle, when it failed to verify) failed within the last CoverageTTL.
 func (a *Archive) Blocks(ctx context.Context, slot phase0.Slot) (blocks Blocks, found bool, err error) {
 	network := a.network()
 
@@ -172,7 +176,12 @@ func (a *Archive) Blocks(ctx context.Context, slot phase0.Slot) (blocks Blocks, 
 		return a.load(fetchCtx, network, desc, first, last)
 	})
 	if err != nil {
-		a.markUnavailable()
+		if errors.Is(err, errCorruptBundle) {
+			a.skipBundle(desc)
+		} else {
+			a.markUnavailable()
+		}
+
 		a.metrics.lookup(network, "error")
 
 		return nil, false, err
@@ -204,6 +213,18 @@ func (a *Archive) markUnavailable() {
 	defer a.mu.Unlock()
 
 	a.unavailable = time.Now().Add(a.cfg.CoverageTTL.Duration)
+}
+
+// skipBundle stops serving one bundle for CoverageTTL.
+func (a *Archive) skipBundle(desc *Descriptor) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	delete(a.bundles, desc.StartSlot)
+
+	if desc.Span > 0 {
+		a.notCovered.Set(desc.StartSlot/desc.Span, struct{}{}, ttlcache.DefaultTTL)
+	}
 }
 
 func (a *Archive) isUnavailable() bool {
@@ -373,8 +394,11 @@ func (a *Archive) loadRange(ctx context.Context, desc *Descriptor, first, last u
 	}
 
 	blocks, err := decodeEntries(ds, idx.entries(first, last), data, base)
+	if err != nil {
+		return nil, int64(len(data)), fmt.Errorf("%w: %w", errCorruptBundle, err)
+	}
 
-	return blocks, int64(len(data)), err
+	return blocks, int64(len(data)), nil
 }
 
 // fetchBundle downloads a whole bundle, returning its index and data section.

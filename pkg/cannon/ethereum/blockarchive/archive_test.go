@@ -13,12 +13,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/creasty/defaults"
 	"github.com/ethpandaops/beacon/pkg/human"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	dynssz "github.com/pk910/dynamic-ssz"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	yaml "gopkg.in/yaml.v3"
 )
 
 const testNetwork = "testnet"
@@ -251,7 +253,33 @@ func TestArchiveCorruptBundleErrors(t *testing.T) {
 
 	_, found, err := a.Blocks(context.Background(), 1000)
 	require.ErrorContains(t, err, "does not match index root")
+	require.ErrorIs(t, err, errCorruptBundle)
 	assert.False(t, found)
+
+	// Only the corrupt bundle is skipped; the archive stays available.
+	assert.False(t, a.isUnavailable())
+
+	_, found, err = a.Blocks(context.Background(), 1001)
+	require.NoError(t, err)
+	assert.False(t, found)
+	assert.Equal(t, int64(1), fake.downloads.Load())
+}
+
+func TestConfigDefaultsAndYAML(t *testing.T) {
+	cfg := &Config{}
+	require.NoError(t, defaults.Set(cfg))
+
+	assert.False(t, cfg.Enabled)
+	assert.Equal(t, 2*time.Minute, cfg.Timeout.Duration)
+	assert.Equal(t, time.Minute, cfg.CoverageTTL.Duration)
+	assert.Equal(t, 2, cfg.MaxConcurrentFetches)
+	assert.Equal(t, uint64(0), cfg.RangeSlots)
+
+	require.NoError(t, yaml.Unmarshal([]byte("enabled: true\naddress: http://archive\nrangeSlots: 32\ntimeout: 30s\n"), cfg))
+	require.NoError(t, cfg.Validate())
+	assert.Equal(t, uint64(32), cfg.RangeSlots)
+	assert.Equal(t, 30*time.Second, cfg.Timeout.Duration)
+	assert.Equal(t, time.Minute, cfg.CoverageTTL.Duration)
 }
 
 func TestConfigValidate(t *testing.T) {

@@ -160,7 +160,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 	}
 
 	if config.BlockArchive.Enabled {
-		b.archive = blockarchive.New(&config.BlockArchive, log, b.archiveNetwork, b.archiveChain,
+		b.archive = blockarchive.New(&config.BlockArchive, log, b.archiveNetwork, b.archiveChain, b.archiveCanonicalRoot,
 			blockarchive.NewMetrics(namespace+"_ethereum"))
 	}
 
@@ -199,6 +199,30 @@ func (b *BeaconNode) archiveChain(ctx context.Context) (*blockarchive.Chain, err
 		SlotsPerEra:   slotsPerEra,
 		Forks:         sp.ForkEpochs,
 	}, nil
+}
+
+// archiveCanonicalRoot is the beacon node's block root at slot, which each era window is tied to.
+func (b *BeaconNode) archiveCanonicalRoot(ctx context.Context, slot phase0.Slot) (phase0.Root, bool, error) {
+	provider, ok := b.beacon.Service().(client.BeaconBlockHeadersProvider)
+	if !ok {
+		return phase0.Root{}, false, errors.New("beacon block headers provider not available")
+	}
+
+	resp, err := provider.BeaconBlockHeader(ctx, &api.BeaconBlockHeaderOpts{Block: strconv.FormatUint(uint64(slot), 10)})
+	if err != nil {
+		var apiErr *api.Error
+		if errors.As(err, &apiErr) && apiErr.StatusCode == 404 {
+			return phase0.Root{}, false, nil
+		}
+
+		return phase0.Root{}, false, errors.Wrapf(err, "failed to fetch block header at slot %d", slot)
+	}
+
+	if resp == nil || resp.Data == nil {
+		return phase0.Root{}, false, errors.Errorf("empty block header response at slot %d", slot)
+	}
+
+	return resp.Data.Root, true, nil
 }
 
 func (b *BeaconNode) Start(ctx context.Context) error {
@@ -487,11 +511,11 @@ func (b *BeaconNode) archiveSlot(ctx context.Context, identifier string) (conten
 		return content, false
 	}
 
-	content, inRange := slots[phase0.Slot(slot)]
-	if !found || !inRange {
+	if !found {
 		return content, false
 	}
 
+	// Cache the whole range even when it cannot answer for this slot, so its other slots skip the archive.
 	for s, c := range slots {
 		key := strconv.FormatUint(uint64(s), 10)
 		b.blockCache.Set(key, c.Block, time.Hour)
@@ -501,7 +525,9 @@ func (b *BeaconNode) archiveSlot(ctx context.Context, identifier string) (conten
 		}
 	}
 
-	return content, true
+	content, ok = slots[phase0.Slot(slot)]
+
+	return content, ok
 }
 
 func (b *BeaconNode) LazyLoadBeaconBlock(identifier string) {

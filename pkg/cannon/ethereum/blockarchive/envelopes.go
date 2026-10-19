@@ -3,7 +3,7 @@ package blockarchive
 import (
 	"errors"
 	"fmt"
-	"sort"
+	"slices"
 
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
@@ -38,16 +38,17 @@ func parseEnvelopeTail(tail []byte, size int64, era, slotsPerEra uint64) (*fileI
 	return &fileIndex{slots: idx, end: idx.pos}, nil
 }
 
-// decodeEnvelopes verifies envelopes against their blocks, returning every Gloas+ block's envelope (nil if withheld).
+// decodeEnvelopes returns each Gloas+ block's verified envelope, or nil when a later bid proves it withheld, else omits it.
 func decodeEnvelopes(
 	chain *Chain,
-	blocks map[uint64]*spec.VersionedSignedBeaconBlock,
+	blocks map[uint64]decodedBlock,
 	raw map[uint64][]byte,
+	next *decodedBlock,
 ) (map[uint64]*gloas.SignedExecutionPayloadEnvelope, error) {
 	out := make(map[uint64]*gloas.SignedExecutionPayloadEnvelope, len(blocks))
 
-	for slot, block := range blocks {
-		if block != nil && hasEnvelopes(block.Version) {
+	for slot, b := range blocks {
+		if hasEnvelopes(b.block.Version) {
 			out[slot] = nil
 		}
 	}
@@ -69,8 +70,13 @@ func decodeEnvelopes(
 		out[slot] = envelope
 	}
 
-	if err := checkPayloads(blocks, out); err != nil {
+	unproven, err := checkPayloads(blocks, out, next)
+	if err != nil {
 		return nil, err
+	}
+
+	for _, slot := range unproven {
+		delete(out, slot)
 	}
 
 	return out, nil
@@ -81,7 +87,7 @@ func hasEnvelopes(v spec.DataVersion) bool {
 }
 
 // decodeEnvelope decodes a block's envelope and checks it commits to the block and its bid.
-func decodeEnvelope(chain *Chain, block *spec.VersionedSignedBeaconBlock, compressed []byte) (*gloas.SignedExecutionPayloadEnvelope, error) {
+func decodeEnvelope(chain *Chain, b decodedBlock, compressed []byte) (*gloas.SignedExecutionPayloadEnvelope, error) {
 	ssz, err := decompress(compressed)
 	if err != nil {
 		return nil, err
@@ -96,21 +102,11 @@ func decodeEnvelope(chain *Chain, block *spec.VersionedSignedBeaconBlock, compre
 		return nil, errors.New("envelope has no payload")
 	}
 
-	message, err := blockMessage(block)
-	if err != nil {
-		return nil, err
+	if envelope.Message.BeaconBlockRoot != b.root {
+		return nil, fmt.Errorf("envelope commits to block %#x, not %#x", envelope.Message.BeaconBlockRoot, b.root)
 	}
 
-	root, err := chain.Codec.HashTreeRoot(message)
-	if err != nil {
-		return nil, fmt.Errorf("failed to hash block: %w", err)
-	}
-
-	if envelope.Message.BeaconBlockRoot != root {
-		return nil, fmt.Errorf("envelope commits to block %#x, not %#x", envelope.Message.BeaconBlockRoot, root)
-	}
-
-	_, hash, err := bidHashes(block)
+	_, hash, err := bidHashes(b.block)
 	if err != nil {
 		return nil, err
 	}
@@ -121,17 +117,6 @@ func decodeEnvelope(chain *Chain, block *spec.VersionedSignedBeaconBlock, compre
 	}
 
 	return envelope, nil
-}
-
-func blockMessage(block *spec.VersionedSignedBeaconBlock) (any, error) {
-	switch {
-	case block.Gloas != nil && block.Gloas.Message != nil:
-		return block.Gloas.Message, nil
-	case block.Heze != nil && block.Heze.Message != nil:
-		return block.Heze.Message, nil
-	default:
-		return nil, fmt.Errorf("%s block has no gloas message", block.Version)
-	}
 }
 
 // bidHashes returns a Gloas+ block's bid parent block hash and promised block hash.
@@ -151,42 +136,57 @@ func bidHashes(block *spec.VersionedSignedBeaconBlock) (parent, hash phase0.Hash
 	}
 }
 
-// checkPayloads checks each next bid builds on an applied payload's hash, or a withheld payload's parent hash.
-func checkPayloads(blocks map[uint64]*spec.VersionedSignedBeaconBlock, envelopes map[uint64]*gloas.SignedExecutionPayloadEnvelope) error {
+// checkPayloads checks each payload status against the next bid, returning withheld slots with no next block to prove them.
+func checkPayloads(
+	blocks map[uint64]decodedBlock,
+	envelopes map[uint64]*gloas.SignedExecutionPayloadEnvelope,
+	next *decodedBlock,
+) (unproven []uint64, err error) {
 	slots := make([]uint64, 0, len(envelopes))
 	for slot := range envelopes {
 		slots = append(slots, slot)
 	}
 
-	sort.Slice(slots, func(i, j int) bool { return slots[i] < slots[j] })
-
-	var (
-		prev                 uint64
-		prevParent, prevHash phase0.Hash32
-	)
+	slices.Sort(slots)
 
 	for i, slot := range slots {
-		parent, hash, err := bidHashes(blocks[slot])
+		successor := next
+
+		if i+1 < len(slots) {
+			b := blocks[slots[i+1]]
+			successor = &b
+		}
+
+		if successor == nil {
+			if envelopes[slot] == nil {
+				unproven = append(unproven, slot)
+			}
+
+			continue
+		}
+
+		parent, hash, err := bidHashes(blocks[slot].block)
 		if err != nil {
-			return fmt.Errorf("slot %d: %w", slot, err)
+			return nil, fmt.Errorf("slot %d: %w", slot, err)
 		}
 
-		if i > 0 {
-			want := prevParent
-			if envelopes[prev] != nil {
-				want = prevHash
-			}
-
-			if parent != want {
-				return fmt.Errorf("slot %d bid builds on %#x, which contradicts slot %d payload being %s",
-					slot, parent, prev, payloadStatus(envelopes[prev]))
-			}
+		builtOn, _, err := bidHashes(successor.block)
+		if err != nil {
+			return nil, fmt.Errorf("block after slot %d: %w", slot, err)
 		}
 
-		prev, prevParent, prevHash = slot, parent, hash
+		want := parent
+		if envelopes[slot] != nil {
+			want = hash
+		}
+
+		if builtOn != want {
+			return nil, fmt.Errorf("the next bid builds on %#x, which contradicts slot %d payload being %s",
+				builtOn, slot, payloadStatus(envelopes[slot]))
+		}
 	}
 
-	return nil
+	return unproven, nil
 }
 
 func payloadStatus(envelope *gloas.SignedExecutionPayloadEnvelope) string {

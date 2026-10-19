@@ -2,7 +2,9 @@ package blockarchive
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
+	"sync/atomic"
 	"testing"
 
 	"github.com/ethpandaops/beacon/pkg/beacon/state"
@@ -43,72 +45,99 @@ func testChain() *Chain {
 // testBlock is a canonical block placed in a test era, with its envelope when its payload was applied.
 type testBlock struct {
 	slot     uint64
+	root     phase0.Root
 	ssz      []byte
 	envelope []byte
 }
 
-// testBlockAt builds the block the test chain's fork schedule expects at slot.
-func testBlockAt(t *testing.T, slot uint64) testBlock {
-	t.Helper()
+// testParent is the parent root of the first block of a test chain.
+var testParent = phase0.Root{0x01}
 
-	switch testChain().forkAt(slot) {
-	case spec.DataVersionPhase0:
-		return phase0Block(t, slot)
-	case spec.DataVersionAltair:
-		return altairBlock(t, slot)
-	default:
-		return gloasBlock(t, slot, phase0.Hash32{0xaa}, false)
-	}
-}
-
+// testBlocksAt builds a canonical chain with blocks at slots and every Gloas payload applied.
 func testBlocksAt(t *testing.T, slots ...uint64) []testBlock {
 	t.Helper()
 
+	return linkedBlocks(t, testParent, slots, nil)
+}
+
+// gloasChain builds a canonical chain with blocks at slots, withholding the payloads of the withheld slots.
+func gloasChain(t *testing.T, slots []uint64, withheld map[uint64]bool) []testBlock {
+	t.Helper()
+
+	return linkedBlocks(t, testParent, slots, withheld)
+}
+
+// linkedBlocks builds a chain of the forks' blocks at slots, linked by parent root and, from Gloas, by bid.
+func linkedBlocks(t *testing.T, parent phase0.Root, slots []uint64, withheld map[uint64]bool) []testBlock {
+	t.Helper()
+
+	head := phase0.Hash32{0xaa}
 	out := make([]testBlock, 0, len(slots))
+
 	for _, slot := range slots {
-		out = append(out, testBlockAt(t, slot))
+		var b testBlock
+
+		switch testChain().forkAt(slot) {
+		case spec.DataVersionPhase0:
+			b = phase0Block(t, slot, parent)
+		case spec.DataVersionAltair:
+			b = altairBlock(t, slot, parent)
+		default:
+			b = gloasBlock(t, slot, parent, head, !withheld[slot])
+
+			if !withheld[slot] {
+				head = testHash(slot)
+			}
+		}
+
+		out = append(out, b)
+		parent = b.root
 	}
 
 	return out
 }
 
-func phase0Block(t *testing.T, slot uint64) testBlock {
+func phase0Block(t *testing.T, slot uint64, parent phase0.Root) testBlock {
 	t.Helper()
 
-	return encodeTestBlock(t, slot, &phase0.SignedBeaconBlock{Message: &phase0.BeaconBlock{
+	msg := &phase0.BeaconBlock{
 		Slot:          phase0.Slot(slot),
 		ProposerIndex: phase0.ValidatorIndex(slot % 97),
-		ParentRoot:    phase0.Root{byte(slot)},
+		ParentRoot:    parent,
 		Body: &phase0.BeaconBlockBody{
 			ETH1Data: &phase0.ETH1Data{BlockHash: make([]byte, 32)},
 			Graffiti: [32]byte{'p', '0', byte(slot)},
 		},
-	}})
+	}
+
+	return encodeTestBlock(t, slot, msg, &phase0.SignedBeaconBlock{Message: msg})
 }
 
-func altairBlock(t *testing.T, slot uint64) testBlock {
+func altairBlock(t *testing.T, slot uint64, parent phase0.Root) testBlock {
 	t.Helper()
 
-	return encodeTestBlock(t, slot, &altair.SignedBeaconBlock{Message: &altair.BeaconBlock{
+	msg := &altair.BeaconBlock{
 		Slot:          phase0.Slot(slot),
 		ProposerIndex: phase0.ValidatorIndex(slot % 89),
-		ParentRoot:    phase0.Root{byte(slot), 1},
+		ParentRoot:    parent,
 		Body: &altair.BeaconBlockBody{
 			ETH1Data:      &phase0.ETH1Data{BlockHash: make([]byte, 32)},
 			Graffiti:      [32]byte{'a', 'l', byte(slot)},
 			SyncAggregate: &altair.SyncAggregate{SyncCommitteeBits: make([]byte, 64)},
 		},
-	}})
+	}
+
+	return encodeTestBlock(t, slot, msg, &altair.SignedBeaconBlock{Message: msg})
 }
 
 // gloasBlock builds a Gloas block bidding testHash(slot) on parentHash, with its envelope when applied.
-func gloasBlock(t *testing.T, slot uint64, parentHash phase0.Hash32, applied bool) testBlock {
+func gloasBlock(t *testing.T, slot uint64, parent phase0.Root, parentHash phase0.Hash32, applied bool) testBlock {
 	t.Helper()
 
 	msg := &gloas.BeaconBlock{
 		Slot:          phase0.Slot(slot),
 		ProposerIndex: phase0.ValidatorIndex(slot % 83),
-		ParentRoot:    phase0.Root{byte(slot), 2},
+		ParentRoot:    parent,
 		Body: &gloas.BeaconBlockBody{
 			ETH1Data:      &phase0.ETH1Data{BlockHash: make([]byte, 32)},
 			Graffiti:      [32]byte{'g', 'l', byte(slot)},
@@ -122,13 +151,10 @@ func gloasBlock(t *testing.T, slot uint64, parentHash phase0.Hash32, applied boo
 		},
 	}
 
-	b := encodeTestBlock(t, slot, &gloas.SignedBeaconBlock{Message: msg})
+	b := encodeTestBlock(t, slot, msg, &gloas.SignedBeaconBlock{Message: msg})
 
 	if applied {
-		root, err := dynssz.GetGlobalDynSsz().HashTreeRoot(msg)
-		require.NoError(t, err)
-
-		b.envelope = testEnvelope(t, root, testHash(slot))
+		b.envelope = testEnvelope(t, b.root, testHash(slot))
 	}
 
 	return b
@@ -156,31 +182,47 @@ func testEnvelope(t *testing.T, root phase0.Root, hash phase0.Hash32) []byte {
 	return ssz
 }
 
-// gloasChain builds Gloas blocks whose bids chain the way the canonical chain applies or withholds payloads.
-func gloasChain(t *testing.T, slots []uint64, withheld map[uint64]bool) []testBlock {
-	t.Helper()
+// fakeBeacon answers block roots by slot for the blocks it is given, like the beacon node's headers endpoint.
+type fakeBeacon struct {
+	roots    map[uint64]phase0.Root
+	err      error
+	requests atomic.Int64
+}
 
-	head := phase0.Hash32{0xaa}
-	out := make([]testBlock, 0, len(slots))
+func newFakeBeacon(chains ...[]testBlock) *fakeBeacon {
+	f := &fakeBeacon{roots: make(map[uint64]phase0.Root)}
 
-	for _, slot := range slots {
-		out = append(out, gloasBlock(t, slot, head, !withheld[slot]))
-
-		if !withheld[slot] {
-			head = testHash(slot)
+	for _, blocks := range chains {
+		for _, b := range blocks {
+			f.roots[b.slot] = b.root
 		}
 	}
 
-	return out
+	return f
 }
 
-func encodeTestBlock(t *testing.T, slot uint64, signed any) testBlock {
+func (f *fakeBeacon) root(_ context.Context, slot phase0.Slot) (phase0.Root, bool, error) {
+	f.requests.Add(1)
+
+	if f.err != nil {
+		return phase0.Root{}, false, f.err
+	}
+
+	root, ok := f.roots[uint64(slot)]
+
+	return root, ok, nil
+}
+
+func encodeTestBlock(t *testing.T, slot uint64, message, signed any) testBlock {
 	t.Helper()
 
 	ssz, err := dynssz.GetGlobalDynSsz().MarshalSSZ(signed)
 	require.NoError(t, err)
 
-	return testBlock{slot: slot, ssz: ssz}
+	root, err := dynssz.GetGlobalDynSsz().HashTreeRoot(message)
+	require.NoError(t, err)
+
+	return testBlock{slot: slot, root: root, ssz: ssz}
 }
 
 func snappyFramed(t *testing.T, data []byte) []byte {

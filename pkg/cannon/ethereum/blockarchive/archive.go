@@ -21,18 +21,28 @@ import (
 
 const (
 	// listingTimeout bounds a listing refresh, every page included, so a slow archive falls back to the beacon node quickly.
-	listingTimeout  = 30 * time.Second
-	maxListingSize  = 64 << 20
-	maxListingPages = 1000
-	indexCacheSize  = 16
-	modeEra         = "era"
-	modeRange       = "range"
-	resultHit       = "hit"
-	resultUncovered = "not_covered"
+	listingTimeout     = 30 * time.Second
+	maxListingSize     = 64 << 20
+	maxListingPages    = 1000
+	indexCacheSize     = 16
+	windowMemoSize     = 64
+	modeEra            = "era"
+	modeRange          = "range"
+	resultHit          = "hit"
+	resultUncovered    = "not_covered"
+	resultNotCanonical = "not_canonical"
 )
 
-// errCorrupt marks a file whose contents do not parse, decode or verify; only that file is skipped.
-var errCorrupt = errors.New("corrupt archive file")
+var (
+	// errCorrupt marks a file whose contents do not parse, decode or verify; only that file is skipped.
+	errCorrupt = errors.New("corrupt archive file")
+	// errMissing marks a listed file the archive no longer serves; only that file is skipped.
+	errMissing = errors.New("archive file not found")
+	// errUnreachable marks a failure talking to the archive; the whole archive is skipped for ListingTTL.
+	errUnreachable = errors.New("archive unreachable")
+	// errNotCanonical marks a window that disagrees with the beacon node's chain; only that window is skipped.
+	errNotCanonical = errors.New("era window is not the beacon node's canonical chain")
+)
 
 // Slot is one slot of a fetched era range.
 type Slot struct {
@@ -40,12 +50,15 @@ type Slot struct {
 	Block *spec.VersionedSignedBeaconBlock
 	// Envelope is nil for a withheld payload; only meaningful when EnvelopeKnown is set.
 	Envelope *gloas.SignedExecutionPayloadEnvelope
-	// EnvelopeKnown is set for Gloas+ blocks whose era has a published envelope sidecar.
+	// EnvelopeKnown is set for Gloas+ blocks whose envelope, or withheld payload, a verified sidecar proves.
 	EnvelopeKnown bool
 }
 
-// Slots maps each slot of a fetched era range to its contents.
+// Slots maps the slots of a fetched era range the archive answers for to their contents.
 type Slots map[phase0.Slot]Slot
+
+// CanonicalRoot returns the beacon node's block root at slot; found is false for a slot without a block.
+type CanonicalRoot func(ctx context.Context, slot phase0.Slot) (root phase0.Root, found bool, err error)
 
 // Archive serves finalized blocks from CL era files and Gloas envelopes from per-era sidecars.
 type Archive struct {
@@ -56,6 +69,7 @@ type Archive struct {
 	listingURL string
 	network    func() string
 	chainFn    func(context.Context) (*Chain, error)
+	canonical  CanonicalRoot
 	metrics    *Metrics
 
 	fetchGroup   singleflight.Group
@@ -70,14 +84,16 @@ type Archive struct {
 	unavailable time.Time
 	skipped     *ttlcache.Cache[string, struct{}]
 	indexes     *ttlcache.Cache[string, *fileIndex]
+	windows     *ttlcache.Cache[string, *windowMemo]
 }
 
-// New creates an Archive; network and chain are resolved per request, after beacon metadata is ready.
+// New creates an Archive; network, chain and canonical are resolved per request, after beacon metadata is ready.
 func New(
 	cfg *Config,
 	log observability.ContextualLogger,
 	network func() string,
 	chain func(context.Context) (*Chain, error),
+	canonical CanonicalRoot,
 	metrics *Metrics,
 ) *Archive {
 	base := strings.TrimRight(cfg.URL, "/")
@@ -95,6 +111,7 @@ func New(
 		listingURL: listingURL,
 		network:    network,
 		chainFn:    chain,
+		canonical:  canonical,
 		metrics:    metrics,
 		sem:        make(chan struct{}, cfg.MaxConcurrentFetches),
 		skipped: ttlcache.New(
@@ -104,10 +121,15 @@ func New(
 		indexes: ttlcache.New(
 			ttlcache.WithCapacity[string, *fileIndex](indexCacheSize),
 		),
+		windows: ttlcache.New(
+			ttlcache.WithTTL[string, *windowMemo](cfg.ListingTTL.Duration),
+			ttlcache.WithCapacity[string, *windowMemo](windowMemoSize),
+			ttlcache.WithDisableTouchOnHit[string, *windowMemo](),
+		),
 	}
 }
 
-// Slots returns the era range (whole era or RangeSlots window) holding slot; found is false when the beacon node must answer.
+// Slots returns the proven slots of the era range holding slot; found is false when the beacon node must answer for it all.
 func (a *Archive) Slots(ctx context.Context, slot phase0.Slot) (slots Slots, found bool, err error) {
 	network := a.network()
 
@@ -132,51 +154,95 @@ func (a *Archive) Slots(ctx context.Context, slot phase0.Slot) (slots Slots, fou
 
 	era := chain.eraOf(uint64(slot))
 	first, last := a.window(chain, era, uint64(slot))
+	key := windowKey(file.name, first, last)
 
-	v, err, _ := a.fetchGroup.Do(fmt.Sprintf("%s/%d-%d", file.name, first, last), func() (any, error) {
-		select {
-		case a.sem <- struct{}{}:
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
+	if a.skipped.Has(key) {
+		a.metrics.lookup(network, resultNotCanonical)
 
-		defer func() { <-a.sem }()
+		return nil, false, nil
+	}
 
-		fetchCtx, cancel := context.WithTimeout(ctx, a.cfg.Timeout.Duration)
-		defer cancel()
+	if memo := a.windows.Get(key); memo != nil && !memo.Value().blocks.has(uint64(slot)) {
+		a.metrics.lookup(network, resultUncovered)
 
-		return a.load(fetchCtx, network, chain, era, file, first, last)
+		return nil, false, nil
+	}
+
+	// The fetch is shared and outlives any one caller, so it runs detached with its own timeouts.
+	ch := a.fetchGroup.DoChan(key, func() (any, error) {
+		return a.fetch(context.WithoutCancel(ctx), network, chain, era, file, first, last)
 	})
-	if err != nil {
-		if errors.Is(err, errCorrupt) {
-			a.skipped.Set(file.name, struct{}{}, ttlcache.DefaultTTL)
-		} else {
-			a.markUnavailable()
-		}
 
-		a.metrics.lookup(network, "error")
+	var res singleflight.Result
 
-		return nil, false, err
+	select {
+	case res = <-ch:
+	case <-ctx.Done():
+		return nil, false, ctx.Err()
 	}
 
-	slots, ok := v.(Slots)
+	if res.Err != nil {
+		return nil, false, a.failed(ctx, network, file, key, res.Err)
+	}
+
+	slots, ok := res.Val.(Slots)
 	if !ok {
-		return nil, false, fmt.Errorf("unexpected era result type %T", v)
+		return nil, false, fmt.Errorf("unexpected era result type %T", res.Val)
 	}
 
-	a.metrics.lookup(network, resultHit)
+	if _, ok := slots[slot]; ok {
+		a.metrics.lookup(network, resultHit)
+	} else {
+		a.metrics.lookup(network, resultUncovered)
+	}
 
 	return slots, true, nil
 }
 
-// HasEnvelopes reports whether Slots will return slot's envelope: a Gloas+ slot in an era with a sidecar.
+// failed records a failed window fetch and returns the error the caller should see.
+func (a *Archive) failed(ctx context.Context, network string, file eraFile, key string, err error) error {
+	switch {
+	case errors.Is(err, errNotCanonical):
+		a.skipped.Set(key, struct{}{}, ttlcache.DefaultTTL)
+		a.metrics.lookup(network, resultNotCanonical)
+		a.log.WithError(err).WithField("window", key).WithContext(ctx).
+			Warn("Era window disagrees with the beacon node, serving it from the beacon node")
+
+		return nil
+	case errors.Is(err, errCorrupt), errors.Is(err, errMissing):
+		a.skip(file.name)
+	case errors.Is(err, errUnreachable):
+		a.markUnavailable()
+	}
+
+	a.metrics.lookup(network, "error")
+
+	return err
+}
+
+// HasEnvelopes reports whether Slots may return slot's envelope: a Gloas+ slot in an era with a sidecar.
 func (a *Archive) HasEnvelopes(ctx context.Context, slot phase0.Slot) (bool, error) {
 	chain, file, err := a.resolve(ctx, a.network(), uint64(slot))
 	if err != nil || chain == nil {
 		return false, err
 	}
 
-	return file.envelopes != "" && hasEnvelopes(chain.forkAt(uint64(slot))), nil
+	if file.envelopes == "" || !hasEnvelopes(chain.forkAt(uint64(slot))) {
+		return false, nil
+	}
+
+	first, last := a.window(chain, chain.eraOf(uint64(slot)), uint64(slot))
+	key := windowKey(file.name, first, last)
+
+	if a.skipped.Has(key) {
+		return false, nil
+	}
+
+	if memo := a.windows.Get(key); memo != nil {
+		return memo.Value().envelopes.has(uint64(slot)), nil
+	}
+
+	return true, nil
 }
 
 // resolve returns the chain and slot's era file; chain is nil while unavailable, file.name empty when uncovered.
@@ -192,7 +258,9 @@ func (a *Archive) resolve(ctx context.Context, network string, slot uint64) (cha
 
 	file, err = a.lookup(ctx, network, chain.eraOf(slot))
 	if err != nil {
-		a.markUnavailable()
+		if ctx.Err() == nil {
+			a.markUnavailable()
+		}
 
 		return nil, file, err
 	}
@@ -235,7 +303,11 @@ func (a *Archive) window(chain *Chain, era, slot uint64) (first, last uint64) {
 
 	first = start + (slot-start)/a.cfg.RangeSlots*a.cfg.RangeSlots
 
-	return first, min(first+a.cfg.RangeSlots-1, end)
+	if end-first < a.cfg.RangeSlots {
+		return first, end
+	}
+
+	return first, first + a.cfg.RangeSlots - 1
 }
 
 func (a *Archive) markUnavailable() {
@@ -252,6 +324,12 @@ func (a *Archive) isUnavailable() bool {
 	return time.Now().Before(a.unavailable)
 }
 
+// skip stops using a file for ListingTTL and forgets its index, so a replaced file is read afresh.
+func (a *Archive) skip(name string) {
+	a.skipped.Set(name, struct{}{}, ttlcache.DefaultTTL)
+	a.indexes.Delete(name)
+}
+
 // lookup returns era's usable files, refreshing a listing older than ListingTTL.
 func (a *Archive) lookup(ctx context.Context, network string, era uint64) (file eraFile, err error) {
 	a.mu.Lock()
@@ -259,10 +337,20 @@ func (a *Archive) lookup(ctx context.Context, network string, era uint64) (file 
 	a.mu.Unlock()
 
 	if !fresh {
-		if _, err, _ := a.listingGroup.Do("listing", func() (any, error) {
-			return nil, a.refresh(ctx, network)
-		}); err != nil {
-			return file, err
+		ch := a.listingGroup.DoChan("listing", func() (any, error) {
+			refreshCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), listingTimeout)
+			defer cancel()
+
+			return nil, a.refresh(refreshCtx, network)
+		})
+
+		select {
+		case res := <-ch:
+			if res.Err != nil {
+				return file, res.Err
+			}
+		case <-ctx.Done():
+			return file, ctx.Err()
 		}
 	}
 
@@ -283,9 +371,6 @@ func (a *Archive) lookup(ctx context.Context, network string, era uint64) (file 
 
 // refresh fetches every page of the listing and replaces the known era files.
 func (a *Archive) refresh(ctx context.Context, network string) error {
-	ctx, cancel := context.WithTimeout(ctx, listingTimeout)
-	defer cancel()
-
 	found := newListing(network)
 	target := a.listingURL
 	pages := 0
@@ -336,10 +421,45 @@ func (a *Archive) listingPage(ctx context.Context, target string) ([]byte, error
 		return nil, fmt.Errorf("unexpected status %d from %s", resp.StatusCode, target)
 	}
 
-	return io.ReadAll(io.LimitReader(resp.Body, maxListingSize))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxListingSize+1))
+	if err != nil {
+		return nil, fmt.Errorf("failed to read %s: %w", target, err)
+	}
+
+	if len(body) > maxListingSize {
+		return nil, fmt.Errorf("%s is larger than %d bytes", target, maxListingSize)
+	}
+
+	return body, nil
 }
 
-// load downloads and decodes slots first..last of an era.
+// fetch loads a window under the fetch concurrency limit; ctx carries no caller cancellation.
+func (a *Archive) fetch(ctx context.Context, network string, chain *Chain, era uint64, file eraFile, first, last uint64) (Slots, error) {
+	waitCtx, cancelWait := context.WithTimeout(ctx, a.cfg.Timeout.Duration)
+	defer cancelWait()
+
+	select {
+	case a.sem <- struct{}{}:
+	case <-waitCtx.Done():
+		return nil, fmt.Errorf("waiting to fetch from the archive: %w", waitCtx.Err())
+	}
+
+	defer func() { <-a.sem }()
+
+	fetchCtx, cancel := context.WithTimeout(ctx, a.cfg.Timeout.Duration)
+	defer cancel()
+
+	slots, err := a.load(fetchCtx, network, chain, era, file, first, last)
+	if err != nil {
+		return nil, err
+	}
+
+	a.windows.Set(windowKey(file.name, first, last), memoOf(slots, first, last), ttlcache.DefaultTTL)
+
+	return slots, nil
+}
+
+// load downloads, decodes and verifies slots first..last of an era.
 func (a *Archive) load(ctx context.Context, network string, chain *Chain, era uint64, file eraFile, first, last uint64) (Slots, error) {
 	start := time.Now()
 	mode := modeRange
@@ -356,6 +476,7 @@ func (a *Archive) load(ctx context.Context, network string, chain *Chain, era ui
 	}
 
 	a.log.WithField("slots", fmt.Sprintf("%d..%d", first, last)).
+		WithField("proven", len(slots)).
 		WithField("mode", mode).
 		WithField("bytes", size).
 		WithField("duration", time.Since(start).String()).
@@ -365,6 +486,7 @@ func (a *Archive) load(ctx context.Context, network string, chain *Chain, era ui
 	return slots, nil
 }
 
+// loadRange returns the slots of first..last that the era file proves, tied to the beacon node's chain by one root.
 func (a *Archive) loadRange(ctx context.Context, chain *Chain, era uint64, file eraFile, first, last uint64) (Slots, int64, error) {
 	idx, err := a.index(ctx, file.name, eraTailSize(chain.SlotsPerEra), func(tail []byte, size int64) (*fileIndex, error) {
 		return parseEraTail(tail, size, era, chain.SlotsPerEra)
@@ -373,40 +495,74 @@ func (a *Archive) loadRange(ctx context.Context, chain *Chain, era uint64, file 
 		return nil, 0, err
 	}
 
-	raw, size, err := a.entries(ctx, file.name, idx, typeCompressedSignedBeaconBlock, first, last)
+	p, ok := planWindow(idx.slots, first, last)
+	if !ok {
+		return Slots{}, 0, nil
+	}
+
+	want, found, err := a.canonical(ctx, phase0.Slot(p.anchor))
+	if err != nil {
+		return nil, 0, fmt.Errorf("beacon node block root at slot %d: %w", p.anchor, err)
+	}
+
+	if !found {
+		return nil, 0, fmt.Errorf("%w: %s has a block at slot %d, the beacon node none", errNotCanonical, file.name, p.anchor)
+	}
+
+	raw, size, err := a.entries(ctx, file.name, idx, typeCompressedSignedBeaconBlock, p.readFirst, p.readLast)
 	if err != nil {
 		return nil, size, err
 	}
 
-	blocks, err := decodeBlocks(chain, raw)
+	decoded, err := decodeBlocks(chain, raw)
 	if err != nil {
 		return nil, size, fmt.Errorf("%w: %s: %w", errCorrupt, file.name, err)
 	}
 
-	slots := make(Slots, last-first+1)
-	for s := first; s <= last; s++ {
-		slots[phase0.Slot(s)] = Slot{Block: blocks[s]}
+	if err = checkLinks(decoded); err != nil {
+		return nil, size, fmt.Errorf("%w: %s: %w", errCorrupt, file.name, err)
 	}
 
-	if file.envelopes == "" || !hasEnvelopes(chain.forkAt(last)) {
+	if got := decoded[p.anchor].root; got != want {
+		return nil, size, fmt.Errorf("%w: %s has block %#x at slot %d, the beacon node %#x", errNotCanonical, file.name, got, p.anchor, want)
+	}
+
+	blocks := make(map[uint64]decodedBlock, len(decoded))
+	slots := make(Slots, p.hi-p.lo+1)
+
+	for s := p.lo; s <= p.hi; s++ {
+		b, ok := decoded[s]
+		if ok {
+			blocks[s] = b
+		}
+
+		slots[phase0.Slot(s)] = Slot{Block: b.block}
+	}
+
+	if file.envelopes == "" || !hasEnvelopes(chain.forkAt(p.hi)) {
 		return slots, size, nil
 	}
 
-	envelopes, n, err := a.loadEnvelopes(ctx, chain, era, file.envelopes, blocks, first, last)
+	var next *decodedBlock
+
+	if p.succ {
+		b := decoded[p.readLast]
+		next = &b
+	}
+
+	envelopes, n, err := a.loadEnvelopes(ctx, chain, era, file.envelopes, blocks, next, first, last)
 	size += n
 
-	switch {
-	case errors.Is(err, errCorrupt):
-		a.skipped.Set(file.envelopes, struct{}{}, ttlcache.DefaultTTL)
-		a.log.WithError(err).WithContext(ctx).Warn("Skipping envelope sidecar that failed to verify")
+	if err != nil {
+		a.skip(file.envelopes)
+		a.log.WithError(err).WithField("file", file.envelopes).WithContext(ctx).
+			Warn("Skipping envelope sidecar, envelopes come from the beacon node")
 
 		return slots, size, nil
-	case err != nil:
-		return nil, size, err
 	}
 
 	for s, envelope := range envelopes {
-		slots[phase0.Slot(s)] = Slot{Block: blocks[s], Envelope: envelope, EnvelopeKnown: true}
+		slots[phase0.Slot(s)] = Slot{Block: blocks[s].block, Envelope: envelope, EnvelopeKnown: true}
 	}
 
 	return slots, size, nil
@@ -417,7 +573,8 @@ func (a *Archive) loadEnvelopes(
 	chain *Chain,
 	era uint64,
 	name string,
-	blocks map[uint64]*spec.VersionedSignedBeaconBlock,
+	blocks map[uint64]decodedBlock,
+	next *decodedBlock,
 	first, last uint64,
 ) (envelopes map[uint64]*gloas.SignedExecutionPayloadEnvelope, size int64, err error) {
 	idx, err := a.index(ctx, name, envelopeTailSize(chain.SlotsPerEra), func(tail []byte, fileSize int64) (*fileIndex, error) {
@@ -432,7 +589,7 @@ func (a *Archive) loadEnvelopes(
 		return nil, size, err
 	}
 
-	envelopes, err = decodeEnvelopes(chain, blocks, raw)
+	envelopes, err = decodeEnvelopes(chain, blocks, raw, next)
 	if err != nil {
 		return nil, size, fmt.Errorf("%w: %s: %w", errCorrupt, name, err)
 	}
@@ -497,6 +654,15 @@ func (a *Archive) fileURL(name string) string {
 	return a.base + "/" + name
 }
 
+// statusError classifies an unexpected response: a missing file is skipped alone, anything else skips the archive.
+func statusError(status int, target string) error {
+	if status == http.StatusNotFound || status == http.StatusGone {
+		return fmt.Errorf("%w: %s", errMissing, target)
+	}
+
+	return fmt.Errorf("%w: unexpected status %d for %s", errUnreachable, status, target)
+}
+
 // getTail returns the last n bytes of target and its size, also against servers that ignore Range.
 func (a *Archive) getTail(ctx context.Context, target string, n int64) (tail []byte, size int64, err error) {
 	resp, err := a.get(ctx, target, fmt.Sprintf("bytes=-%d", n))
@@ -508,26 +674,29 @@ func (a *Archive) getTail(ctx context.Context, target string, n int64) (tail []b
 	switch resp.StatusCode {
 	case http.StatusPartialContent:
 		var first, last int64
-		if _, err := fmt.Sscanf(resp.Header.Get("Content-Range"), "bytes %d-%d/%d", &first, &last, &size); err != nil ||
-			last != size-1 || last-first+1 != n {
-			return nil, 0, fmt.Errorf("unexpected Content-Range %q for the last %d bytes", resp.Header.Get("Content-Range"), n)
+		if _, err := fmt.Sscanf(resp.Header.Get("Content-Range"), "bytes %d-%d/%d", &first, &last, &size); err != nil || last != size-1 {
+			return nil, 0, fmt.Errorf("%w: unexpected Content-Range %q for the last %d bytes", errUnreachable, resp.Header.Get("Content-Range"), n)
+		}
+
+		if last-first+1 != n {
+			return nil, 0, fmt.Errorf("%w: file of %d bytes is shorter than its %d byte index", errCorrupt, size, n)
 		}
 	case http.StatusOK:
 		size = resp.ContentLength
 		if size < n {
-			return nil, 0, fmt.Errorf("file of %d bytes is shorter than its %d byte index", size, n)
+			return nil, 0, fmt.Errorf("%w: file of %d bytes is shorter than its %d byte index", errCorrupt, size, n)
 		}
 
 		if _, err := io.CopyN(io.Discard, resp.Body, size-n); err != nil {
-			return nil, 0, fmt.Errorf("failed to skip to the file tail: %w", err)
+			return nil, 0, fmt.Errorf("%w: failed to skip to the file tail: %w", errUnreachable, err)
 		}
 	default:
-		return nil, 0, fmt.Errorf("unexpected status %d for tail request", resp.StatusCode)
+		return nil, 0, statusError(resp.StatusCode, target)
 	}
 
 	tail = make([]byte, n)
 	if _, err := io.ReadFull(resp.Body, tail); err != nil {
-		return nil, 0, fmt.Errorf("failed to read file tail: %w", err)
+		return nil, 0, fmt.Errorf("%w: failed to read file tail: %w", errUnreachable, err)
 	}
 
 	return tail, size, nil
@@ -544,19 +713,19 @@ func (a *Archive) getRange(ctx context.Context, target string, first, last int64
 	switch resp.StatusCode {
 	case http.StatusPartialContent:
 		if !strings.HasPrefix(resp.Header.Get("Content-Range"), fmt.Sprintf("bytes %d-%d/", first, last)) {
-			return nil, fmt.Errorf("unexpected Content-Range %q for bytes %d-%d", resp.Header.Get("Content-Range"), first, last)
+			return nil, fmt.Errorf("%w: unexpected Content-Range %q for bytes %d-%d", errUnreachable, resp.Header.Get("Content-Range"), first, last)
 		}
 	case http.StatusOK:
 		if _, err := io.CopyN(io.Discard, resp.Body, first); err != nil {
-			return nil, fmt.Errorf("failed to skip to range start: %w", err)
+			return nil, fmt.Errorf("%w: failed to skip to range start: %w", errUnreachable, err)
 		}
 	default:
-		return nil, fmt.Errorf("unexpected status %d for range request", resp.StatusCode)
+		return nil, statusError(resp.StatusCode, target)
 	}
 
 	data := make([]byte, last-first+1)
 	if _, err := io.ReadFull(resp.Body, data); err != nil {
-		return nil, fmt.Errorf("failed to read range: %w", err)
+		return nil, fmt.Errorf("%w: failed to read range: %w", errUnreachable, err)
 	}
 
 	return data, nil
@@ -578,5 +747,10 @@ func (a *Archive) get(ctx context.Context, target, byteRange string) (*http.Resp
 		req.Header.Set("Range", byteRange)
 	}
 
-	return a.client.Do(req)
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errUnreachable, err)
+	}
+
+	return resp, nil
 }

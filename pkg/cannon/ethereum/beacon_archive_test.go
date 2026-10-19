@@ -10,6 +10,7 @@ import (
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	eth2client "github.com/ethpandaops/go-eth2-client"
 	"github.com/ethpandaops/go-eth2-client/api"
+	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/all"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
@@ -32,6 +33,8 @@ type fakeBeaconNode struct {
 	mu        sync.Mutex
 	fetched   []string
 	envelopes []string
+	// headers are the block roots the node has, by slot.
+	headers map[string]phase0.Root
 }
 
 // fakeEnvelopeService answers envelope requests the way the beacon API does for a revealed payload.
@@ -50,6 +53,15 @@ func (f *fakeEnvelopeService) SignedExecutionPayloadEnvelope(_ context.Context, 
 	return &api.Response[*spec.VersionedSignedExecutionPayloadEnvelope]{
 		Data: &spec.VersionedSignedExecutionPayloadEnvelope{Version: spec.DataVersionGloas, Gloas: testEnvelope(999)},
 	}, nil
+}
+
+func (f *fakeEnvelopeService) BeaconBlockHeader(_ context.Context, opts *api.BeaconBlockHeaderOpts) (*api.Response[*apiv1.BeaconBlockHeader], error) {
+	root, ok := f.node.headers[opts.Block]
+	if !ok {
+		return nil, &api.Error{StatusCode: 404}
+	}
+
+	return &api.Response[*apiv1.BeaconBlockHeader]{Data: &apiv1.BeaconBlockHeader{Root: root}}, nil
 }
 
 func (f *fakeEnvelopeService) AgnosticSignedExecutionPayloadEnvelope(context.Context, *api.SignedExecutionPayloadEnvelopeOpts) (*api.Response[*all.SignedExecutionPayloadEnvelope], error) {
@@ -73,8 +85,10 @@ type fakeBlockArchive struct {
 	slots blockarchive.Slots
 	// sidecar is whether the slots' era has a published envelope sidecar.
 	sidecar bool
-	err     error
-	calls   int
+	// unproven are slots of the fetched range the archive cannot answer for.
+	unproven map[phase0.Slot]bool
+	err      error
+	calls    int
 }
 
 func (f *fakeBlockArchive) HasEnvelopes(context.Context, phase0.Slot) (bool, error) {
@@ -92,7 +106,7 @@ func (f *fakeBlockArchive) Slots(_ context.Context, slot phase0.Slot) (slots blo
 		return nil, false, f.err
 	}
 
-	if _, ok := f.slots[slot]; !ok {
+	if _, ok := f.slots[slot]; !ok && !f.unproven[slot] {
 		return nil, false, nil
 	}
 
@@ -223,6 +237,39 @@ func TestGetBeaconBlockFallsBackToBeacon(t *testing.T) {
 			assert.Equal(t, tt.wantArchive, tt.archive.calls)
 		})
 	}
+}
+
+func TestGetBeaconBlockCachesRangeForUnprovenSlot(t *testing.T) {
+	archive := &fakeBlockArchive{
+		slots:    blockarchive.Slots{100: {Block: testVersionedBlock(100)}, 101: {}},
+		unproven: map[phase0.Slot]bool{102: true},
+	}
+	b, node := newArchiveTestNode(archive)
+
+	block, err := b.GetBeaconBlock(context.Background(), "102")
+	require.NoError(t, err)
+	assert.Equal(t, phase0.Slot(999), block.Phase0.Message.Slot, "the beacon node answers the unproven slot")
+
+	block, err = b.GetBeaconBlock(context.Background(), "100")
+	require.NoError(t, err)
+	assert.Same(t, archive.slots[100].Block, block)
+
+	assert.Equal(t, 1, archive.calls, "the range was cached by the first lookup")
+	assert.Equal(t, []string{"102"}, node.fetched)
+}
+
+func TestArchiveCanonicalRoot(t *testing.T) {
+	b, node := newArchiveTestNode(nil)
+	node.headers = map[string]phase0.Root{"100": {0x01}}
+
+	root, found, err := b.archiveCanonicalRoot(context.Background(), 100)
+	require.NoError(t, err)
+	assert.True(t, found)
+	assert.Equal(t, phase0.Root{0x01}, root)
+
+	_, found, err = b.archiveCanonicalRoot(context.Background(), 101)
+	require.NoError(t, err)
+	assert.False(t, found, "a slot without a block")
 }
 
 func TestGetBeaconBlockWithoutArchive(t *testing.T) {

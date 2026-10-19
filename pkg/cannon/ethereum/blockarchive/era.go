@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"slices"
 
 	"github.com/ethpandaops/beacon/pkg/beacon/state"
 	"github.com/ethpandaops/go-eth2-client/spec"
@@ -113,21 +114,21 @@ func parseEraTail(tail []byte, size int64, era, slotsPerEra uint64) (*fileIndex,
 	return &fileIndex{slots: blockIdx, end: statePos}, nil
 }
 
-// decodeParallel decodes each slot's raw entry with fn across GOMAXPROCS workers.
-func decodeParallel[T any](raw map[uint64][]byte, fn func(slot uint64, data []byte) (T, error)) (map[uint64]T, error) {
-	slots := make([]uint64, 0, len(raw))
-	for slot := range raw {
+// decodeParallel applies fn to each slot's input across GOMAXPROCS workers.
+func decodeParallel[In, Out any](in map[uint64]In, fn func(slot uint64, v In) (Out, error)) (map[uint64]Out, error) {
+	slots := make([]uint64, 0, len(in))
+	for slot := range in {
 		slots = append(slots, slot)
 	}
 
-	decoded := make([]T, len(slots))
+	decoded := make([]Out, len(slots))
 
 	g := errgroup.Group{}
 	g.SetLimit(runtime.GOMAXPROCS(0))
 
 	for i, slot := range slots {
 		g.Go(func() error {
-			v, err := fn(slot, raw[slot])
+			v, err := fn(slot, in[slot])
 			if err != nil {
 				return fmt.Errorf("slot %d: %w", slot, err)
 			}
@@ -142,7 +143,7 @@ func decodeParallel[T any](raw map[uint64][]byte, fn func(slot uint64, data []by
 		return nil, err
 	}
 
-	out := make(map[uint64]T, len(slots))
+	out := make(map[uint64]Out, len(slots))
 	for i, slot := range slots {
 		out[slot] = decoded[i]
 	}
@@ -150,11 +151,55 @@ func decodeParallel[T any](raw map[uint64][]byte, fn func(slot uint64, data []by
 	return out, nil
 }
 
-// decodeBlocks decodes compressed block entries, checking each block's slot matches its index slot.
-func decodeBlocks(chain *Chain, raw map[uint64][]byte) (map[uint64]*spec.VersionedSignedBeaconBlock, error) {
-	return decodeParallel(raw, func(slot uint64, data []byte) (*spec.VersionedSignedBeaconBlock, error) {
-		return decodeBlock(chain, slot, data)
+// decodedBlock is a block decoded from an era file with its root.
+type decodedBlock struct {
+	block *spec.VersionedSignedBeaconBlock
+	root  phase0.Root
+}
+
+// decodeBlocks decodes and hashes compressed block entries, checking each block's slot matches its index slot.
+func decodeBlocks(chain *Chain, raw map[uint64][]byte) (map[uint64]decodedBlock, error) {
+	return decodeParallel(raw, func(slot uint64, data []byte) (decodedBlock, error) {
+		block, err := decodeBlock(chain, slot, data)
+		if err != nil {
+			return decodedBlock{}, err
+		}
+
+		message, err := blockMessage(block)
+		if err != nil {
+			return decodedBlock{}, err
+		}
+
+		root, err := chain.Codec.HashTreeRoot(message)
+		if err != nil {
+			return decodedBlock{}, fmt.Errorf("failed to hash block: %w", err)
+		}
+
+		return decodedBlock{block: block, root: root}, nil
 	})
+}
+
+// checkLinks checks each decoded block's parent root is the root of the decoded block before it.
+func checkLinks(blocks map[uint64]decodedBlock) error {
+	slots := make([]uint64, 0, len(blocks))
+	for slot := range blocks {
+		slots = append(slots, slot)
+	}
+
+	slices.Sort(slots)
+
+	for i := 1; i < len(slots); i++ {
+		parent, err := blocks[slots[i]].block.ParentRoot()
+		if err != nil {
+			return fmt.Errorf("slot %d: %w", slots[i], err)
+		}
+
+		if parent != blocks[slots[i-1]].root {
+			return fmt.Errorf("slot %d builds on %#x, not on slot %d block %#x", slots[i], parent, slots[i-1], blocks[slots[i-1]].root)
+		}
+	}
+
+	return nil
 }
 
 func decodeBlock(chain *Chain, slot uint64, compressed []byte) (*spec.VersionedSignedBeaconBlock, error) {
@@ -178,6 +223,57 @@ func decodeBlock(chain *Chain, slot uint64, compressed []byte) (*spec.VersionedS
 	}
 
 	return block, nil
+}
+
+// blockMessage returns the BeaconBlock a signed block wraps.
+func blockMessage(block *spec.VersionedSignedBeaconBlock) (any, error) {
+	var message any
+
+	switch block.Version {
+	case spec.DataVersionPhase0:
+		if block.Phase0 != nil && block.Phase0.Message != nil {
+			message = block.Phase0.Message
+		}
+	case spec.DataVersionAltair:
+		if block.Altair != nil && block.Altair.Message != nil {
+			message = block.Altair.Message
+		}
+	case spec.DataVersionBellatrix:
+		if block.Bellatrix != nil && block.Bellatrix.Message != nil {
+			message = block.Bellatrix.Message
+		}
+	case spec.DataVersionCapella:
+		if block.Capella != nil && block.Capella.Message != nil {
+			message = block.Capella.Message
+		}
+	case spec.DataVersionDeneb:
+		if block.Deneb != nil && block.Deneb.Message != nil {
+			message = block.Deneb.Message
+		}
+	case spec.DataVersionElectra:
+		if block.Electra != nil && block.Electra.Message != nil {
+			message = block.Electra.Message
+		}
+	case spec.DataVersionFulu:
+		if block.Fulu != nil && block.Fulu.Message != nil {
+			message = block.Fulu.Message
+		}
+	case spec.DataVersionGloas:
+		if block.Gloas != nil && block.Gloas.Message != nil {
+			message = block.Gloas.Message
+		}
+	case spec.DataVersionHeze:
+		if block.Heze != nil && block.Heze.Message != nil {
+			message = block.Heze.Message
+		}
+	default:
+	}
+
+	if message == nil {
+		return nil, fmt.Errorf("%s block has no message", block.Version)
+	}
+
+	return message, nil
 }
 
 // unmarshalBlock decodes a SignedBeaconBlock of fork v as go-eth2-client decodes SSZ API responses.

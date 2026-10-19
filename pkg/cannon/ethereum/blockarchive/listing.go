@@ -36,16 +36,21 @@ func newListing(network string) *listing {
 }
 
 func (l *listing) add(body []byte) {
-	for _, m := range l.re.FindAllSubmatch(body, -1) {
-		basename := string(m[1])
+	for _, m := range l.re.FindAllSubmatchIndex(body, -1) {
+		// A name must end at its suffix, so .era1 or .era.tmp files are not era files.
+		if m[1] < len(body) && isNameByte(body[m[1]]) {
+			continue
+		}
 
-		if string(m[3]) == sidecarSuffix {
+		basename, suffix := string(body[m[2]:m[3]]), string(body[m[6]:m[7]])
+
+		if suffix == sidecarSuffix {
 			l.sidecars[basename] = true
 
 			continue
 		}
 
-		era, err := strconv.ParseUint(string(m[2]), 10, 64)
+		era, err := strconv.ParseUint(string(body[m[4]:m[5]]), 10, 64)
 		if err != nil {
 			continue
 		}
@@ -54,6 +59,10 @@ func (l *listing) add(body []byte) {
 			l.eras[era] = basename
 		}
 	}
+}
+
+func isNameByte(b byte) bool {
+	return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '.' || b == '_' || b == '-'
 }
 
 // files pairs each listed era file with its sidecar, which must share the era file's basename.

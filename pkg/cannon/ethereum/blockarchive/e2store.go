@@ -126,6 +126,30 @@ func (s *slotIndex) entryAt(slot uint64) (pos int64, ok bool) {
 	return pos, true
 }
 
+// prevEntry returns the nearest slot before slot that has an entry.
+func (s *slotIndex) prevEntry(slot uint64) (uint64, bool) {
+	for slot > s.start {
+		slot--
+
+		if _, ok := s.entryAt(slot); ok {
+			return slot, true
+		}
+	}
+
+	return 0, false
+}
+
+// nextEntry returns the nearest slot after slot that has an entry.
+func (s *slotIndex) nextEntry(slot uint64) (uint64, bool) {
+	for slot++; s.covers(slot); slot++ {
+		if _, ok := s.entryAt(slot); ok {
+			return slot, true
+		}
+	}
+
+	return 0, false
+}
+
 // validate checks that the indexed entries lie in [lo, hi) in strictly increasing slot order.
 func (s *slotIndex) validate(lo, hi int64) error {
 	prev := lo - 1

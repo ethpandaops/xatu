@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const hoodi10 = "hoodi-00010-0123abcd.era"
+
 func parseListing(network string, bodies ...string) map[uint64]eraFile {
 	l := newListing(network)
 	for _, body := range bodies {
@@ -52,14 +54,30 @@ func TestParseListingBlockArchiverAPI(t *testing.T) {
 "coverage": {"era": {"count": 2, "min_era": 10, "max_era": 11, "size_bytes": 2}}, "limit": 100, "offset": 0}`
 
 	assert.Equal(t, map[uint64]eraFile{
-		10: {name: "hoodi-00010-0123abcd.era"},
+		10: {name: hoodi10},
 		11: {name: "hoodi-00011-89abcdef.era", envelopes: "hoodi-00011-89abcdef.envelopes.e2s"},
+	}, parseListing("hoodi", body))
+}
+
+func TestParseListingNamesEndAtTheirSuffix(t *testing.T) {
+	body := `<a href="hoodi-00010-0123abcd.era">hoodi-00010-0123abcd.era</a>
+<a href="hoodi-00011-89abcdef.era1">hoodi-00011-89abcdef.era1</a>
+<a href="hoodi-00012-01234567.era.tmp">hoodi-00012-01234567.era.tmp</a>
+<a href="hoodi-00013-aaaaaaaa.era.envelopes.e2s">x</a>
+<a href="hoodi-00010-0123abcd.envelopes.e2s.part">x</a>
+hoodi-00014-bbbbbbbb.era hoodi-00014-bbbbbbbb.envelopes.e2s
+"hoodi-00015-cccccccc.era"`
+
+	assert.Equal(t, map[uint64]eraFile{
+		10: {name: hoodi10},
+		14: {name: "hoodi-00014-bbbbbbbb.era", envelopes: "hoodi-00014-bbbbbbbb.envelopes.e2s"},
+		15: {name: "hoodi-00015-cccccccc.era"},
 	}, parseListing("hoodi", body))
 }
 
 func TestParseListingPairsSidecarsByBasename(t *testing.T) {
 	assert.Equal(t, map[uint64]eraFile{
-		10: {name: "hoodi-00010-0123abcd.era"},
+		10: {name: hoodi10},
 		11: {name: "hoodi-00011-89abcdef.era", envelopes: "hoodi-00011-89abcdef.envelopes.e2s"},
 	}, parseListing("hoodi",
 		`hoodi-00010-0123abcd.era hoodi-00010-ffffffff.envelopes.e2s hoodi-00012-0123abcd.envelopes.e2s`,

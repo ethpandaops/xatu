@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -92,11 +93,13 @@ func TestDecodeBlocksAcrossForkBoundary(t *testing.T) {
 
 	decoded, err := decodeBlocks(chain, raw)
 	require.NoError(t, err)
+	require.NoError(t, checkLinks(decoded))
 
 	for _, b := range blocks {
-		block := decoded[b.slot]
+		block := decoded[b.slot].block
 		require.NotNil(t, block, "slot %d", b.slot)
 		assert.Equal(t, chain.forkAt(b.slot), block.Version, "slot %d", b.slot)
+		assert.Equal(t, b.root, decoded[b.slot].root, "slot %d", b.slot)
 
 		got, err := chain.Codec.MarshalSSZ(versionedMessage(t, block))
 		require.NoError(t, err)
@@ -104,9 +107,32 @@ func TestDecodeBlocksAcrossForkBoundary(t *testing.T) {
 	}
 }
 
+func TestCheckLinks(t *testing.T) {
+	chain := testChain()
+	blocks := testBlocksAt(t, 16, 17, 20, 24)
+	other := linkedBlocks(t, phase0.Root{0x02}, []uint64{17}, nil)
+
+	decode := func(bs ...testBlock) map[uint64]decodedBlock {
+		raw := make(map[uint64][]byte, len(bs))
+		for _, b := range bs {
+			raw[b.slot] = snappyFramed(t, b.ssz)
+		}
+
+		decoded, err := decodeBlocks(chain, raw)
+		require.NoError(t, err)
+
+		return decoded
+	}
+
+	require.NoError(t, checkLinks(decode(blocks...)))
+	require.NoError(t, checkLinks(decode(blocks[2])), "a lone block links trivially")
+	require.ErrorContains(t, checkLinks(decode(blocks[0], blocks[2])), "slot 20 builds on", "a block left out breaks the links")
+	require.ErrorContains(t, checkLinks(decode(blocks[0], other[0], blocks[2])), "slot 17 builds on")
+}
+
 func TestDecodeBlockChecksIndexSlot(t *testing.T) {
 	chain := testChain()
-	b := phase0Block(t, 17)
+	b := phase0Block(t, 17, testParent)
 
 	_, err := decodeBlock(chain, 18, snappyFramed(t, b.ssz))
 	require.ErrorContains(t, err, "decodes to slot 17")

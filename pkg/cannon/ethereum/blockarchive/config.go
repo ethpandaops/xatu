@@ -26,7 +26,7 @@ type Config struct {
 	ListingTTL human.Duration `yaml:"listingTtl" default:"5m"`
 	// MaxConcurrentFetches bounds parallel fetches from the archive.
 	MaxConcurrentFetches int `yaml:"maxConcurrentFetches" default:"2"`
-	// RangeSlots is the aligned window fetched with HTTP Range; zero fetches whole eras.
+	// RangeSlots is the aligned window fetched with HTTP Range, at most a mainnet-preset era; zero reads whole eras.
 	RangeSlots uint64 `yaml:"rangeSlots" default:"256"`
 }
 
@@ -64,6 +64,10 @@ func (c *Config) Validate() error {
 
 	if c.MaxConcurrentFetches < 1 {
 		return errors.New("blockArchive.maxConcurrentFetches must be at least 1")
+	}
+
+	if c.RangeSlots > mainnetSlotsPerEra {
+		return fmt.Errorf("blockArchive.rangeSlots must be at most %d, the slots of a mainnet-preset era", mainnetSlotsPerEra)
 	}
 
 	if c.Timeout.Duration <= 0 || c.ListingTTL.Duration <= 0 {

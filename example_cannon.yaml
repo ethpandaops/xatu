@@ -46,9 +46,12 @@ ethereum:
   # block-archiver's verified mirrors with
   #   url: https://<archive>/era/<network>
   #   listingUrl: https://<archive>/api/v1/era?network=<network>
-  # rangeSlots fetches aligned windows with HTTP Range reads of the era's slot
-  # index; 0 downloads whole eras (~600MB of mainnet blocks each). The block
-  # cache is grown to hold one fetch.
+  # Every fetched window is tied to the beacon node by one block header request.
+  # rangeSlots fetches aligned windows (at most 8192 slots) with HTTP Range reads
+  # of the era's slot index; a 256-slot mainnet window is ~25MB to download and
+  # ~70MB decoded. 0 reads each era's whole block section instead: ~600MB per
+  # mainnet era, peaking near 3GiB of memory per in-flight fetch and keeping
+  # ~1.4GiB of decoded blocks, as the block cache grows to hold one fetch.
   # blockArchive:
   #   enabled: false
   #   url: https://mainnet.era.nimbus.team

@@ -26,7 +26,7 @@ func NewMetrics(namespace string) *Metrics {
 		lookups: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "lookups_total",
-			Help:      "Era archive lookups for a slot by result (hit, not_covered, unavailable, error)",
+			Help:      "Era archive lookups for a slot by result (hit, not_covered, not_canonical, unavailable, error)",
 		}, []string{labelNetwork, "result"}),
 		fetches: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,

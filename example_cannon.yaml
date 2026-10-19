@@ -45,7 +45,7 @@ ethereum:
   # files with a listing, e.g. https://<network>.era.nimbus.team, or
   # block-archiver's verified mirrors with
   #   url: https://<archive>/era/<network>
-  #   listingUrl: https://<archive>/api/v1/era?network=<network>&limit=1000
+  #   listingUrl: https://<archive>/api/v1/era?network=<network>
   # rangeSlots fetches aligned windows with HTTP Range reads of the era's slot
   # index; 0 downloads whole eras (~600MB of mainnet blocks each). The block
   # cache is grown to hold one fetch.

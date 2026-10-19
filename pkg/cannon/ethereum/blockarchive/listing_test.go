@@ -89,6 +89,7 @@ func TestNextPage(t *testing.T) {
 		"short page":        {target: other, body: `{"eras": [{"era": 3}], "limit": 2, "offset": 2}`},
 		"empty page":        {target: other, body: `{"eras": [], "limit": 100, "offset": 200}`},
 		"unpaged json":      {target: other, body: `{"eras": [{"era": 1}]}`},
+		"every era":         {target: other, body: `{"eras": [{"era": 1}], "limit": null, "offset": 0}`},
 		"html index":        {target: "https://archive/", body: `<html><a href="mainnet-00001-40cf2f3c.era"></a></html>`},
 		"non-positive size": {target: other, body: `{"eras": [], "limit": 0, "offset": 0}`},
 	}

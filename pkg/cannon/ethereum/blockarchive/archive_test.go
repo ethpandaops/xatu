@@ -399,7 +399,7 @@ func TestArchiveCorruptSidecarIsSkipped(t *testing.T) {
 	assert.False(t, has, "the sidecar is skipped after failing to verify")
 }
 
-// blockArchiverAPI serves eras 1..lastEra the way block-archiver's /api/v1/era?network= lists them, paged oldest first.
+// blockArchiverAPI lists eras 1..lastEra like block-archiver's /api/v1/era?network=: all of them, or a page with limit.
 func blockArchiverAPI(lastEra uint64, sidecars map[uint64]bool, requests *atomic.Int64) http.HandlerFunc {
 	type file struct {
 		File string `json:"file"`
@@ -414,9 +414,13 @@ func blockArchiverAPI(lastEra uint64, sidecars map[uint64]bool, requests *atomic
 	return func(w http.ResponseWriter, r *http.Request) {
 		requests.Add(1)
 
-		limit, offset := 100, 0
+		var limit *int
+
+		offset := 0
+
 		if v, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil {
-			limit = max(1, min(1000, v))
+			limit = new(int)
+			*limit = max(1, v)
 		}
 
 		if v, err := strconv.Atoi(r.URL.Query().Get("offset")); err == nil {
@@ -425,7 +429,7 @@ func blockArchiverAPI(lastEra uint64, sidecars map[uint64]bool, requests *atomic
 
 		eras := []era{}
 
-		for n := uint64(offset) + 1; r.URL.Query().Get("network") == testNetwork && n <= lastEra && len(eras) < limit; n++ {
+		for n := uint64(offset) + 1; r.URL.Query().Get("network") == testNetwork && n <= lastEra && (limit == nil || len(eras) < *limit); n++ {
 			e := era{Era: n, Files: map[string]*file{"era": {eraName(n), "/era/" + testNetwork + "/" + eraName(n)}, "envelopes": nil}}
 			if sidecars[n] {
 				e.Files["envelopes"] = &file{sidecarName(n), "/era/" + testNetwork + "/" + sidecarName(n)}
@@ -446,40 +450,45 @@ func TestArchiveBlockArchiverListing(t *testing.T) {
 		sidecarName(3): encodeSidecar(t, 3, blocks),
 	})
 
-	var listings atomic.Int64
+	for query, pages := range map[string]int64{"": 1, "&limit=100": 3} {
+		t.Run("listing"+query, func(t *testing.T) {
+			var listings atomic.Int64
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/era", blockArchiverAPI(250, map[uint64]bool{3: true}, &listings))
-	mux.Handle("/era/"+testNetwork+"/", http.StripPrefix("/era/"+testNetwork, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = "/era" + r.URL.Path
-		fake.ServeHTTP(w, r)
-	})))
+			mux := http.NewServeMux()
+			mux.HandleFunc("/api/v1/era", blockArchiverAPI(250, map[uint64]bool{3: true}, &listings))
+			mux.Handle("/era/"+testNetwork+"/", http.StripPrefix("/era/"+testNetwork, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.URL.Path = "/era" + r.URL.Path
+				fake.ServeHTTP(w, r)
+			})))
 
-	srv := httptest.NewServer(mux)
-	defer srv.Close()
+			srv := httptest.NewServer(mux)
+			defer srv.Close()
 
-	cfg := testConfig(srv.URL, 0)
-	cfg.URL = srv.URL + "/era/" + testNetwork
-	cfg.ListingURL = srv.URL + "/api/v1/era?network=" + testNetwork
-	a := newTestArchive(t, cfg)
+			cfg := testConfig(srv.URL, 0)
+			cfg.URL = srv.URL + "/era/" + testNetwork
+			cfg.ListingURL = srv.URL + "/api/v1/era?network=" + testNetwork + query
+			a := newTestArchive(t, cfg)
 
-	slots, found, err := a.Slots(context.Background(), 36)
-	require.NoError(t, err)
-	require.True(t, found)
-	assert.Equal(t, int64(3), listings.Load(), "eras 1..250 take three pages of 100")
-	assert.Equal(t, int64(0), fake.listings.Load())
+			slots, found, err := a.Slots(context.Background(), 36)
+			require.NoError(t, err)
+			require.True(t, found)
+			assert.Equal(t, pages, listings.Load(), "listing requests for eras 1..250")
 
-	require.NotNil(t, slots[36].Envelope)
-	assert.True(t, slots[38].EnvelopeKnown)
-	assert.Nil(t, slots[38].Envelope, "withheld payload")
+			require.NotNil(t, slots[36].Envelope)
+			assert.True(t, slots[38].EnvelopeKnown)
+			assert.Nil(t, slots[38].Envelope, "withheld payload")
 
-	file, err := a.lookup(context.Background(), testNetwork, 250)
-	require.NoError(t, err)
-	assert.Equal(t, eraFile{name: eraName(250)}, file, "the last page is listed")
+			file, err := a.lookup(context.Background(), testNetwork, 250)
+			require.NoError(t, err)
+			assert.Equal(t, eraFile{name: eraName(250)}, file, "the newest era is listed")
 
-	has, err := a.HasEnvelopes(context.Background(), 16)
-	require.NoError(t, err)
-	assert.False(t, has, "era 2 has no sidecar")
+			has, err := a.HasEnvelopes(context.Background(), 16)
+			require.NoError(t, err)
+			assert.False(t, has, "era 2 has no sidecar")
+		})
+	}
+
+	assert.Equal(t, int64(0), fake.listings.Load(), "the era directory is never listed")
 }
 
 func TestArchiveListingPagesAreBounded(t *testing.T) {

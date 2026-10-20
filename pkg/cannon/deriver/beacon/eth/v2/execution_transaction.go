@@ -240,44 +240,10 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 		return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
 	}
 
-	blobSidecars := []*deneb.BlobSidecar{}
-
-	if block.Version >= spec.DataVersionDeneb {
-		sidecars, errr := b.beacon.GetBlobSidecars(ctx, block, xatuethv1.SlotAsString(slot))
-		if errr != nil {
-			// From Gloas (EIP-7732) blobs are only obtainable by reconstruction
-			// from data columns, which not all clients serve reliably. Blob size
-			// stats are best-effort there — never block the transaction dataset.
-			if block.Version >= spec.DataVersionGloas {
-				b.log.WithError(errr).WithField("slot", slot).WithContext(ctx).Debug("failed to get blob sidecars for gloas block, continuing without blob stats")
-			} else {
-				var apiErr *api.Error
-				if errors.As(errr, &apiErr) {
-					switch apiErr.StatusCode {
-					case 404:
-						b.log.WithError(errr).WithField("slot", slot).WithContext(ctx).Debug("no beacon block blob sidecars found for slot")
-					case 503:
-						return nil, errors.New("beacon node is syncing")
-					default:
-						return nil, errors.Wrapf(errr, "failed to get beacon block blob sidecars for slot %d", slot)
-					}
-				} else {
-					return nil, errors.Wrapf(errr, "failed to get beacon block blob sidecars for slot %d", slot)
-				}
-			}
-		}
-
-		blobSidecars = sidecars
+	blobSidecars, err := b.getBlobSidecars(ctx, block, slot)
+	if err != nil {
+		return nil, err
 	}
-
-	blobSidecarsMap := map[string]*deneb.BlobSidecar{}
-
-	for _, blobSidecar := range blobSidecars {
-		versionedHash := ethereum.ConvertKzgCommitmentToVersionedHash(blobSidecar.KZGCommitment[:])
-		blobSidecarsMap[versionedHash.String()] = blobSidecar
-	}
-
-	events := []*xatu.DecoratedEvent{}
 
 	// EIP-7732: under ePBS the execution payload (transactions, base fee, etc.)
 	// arrives in a separate ExecutionPayloadEnvelope. Fetch it once here so
@@ -291,18 +257,129 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 		}
 
 		if envelope == nil || envelope.Message == nil || envelope.Message.Payload == nil {
-			return events, nil
+			return []*xatu.DecoratedEvent{}, nil
 		}
-	}
-
-	transactions, err := b.getExecutionTransactions(ctx, block, envelope)
-	if err != nil {
-		return nil, err
 	}
 
 	chainID := new(big.Int).SetUint64(b.beacon.Metadata().Spec.DepositChainID)
 	if chainID.Cmp(big.NewInt(0)) == 0 {
 		return nil, fmt.Errorf("failed to get chain ID from beacon node metadata")
+	}
+
+	return b.deriveEvents(ctx, block, envelope, blobSidecars, blockIdentifier, chainID)
+}
+
+// getBlobSidecars returns the block's blob sidecars keyed by versioned hash. A nil map means the
+// beacon node could not serve them: blobs past its retention window, a node without the block's
+// blobs (404), or a Gloas block whose blobs could not be reconstructed.
+func (b *ExecutionTransactionDeriver) getBlobSidecars(
+	ctx context.Context,
+	block *spec.VersionedSignedBeaconBlock,
+	slot phase0.Slot,
+) (map[string]*deneb.BlobSidecar, error) {
+	if block.Version < spec.DataVersionDeneb {
+		return map[string]*deneb.BlobSidecar{}, nil
+	}
+
+	sidecars, err := b.beacon.GetBlobSidecars(ctx, block, xatuethv1.SlotAsString(slot))
+	if err == nil {
+		// Some nodes answer an empty list rather than an error once blobs are pruned.
+		if commitments, cerr := block.BlobKZGCommitments(); cerr == nil && len(sidecars) < len(commitments) {
+			if retained, rerr := b.blobsRetained(block.Version, slot); rerr == nil && !retained {
+				b.log.WithField("slot", slot).WithContext(ctx).Debug("Blob sidecars are past the beacon node's retention window, blob sizes left unknown")
+
+				return nil, nil //nolint:nilnil // nil map marks blob sidecars as unavailable
+			}
+		}
+
+		byHash := make(map[string]*deneb.BlobSidecar, len(sidecars))
+
+		for _, sidecar := range sidecars {
+			byHash[ethereum.ConvertKzgCommitmentToVersionedHash(sidecar.KZGCommitment[:]).String()] = sidecar
+		}
+
+		return byHash, nil
+	}
+
+	log := b.log.WithError(err).WithField("slot", slot).WithContext(ctx)
+
+	// From Gloas (EIP-7732) blobs are only obtainable by reconstruction from
+	// data columns, which not all clients serve reliably.
+	if block.Version >= spec.DataVersionGloas {
+		log.Debug("Failed to get blob sidecars for gloas block, blob sizes left unknown")
+
+		return nil, nil //nolint:nilnil // nil map marks blob sidecars as unavailable
+	}
+
+	var apiErr *api.Error
+	if errors.As(err, &apiErr) && apiErr.StatusCode == 503 {
+		return nil, errors.New("beacon node is syncing")
+	}
+
+	retained, rerr := b.blobsRetained(block.Version, slot)
+	if rerr != nil {
+		return nil, errors.Wrapf(rerr, "failed to get beacon block blob sidecars for slot %d: %s", slot, err)
+	}
+
+	if !retained {
+		log.Debug("Blob sidecars are past the beacon node's retention window, blob sizes left unknown")
+
+		return nil, nil //nolint:nilnil // nil map marks blob sidecars as unavailable
+	}
+
+	if apiErr != nil && apiErr.StatusCode == 404 {
+		log.Warn("Beacon node has no blob sidecars for slot, blob sizes left unknown")
+
+		return nil, nil //nolint:nilnil // nil map marks blob sidecars as unavailable
+	}
+
+	return nil, errors.Wrapf(err, "failed to get beacon block blob sidecars for slot %d", slot)
+}
+
+// blobsRetained reports whether the beacon node must still serve blob data for slot
+// (MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS, or the data column window from Fulu).
+func (b *ExecutionTransactionDeriver) blobsRetained(version spec.DataVersion, slot phase0.Slot) (bool, error) {
+	sp, err := b.beacon.Node().Spec()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to obtain spec")
+	}
+
+	key := "MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS"
+	if version >= spec.DataVersionFulu {
+		key = "MIN_EPOCHS_FOR_DATA_COLUMN_SIDECARS_REQUESTS"
+	}
+
+	window, ok := sp.FullSpec[key].(uint64)
+	if !ok {
+		return false, errors.Errorf("spec has no %s", key)
+	}
+
+	epoch := uint64(slot) / uint64(sp.SlotsPerEpoch)
+	current := b.beacon.Metadata().Wallclock().Epochs().Current()
+
+	return withinBlobRetention(epoch, current.Number(), window), nil
+}
+
+// withinBlobRetention follows the spec's data availability boundary: current epoch minus the window.
+func withinBlobRetention(epoch, currentEpoch, window uint64) bool {
+	return epoch+window >= currentEpoch
+}
+
+// deriveEvents builds one event per execution transaction. A nil blobSidecars map leaves the
+// blob sizes of blob transactions unknown (NULL) rather than zero.
+func (b *ExecutionTransactionDeriver) deriveEvents(
+	ctx context.Context,
+	block *spec.VersionedSignedBeaconBlock,
+	envelope *gloas.SignedExecutionPayloadEnvelope,
+	blobSidecars map[string]*deneb.BlobSidecar,
+	blockIdentifier *xatu.BlockIdentifier,
+	chainID *big.Int,
+) ([]*xatu.DecoratedEvent, error) {
+	events := []*xatu.DecoratedEvent{}
+
+	transactions, err := b.getExecutionTransactions(ctx, block, envelope)
+	if err != nil {
+		return nil, err
 	}
 
 	signer := types.LatestSignerForChainID(chainID)
@@ -348,8 +425,7 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 			Type:      wrapperspb.UInt32(uint32(transaction.Type())),
 		}
 
-		sidecarsEmptySize := 0
-		sidecarsSize := 0
+		sidecarsSize, sidecarsEmptySize := "0", "0"
 
 		if transaction.Type() == 3 {
 			blobHashes := make([]string, len(transaction.BlobHashes()))
@@ -358,17 +434,15 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 				b.log.WithField("transaction", transaction.Hash().Hex()).WithContext(ctx).Warn("no versioned hashes for type 3 transaction")
 			}
 
-			for i := 0; i < len(transaction.BlobHashes()); i++ {
-				hash := transaction.BlobHashes()[i]
+			for i, hash := range transaction.BlobHashes() {
 				blobHashes[i] = hash.String()
-				sidecar := blobSidecarsMap[hash.String()]
+			}
 
-				if sidecar != nil {
-					sidecarsSize += len(sidecar.Blob)
-					sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(sidecar.Blob[:], 4)
-				} else {
-					b.log.WithField("versioned hash", hash.String()).WithField("transaction", transaction.Hash().Hex()).WithContext(ctx).Warn("missing blob sidecar")
-				}
+			var missing []string
+
+			sidecarsSize, sidecarsEmptySize, missing = blobSidecarSizes(blobHashes, blobSidecars)
+			if blobSidecars != nil && len(missing) > 0 {
+				b.log.WithField("versioned_hashes", missing).WithField("transaction", transaction.Hash().Hex()).WithContext(ctx).Warn("missing blob sidecar, blob sizes left unknown")
 			}
 
 			tx.BlobGas = wrapperspb.UInt64(transaction.BlobGas())
@@ -387,6 +461,31 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	}
 
 	return events, nil
+}
+
+// blobSidecarSizes sums the blob and empty byte sizes of a blob transaction's sidecars. When any
+// sidecar is unavailable both sizes are empty, which is stored as NULL, and missing lists the
+// versioned hashes without a sidecar.
+func blobSidecarSizes(versionedHashes []string, sidecars map[string]*deneb.BlobSidecar) (size, emptySize string, missing []string) {
+	total, empty := 0, 0
+
+	for _, hash := range versionedHashes {
+		sidecar := sidecars[hash]
+		if sidecar == nil {
+			missing = append(missing, hash)
+
+			continue
+		}
+
+		total += len(sidecar.Blob)
+		empty += ethereum.CountConsecutiveEmptyBytes(sidecar.Blob[:], 4)
+	}
+
+	if len(missing) > 0 {
+		return "", "", missing
+	}
+
+	return strconv.Itoa(total), strconv.Itoa(empty), nil
 }
 
 func (b *ExecutionTransactionDeriver) getExecutionTransactions(
@@ -435,7 +534,7 @@ func (b *ExecutionTransactionDeriver) getExecutionTransactions(
 	return transactions, nil
 }
 
-func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transaction *xatuethv1.Transaction, positionInBlock uint64, blockIdentifier *xatu.BlockIdentifier, rlpTransaction *types.Transaction, sidecarsSize, sidecarsEmptySize int) (*xatu.DecoratedEvent, error) {
+func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transaction *xatuethv1.Transaction, positionInBlock uint64, blockIdentifier *xatu.BlockIdentifier, rlpTransaction *types.Transaction, sidecarsSize, sidecarsEmptySize string) (*xatu.DecoratedEvent, error) {
 	// Make a clone of the metadata
 	metadata, ok := proto.Clone(b.clientMeta).(*xatu.ClientMeta)
 	if !ok {
@@ -462,8 +561,8 @@ func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transacti
 			PositionInBlock:       wrapperspb.UInt64(positionInBlock),
 			Size:                  strconv.FormatFloat(float64(rlpTransaction.Size()), 'f', 0, 64),
 			CallDataSize:          fmt.Sprintf("%d", len(rlpTransaction.Data())),
-			BlobSidecarsSize:      fmt.Sprint(sidecarsSize),
-			BlobSidecarsEmptySize: fmt.Sprint(sidecarsEmptySize),
+			BlobSidecarsSize:      sidecarsSize,
+			BlobSidecarsEmptySize: sidecarsEmptySize,
 		},
 	}
 
@@ -488,6 +587,15 @@ func GetGasPrice(
 		switch block.Version {
 		case spec.DataVersionBellatrix:
 			le := block.Bellatrix.Message.Body.ExecutionPayload.BaseFeePerGasLE
+
+			var be [32]byte
+			for i := 0; i < 32; i++ {
+				be[i] = le[31-i]
+			}
+
+			baseFee = new(big.Int).SetBytes(be[:])
+		case spec.DataVersionCapella:
+			le := block.Capella.Message.Body.ExecutionPayload.BaseFeePerGasLE
 
 			var be [32]byte
 			for i := 0; i < 32; i++ {

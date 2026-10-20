@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"context"
 	"math/big"
 	"testing"
 
@@ -13,6 +14,12 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/holiman/uint256"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 func TestGetGasPrice_Legacy(t *testing.T) {
@@ -236,4 +243,111 @@ func TestGetGasPrice_UnknownTxType(t *testing.T) {
 	if _, err := GetGasPrice(block, tx, nil); err == nil {
 		t.Fatal("expected error for unknown block version with EIP-1559 tx")
 	}
+}
+
+// Mainnet slot 6316823 is a Capella block; expected prices are the EL receipts' effectiveGasPrice.
+func TestGetGasPrice_CapellaBlock(t *testing.T) {
+	block := loadEraBlock(t, "mainnet-6316823", spec.DataVersionCapella)
+
+	want := []int64{
+		41000000000, 40051643706, 38051643706, 38051643706, 38000000000, 37833130593,
+		37430618558, 37401643706, 37351643706, 37151643706, 37151643706, 37151643706,
+	}
+
+	transactions, err := (&ExecutionTransactionDeriver{}).getExecutionTransactions(context.Background(), block, nil)
+	require.NoError(t, err)
+	require.Len(t, transactions, len(want))
+
+	for i, tx := range transactions {
+		got, err := GetGasPrice(block, tx, nil)
+		require.NoError(t, err)
+		assert.Equal(t, big.NewInt(want[i]), got, "transaction %d", i)
+	}
+}
+
+func TestWithinBlobRetention(t *testing.T) {
+	const current, window = 483421, 4096
+
+	assert.True(t, withinBlobRetention(current, current, window))
+	assert.True(t, withinBlobRetention(current-window, current, window))
+	assert.False(t, withinBlobRetention(current-window-1, current, window))
+	// Mainnet execution transaction backfill stalled here on 2026-03-19.
+	assert.False(t, withinBlobRetention(431117, current, window))
+}
+
+// Mainnet slot 13795744 (Fulu): its blobs are long pruned, so the beacon node answers
+// 400 "Insufficient data columns to reconstruct blobs" and the deriver used to stall.
+func TestExecutionTransactionDeriver_PrunedBlobsFuluBlock(t *testing.T) {
+	block := loadEraBlock(t, "mainnet-13795744", spec.DataVersionFulu)
+
+	deriver := &ExecutionTransactionDeriver{
+		log:        logrus.New(),
+		clientMeta: &xatu.ClientMeta{Name: "cannon-test"},
+	}
+
+	const blobTx = 173
+
+	t.Run("blob sidecars unavailable", func(t *testing.T) {
+		events, err := deriver.deriveEvents(context.Background(), block, nil, nil, testBlockIdentifier(), big.NewInt(1))
+		require.NoError(t, err)
+		require.Len(t, events, 175)
+
+		totalGasPrice := new(big.Int)
+
+		for i, event := range events {
+			tx := event.GetEthV2BeaconBlockExecutionTransaction()
+			additional := event.GetMeta().GetClient().GetEthV2BeaconBlockExecutionTransaction()
+
+			gasPrice, ok := new(big.Int).SetString(tx.GetGasPrice(), 10)
+			require.True(t, ok)
+			totalGasPrice.Add(totalGasPrice, gasPrice)
+
+			if i == blobTx {
+				assert.Equal(t, uint32(3), tx.GetType().GetValue())
+				assert.Equal(t, []string{"0x013a686e30a01becc9ef89d91341f52643c0fa9b5b484524943c3a2e169adb1f"}, tx.GetBlobHashes())
+				assert.Empty(t, additional.GetBlobSidecarsSize())
+				assert.Empty(t, additional.GetBlobSidecarsEmptySize())
+
+				continue
+			}
+
+			assert.Equal(t, "0", additional.GetBlobSidecarsSize())
+			assert.Equal(t, "0", additional.GetBlobSidecarsEmptySize())
+		}
+
+		// Sum of the EL receipts' effectiveGasPrice for execution block 24562996.
+		assert.Equal(t, "166805221010", totalGasPrice.String())
+
+		first := events[0].GetEthV2BeaconBlockExecutionTransaction()
+		assert.Equal(t, "0xd2ee541adcd995e0d639dc02591a27a2266b06a6e9c40268cf895e3f29fb36fd", first.GetHash())
+		assert.Equal(t, "0x5B43453FCE04b92E190f391a83136bfBeCEDEFd1", first.GetFrom())
+		assert.Equal(t, "0xfBd4cdB413E45a52E2C8312f670e9cE67E794C37", first.GetTo())
+		assert.Equal(t, "1701095980", first.GetGasPrice())
+		assert.Equal(t, uint64(736379), first.GetNonce().GetValue())
+	})
+
+	t.Run("blob sidecars available", func(t *testing.T) {
+		commitments, err := block.BlobKZGCommitments()
+		require.NoError(t, err)
+		require.Len(t, commitments, 1)
+
+		sidecar := &deneb.BlobSidecar{KZGCommitment: commitments[0]}
+		hash := ethereum.ConvertKzgCommitmentToVersionedHash(commitments[0][:]).String()
+
+		events, err := deriver.deriveEvents(context.Background(), block, nil, map[string]*deneb.BlobSidecar{hash: sidecar}, testBlockIdentifier(), big.NewInt(1))
+		require.NoError(t, err)
+
+		additional := events[blobTx].GetMeta().GetClient().GetEthV2BeaconBlockExecutionTransaction()
+		assert.Equal(t, "131072", additional.GetBlobSidecarsSize())
+		assert.Equal(t, "131072", additional.GetBlobSidecarsEmptySize())
+	})
+
+	t.Run("blob sidecar missing", func(t *testing.T) {
+		events, err := deriver.deriveEvents(context.Background(), block, nil, map[string]*deneb.BlobSidecar{}, testBlockIdentifier(), big.NewInt(1))
+		require.NoError(t, err)
+
+		additional := events[blobTx].GetMeta().GetClient().GetEthV2BeaconBlockExecutionTransaction()
+		assert.Empty(t, additional.GetBlobSidecarsSize())
+		assert.Empty(t, additional.GetBlobSidecarsEmptySize())
+	})
 }

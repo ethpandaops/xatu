@@ -49,9 +49,7 @@ message CanonicalBeaconBlock {
   google.protobuf.UInt64Value execution_payload_blob_gas_used = 29;
   // Excess gas used for blobs in execution payload
   google.protobuf.UInt64Value execution_payload_excess_blob_gas = 30;
-  // The slot number of the execution payload (EIP-7843, Gloas+)
   google.protobuf.UInt64Value execution_payload_slot_number = 31;
-  // The keccak256 hash of the execution payload's RLP-encoded block access list, as committed to by the execution block header (EIP-7928, Gloas+)
   google.protobuf.StringValue execution_payload_block_access_list_root = 32;
   // Builder index from the bid (Gloas+). NULL for self-built payloads (BUILDER_INDEX_SELF_BUILD) and before Gloas
   google.protobuf.UInt64Value builder_index = 33;
@@ -125,9 +123,9 @@ message ListCanonicalBeaconBlockRequest {
   NullableUInt64Filter execution_payload_blob_gas_used = 20;
   // Filter by execution_payload_excess_blob_gas - Excess gas used for blobs in execution payload (optional)
   NullableUInt64Filter execution_payload_excess_blob_gas = 21;
-  // Filter by execution_payload_slot_number - The slot number of the execution payload (EIP-7843, Gloas+) (optional)
+  // Filter by execution_payload_slot_number (optional)
   NullableUInt64Filter execution_payload_slot_number = 22;
-  // Filter by execution_payload_block_access_list_root - The keccak256 hash of the execution payload's RLP-encoded block access list, as committed to by the execution block header (EIP-7928, Gloas+) (optional)
+  // Filter by execution_payload_block_access_list_root (optional)
   NullableStringFilter execution_payload_block_access_list_root = 23;
   // Filter by builder_index - Builder index from the bid (Gloas+). NULL for self-built payloads (BUILDER_INDEX_SELF_BUILD) and before Gloas (optional)
   NullableUInt64Filter builder_index = 24;

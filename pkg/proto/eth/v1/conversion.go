@@ -692,11 +692,12 @@ func NewSignedExecutionPayloadBidFromGloas(bid *gloas.SignedExecutionPayloadBid)
 }
 
 // NewSignedExecutionPayloadEnvelopeFromGloas converts the SDK's Gloas envelope
-// into a compact proto representation. The payload section carries header
-// fields (block hash, state root, block number, gas, base fee, fee recipient,
-// slot number) but bulk fields (transactions, withdrawals, block_access_list,
-// extra_data) are intentionally omitted — those are captured by their own
-// cannon derivers or libp2p gossip paths. Returns nil if the input is nil.
+// into our proto representation for sentry SSE emission. The payload section
+// is populated with metadata (block hash, state root, block number, fee
+// recipient, slot number) but bulk fields (transactions, withdrawals,
+// block_access_list, extra_data) are intentionally omitted — those are
+// captured via cannon backfill or libp2p gossip paths to keep the SSE-emitted
+// DecoratedEvent compact. Returns nil if the input is nil.
 func NewSignedExecutionPayloadEnvelopeFromGloas(envelope *gloas.SignedExecutionPayloadEnvelope) *SignedExecutionPayloadEnvelope {
 	if envelope == nil || envelope.Message == nil {
 		return nil
@@ -726,10 +727,6 @@ func NewSignedExecutionPayloadEnvelopeFromGloas(envelope *gloas.SignedExecutionP
 			BlobGasUsed:   &wrapperspb.UInt64Value{Value: p.BlobGasUsed},
 			ExcessBlobGas: &wrapperspb.UInt64Value{Value: p.ExcessBlobGas},
 			SlotNumber:    &wrapperspb.UInt64Value{Value: p.SlotNumber},
-		}
-
-		if p.BaseFeePerGas != nil {
-			out.Payload.BaseFeePerGas = p.BaseFeePerGas.Dec()
 		}
 	}
 

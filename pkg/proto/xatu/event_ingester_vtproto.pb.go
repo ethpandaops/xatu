@@ -6007,38 +6007,6 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockV2Data) MarshalToSizedBufferVT(dAt
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x6a
-	}
-	if m.ExecutionPayloadBlockAccessListHash != nil {
-		size, err := (*wrapperspb.StringValue)(m.ExecutionPayloadBlockAccessListHash).MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x62
-	}
-	if m.ExecutionPayloadEnvelope != nil {
-		if vtmsg, ok := interface{}(m.ExecutionPayloadEnvelope).(interface {
-			MarshalToSizedBufferVT([]byte) (int, error)
-		}); ok {
-			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		} else {
-			encoded, err := proto.Marshal(m.ExecutionPayloadEnvelope)
-			if err != nil {
-				return 0, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
-		}
-		i--
 		dAtA[i] = 0x5a
 	}
 	if m.FinalizedWhenRequested {
@@ -25344,7 +25312,6 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockV2Data) ResetVT() {
 	if m != nil {
 		m.Epoch.ReturnToVTPool()
 		m.Slot.ReturnToVTPool()
-		m.ExecutionPayloadEnvelope.ReturnToVTPool()
 		m.Reset()
 	}
 }
@@ -31634,20 +31601,6 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockV2Data) SizeVT() (n int) {
 	}
 	if m.FinalizedWhenRequested {
 		n += 2
-	}
-	if m.ExecutionPayloadEnvelope != nil {
-		if size, ok := interface{}(m.ExecutionPayloadEnvelope).(interface {
-			SizeVT() int
-		}); ok {
-			l = size.SizeVT()
-		} else {
-			l = proto.Size(m.ExecutionPayloadEnvelope)
-		}
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if m.ExecutionPayloadBlockAccessListHash != nil {
-		l = (*wrapperspb.StringValue)(m.ExecutionPayloadBlockAccessListHash).SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.PayloadPresent != nil {
 		l = (*wrapperspb.BoolValue)(m.PayloadPresent).SizeVT()
@@ -55238,86 +55191,6 @@ func (m *ClientMeta_AdditionalEthV2BeaconBlockV2Data) UnmarshalVT(dAtA []byte) e
 			}
 			m.FinalizedWhenRequested = bool(v != 0)
 		case 11:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionPayloadEnvelope", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.ExecutionPayloadEnvelope == nil {
-				m.ExecutionPayloadEnvelope = v1.SignedExecutionPayloadEnvelopeFromVTPool()
-			}
-			if unmarshal, ok := interface{}(m.ExecutionPayloadEnvelope).(interface {
-				UnmarshalVT([]byte) error
-			}); ok {
-				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ExecutionPayloadEnvelope); err != nil {
-					return err
-				}
-			}
-			iNdEx = postIndex
-		case 12:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionPayloadBlockAccessListHash", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.ExecutionPayloadBlockAccessListHash == nil {
-				m.ExecutionPayloadBlockAccessListHash = &wrapperspb1.StringValue{}
-			}
-			if err := (*wrapperspb.StringValue)(m.ExecutionPayloadBlockAccessListHash).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 13:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PayloadPresent", wireType)
 			}

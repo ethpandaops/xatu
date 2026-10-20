@@ -65,10 +65,8 @@ type CanonicalBeaconBlock struct {
 	// Gas used for blobs in execution payload
 	ExecutionPayloadBlobGasUsed *wrapperspb.UInt64Value `protobuf:"bytes,29,opt,name=execution_payload_blob_gas_used,json=executionPayloadBlobGasUsed,proto3" json:"execution_payload_blob_gas_used,omitempty"`
 	// Excess gas used for blobs in execution payload
-	ExecutionPayloadExcessBlobGas *wrapperspb.UInt64Value `protobuf:"bytes,30,opt,name=execution_payload_excess_blob_gas,json=executionPayloadExcessBlobGas,proto3" json:"execution_payload_excess_blob_gas,omitempty"`
-	// The slot number of the execution payload (EIP-7843, Gloas+)
-	ExecutionPayloadSlotNumber *wrapperspb.UInt64Value `protobuf:"bytes,31,opt,name=execution_payload_slot_number,json=executionPayloadSlotNumber,proto3" json:"execution_payload_slot_number,omitempty"`
-	// The keccak256 hash of the execution payload's RLP-encoded block access list, as committed to by the execution block header (EIP-7928, Gloas+)
+	ExecutionPayloadExcessBlobGas       *wrapperspb.UInt64Value `protobuf:"bytes,30,opt,name=execution_payload_excess_blob_gas,json=executionPayloadExcessBlobGas,proto3" json:"execution_payload_excess_blob_gas,omitempty"`
+	ExecutionPayloadSlotNumber          *wrapperspb.UInt64Value `protobuf:"bytes,31,opt,name=execution_payload_slot_number,json=executionPayloadSlotNumber,proto3" json:"execution_payload_slot_number,omitempty"`
 	ExecutionPayloadBlockAccessListRoot *wrapperspb.StringValue `protobuf:"bytes,32,opt,name=execution_payload_block_access_list_root,json=executionPayloadBlockAccessListRoot,proto3" json:"execution_payload_block_access_list_root,omitempty"`
 	// Builder index from the bid (Gloas+). NULL for self-built payloads (BUILDER_INDEX_SELF_BUILD) and before Gloas
 	BuilderIndex *wrapperspb.UInt64Value `protobuf:"bytes,33,opt,name=builder_index,json=builderIndex,proto3" json:"builder_index,omitempty"`
@@ -414,9 +412,9 @@ type ListCanonicalBeaconBlockRequest struct {
 	ExecutionPayloadBlobGasUsed *NullableUInt64Filter `protobuf:"bytes,20,opt,name=execution_payload_blob_gas_used,json=executionPayloadBlobGasUsed,proto3" json:"execution_payload_blob_gas_used,omitempty"`
 	// Filter by execution_payload_excess_blob_gas - Excess gas used for blobs in execution payload (optional)
 	ExecutionPayloadExcessBlobGas *NullableUInt64Filter `protobuf:"bytes,21,opt,name=execution_payload_excess_blob_gas,json=executionPayloadExcessBlobGas,proto3" json:"execution_payload_excess_blob_gas,omitempty"`
-	// Filter by execution_payload_slot_number - The slot number of the execution payload (EIP-7843, Gloas+) (optional)
+	// Filter by execution_payload_slot_number (optional)
 	ExecutionPayloadSlotNumber *NullableUInt64Filter `protobuf:"bytes,22,opt,name=execution_payload_slot_number,json=executionPayloadSlotNumber,proto3" json:"execution_payload_slot_number,omitempty"`
-	// Filter by execution_payload_block_access_list_root - The keccak256 hash of the execution payload's RLP-encoded block access list, as committed to by the execution block header (EIP-7928, Gloas+) (optional)
+	// Filter by execution_payload_block_access_list_root (optional)
 	ExecutionPayloadBlockAccessListRoot *NullableStringFilter `protobuf:"bytes,23,opt,name=execution_payload_block_access_list_root,json=executionPayloadBlockAccessListRoot,proto3" json:"execution_payload_block_access_list_root,omitempty"`
 	// Filter by builder_index - Builder index from the bid (Gloas+). NULL for self-built payloads (BUILDER_INDEX_SELF_BUILD) and before Gloas (optional)
 	BuilderIndex *NullableUInt64Filter `protobuf:"bytes,24,opt,name=builder_index,json=builderIndex,proto3" json:"builder_index,omitempty"`

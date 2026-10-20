@@ -1,11 +1,7 @@
 ALTER TABLE canonical_beacon_block ON CLUSTER '{cluster}'
-    COMMENT COLUMN execution_payload_slot_number '',
-    COMMENT COLUMN execution_payload_block_access_list_root '',
     COMMENT COLUMN payload_present 'Whether execution payload was delivered (Gloas+)';
 
 ALTER TABLE canonical_beacon_block_local ON CLUSTER '{cluster}'
-    COMMENT COLUMN execution_payload_slot_number '',
-    COMMENT COLUMN execution_payload_block_access_list_root '',
     COMMENT COLUMN payload_present 'Whether execution payload was delivered (Gloas+)';
 
 ALTER TABLE canonical_beacon_block_execution_transaction ON CLUSTER '{cluster}'

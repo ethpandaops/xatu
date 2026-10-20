@@ -6,9 +6,7 @@ import (
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v5"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethpandaops/go-eth2-client/spec"
-	"github.com/ethpandaops/go-eth2-client/spec/bellatrix"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	ssz "github.com/ferranbt/fastssz"
 	"github.com/golang/snappy"
@@ -327,7 +325,7 @@ func (b *BeaconBlockDeriver) getAdditionalData(ctx context.Context, block *spec.
 		return nil, err
 	}
 
-	if err := setExecutionPayloadEnvelope(ctx, extra, b.beacon, block); err != nil {
+	if err := setPayloadPresent(ctx, extra, b.beacon, block); err != nil {
 		return nil, err
 	}
 
@@ -337,7 +335,7 @@ func (b *BeaconBlockDeriver) getAdditionalData(ctx context.Context, block *spec.
 	return extra, nil
 }
 
-// setBlockSizes sets a block's root and encoded sizes and, for blocks with an inline execution payload, its transaction stats.
+// setBlockSizes sets a block's root and encoded sizes and, for blocks with an execution payload, its transaction stats.
 func setBlockSizes(extra *xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, block *spec.VersionedSignedBeaconBlock) error {
 	blockMessage, err := getBlockMessage(block)
 	if err != nil {
@@ -368,12 +366,6 @@ func setBlockSizes(extra *xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, bloc
 		return errors.Wrap(err, "failed to get execution transactions")
 	}
 
-	setTransactionStats(extra, transactions)
-
-	return nil
-}
-
-func setTransactionStats(extra *xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, transactions []bellatrix.Transaction) {
 	var transactionsBytes []byte
 
 	for _, tx := range transactions {
@@ -383,10 +375,12 @@ func setTransactionStats(extra *xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data
 	extra.TransactionsCount = wrapperspb.UInt64(uint64(len(transactions)))
 	extra.TransactionsTotalBytes = wrapperspb.UInt64(uint64(len(transactionsBytes)))
 	extra.TransactionsTotalBytesCompressed = wrapperspb.UInt64(uint64(len(snappy.Encode(nil, transactionsBytes))))
+
+	return nil
 }
 
-// setExecutionPayloadEnvelope sets a Gloas+ block's payload reveal status and, if revealed, its header, BAL hash and transaction stats.
-func setExecutionPayloadEnvelope(
+// setPayloadPresent sets whether the builder revealed a Gloas+ block's execution payload.
+func setPayloadPresent(
 	ctx context.Context,
 	extra *xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data,
 	envelopes executionPayloadEnvelopeProvider,
@@ -407,22 +401,7 @@ func setExecutionPayloadEnvelope(
 	}
 
 	// A missing envelope means the builder withheld the payload.
-	if envelope == nil || envelope.Message == nil || envelope.Message.Payload == nil {
-		extra.PayloadPresent = wrapperspb.Bool(false)
-
-		return nil
-	}
-
-	payload := envelope.Message.Payload
-
-	extra.PayloadPresent = wrapperspb.Bool(true)
-	extra.ExecutionPayloadEnvelope = xatuethv1.NewSignedExecutionPayloadEnvelopeFromGloas(envelope)
-
-	if len(payload.BlockAccessList) > 0 {
-		extra.ExecutionPayloadBlockAccessListHash = wrapperspb.String(crypto.Keccak256Hash(payload.BlockAccessList).Hex())
-	}
-
-	setTransactionStats(extra, payload.Transactions)
+	extra.PayloadPresent = wrapperspb.Bool(envelope != nil && envelope.Message != nil && envelope.Message.Payload != nil)
 
 	return nil
 }

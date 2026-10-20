@@ -432,10 +432,6 @@ func TestNewSignedExecutionPayloadEnvelopeFromGloas_Populated(t *testing.T) {
 		t.Errorf("payload slot_number: got %d want 99", v)
 	}
 
-	if v := payload.GetBaseFeePerGas(); v != "7" {
-		t.Errorf("payload base_fee_per_gas: got %q want \"7\"", v)
-	}
-
 	if got.GetSignature() != envelope.Signature.String() {
 		t.Errorf("signature mismatch: got %q want %q", got.GetSignature(), envelope.Signature.String())
 	}

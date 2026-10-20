@@ -34,14 +34,10 @@ ALTER TABLE canonical_beacon_block_execution_transaction ON CLUSTER '{cluster}'
     ADD COLUMN IF NOT EXISTS authorization_authorities Array(String)
         COMMENT 'The account that signed each EIP-7702 authorization, recovered from its signature. Empty when the signature does not recover' CODEC(ZSTD(1));
 
--- canonical_beacon_block: from Gloas the execution payload columns come from
--- the block's payload envelope.
+-- canonical_beacon_block: payload_present is now set from whether the
+-- block's payload envelope was revealed.
 ALTER TABLE canonical_beacon_block_local ON CLUSTER '{cluster}'
-    COMMENT COLUMN execution_payload_slot_number 'The slot number of the execution payload (EIP-7843, Gloas+)',
-    COMMENT COLUMN execution_payload_block_access_list_root 'The keccak256 hash of the execution payload''s RLP-encoded block access list, as committed to by the execution block header (EIP-7928, Gloas+)',
     COMMENT COLUMN payload_present 'Whether the builder revealed the execution payload (Gloas+)';
 
 ALTER TABLE canonical_beacon_block ON CLUSTER '{cluster}'
-    COMMENT COLUMN execution_payload_slot_number 'The slot number of the execution payload (EIP-7843, Gloas+)',
-    COMMENT COLUMN execution_payload_block_access_list_root 'The keccak256 hash of the execution payload''s RLP-encoded block access list, as committed to by the execution block header (EIP-7928, Gloas+)',
     COMMENT COLUMN payload_present 'Whether the builder revealed the execution payload (Gloas+)';

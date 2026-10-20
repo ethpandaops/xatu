@@ -11,6 +11,8 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/altair"
 	"github.com/ethpandaops/go-eth2-client/spec/bellatrix"
+	"github.com/ethpandaops/go-eth2-client/spec/capella"
+	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/golang/snappy"
@@ -46,6 +48,12 @@ func loadEraBlock(t *testing.T, name string, version spec.DataVersion) *spec.Ver
 	case spec.DataVersionBellatrix:
 		block.Bellatrix = &bellatrix.SignedBeaconBlock{}
 		target = block.Bellatrix
+	case spec.DataVersionCapella:
+		block.Capella = &capella.SignedBeaconBlock{}
+		target = block.Capella
+	case spec.DataVersionFulu:
+		block.Fulu = &electra.SignedBeaconBlock{}
+		target = block.Fulu
 	case spec.DataVersionGloas:
 		block.Gloas = &gloas.SignedBeaconBlock{}
 		target = block.Gloas

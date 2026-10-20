@@ -448,8 +448,12 @@ func (b *BeaconBlockSyncAggregateDeriver) fetchSyncCommittee(
 	// The sync committee is the same for all slots in a period, so we use the
 	// boundary slot which is more likely to have state available on beacon nodes.
 	epoch := phase0.Epoch(uint64(slot) / uint64(sp.SlotsPerEpoch))
-	epochsPerPeriod := uint64(sp.EpochsPerSyncCommitteePeriod)
-	boundaryEpoch := phase0.Epoch((uint64(epoch) / epochsPerPeriod) * epochsPerPeriod)
+
+	boundaryEpoch, err := b.beacon.SyncCommitteeStateEpoch(epoch)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get sync committee period boundary")
+	}
+
 	boundarySlot := phase0.Slot(uint64(boundaryEpoch) * uint64(sp.SlotsPerEpoch))
 
 	// Use the SyncCommittee method from go-eth2-client

@@ -1386,11 +1386,13 @@ func (p *Processor) parseRPCMetaSubscription(
 			},
 			Data: &xatu.DecoratedEvent_Libp2PTraceRpcMetaSubscription{
 				Libp2PTraceRpcMetaSubscription: &libp2p.SubMetaItem{
-					RootEventId:  wrapperspb.String(rootEventID),
-					PeerId:       wrapperspb.String(peerID),
-					TopicId:      subscription.TopicId,
-					Subscribe:    subscription.Subscribe,
-					ControlIndex: wrapperspb.UInt32(uint32(controlIndex)), //nolint:gosec // conversion fine.
+					RootEventId:            wrapperspb.String(rootEventID),
+					PeerId:                 wrapperspb.String(peerID),
+					TopicId:                subscription.GetTopicId(),
+					Subscribe:              subscription.GetSubscribe(),
+					ControlIndex:           wrapperspb.UInt32(uint32(controlIndex)),
+					RequestsPartial:        subscription.GetRequestsPartial(),
+					SupportsSendingPartial: subscription.GetSupportsSendingPartial(),
 				},
 			},
 		})

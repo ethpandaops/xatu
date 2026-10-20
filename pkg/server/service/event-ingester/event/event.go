@@ -166,6 +166,11 @@ var (
 	TypeBeaconSyntheticPayloadStatusResolved           Type = synthetic.PayloadStatusResolvedType
 	TypeBeaconSyntheticBuilderPendingPaymentSettlement Type = synthetic.BuilderPendingPaymentSettlementType
 	TypeBeaconSyntheticPayloadAttestationProcessed     Type = synthetic.PayloadAttestationProcessedType
+
+	// Gossipsub partial messages extension: cell-level data column dissemination.
+	TypeLibP2PTraceGossipSubPartialDataColumn        Type = Type(libp2p.TraceGossipSubPartialDataColumnType)
+	TypeLibP2PTraceDataColumnCompleted               Type = Type(libp2p.TraceDataColumnCompletedType)
+	TypeLibP2PTraceGossipSubPartialDataColumnOutcome Type = Type(libp2p.TraceGossipSubPartialDataColumnOutcomeType)
 )
 
 type Event interface {
@@ -550,6 +555,15 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	})
 	router.RegisterHandler(TypeLibP2PTraceGossipSubMessagePayload, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceGossipSubMessagePayload(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceGossipSubPartialDataColumn, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGossipSubPartialDataColumn(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceDataColumnCompleted, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceDataColumnCompleted(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceGossipSubPartialDataColumnOutcome, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGossipSubPartialDataColumnOutcome(router.log, event), nil
 	})
 	router.RegisterHandler(TypeLibP2PTraceSyntheticHeartbeat, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceSyntheticHeartbeat(router.log, event, router.geoipProvider), nil

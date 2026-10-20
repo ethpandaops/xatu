@@ -314,6 +314,10 @@ jobs:
               chgo:
                 adaptiveLimiter:
                   enabled: false
+              # One replica per shard: no peer to form the canonical tables' default insert quorum with.
+              defaults:
+                insertSettings:
+                  insert_quorum: 0
           - name: blob-archive
             type: s3blobstore
             config:

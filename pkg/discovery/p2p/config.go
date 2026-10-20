@@ -189,6 +189,19 @@ func (c *Config) Validate() error {
 	return nil
 }
 
+// decodeP2PConfig applies defaults before the YAML so an explicit false survives a default of true.
+func decodeP2PConfig(raw *RawMessage, conf any) error {
+	if err := defaults.Set(conf); err != nil {
+		return err
+	}
+
+	if raw == nil {
+		return nil
+	}
+
+	return raw.Unmarshal(conf)
+}
+
 func NewP2P(ctx context.Context, p2pType Type, config *RawMessage, handler func(ctx context.Context, node *enode.Node, source string) error, log observability.ContextualLogger) (P2P, error) {
 	if p2pType == TypeUnknown {
 		return nil, errors.New("p2p type is required")
@@ -198,11 +211,7 @@ func NewP2P(ctx context.Context, p2pType Type, config *RawMessage, handler func(
 	case TypeStatic:
 		conf := &static.Config{}
 
-		if err := config.Unmarshal(conf); err != nil {
-			return nil, err
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := decodeP2PConfig(config, conf); err != nil {
 			return nil, err
 		}
 
@@ -210,11 +219,7 @@ func NewP2P(ctx context.Context, p2pType Type, config *RawMessage, handler func(
 	case TypeXatu:
 		conf := &xatu.Config{}
 
-		if err := config.Unmarshal(conf); err != nil {
-			return nil, err
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := decodeP2PConfig(config, conf); err != nil {
 			return nil, err
 		}
 

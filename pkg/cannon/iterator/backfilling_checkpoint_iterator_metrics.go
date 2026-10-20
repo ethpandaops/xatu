@@ -10,6 +10,18 @@ type BackfillingCheckpointMetrics struct {
 }
 
 func NewBackfillingCheckpointMetrics(namespace string) BackfillingCheckpointMetrics {
+	s := newBackfillingCheckpointMetrics(namespace)
+
+	prometheus.MustRegister(s.BackfillEpoch)
+	prometheus.MustRegister(s.FinalizedEpoch)
+	prometheus.MustRegister(s.FinalizedCheckpointEpoch)
+	prometheus.MustRegister(s.Lag)
+
+	return s
+}
+
+// newBackfillingCheckpointMetrics builds the collectors without registering them.
+func newBackfillingCheckpointMetrics(namespace string) BackfillingCheckpointMetrics {
 	namespace += "_epoch_iterator"
 
 	s := BackfillingCheckpointMetrics{
@@ -34,11 +46,6 @@ func NewBackfillingCheckpointMetrics(namespace string) BackfillingCheckpointMetr
 			Help:      "The lag of the iterator in epochs",
 		}, []string{"cannon_type", "network", "direction"}),
 	}
-
-	prometheus.MustRegister(s.BackfillEpoch)
-	prometheus.MustRegister(s.FinalizedEpoch)
-	prometheus.MustRegister(s.FinalizedCheckpointEpoch)
-	prometheus.MustRegister(s.Lag)
 
 	return s
 }

@@ -18,6 +18,14 @@ network:
 # Lower = faster test, but needs recent data available on beacon node
 epoch_offset: 3
 
+# One deriver also backfills `epochs` epochs below the seed epoch in batches of
+# `epochs_per_batch`; the last batch is clamped to the backfill floor.
+batched_backfill:
+  type: BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI
+  table: canonical_beacon_block_graffiti
+  epochs: 10
+  epochs_per_batch: 4
+
 # Event types to test - these must exist in every epoch
 # Each type needs a corresponding ClickHouse table for assertions
 event_types:

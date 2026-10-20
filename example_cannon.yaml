@@ -80,6 +80,13 @@ cryo:
 # Derivers are grouped by layer.
 derivers:
   # ── Consensus layer — derive from the beacon chain ──
+  # Every consensus deriver takes an iterator block:
+  #   iterator: { backfill: { enabled: false, toEpoch: 0, epochsPerBatch: 1 } }
+  # epochsPerBatch derives and writes that many epochs per backfill step (head
+  # steps stay one epoch). Raise it for block derivers whose backfill waits on
+  # ClickHouse inserts, e.g. beaconBlockGraffiti at 32; keep state and reward
+  # derivers at 1. beaconSyncCommittee, beaconValidators and blockAccessList
+  # only take 1.
   consensus:
     attesterSlashing:      { enabled: true }
     proposerSlashing:      { enabled: true }

@@ -130,7 +130,7 @@ func (b *ExecutionTransactionDeriver) run(rctx context.Context) {
 				}
 
 				// Process the epoch
-				events, err := b.processEpoch(ctx, position.Next)
+				events, err := iterator.DeriveEpochs(ctx, position.Epochs(), b.processEpoch)
 				if err != nil {
 					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
@@ -148,7 +148,7 @@ func (b *ExecutionTransactionDeriver) run(rctx context.Context) {
 				}
 
 				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, position.LastEpoch(), position.Direction); err != nil {
 					return "", err
 				}
 

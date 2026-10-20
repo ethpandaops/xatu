@@ -133,7 +133,7 @@ func (b *BeaconStatePendingConsolidationDeriver) run(rctx context.Context) {
 					return "", err
 				}
 
-				events, err := b.processEpoch(ctx, position.Next)
+				events, err := iterator.DeriveEpochs(ctx, position.Epochs(), b.processEpoch)
 				if err != nil {
 					b.log.WithError(err).WithField("epoch", position.Next).WithContext(ctx).Error("Failed to process epoch")
 
@@ -150,7 +150,7 @@ func (b *BeaconStatePendingConsolidationDeriver) run(rctx context.Context) {
 					}
 				}
 
-				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, position.LastEpoch(), position.Direction); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return "", err

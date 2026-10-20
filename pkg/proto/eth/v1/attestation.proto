@@ -81,4 +81,7 @@ message ElaboratedAttestation {
   AttestationDataV2 data = 2;
 
   repeated google.protobuf.UInt64Value validator_indexes = 3 [ json_name = "validator_indexes" ];
+
+  // PayloadPresent is the Gloas+ payload vote (attestation data index 1).
+  google.protobuf.BoolValue payload_present = 4 [ json_name = "payload_present" ];
 }

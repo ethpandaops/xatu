@@ -40,6 +40,10 @@ type CanonicalBeaconBlockExecutionTransactionRow struct {
 	BlobSidecarsSize *uint32 `ch:"blob_sidecars_size" json:"blob_sidecars_size"`
 	BlobSidecarsEmptySize *uint32 `ch:"blob_sidecars_empty_size" json:"blob_sidecars_empty_size"`
 	MetaNetworkName string `ch:"meta_network_name" json:"meta_network_name"`
+	AuthorizationChainIds []string `ch:"authorization_chain_ids" json:"authorization_chain_ids"`
+	AuthorizationAddresses []string `ch:"authorization_addresses" json:"authorization_addresses"`
+	AuthorizationNonces []uint64 `ch:"authorization_nonces" json:"authorization_nonces"`
+	AuthorizationAuthorities []string `ch:"authorization_authorities" json:"authorization_authorities"`
 }
 
 // TableName returns the ClickHouse table this row maps to.
@@ -97,5 +101,9 @@ func (r *CanonicalBeaconBlockExecutionTransactionRow) ToProto() *CanonicalBeacon
 		p.BlobSidecarsEmptySize = wrapperspb.UInt32(*r.BlobSidecarsEmptySize)
 	}
 	p.MetaNetworkName = r.MetaNetworkName
+	p.AuthorizationChainIds = r.AuthorizationChainIds
+	p.AuthorizationAddresses = r.AuthorizationAddresses
+	p.AuthorizationNonces = r.AuthorizationNonces
+	p.AuthorizationAuthorities = r.AuthorizationAuthorities
 	return p
 }

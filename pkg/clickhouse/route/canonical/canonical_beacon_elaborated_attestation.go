@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ClickHouse/ch-go/proto"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -197,6 +199,12 @@ func (b *canonicalBeaconElaboratedAttestationBatch) appendRow(event *xatu.Decora
 		b.SourceRoot.Append(nil)
 		b.TargetEpoch.Append(0)
 		b.TargetRoot.Append(nil)
+	}
+
+	if present := attestation.GetPayloadPresent(); present != nil {
+		b.PayloadPresent.Append(proto.NewNullable(present.GetValue()))
+	} else {
+		b.PayloadPresent.Append(proto.Nullable[bool]{})
 	}
 
 	// Slot from payload (matching Vector: .slot = .data.data.slot).

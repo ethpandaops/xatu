@@ -24,6 +24,7 @@ import "pkg/proto/eth/v1/payload_attestation.proto";
 import "pkg/proto/eth/v1/execution_payload_bid.proto";
 import "pkg/proto/eth/v1/execution_payload_available.proto";
 import "pkg/proto/eth/v1/execution_payload_event.proto";
+import "pkg/proto/eth/v1/execution_payload_envelope.proto";
 import "pkg/proto/eth/v1/proposer_preferences.proto";
 import "pkg/proto/eth/v1/beacon_synthetic.proto";
 import "pkg/proto/eth/v1/execution_requests.proto";
@@ -1283,6 +1284,18 @@ message ClientMeta {
     // FinalizedWhenRequested is if the block was finalized when requested
     bool finalized_when_requested = 10
         [ json_name = "finalized_when_requested" ];
+
+    // ExecutionPayloadEnvelope is the revealed Gloas+ payload, header only.
+    xatu.eth.v1.SignedExecutionPayloadEnvelope execution_payload_envelope = 11
+        [ json_name = "execution_payload_envelope" ];
+
+    // ExecutionPayloadBlockAccessListHash is keccak256 of the payload's BAL.
+    google.protobuf.StringValue execution_payload_block_access_list_hash = 12
+        [ json_name = "execution_payload_block_access_list_hash" ];
+
+    // PayloadPresent is whether the builder revealed the payload (Gloas+).
+    google.protobuf.BoolValue payload_present = 13
+        [ json_name = "payload_present" ];
   }
 
   message AdditionalEthV2BeaconBlockAttesterSlashingData {

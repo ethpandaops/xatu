@@ -2,6 +2,9 @@ package v2
 
 import (
 	"bytes"
+	"context"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -16,6 +19,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/golang/snappy"
+	"github.com/holiman/uint256"
 	dynssz "github.com/pk910/dynamic-ssz"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -102,10 +106,10 @@ func TestSetBlockSizes(t *testing.T) {
 			txCount: uint64Ptr(80), txBytes: uint64Ptr(17884), txCompBytes: uint64Ptr(12808),
 		},
 		{
+			// Gloas transaction stats come from the payload envelope, not the body.
 			fixture: "sepolia-11374000", version: spec.DataVersionGloas,
 			root:  "0x1a4161ae68d3aa561f4463754b17b53523972882f5ac745d50ecb57e1e01e7b6",
 			total: 1802, totalCompressed: 1482,
-			txCount: uint64Ptr(0), txBytes: uint64Ptr(0), txCompBytes: uint64Ptr(1),
 		},
 	}
 
@@ -142,4 +146,70 @@ func TestSetBlockSizes(t *testing.T) {
 			assert.NotNil(t, event.GetMessage())
 		})
 	}
+}
+
+func TestSetExecutionPayloadEnvelope(t *testing.T) {
+	raw, err := hex.DecodeString(devnetBAL)
+	require.NoError(t, err)
+
+	t.Run("revealed payload sets its header, access list hash and transaction stats", func(t *testing.T) {
+		envelope := envelopeWithBAL(raw)
+		envelope.Message.Payload.GasUsed = 21_000
+		envelope.Message.Payload.BaseFeePerGas = uint256.NewInt(7)
+		envelope.Message.Payload.SlotNumber = 123
+		envelope.Message.Payload.Transactions = []bellatrix.Transaction{{0x01, 0x02}, {0x03}}
+
+		provider := &fakeEnvelopeProvider{envelope: envelope}
+		extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
+
+		require.NoError(t, setExecutionPayloadEnvelope(context.Background(), extra, provider, gloasBlock(123)))
+		assert.Equal(t, []string{"123"}, provider.blockIDs)
+
+		require.NotNil(t, extra.GetPayloadPresent())
+		assert.True(t, extra.GetPayloadPresent().GetValue())
+
+		payload := extra.GetExecutionPayloadEnvelope().GetMessage().GetPayload()
+		require.NotNil(t, payload)
+		assert.Equal(t, testPayloadBlockNumber, payload.GetBlockNumber().GetValue())
+		assert.Equal(t, testPayloadBlockHash, payload.GetBlockHash())
+		assert.Equal(t, uint64(21_000), payload.GetGasUsed().GetValue())
+		assert.Equal(t, "7", payload.GetBaseFeePerGas())
+		assert.Equal(t, uint64(123), payload.GetSlotNumber().GetValue())
+		assert.Empty(t, payload.GetTransactions())
+
+		assert.Equal(t, "0x77d73a8c93424f86fec3b88a664fe5a13134e1a017a2d5d96eac421773f4baa0",
+			extra.GetExecutionPayloadBlockAccessListHash().GetValue())
+		assert.Equal(t, uint64(2), extra.GetTransactionsCount().GetValue())
+		assert.Equal(t, uint64(3), extra.GetTransactionsTotalBytes().GetValue())
+	})
+
+	t.Run("withheld payload is not present and leaves the payload unset", func(t *testing.T) {
+		provider := &fakeEnvelopeProvider{}
+		extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
+
+		require.NoError(t, setExecutionPayloadEnvelope(context.Background(), extra, provider, gloasBlock(123)))
+
+		require.NotNil(t, extra.GetPayloadPresent())
+		assert.False(t, extra.GetPayloadPresent().GetValue())
+		assert.Nil(t, extra.GetExecutionPayloadEnvelope())
+		assert.Nil(t, extra.GetExecutionPayloadBlockAccessListHash())
+		assert.Nil(t, extra.GetTransactionsCount())
+	})
+
+	t.Run("pre gloas block is left alone without fetching an envelope", func(t *testing.T) {
+		provider := &fakeEnvelopeProvider{}
+		extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
+
+		require.NoError(t, setExecutionPayloadEnvelope(context.Background(), extra, provider,
+			electraBlockWithRequests(spec.DataVersionFulu, nil)))
+		assert.Empty(t, provider.blockIDs)
+		assert.Nil(t, extra.GetPayloadPresent())
+	})
+
+	t.Run("envelope fetch error is returned", func(t *testing.T) {
+		provider := &fakeEnvelopeProvider{err: errors.New("beacon node unavailable")}
+		extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
+
+		require.Error(t, setExecutionPayloadEnvelope(context.Background(), extra, provider, gloasBlock(123)))
+	})
 }

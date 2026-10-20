@@ -850,6 +850,134 @@ func BuildListCanonicalBeaconBlockExecutionTransactionQuery(req *ListCanonicalBe
 		}
 	}
 
+	// Add filter for column: authorization_chain_ids
+	if req.AuthorizationChainIds != nil {
+		switch filter := req.AuthorizationChainIds.Filter.(type) {
+		case *ArrayStringFilter_Has:
+			qb.AddArrayHasCondition("authorization_chain_ids", filter.Has)
+		case *ArrayStringFilter_HasAll:
+			if len(filter.HasAll.Values) > 0 {
+				qb.AddArrayHasAllCondition("authorization_chain_ids", StringSliceToInterface(filter.HasAll.Values))
+			}
+		case *ArrayStringFilter_HasAny:
+			if len(filter.HasAny.Values) > 0 {
+				qb.AddArrayHasAnyCondition("authorization_chain_ids", StringSliceToInterface(filter.HasAny.Values))
+			}
+		case *ArrayStringFilter_LengthEq:
+			qb.AddArrayLengthCondition("authorization_chain_ids", "=", filter.LengthEq)
+		case *ArrayStringFilter_LengthGt:
+			qb.AddArrayLengthCondition("authorization_chain_ids", ">", filter.LengthGt)
+		case *ArrayStringFilter_LengthGte:
+			qb.AddArrayLengthCondition("authorization_chain_ids", ">=", filter.LengthGte)
+		case *ArrayStringFilter_LengthLt:
+			qb.AddArrayLengthCondition("authorization_chain_ids", "<", filter.LengthLt)
+		case *ArrayStringFilter_LengthLte:
+			qb.AddArrayLengthCondition("authorization_chain_ids", "<=", filter.LengthLte)
+		case *ArrayStringFilter_IsEmpty:
+			qb.AddArrayIsEmptyCondition("authorization_chain_ids")
+		case *ArrayStringFilter_IsNotEmpty:
+			qb.AddArrayIsNotEmptyCondition("authorization_chain_ids")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: authorization_addresses
+	if req.AuthorizationAddresses != nil {
+		switch filter := req.AuthorizationAddresses.Filter.(type) {
+		case *ArrayStringFilter_Has:
+			qb.AddArrayHasCondition("authorization_addresses", filter.Has)
+		case *ArrayStringFilter_HasAll:
+			if len(filter.HasAll.Values) > 0 {
+				qb.AddArrayHasAllCondition("authorization_addresses", StringSliceToInterface(filter.HasAll.Values))
+			}
+		case *ArrayStringFilter_HasAny:
+			if len(filter.HasAny.Values) > 0 {
+				qb.AddArrayHasAnyCondition("authorization_addresses", StringSliceToInterface(filter.HasAny.Values))
+			}
+		case *ArrayStringFilter_LengthEq:
+			qb.AddArrayLengthCondition("authorization_addresses", "=", filter.LengthEq)
+		case *ArrayStringFilter_LengthGt:
+			qb.AddArrayLengthCondition("authorization_addresses", ">", filter.LengthGt)
+		case *ArrayStringFilter_LengthGte:
+			qb.AddArrayLengthCondition("authorization_addresses", ">=", filter.LengthGte)
+		case *ArrayStringFilter_LengthLt:
+			qb.AddArrayLengthCondition("authorization_addresses", "<", filter.LengthLt)
+		case *ArrayStringFilter_LengthLte:
+			qb.AddArrayLengthCondition("authorization_addresses", "<=", filter.LengthLte)
+		case *ArrayStringFilter_IsEmpty:
+			qb.AddArrayIsEmptyCondition("authorization_addresses")
+		case *ArrayStringFilter_IsNotEmpty:
+			qb.AddArrayIsNotEmptyCondition("authorization_addresses")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: authorization_nonces
+	if req.AuthorizationNonces != nil {
+		switch filter := req.AuthorizationNonces.Filter.(type) {
+		case *ArrayUInt64Filter_Has:
+			qb.AddArrayHasCondition("authorization_nonces", filter.Has)
+		case *ArrayUInt64Filter_HasAll:
+			if len(filter.HasAll.Values) > 0 {
+				qb.AddArrayHasAllCondition("authorization_nonces", UInt64SliceToInterface(filter.HasAll.Values))
+			}
+		case *ArrayUInt64Filter_HasAny:
+			if len(filter.HasAny.Values) > 0 {
+				qb.AddArrayHasAnyCondition("authorization_nonces", UInt64SliceToInterface(filter.HasAny.Values))
+			}
+		case *ArrayUInt64Filter_LengthEq:
+			qb.AddArrayLengthCondition("authorization_nonces", "=", filter.LengthEq)
+		case *ArrayUInt64Filter_LengthGt:
+			qb.AddArrayLengthCondition("authorization_nonces", ">", filter.LengthGt)
+		case *ArrayUInt64Filter_LengthGte:
+			qb.AddArrayLengthCondition("authorization_nonces", ">=", filter.LengthGte)
+		case *ArrayUInt64Filter_LengthLt:
+			qb.AddArrayLengthCondition("authorization_nonces", "<", filter.LengthLt)
+		case *ArrayUInt64Filter_LengthLte:
+			qb.AddArrayLengthCondition("authorization_nonces", "<=", filter.LengthLte)
+		case *ArrayUInt64Filter_IsEmpty:
+			qb.AddArrayIsEmptyCondition("authorization_nonces")
+		case *ArrayUInt64Filter_IsNotEmpty:
+			qb.AddArrayIsNotEmptyCondition("authorization_nonces")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: authorization_authorities
+	if req.AuthorizationAuthorities != nil {
+		switch filter := req.AuthorizationAuthorities.Filter.(type) {
+		case *ArrayStringFilter_Has:
+			qb.AddArrayHasCondition("authorization_authorities", filter.Has)
+		case *ArrayStringFilter_HasAll:
+			if len(filter.HasAll.Values) > 0 {
+				qb.AddArrayHasAllCondition("authorization_authorities", StringSliceToInterface(filter.HasAll.Values))
+			}
+		case *ArrayStringFilter_HasAny:
+			if len(filter.HasAny.Values) > 0 {
+				qb.AddArrayHasAnyCondition("authorization_authorities", StringSliceToInterface(filter.HasAny.Values))
+			}
+		case *ArrayStringFilter_LengthEq:
+			qb.AddArrayLengthCondition("authorization_authorities", "=", filter.LengthEq)
+		case *ArrayStringFilter_LengthGt:
+			qb.AddArrayLengthCondition("authorization_authorities", ">", filter.LengthGt)
+		case *ArrayStringFilter_LengthGte:
+			qb.AddArrayLengthCondition("authorization_authorities", ">=", filter.LengthGte)
+		case *ArrayStringFilter_LengthLt:
+			qb.AddArrayLengthCondition("authorization_authorities", "<", filter.LengthLt)
+		case *ArrayStringFilter_LengthLte:
+			qb.AddArrayLengthCondition("authorization_authorities", "<=", filter.LengthLte)
+		case *ArrayStringFilter_IsEmpty:
+			qb.AddArrayIsEmptyCondition("authorization_authorities")
+		case *ArrayStringFilter_IsNotEmpty:
+			qb.AddArrayIsNotEmptyCondition("authorization_authorities")
+		default:
+			// Unsupported filter type
+		}
+	}
+
 	// Handle pagination per AIP-132
 	// Validate page size
 	if req.PageSize < 0 {
@@ -875,7 +1003,7 @@ func BuildListCanonicalBeaconBlockExecutionTransactionQuery(req *ListCanonicalBe
 	// Handle custom ordering if provided
 	var orderByClause string
 	if req.OrderBy != "" {
-		validFields := []string{"updated_date_time", "slot", "slot_start_date_time", "epoch", "epoch_start_date_time", "block_root", "block_version", "position", "hash", "from", "to", "nonce", "gas_price", "gas", "gas_tip_cap", "gas_fee_cap", "value", "type", "size", "call_data_size", "blob_gas", "blob_gas_fee_cap", "blob_hashes", "blob_sidecars_size", "blob_sidecars_empty_size", "meta_network_name"}
+		validFields := []string{"updated_date_time", "slot", "slot_start_date_time", "epoch", "epoch_start_date_time", "block_root", "block_version", "position", "hash", "from", "to", "nonce", "gas_price", "gas", "gas_tip_cap", "gas_fee_cap", "value", "type", "size", "call_data_size", "blob_gas", "blob_gas_fee_cap", "blob_hashes", "blob_sidecars_size", "blob_sidecars_empty_size", "meta_network_name", "authorization_chain_ids", "authorization_addresses", "authorization_nonces", "authorization_authorities"}
 		orderFields, err := ParseOrderBy(req.OrderBy, validFields)
 		if err != nil {
 			return SQLQuery{}, fmt.Errorf("invalid order_by: %w", err)
@@ -887,7 +1015,7 @@ func BuildListCanonicalBeaconBlockExecutionTransactionQuery(req *ListCanonicalBe
 	}
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "position", "NULLIF(`hash`, repeat('\x00', 66)) AS `hash`", "NULLIF(`from`, repeat('\x00', 42)) AS `from`", "NULLIF(`to`, repeat('\x00', 42)) AS `to`", "nonce", "toString(`gas_price`) AS `gas_price`", "gas", "toString(`gas_tip_cap`) AS `gas_tip_cap`", "toString(`gas_fee_cap`) AS `gas_fee_cap`", "toString(`value`) AS `value`", "toUInt32(`type`) AS `type`", "size", "call_data_size", "blob_gas", "toString(`blob_gas_fee_cap`) AS `blob_gas_fee_cap`", "blob_hashes", "blob_sidecars_size", "blob_sidecars_empty_size", "meta_network_name"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "position", "NULLIF(`hash`, repeat('\x00', 66)) AS `hash`", "NULLIF(`from`, repeat('\x00', 42)) AS `from`", "NULLIF(`to`, repeat('\x00', 42)) AS `to`", "nonce", "toString(`gas_price`) AS `gas_price`", "gas", "toString(`gas_tip_cap`) AS `gas_tip_cap`", "toString(`gas_fee_cap`) AS `gas_fee_cap`", "toString(`value`) AS `value`", "toUInt32(`type`) AS `type`", "size", "call_data_size", "blob_gas", "toString(`blob_gas_fee_cap`) AS `blob_gas_fee_cap`", "blob_hashes", "blob_sidecars_size", "blob_sidecars_empty_size", "meta_network_name", "arrayMap(x -> toString(x), `authorization_chain_ids`) AS `authorization_chain_ids`", "authorization_addresses", "authorization_nonces", "authorization_authorities"}
 
 	return BuildParameterizedQuery("canonical_beacon_block_execution_transaction", columns, qb, orderByClause, limit, offset, options...)
 }
@@ -907,7 +1035,7 @@ func BuildGetCanonicalBeaconBlockExecutionTransactionQuery(req *GetCanonicalBeac
 	orderByClause := " ORDER BY meta_network_name, slot_start_date_time, block_root, position, hash, nonce"
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "position", "NULLIF(`hash`, repeat('\x00', 66)) AS `hash`", "NULLIF(`from`, repeat('\x00', 42)) AS `from`", "NULLIF(`to`, repeat('\x00', 42)) AS `to`", "nonce", "toString(`gas_price`) AS `gas_price`", "gas", "toString(`gas_tip_cap`) AS `gas_tip_cap`", "toString(`gas_fee_cap`) AS `gas_fee_cap`", "toString(`value`) AS `value`", "toUInt32(`type`) AS `type`", "size", "call_data_size", "blob_gas", "toString(`blob_gas_fee_cap`) AS `blob_gas_fee_cap`", "blob_hashes", "blob_sidecars_size", "blob_sidecars_empty_size", "meta_network_name"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "position", "NULLIF(`hash`, repeat('\x00', 66)) AS `hash`", "NULLIF(`from`, repeat('\x00', 42)) AS `from`", "NULLIF(`to`, repeat('\x00', 42)) AS `to`", "nonce", "toString(`gas_price`) AS `gas_price`", "gas", "toString(`gas_tip_cap`) AS `gas_tip_cap`", "toString(`gas_fee_cap`) AS `gas_fee_cap`", "toString(`value`) AS `value`", "toUInt32(`type`) AS `type`", "size", "call_data_size", "blob_gas", "toString(`blob_gas_fee_cap`) AS `blob_gas_fee_cap`", "blob_hashes", "blob_sidecars_size", "blob_sidecars_empty_size", "meta_network_name", "arrayMap(x -> toString(x), `authorization_chain_ids`) AS `authorization_chain_ids`", "authorization_addresses", "authorization_nonces", "authorization_authorities"}
 
 	// Return single record
 	return BuildParameterizedQuery("canonical_beacon_block_execution_transaction", columns, qb, orderByClause, 1, 0, options...)

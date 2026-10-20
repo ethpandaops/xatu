@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
@@ -177,11 +178,11 @@ func (b *canonicalBeaconBlockBatch) appendRuntime(_ *xatu.DecoratedEvent) {
 func (b *canonicalBeaconBlockBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	eventBlock := event.GetEthV2BeaconBlockV2()
 
-	return b.appendPayloadFromEventBlockV2(eventBlock)
+	return b.appendPayloadFromEventBlockV2(eventBlock, event.GetMeta().GetClient().GetEthV2BeaconBlockV2())
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
-func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *ethv2.EventBlockV2) error {
+func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *ethv2.EventBlockV2, additional *xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data) error {
 	if phase0Block := eventBlock.GetPhase0Block(); phase0Block != nil {
 		if slot := phase0Block.GetSlot(); slot != nil {
 			b.Slot.Append(uint32(slot.GetValue()))
@@ -353,11 +354,9 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 		body := gloasBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
 
-		// Gloas blocks have no inline execution payload — it arrives
-		// via the ExecutionPayloadEnvelope event. EPBS columns are
-		// populated from the bid in the block body.
-		b.appendNullInlinePayloadFields()
-		b.appendEpbsFromBid(body.GetSignedExecutionPayloadBid())
+		// Payload columns come from the cannon-attached envelope, EPBS columns from the bid.
+		b.appendExecutionPayloadGloas(additional)
+		b.appendEpbsFromBid(body.GetSignedExecutionPayloadBid(), additional.GetPayloadPresent())
 
 		return nil
 	}
@@ -417,12 +416,8 @@ func (b *canonicalBeaconBlockBatch) appendNullEpbsColumns() {
 	b.PayloadPresent.Append(proto.Nullable[bool]{})
 }
 
-// appendEpbsFromBid populates the four EPBS columns from a Gloas block's
-// SignedExecutionPayloadBid. payload_present cannot be determined at block
-// time (it requires the post-fact PTC vote / envelope arrival), so it stays
-// NULL here — downstream queries can fold it in by joining against the
-// payload_attestation aggregate.
-func (b *canonicalBeaconBlockBatch) appendEpbsFromBid(bid *ethv1.SignedExecutionPayloadBid) {
+// appendEpbsFromBid populates the four EPBS columns from a Gloas block's bid and payload reveal status.
+func (b *canonicalBeaconBlockBatch) appendEpbsFromBid(bid *ethv1.SignedExecutionPayloadBid, present *wrapperspb.BoolValue) {
 	if bid == nil || bid.GetMessage() == nil {
 		b.appendNullEpbsColumns()
 
@@ -450,8 +445,77 @@ func (b *canonicalBeaconBlockBatch) appendEpbsFromBid(bid *ethv1.SignedExecution
 		b.ExecutionPayment.Append(proto.Nullable[uint64]{})
 	}
 
-	// payload_present is a post-fact determination — left NULL here.
-	b.PayloadPresent.Append(proto.Nullable[bool]{})
+	if present != nil {
+		b.PayloadPresent.Append(proto.NewNullable(present.GetValue()))
+	} else {
+		b.PayloadPresent.Append(proto.Nullable[bool]{})
+	}
+}
+
+// appendExecutionPayloadGloas appends a Gloas+ block's payload columns from its envelope, NULL when withheld.
+//
+//nolint:gosec // G115
+func (b *canonicalBeaconBlockBatch) appendExecutionPayloadGloas(additional *xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data) {
+	payload := additional.GetExecutionPayloadEnvelope().GetMessage().GetPayload()
+	if payload == nil {
+		b.appendNullInlinePayloadFields()
+
+		return
+	}
+
+	baseFeePerGas, err := route.ParseUInt128(payload.GetBaseFeePerGas())
+	if err != nil || payload.GetBaseFeePerGas() == "" {
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.Nullable[proto.UInt128]{})
+	} else {
+		b.ExecutionPayloadBaseFeePerGas.Append(proto.NewNullable[proto.UInt128](baseFeePerGas))
+	}
+
+	b.ExecutionPayloadBlockHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetBlockHash())))
+	b.ExecutionPayloadFeeRecipient.Append(proto.NewNullable[string](payload.GetFeeRecipient()))
+	b.ExecutionPayloadStateRoot.Append(proto.NewNullable[[]byte]([]byte(payload.GetStateRoot())))
+	b.ExecutionPayloadParentHash.Append(proto.NewNullable[[]byte]([]byte(payload.GetParentHash())))
+
+	if blockNumber := payload.GetBlockNumber(); blockNumber != nil {
+		b.ExecutionPayloadBlockNumber.Append(proto.NewNullable[uint32](uint32(blockNumber.GetValue())))
+	} else {
+		b.ExecutionPayloadBlockNumber.Append(proto.Nullable[uint32]{})
+	}
+
+	if blobGasUsed := payload.GetBlobGasUsed(); blobGasUsed != nil {
+		b.ExecutionPayloadBlobGasUsed.Append(proto.NewNullable[uint64](blobGasUsed.GetValue()))
+	} else {
+		b.ExecutionPayloadBlobGasUsed.Append(proto.Nullable[uint64]{})
+	}
+
+	if excessBlobGas := payload.GetExcessBlobGas(); excessBlobGas != nil {
+		b.ExecutionPayloadExcessBlobGas.Append(proto.NewNullable[uint64](excessBlobGas.GetValue()))
+	} else {
+		b.ExecutionPayloadExcessBlobGas.Append(proto.Nullable[uint64]{})
+	}
+
+	if gasLimit := payload.GetGasLimit(); gasLimit != nil {
+		b.ExecutionPayloadGasLimit.Append(proto.NewNullable[uint64](gasLimit.GetValue()))
+	} else {
+		b.ExecutionPayloadGasLimit.Append(proto.Nullable[uint64]{})
+	}
+
+	if gasUsed := payload.GetGasUsed(); gasUsed != nil {
+		b.ExecutionPayloadGasUsed.Append(proto.NewNullable[uint64](gasUsed.GetValue()))
+	} else {
+		b.ExecutionPayloadGasUsed.Append(proto.Nullable[uint64]{})
+	}
+
+	if slotNumber := payload.GetSlotNumber(); slotNumber != nil {
+		b.ExecutionPayloadSlotNumber.Append(proto.NewNullable[uint64](slotNumber.GetValue()))
+	} else {
+		b.ExecutionPayloadSlotNumber.Append(proto.Nullable[uint64]{})
+	}
+
+	if balHash := additional.GetExecutionPayloadBlockAccessListHash(); balHash != nil {
+		b.ExecutionPayloadBlockAccessListRoot.Append(proto.NewNullable[[]byte]([]byte(balHash.GetValue())))
+	} else {
+		b.ExecutionPayloadBlockAccessListRoot.Append(proto.Nullable[[]byte]{})
+	}
 }
 
 //nolint:gosec // G115

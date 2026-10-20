@@ -31,7 +31,7 @@ func TestCanonicalBeaconBlockBuilderIndexSelfBuild(t *testing.T) {
 			b := newcanonicalBeaconBlockBatch()
 			b.appendEpbsFromBid(&ethv1.SignedExecutionPayloadBid{
 				Message: &ethv1.ExecutionPayloadBid{BuilderIndex: wrapperspb.UInt64(tt.index)},
-			})
+			}, nil)
 
 			require.Equal(t, 1, b.BuilderIndex.Rows())
 

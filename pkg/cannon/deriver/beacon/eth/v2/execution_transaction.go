@@ -463,6 +463,10 @@ func (b *ExecutionTransactionDeriver) deriveEvents(
 			tx.BlobHashes = blobHashes
 		}
 
+		if transaction.Type() == types.SetCodeTxType {
+			tx.AuthorizationList = newSetCodeAuthorizations(transaction.SetCodeAuthorizations())
+		}
+
 		event, err := b.createEvent(ctx, tx, uint64(index), blockIdentifier, transaction, sidecarsSize, sidecarsEmptySize)
 		if err != nil {
 			b.log.WithError(err).WithContext(ctx).Error("Failed to create event")
@@ -497,6 +501,29 @@ func blobSidecarSizes(versionedHashes []string, sidecars map[string]*deneb.BlobS
 	}
 
 	return strconv.Itoa(total), strconv.Itoa(empty), nil
+}
+
+// newSetCodeAuthorizations converts an EIP-7702 authorization list, recovering each authorization's signer.
+func newSetCodeAuthorizations(authorizations []types.SetCodeAuthorization) []*xatuethv1.SetCodeAuthorization {
+	out := make([]*xatuethv1.SetCodeAuthorization, 0, len(authorizations))
+
+	for i := range authorizations {
+		auth := &authorizations[i]
+		authority := ""
+
+		if signer, err := auth.Authority(); err == nil {
+			authority = signer.Hex()
+		}
+
+		out = append(out, &xatuethv1.SetCodeAuthorization{
+			ChainId:   auth.ChainID.Dec(),
+			Address:   auth.Address.Hex(),
+			Nonce:     wrapperspb.UInt64(auth.Nonce),
+			Authority: authority,
+		})
+	}
+
+	return out
 }
 
 func (b *ExecutionTransactionDeriver) getExecutionTransactions(

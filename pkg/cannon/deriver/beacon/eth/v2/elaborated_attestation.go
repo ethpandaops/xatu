@@ -391,6 +391,7 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 						},
 					},
 					ValidatorIndexes: committeeValidatorIndexes,
+					PayloadPresent:   attestationPayloadPresent(attestation.Version, attestationData),
 				}
 
 				//nolint:gosec // If we have that many attestations in a block we're cooked
@@ -408,6 +409,15 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 	}
 
 	return events, nil
+}
+
+// attestationPayloadPresent returns the payload vote the attestation data index carries from Gloas (EIP-7732).
+func attestationPayloadPresent(version spec.DataVersion, data *phase0.AttestationData) *wrapperspb.BoolValue {
+	if version < spec.DataVersionGloas {
+		return nil
+	}
+
+	return wrapperspb.Bool(data.Index == 1)
 }
 
 func (b *ElaboratedAttestationDeriver) getAttestatingValidatorIndexesPhase0(ctx context.Context, attestation *spec.VersionedAttestation) ([]*wrapperspb.UInt64Value, error) {

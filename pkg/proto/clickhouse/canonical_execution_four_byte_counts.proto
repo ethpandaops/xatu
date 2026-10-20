@@ -40,12 +40,13 @@ message ListCanonicalExecutionFourByteCountsRequest {
   // Filter by signature - The signature of the four byte count (ORDER BY column 4 - optional)
   StringFilter signature = 4;
 
+  // Filter by size - The size of the four byte count (ORDER BY column 5 - optional)
+  UInt64Filter size = 5;
+
   // Filter by updated_date_time - Timestamp when the record was last updated (optional)
-  UInt32Filter updated_date_time = 5;
+  UInt32Filter updated_date_time = 6;
   // Filter by transaction_index - The transaction index in the block (optional)
-  UInt64Filter transaction_index = 6;
-  // Filter by size - The size of the four byte count (optional)
-  UInt64Filter size = 7;
+  UInt64Filter transaction_index = 7;
   // Filter by count - The count of the four byte count (optional)
   UInt64Filter count = 8;
 

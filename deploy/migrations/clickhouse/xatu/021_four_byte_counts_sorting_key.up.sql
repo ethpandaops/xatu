@@ -1,4 +1,4 @@
--- Rebuild canonical_execution_four_byte_counts_local with signature in its ORDER BY, keeping the old table as *_migrate_bak_local.
+-- Rebuild canonical_execution_four_byte_counts_local keyed on signature and size, keeping the old table as *_migrate_bak_local.
 
 CREATE TABLE IF NOT EXISTS canonical_execution_four_byte_counts_migrate_bak_local ON CLUSTER '{cluster}'
 (
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS canonical_execution_four_byte_counts_migrate_bak_loca
 )
 ENGINE = ReplicatedReplacingMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/canonical_execution_four_byte_counts_v2_local', '{replica}', updated_date_time)
 PARTITION BY (meta_network_name, intDiv(block_number, 5000000))
-ORDER BY (meta_network_name, block_number, transaction_hash, signature)
+ORDER BY (meta_network_name, block_number, transaction_hash, signature, size)
 COMMENT 'Contains canonical execution four byte count data.';
 
 CREATE TABLE IF NOT EXISTS canonical_execution_four_byte_counts_migrate_bak ON CLUSTER '{cluster}'

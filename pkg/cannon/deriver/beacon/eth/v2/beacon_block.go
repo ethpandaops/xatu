@@ -136,7 +136,7 @@ func (b *BeaconBlockDeriver) run(rctx context.Context) {
 				b.lookAhead(ctx, position.LookAheads)
 
 				// Process the epoch
-				events, err := b.processEpoch(ctx, position.Next)
+				events, err := iterator.DeriveEpochs(ctx, position.Epochs(), b.processEpoch)
 				if err != nil {
 					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
@@ -159,7 +159,7 @@ func (b *BeaconBlockDeriver) run(rctx context.Context) {
 				span.AddEvent("Events sent. Updating location...")
 
 				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, position.LastEpoch(), position.Direction); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return "", err

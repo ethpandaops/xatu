@@ -79,6 +79,14 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid derivers config: %w", err)
 	}
 
+	// Batching backfills share the block cache; a look-ahead larger than it evicts blocks before they are derived.
+	if slots := c.Derivers.BatchLookAheadSlots(); slots > c.Ethereum.Beacon.BlockCacheSize {
+		return fmt.Errorf(
+			"invalid derivers config: batched backfills preload %d blocks (2 x epochsPerBatch x 32 per deriver), more than ethereum.beacon.blockCacheSize %d",
+			slots, c.Ethereum.Beacon.BlockCacheSize,
+		)
+	}
+
 	// Execution (EL) derivers collect via cryo from an execution node. When any
 	// are enabled, that node address and a valid cryo config are required.
 	if c.Derivers.Execution.AnyEnabled() {

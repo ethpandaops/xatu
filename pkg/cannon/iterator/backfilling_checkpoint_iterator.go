@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/ethwallclock"
+	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/pkg/errors"
@@ -22,17 +23,64 @@ import (
 type BackfillingCheckpoint struct {
 	log               observability.ContextualLogger
 	cannonType        xatu.CannonType
-	coordinator       coordinator.Client
+	coordinator       locationStore
 	wallclock         *ethwallclock.EthereumBeaconChain
 	networkID         string
 	networkName       string
 	metrics           *BackfillingCheckpointMetrics
-	beaconNode        *ethereum.BeaconNode
+	chain             checkpointSource
 	checkpointName    string
 	lookAheadDistance int
 	config            *BackfillingCheckpointConfig
 	activationFork    spec.DataVersion
+
+	// lastBackfill is the last backfill step handed out; seeing its first epoch again means it never committed.
+	lastBackfill *backfillStep
+	// isolateFrom is the lowest epoch of an uncommitted batch; steps at or above it cover one epoch.
+	isolateFrom *phase0.Epoch
+	// unrecorded is a backfill step whose events were written but whose marker update failed.
+	unrecorded *backfillStep
 }
+
+// backfillStep is the epoch range of one backfill step, walking down from first to lowest.
+type backfillStep struct {
+	first, lowest phase0.Epoch
+}
+
+// locationStore persists cannon locations; the coordinator client in production.
+type locationStore interface {
+	GetCannonLocation(ctx context.Context, typ xatu.CannonType, networkID string) (*xatu.CannonLocation, error)
+	UpsertCannonLocationRequest(ctx context.Context, location *xatu.CannonLocation) error
+}
+
+// checkpointSource reports finality and fork activation; the beacon node in production.
+type checkpointSource interface {
+	Finality() (*apiv1.Finality, error)
+	ForkEpoch(fork spec.DataVersion) (phase0.Epoch, error)
+}
+
+// beaconCheckpointSource adapts the cannon beacon node to checkpointSource.
+type beaconCheckpointSource struct {
+	beacon *ethereum.BeaconNode
+}
+
+func (s beaconCheckpointSource) Finality() (*apiv1.Finality, error) {
+	return s.beacon.Node().Finality()
+}
+
+func (s beaconCheckpointSource) ForkEpoch(fork spec.DataVersion) (phase0.Epoch, error) {
+	forkEpoch, err := s.beacon.Metadata().Spec.ForkEpochs.GetByName(fork.String())
+	if err != nil {
+		return 0, err
+	}
+
+	return forkEpoch.Epoch, nil
+}
+
+const (
+	logKeyNextEpoch   = "next_epoch"
+	logKeyLowestEpoch = "lowest_epoch"
+)
 
 type BackfillingCheckpointDirection string
 
@@ -45,6 +93,25 @@ type BackFillingCheckpointNextResponse struct {
 	Next       phase0.Epoch
 	LookAheads []phase0.Epoch
 	Direction  BackfillingCheckpointDirection
+
+	// epochs is the step in processing order; empty means Next alone.
+	epochs []phase0.Epoch
+}
+
+// Epochs returns the step's epochs in processing order: Next alone for head steps, up to epochsPerBatch walking down for backfill.
+func (r *BackFillingCheckpointNextResponse) Epochs() []phase0.Epoch {
+	if len(r.epochs) == 0 {
+		return []phase0.Epoch{r.Next}
+	}
+
+	return r.epochs
+}
+
+// LastEpoch is the epoch to pass to UpdateLocation, only after every epoch of the step is durably written.
+func (r *BackFillingCheckpointNextResponse) LastEpoch() phase0.Epoch {
+	epochs := r.Epochs()
+
+	return epochs[len(epochs)-1]
 }
 
 func NewBackfillingCheckpoint(
@@ -65,9 +132,9 @@ func NewBackfillingCheckpoint(
 		networkName:       networkName,
 		networkID:         networkID,
 		cannonType:        cannonType,
-		coordinator:       *coordinatorClient,
+		coordinator:       coordinatorClient,
 		wallclock:         wallclock,
-		beaconNode:        beacon,
+		chain:             beaconCheckpointSource{beacon: beacon},
 		metrics:           metrics,
 		checkpointName:    checkpoint,
 		lookAheadDistance: lookAheadDistance,
@@ -87,6 +154,7 @@ func (c *BackfillingCheckpoint) Start(ctx context.Context, activationFork spec.D
 
 		c.log.WithFields(logrus.Fields{
 			"backfill_target_epoch": epoch,
+			"epochs_per_batch":      c.config.epochsPerBatch(),
 		}).WithContext(ctx).Info("Backfilling is enabled")
 	} else {
 		c.log.WithContext(ctx).Info("Backfilling is disabled")
@@ -95,7 +163,65 @@ func (c *BackfillingCheckpoint) Start(ctx context.Context, activationFork spec.D
 	return nil
 }
 
+// UpdateLocation records epoch as processed in direction; callers only call it once the epoch's events are written.
 func (c *BackfillingCheckpoint) UpdateLocation(ctx context.Context, epoch phase0.Epoch, direction BackfillingCheckpointDirection) error {
+	err := c.updateLocation(ctx, epoch, direction)
+
+	if direction == BackfillingCheckpointDirectionBackfill {
+		switch last := c.lastBackfill; {
+		case err == nil:
+			c.unrecorded = nil
+		case last != nil && epoch == last.lowest:
+			c.unrecorded = last
+		}
+	}
+
+	return err
+}
+
+// recordWrittenStep retries the marker update of a backfill step whose events are already written, instead of deriving it again.
+func (c *BackfillingCheckpoint) recordWrittenStep(ctx context.Context) error {
+	step := c.unrecorded
+	if step == nil {
+		return nil
+	}
+
+	location, err := c.coordinator.GetCannonLocation(ctx, c.cannonType, c.networkID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get cannon location")
+	}
+
+	if location == nil {
+		c.unrecorded = nil
+
+		return nil
+	}
+
+	marker, err := c.GetMarker(location)
+	if err != nil {
+		return errors.Wrap(err, "failed to get marker from location")
+	}
+
+	// Something else moved the marker since the step was handed out; carry on from where it points now.
+	if marker.GetBackfillEpoch() != int64(step.first)+1 { //nolint:gosec // epochs fit int64
+		c.unrecorded = nil
+
+		return nil
+	}
+
+	c.log.WithFields(logrus.Fields{
+		logKeyNextEpoch:   step.first,
+		logKeyLowestEpoch: step.lowest,
+	}).WithContext(ctx).Warn("Retrying the marker update of a written backfill step")
+
+	if err := c.UpdateLocation(ctx, step.lowest, BackfillingCheckpointDirectionBackfill); err != nil {
+		return errors.Wrap(err, "failed to record written backfill step")
+	}
+
+	return nil
+}
+
+func (c *BackfillingCheckpoint) updateLocation(ctx context.Context, epoch phase0.Epoch, direction BackfillingCheckpointDirection) error {
 	location, err := c.coordinator.GetCannonLocation(ctx, c.cannonType, c.networkID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get cannon location")
@@ -162,9 +288,9 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 			span.RecordError(err)
 		} else if rsp != nil {
 			c.log.WithFields(logrus.Fields{
-				"next_epoch":  rsp.Next,
-				"direction":   rsp.Direction,
-				"look_aheads": rsp.LookAheads,
+				logKeyNextEpoch: rsp.Next,
+				"direction":     rsp.Direction,
+				"look_aheads":   rsp.LookAheads,
 			}).WithContext(ctx).Debug("Returning next epoch")
 
 			span.SetAttributes(attribute.Int64("next_epoch", int64(rsp.Next)))
@@ -182,6 +308,10 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 
 		span.End()
 	}()
+
+	if err := c.recordWrittenStep(ctx); err != nil {
+		return nil, err
+	}
 
 	for {
 		// Grab the current checkpoint from the beacon node
@@ -218,12 +348,12 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 		targetEpoch := phase0.Epoch(0)
 
 		if c.activationFork != spec.DataVersionPhase0 {
-			forkEpoch, errr := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(c.activationFork.String())
+			forkEpoch, errr := c.chain.ForkEpoch(c.activationFork)
 			if errr != nil {
 				return nil, errors.Wrap(errr, fmt.Sprintf("failed to get epoch for fork: %s", c.activationFork))
 			}
 
-			targetEpoch = forkEpoch.Epoch
+			targetEpoch = forkEpoch
 		}
 
 		if checkpoint.Epoch < targetEpoch {
@@ -253,6 +383,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 				Next:       checkpoint.Epoch,
 				LookAheads: c.calculateFinalizedLookAheads(checkpoint.Epoch, checkpoint.Epoch),
 				Direction:  BackfillingCheckpointDirectionHead,
+				epochs:     []phase0.Epoch{checkpoint.Epoch},
 			}, nil
 		}
 
@@ -271,6 +402,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 				Next:       checkpoint.Epoch,
 				LookAheads: c.calculateFinalizedLookAheads(checkpoint.Epoch, checkpoint.Epoch),
 				Direction:  BackfillingCheckpointDirectionHead,
+				epochs:     []phase0.Epoch{checkpoint.Epoch},
 			}, nil
 		}
 
@@ -282,6 +414,7 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 				Next:       next,
 				LookAheads: c.calculateFinalizedLookAheads(next, checkpoint.Epoch),
 				Direction:  BackfillingCheckpointDirectionHead,
+				epochs:     []phase0.Epoch{next},
 			}, nil
 		}
 
@@ -289,16 +422,21 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 		//nolint:gosec // marker.BackfillEpoch is an int64
 		if c.shouldBackfill(ctx) && phase0.Epoch(marker.BackfillEpoch) > backfillTargetEpoch {
 			next := phase0.Epoch(marker.BackfillEpoch - 1)
+			epochs := backfillEpochs(next, backfillTargetEpoch, c.backfillStepSize(ctx, next))
+
+			c.lastBackfill = &backfillStep{first: epochs[0], lowest: epochs[len(epochs)-1]}
 
 			c.log.WithFields(logrus.Fields{
-				"next_epoch":   next,
-				"target_epoch": backfillTargetEpoch,
+				logKeyNextEpoch: next,
+				"last_epoch":    epochs[len(epochs)-1],
+				"target_epoch":  backfillTargetEpoch,
 			}).WithContext(ctx).Info("Derived next backfill epoch to process")
 
 			return &BackFillingCheckpointNextResponse{
 				Next:       next,
-				LookAheads: c.calculateBackfillingLookAheads(next),
+				LookAheads: c.calculateBackfillingLookAheads(next, backfillTargetEpoch),
 				Direction:  BackfillingCheckpointDirectionBackfill,
+				epochs:     epochs,
 			}, nil
 		}
 
@@ -348,7 +486,7 @@ func (c *BackfillingCheckpoint) fetchLatestCheckpoint(ctx context.Context) (*pha
 	)
 	defer span.End()
 
-	finality, err := c.beaconNode.Node().Finality()
+	finality, err := c.chain.Finality()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch finality")
 	}
@@ -364,16 +502,37 @@ func (c *BackfillingCheckpoint) fetchLatestCheckpoint(ctx context.Context) (*pha
 	return nil, errors.Errorf("unknown checkpoint name %s", c.checkpointName)
 }
 
-func (c *BackfillingCheckpoint) calculateBackfillingLookAheads(epoch phase0.Epoch) []phase0.Epoch {
-	epochs := []phase0.Epoch{}
+// backfillStepSize retries a batch that never committed one epoch at a time, so the marker stops right above a failing epoch.
+func (c *BackfillingCheckpoint) backfillStepSize(ctx context.Context, next phase0.Epoch) uint64 {
+	if last := c.lastBackfill; last != nil && last.first == next && last.lowest < last.first {
+		lowest := last.lowest
+		c.isolateFrom = &lowest
 
-	for i := 0; i < c.lookAheadDistance; i++ {
-		e := epoch - phase0.Epoch(i)
+		c.metrics.IncBackfillBatchFallbacks(c.cannonType.String(), c.networkName)
 
-		epochs = append(epochs, e)
+		c.log.WithFields(logrus.Fields{
+			logKeyNextEpoch:   next,
+			logKeyLowestEpoch: lowest,
+		}).WithContext(ctx).Warn("Backfill batch did not commit, retrying its epochs one at a time")
 	}
 
-	return epochs
+	if c.isolateFrom != nil {
+		if next >= *c.isolateFrom {
+			return 1
+		}
+
+		c.isolateFrom = nil
+	}
+
+	return c.config.epochsPerBatch()
+}
+
+// calculateBackfillingLookAheads preloads the current batch and the one after it, or lookAheadDistance epochs if more.
+func (c *BackfillingCheckpoint) calculateBackfillingLookAheads(epoch, target phase0.Epoch) []phase0.Epoch {
+	//nolint:gosec // lookAheadDistance is a small positive constant
+	count := max(uint64(c.lookAheadDistance), 2*c.config.epochsPerBatch())
+
+	return backfillLookAheads(epoch, target, count)
 }
 
 func (c *BackfillingCheckpoint) calculateFinalizedLookAheads(epoch, finalizedEpoch phase0.Epoch) []phase0.Epoch {
@@ -493,12 +652,12 @@ func (c *BackfillingCheckpoint) getEarliestPossibleBackfillEpoch() (phase0.Epoch
 	activationEpoch := phase0.Epoch(0)
 
 	if c.activationFork != spec.DataVersionPhase0 {
-		forkEpoch, err := c.beaconNode.Metadata().Spec.ForkEpochs.GetByName(c.activationFork.String())
+		forkEpoch, err := c.chain.ForkEpoch(c.activationFork)
 		if err != nil {
 			return 0, errors.Wrap(err, "failed to get fork epoch")
 		}
 
-		activationEpoch = forkEpoch.Epoch
+		activationEpoch = forkEpoch
 	}
 
 	return backfillTargetEpoch(activationEpoch, c.config.Backfill.ToEpoch), nil

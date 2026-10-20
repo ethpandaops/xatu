@@ -62,6 +62,7 @@ jobs:
         # Read config
         BEACON_NODE="https://mainnet-archive-lb-bn.utility.production.platform.ethpandaops.io"
         EPOCH_OFFSET=$(yq '.epoch_offset' .github/cannon/seeding.yaml)
+        BACKFILL_EPOCHS=$(yq '.batched_backfill.epochs' .github/cannon/seeding.yaml)
         NETWORK_ID=$(yq '.network.id' .github/cannon/seeding.yaml)
         NETWORK_NAME=$(yq '.network.name' .github/cannon/seeding.yaml)
 
@@ -81,6 +82,8 @@ jobs:
         SEED_EPOCH=$((FINALIZED_EPOCH - EPOCH_OFFSET - 1))
         # Target epoch is what we expect to see data for
         TARGET_EPOCH=$((FINALIZED_EPOCH - EPOCH_OFFSET))
+        # The batched_backfill deriver also backfills SEED_EPOCH-1 down to this epoch
+        BACKFILL_TO_EPOCH=$((SEED_EPOCH - BACKFILL_EPOCHS))
 
         echo "Finalized epoch: $FINALIZED_EPOCH"
         echo "Epoch offset: $EPOCH_OFFSET"
@@ -92,6 +95,7 @@ jobs:
         echo "finalized_epoch=$FINALIZED_EPOCH" >> $GITHUB_OUTPUT
         echo "seed_epoch=$SEED_EPOCH" >> $GITHUB_OUTPUT
         echo "target_epoch=$TARGET_EPOCH" >> $GITHUB_OUTPUT
+        echo "backfill_to_epoch=$BACKFILL_TO_EPOCH" >> $GITHUB_OUTPUT
         echo "network_id=$NETWORK_ID" >> $GITHUB_OUTPUT
         echo "network_name=$NETWORK_NAME" >> $GITHUB_OUTPUT
     - name: Run Xatu stack
@@ -223,6 +227,13 @@ jobs:
           docker exec xatu-postgres psql -U user -d xatu -c "$SQL"
         done
 
+        # The batched backfill type also starts its backfill marker at the seed epoch.
+        BACKFILL_TYPE=$(yq '.batched_backfill.type' .github/cannon/seeding.yaml)
+        VALUE="{\"backfillingCheckpointMarker\":{\"finalizedEpoch\":\"$SEED_EPOCH\",\"backfillEpoch\":\"$SEED_EPOCH\"}}"
+        SQL="INSERT INTO cannon_location (network_id, type, value) VALUES ('$NETWORK_ID', '$BACKFILL_TYPE', '$VALUE') ON CONFLICT (network_id, type) DO UPDATE SET value = EXCLUDED.value, update_time = now();"
+        echo "Seeding $BACKFILL_TYPE backfill marker at epoch $SEED_EPOCH"
+        docker exec xatu-postgres psql -U user -d xatu -c "$SQL"
+
         echo "Seeding completed successfully."
     - name: Show the state of the database
       run: |
@@ -230,6 +241,8 @@ jobs:
     - name: Create Xatu Cannon config
       run: |
         NETWORK_NAME="${{ steps.beacon.outputs.network_name }}"
+        BACKFILL_TO_EPOCH="${{ steps.beacon.outputs.backfill_to_epoch }}"
+        EPOCHS_PER_BATCH=$(yq '.batched_backfill.epochs_per_batch' .github/cannon/seeding.yaml)
 
         cat <<EOF > /tmp/cannon_config.yaml
         logging: debug
@@ -252,6 +265,11 @@ jobs:
               enabled: true
             beaconBlockGraffiti:
               enabled: true
+              iterator:
+                backfill:
+                  enabled: true
+                  toEpoch: $BACKFILL_TO_EPOCH
+                  epochsPerBatch: $EPOCHS_PER_BATCH
             beaconBlobSidecar:
               enabled: true
             proposerDuty:
@@ -296,6 +314,10 @@ jobs:
               chgo:
                 adaptiveLimiter:
                   enabled: false
+              # One replica per shard: no peer to form the canonical tables' default insert quorum with.
+              defaults:
+                insertSettings:
+                  insert_quorum: 0
           - name: blob-archive
             type: s3blobstore
             config:
@@ -326,6 +348,15 @@ jobs:
         NETWORK_NAME: ${{ steps.beacon.outputs.network_name }}
       run: |
         .github/cannon/assert_clickhouse.sh .github/cannon/seeding.yaml
+    - name: Verify batched backfill
+      timeout-minutes: 10
+      env:
+        SEED_EPOCH: ${{ steps.beacon.outputs.seed_epoch }}
+        BACKFILL_TO_EPOCH: ${{ steps.beacon.outputs.backfill_to_epoch }}
+        NETWORK_ID: ${{ steps.beacon.outputs.network_id }}
+        NETWORK_NAME: ${{ steps.beacon.outputs.network_name }}
+      run: |
+        .github/cannon/assert_batched_backfill.sh .github/cannon/seeding.yaml
     - name: Verify s3blobstore output landed the CH-sampled blob in MinIO
       timeout-minutes: 5
       env:

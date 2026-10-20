@@ -124,7 +124,7 @@ func (a *AttesterSlashingDeriver) run(rctx context.Context) {
 				}
 
 				// Process the epoch
-				events, err := a.processEpoch(ctx, position.Next)
+				events, err := iterator.DeriveEpochs(ctx, position.Epochs(), a.processEpoch)
 				if err != nil {
 					a.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
@@ -142,7 +142,7 @@ func (a *AttesterSlashingDeriver) run(rctx context.Context) {
 				}
 
 				// Update our location
-				if err := a.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
+				if err := a.iterator.UpdateLocation(ctx, position.LastEpoch(), position.Direction); err != nil {
 					return "", err
 				}
 

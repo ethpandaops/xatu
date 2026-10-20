@@ -98,6 +98,9 @@ func (b *libp2pRpcMetaSubscriptionBatch) appendPayload(
 		b.Subscribe.Append(false)
 	}
 
+	b.RequestsPartial.Append(nullableBool(payload.GetRequestsPartial()))
+	b.SupportsSendingPartial.Append(nullableBool(payload.GetSupportsSendingPartial()))
+
 	// Parse topic fields from topic_id.
 	if topic := topicID; topic != "" {
 		parsed := parseTopicFields(topic)

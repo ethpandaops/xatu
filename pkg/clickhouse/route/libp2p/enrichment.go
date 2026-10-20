@@ -4,6 +4,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ClickHouse/ch-go/proto"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	libp2pProto "github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -181,6 +184,15 @@ func peerIDFromMetadata(
 	}
 
 	return traceMeta.GetPeerId().GetValue()
+}
+
+// nullableBool maps an unset wrapped bool to NULL rather than false.
+func nullableBool(value *wrapperspb.BoolValue) proto.Nullable[bool] {
+	if value == nil {
+		return proto.Nullable[bool]{}
+	}
+
+	return proto.NewNullable(value.GetValue())
 }
 
 // wrappedStringValue extracts the string value from a wrapped string proto.

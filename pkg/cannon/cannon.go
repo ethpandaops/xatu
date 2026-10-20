@@ -200,11 +200,30 @@ func (c *Cannon) Start(ctx context.Context) error {
 
 	stopBeacon()
 
-	return c.Shutdown(ctx)
+	var errs []error
+
+	// Join the beacon node before the derivers and sinks it feeds are torn down.
+	select {
+	case err := <-beaconErr:
+		if err != nil && !errors.Is(err, context.Canceled) {
+			errs = append(errs, fmt.Errorf("beacon node: %w", err))
+		}
+	case <-time.After(beaconStopTimeout):
+		c.log.WithContext(ctx).Warn("Beacon node did not stop in time")
+	}
+
+	if err := c.Shutdown(ctx); err != nil {
+		errs = append(errs, err)
+	}
+
+	return errors.Join(errs...)
 }
 
-// shutdownTimeout bounds Shutdown below the chart's 90s terminationGracePeriodSeconds.
-const shutdownTimeout = 75 * time.Second
+const (
+	// beaconStopTimeout and shutdownTimeout together stay below the chart's 90s terminationGracePeriodSeconds.
+	beaconStopTimeout = 10 * time.Second
+	shutdownTimeout   = 75 * time.Second
+)
 
 // Shutdown stops the producers first and then flushes the sinks, logging failures so one cannot skip the rest.
 func (c *Cannon) Shutdown(ctx context.Context) error {

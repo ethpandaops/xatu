@@ -14,9 +14,5 @@ func Decode(raw Unmarshaler, conf any) error {
 		return err
 	}
 
-	if raw == nil {
-		return nil
-	}
-
 	return raw.Unmarshal(conf)
 }

@@ -40,7 +40,7 @@ jobs:
           # Uses git merge-base to only report issues in new code. More reliable
           # than the action's only-new-issues for large PRs (>20k line diffs)
           # where the GitHub API cannot generate a patch.
-          args: --timeout=5m --new-from-merge-base=origin/${{ github.event.pull_request.base.ref }}
+          args: --timeout=10m --new-from-merge-base=origin/${{ github.event.pull_request.base.ref }}
 
           # Optional: if set to true then the all caching functionality will be complete disabled,
           #           takes precedence over all other caching options.

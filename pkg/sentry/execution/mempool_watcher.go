@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
@@ -41,7 +42,7 @@ type MempoolWatcher struct {
 	ctx                     context.Context //nolint:containedctx // This is a derived context from the parent context.
 	cancel                  context.CancelFunc
 	txQueue                 *txQueue
-	subscriptionCancel      context.CancelFunc // for canceling active subscription
+	subscribed              atomic.Bool
 	processTxCallback       func(context.Context, *PendingTxRecord, json.RawMessage) error
 	metrics                 *Metrics
 	txsReceivedBySource     map[string]int64
@@ -214,11 +215,7 @@ func (w *MempoolWatcher) Start(ctx context.Context) error {
 func (w *MempoolWatcher) Stop() {
 	w.log.Info("Stopping mempool watcher")
 
-	// Unsubscribe from WebSocket subscription if active.
-	if w.subscriptionCancel != nil {
-		w.subscriptionCancel()
-	}
-
+	// Cancelling the watcher's context also ends any active WebSocket subscription.
 	w.cancel()
 	w.wg.Wait()
 }
@@ -244,28 +241,19 @@ func (w *MempoolWatcher) startNewPendingTxSubscription() error {
 			}
 
 			// Attempt socket subscription, on failure, we'll retry.
-			if err := w.subscribeToNewPendingTransactions(); err != nil {
+			ended, err := w.subscribeToNewPendingTransactions()
+			if err != nil {
 				return "", err
 			}
 
-			// Create a channel to signal when the subscription ends.
-			done := make(chan error, 1)
-
-			// Wait in a goroutine for the subscription to end.
-			go func() {
-				// The subscription will end when w.subscriptionCancel is called
-				// or when the parent context is canceled.
-				<-ctx.Done()
-
-				done <- fmt.Errorf("context canceled")
-			}()
-
-			// Wait for signal that subscription has ended.
-			err := <-done
-
 			bo.Reset()
 
-			return "", err
+			select {
+			case <-ctx.Done():
+				return "", backoff.Permanent(fmt.Errorf("context canceled"))
+			case <-ended:
+				return "", fmt.Errorf("%s subscription ended", SubNewPendingTransactions)
+			}
 		}
 
 		// Configure subscription retry options.
@@ -288,56 +276,66 @@ func (w *MempoolWatcher) startNewPendingTxSubscription() error {
 	return nil
 }
 
-// subscribeToNewPendingTransactions establishes the actual WebSocket subscription
-// and sets up a goroutine to process transaction notifications.
-func (w *MempoolWatcher) subscribeToNewPendingTransactions() error {
+// subscribeToNewPendingTransactions establishes the WebSocket subscription and processes its notifications in a
+// goroutine; the returned channel closes when the subscription ends.
+func (w *MempoolWatcher) subscribeToNewPendingTransactions() (<-chan struct{}, error) {
 	// Always set the connected status to false at the beginning.
-	w.metrics.SetWebsocketConnected(false)
+	w.setSubscribed(false)
 
 	// Create a context for this subscription that can be canceled
 	subCtx, cancel := context.WithCancel(w.ctx)
-	w.subscriptionCancel = cancel
 
 	// Subscribe to new pending transactions
 	txChan, errChan, err := w.client.SubscribeToNewPendingTxs(subCtx)
 	if err != nil {
-		w.subscriptionCancel = nil
-
 		cancel() // Clean up if subscription fails
 
 		w.log.WithError(err).Error("Failed to subscribe to newPendingTransactions")
 
-		return err
+		return nil, err
 	}
 
 	// We've got a connection, :tada:
-	w.metrics.SetWebsocketConnected(true)
+	w.setSubscribed(true)
 
 	w.log.WithField("topic", SubNewPendingTransactions).Debug("Subscribed to newPendingTransactions")
 
+	ended := make(chan struct{})
+
 	// Start goroutine to process incoming transactions.
 	go func() {
+		defer close(ended)
 		defer cancel() // Ensure context is canceled when goroutine exits
 
 		for {
 			select {
 			case <-subCtx.Done():
 				w.log.Debug("subscription context canceled, stopping transaction processing")
-				w.metrics.SetWebsocketConnected(false)
+				w.setSubscribed(false)
 
 				return
 			case txHash := <-txChan:
 				w.addPendingTransaction(txHash, nil, fmt.Sprintf("ws_%s", SubNewPendingTransactions))
 			case err := <-errChan:
 				w.log.WithError(err).Error("subscription error")
-				w.metrics.SetWebsocketConnected(false)
+				w.setSubscribed(false)
 
 				return
 			}
 		}
 	}()
 
-	return nil
+	return ended, nil
+}
+
+func (w *MempoolWatcher) setSubscribed(subscribed bool) {
+	w.subscribed.Store(subscribed)
+	w.metrics.SetWebsocketConnected(subscribed)
+}
+
+// Healthy reports whether the watcher is receiving what it needs: its websocket subscription, when enabled.
+func (w *MempoolWatcher) Healthy() bool {
+	return !w.config.WebsocketEnabled || w.subscribed.Load()
 }
 
 // startPeriodicFetcher launches a goroutine that periodically fetches the full

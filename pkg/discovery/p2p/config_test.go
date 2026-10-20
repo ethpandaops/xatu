@@ -84,6 +84,7 @@ func TestP2PConfigRejectsZeroDialSettings(t *testing.T) {
 		"consensus dialTimeout":       "  consensus:\n    dialTimeout: 0s\n",
 		"consensus dialConcurrency":   "  consensus:\n    dialConcurrency: 0\n",
 		"consensus connectionTimeout": "  consensus:\n    connectionTimeout: 0s\n",
+		"consensus cooloffDuration":   "  consensus:\n    cooloffDuration: 0s\n",
 	}
 
 	for name, in := range tests {

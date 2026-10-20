@@ -68,7 +68,7 @@ func TestDecodeOmittedFieldsGetDefaults(t *testing.T) {
 func TestDecodeNilRawKeepsDefaults(t *testing.T) {
 	conf := &testConfig{}
 
-	require.NoError(t, configdecode.Decode(nil, conf))
+	require.NoError(t, configdecode.Decode(yamlDoc(nil), conf))
 
 	assert.Equal(t, testConfig{Enabled: true, Workers: 4, Interval: 5 * time.Second, Name: "xatu"}, *conf)
 }

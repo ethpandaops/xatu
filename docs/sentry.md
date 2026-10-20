@@ -41,22 +41,24 @@ Sentry requires a single `yaml` config file. An example file can be found [here]
 
 | Name| Type | Default | Description                                                                                                                                   |
 | --- | --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------|
-| logging | string | `warn` | Log level (`panic`, `fatal`, `warn`, `info`, `debug`, `trace`)                                                                                |
+| logging | string | `info` | Log level (`panic`, `fatal`, `warn`, `info`, `debug`, `trace`)                                                                                |
 | metricsAddr | string | `:9090` | The address the metrics server will listen on                                                                                                 |
 | pprofAddr | string | | The address the [pprof](https://github.com/google/pprof) server will listen on. When ommited, the pprof server will not be started            |
 | name | string |  | Unique name of the sentry                                                                                                                     |
 | labels | object |  | A key value map of labels to append to every sentry event                                                                                     |
 | ethereum.beaconNodeAddress | string |  | [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) http server endpoint                |
 | ethereum.beaconSubscriptions | array<string> |  | List of [topcis](https://ethereum.github.io/beacon-APIs/#/Events/eventstream) to subscribe to. If empty, all subscriptions are subscribed to. 
-| ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events                                                                                                |
+| ntpServer | string | `time.google.com` | NTP server to calculate clock drift for events                                                                                                |
 | proposerDuty.enabled | bool | `true` | Publish each epoch's proposer duties (one duties request and 32 events per epoch) |
 | beaconCommittees.enabled | bool | `false` | Fetch and publish each epoch's beacon committees |
 | attestationData.enabled | bool | `false` | Fetch attestation data from the beacon node on a schedule |
 | attestationData.interval.every | string | `12s` | How often to fetch attestation data when `attestationData.interval.enabled` is set |
 | forkChoice.enabled | bool | `false` | Fetch the beacon node's fork choice on a schedule |
 | forkChoice.interval.every | string | `12s` | How often to fetch the fork choice when `forkChoice.interval.enabled` is set |
-| execution.enabled | bool | `false` | Watch the execution client's mempool |
+| execution.enabled | bool | `false` | Watch the execution client's mempool. A watcher whose execution client is unreachable retries in the background. `xatu_sentry_execution_watcher_up{watcher}` is 1 while it runs with its websocket or block subscription up; one that stays down for 2 minutes rebuilds the execution client and every watcher |
 | execution.rpcAddress | string |  | Execution client JSON-RPC address, required when `execution.enabled` is set |
+| execution.websocketEnabled | bool | `false` | Subscribe to new pending transactions over the WebSocket |
+| execution.wsAddress | string |  | Execution client WebSocket address, required when `execution.websocketEnabled` is set |
 | execution.txPoolContentEnabled | bool | `true` | Poll `txpool_content` for pending transactions. Set to `false` on Besu |
 | execution.fetchInterval | int | `45` | Seconds between `txpool_content` polls |
 | execution.processingInterval | int | `3000` | Milliseconds between transaction processing batches |
@@ -66,7 +68,7 @@ Sentry requires a single `yaml` config file. An example file can be found [here]
 | execution.processorWorkerCount | int | `40` | Transaction processing workers |
 | execution.pruneDuration | int | `384` | Seconds to keep pending transactions before pruning |
 | execution.stateSize.enabled | bool | `false` | Poll the execution client's state size (`debug_stateSize`) |
-| execution.stateSize.triggerMode | string | `head` | When to poll the state size: `head`, `block` or `interval` |
+| execution.stateSize.triggerMode | string | `head` | When to poll the state size: `head`, `block` (needs `execution.websocketEnabled`) or `interval` |
 | execution.stateSize.intervalSeconds | int | `12` | Seconds between state size polls in `interval` mode |
 | outputs | array<object> |  | List of outputs for the sentry to send data to                                                                                                |
 | outputs[].name | string |  | Name of the output                                                                                                                            |

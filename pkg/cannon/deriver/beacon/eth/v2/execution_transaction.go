@@ -269,9 +269,7 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	return b.deriveEvents(ctx, block, envelope, blobSidecars, blockIdentifier, chainID)
 }
 
-// getBlobSidecars returns the block's blob sidecars keyed by versioned hash. A nil map means the
-// beacon node could not serve them: blobs past its retention window, a node without the block's
-// blobs (404), or a Gloas block whose blobs could not be reconstructed.
+// getBlobSidecars returns the block's blob sidecars by versioned hash; nil means unavailable (blob sizes stay NULL).
 func (b *ExecutionTransactionDeriver) getBlobSidecars(
 	ctx context.Context,
 	block *spec.VersionedSignedBeaconBlock,
@@ -281,63 +279,79 @@ func (b *ExecutionTransactionDeriver) getBlobSidecars(
 		return map[string]*deneb.BlobSidecar{}, nil
 	}
 
-	sidecars, err := b.beacon.GetBlobSidecars(ctx, block, xatuethv1.SlotAsString(slot))
-	if err == nil {
-		// Some nodes answer an empty list rather than an error once blobs are pruned.
-		if commitments, cerr := block.BlobKZGCommitments(); cerr == nil && len(sidecars) < len(commitments) {
-			if retained, rerr := b.blobsRetained(block.Version, slot); rerr == nil && !retained {
-				b.log.WithField("slot", slot).WithContext(ctx).Debug("Blob sidecars are past the beacon node's retention window, blob sizes left unknown")
+	sidecars, fetchErr := b.beacon.GetBlobSidecars(ctx, block, xatuethv1.SlotAsString(slot))
 
-				return nil, nil //nolint:nilnil // nil map marks blob sidecars as unavailable
-			}
-		}
-
-		byHash := make(map[string]*deneb.BlobSidecar, len(sidecars))
-
-		for _, sidecar := range sidecars {
-			byHash[ethereum.ConvertKzgCommitmentToVersionedHash(sidecar.KZGCommitment[:]).String()] = sidecar
-		}
-
-		return byHash, nil
+	byHash, err := resolveBlobSidecars(block, sidecars, fetchErr, func() (bool, error) {
+		return b.blobsRetained(block.Version, slot)
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get beacon block blob sidecars for slot %d", slot)
 	}
 
-	log := b.log.WithError(err).WithField("slot", slot).WithContext(ctx)
-
-	// From Gloas (EIP-7732) blobs are only obtainable by reconstruction from
-	// data columns, which not all clients serve reliably.
-	if block.Version >= spec.DataVersionGloas {
-		log.Debug("Failed to get blob sidecars for gloas block, blob sizes left unknown")
-
-		return nil, nil //nolint:nilnil // nil map marks blob sidecars as unavailable
+	if byHash == nil {
+		b.log.WithError(fetchErr).WithField("slot", slot).WithContext(ctx).Debug("Blob sidecars unavailable, blob sizes left unknown")
 	}
 
-	var apiErr *api.Error
-	if errors.As(err, &apiErr) && apiErr.StatusCode == 503 {
-		return nil, errors.New("beacon node is syncing")
-	}
-
-	retained, rerr := b.blobsRetained(block.Version, slot)
-	if rerr != nil {
-		return nil, errors.Wrapf(rerr, "failed to get beacon block blob sidecars for slot %d: %s", slot, err)
-	}
-
-	if !retained {
-		log.Debug("Blob sidecars are past the beacon node's retention window, blob sizes left unknown")
-
-		return nil, nil //nolint:nilnil // nil map marks blob sidecars as unavailable
-	}
-
-	if apiErr != nil && apiErr.StatusCode == 404 {
-		log.Warn("Beacon node has no blob sidecars for slot, blob sizes left unknown")
-
-		return nil, nil //nolint:nilnil // nil map marks blob sidecars as unavailable
-	}
-
-	return nil, errors.Wrapf(err, "failed to get beacon block blob sidecars for slot %d", slot)
+	return byHash, nil
 }
 
-// blobsRetained reports whether the beacon node must still serve blob data for slot
-// (MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS, or the data column window from Fulu).
+// resolveBlobSidecars keys sidecars by versioned hash, or returns nil for pruned blobs and failed Gloas reconstructions.
+func resolveBlobSidecars(
+	block *spec.VersionedSignedBeaconBlock,
+	sidecars []*deneb.BlobSidecar,
+	fetchErr error,
+	retained func() (bool, error),
+) (map[string]*deneb.BlobSidecar, error) {
+	// From Gloas (EIP-7732) blobs are only obtainable by reconstruction from data columns, which not all clients serve.
+	if fetchErr != nil && block.Version >= spec.DataVersionGloas {
+		return nil, nil //nolint:nilnil // nil map marks blob sidecars as unavailable
+	}
+
+	if fetchErr != nil {
+		var apiErr *api.Error
+		if !errors.As(fetchErr, &apiErr) || (apiErr.StatusCode != 400 && apiErr.StatusCode != 404) {
+			return nil, fetchErr
+		}
+
+		return unavailableIfPruned(retained, fetchErr)
+	}
+
+	// Gloas sidecars are already checked against the bid, and a withheld payload legitimately has none.
+	if block.Version < spec.DataVersionGloas {
+		commitments, err := block.BlobKZGCommitments()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read blob kzg commitments")
+		}
+
+		if len(sidecars) < len(commitments) {
+			return unavailableIfPruned(retained, errors.Errorf("beacon node returned %d blob sidecars for %d commitments", len(sidecars), len(commitments)))
+		}
+	}
+
+	byHash := make(map[string]*deneb.BlobSidecar, len(sidecars))
+
+	for _, sidecar := range sidecars {
+		byHash[ethereum.ConvertKzgCommitmentToVersionedHash(sidecar.KZGCommitment[:]).String()] = sidecar
+	}
+
+	return byHash, nil
+}
+
+// unavailableIfPruned returns nil when the slot is past blob retention, and cause otherwise.
+func unavailableIfPruned(retained func() (bool, error), cause error) (map[string]*deneb.BlobSidecar, error) {
+	ok, err := retained()
+	if err != nil {
+		return nil, errors.Wrap(err, cause.Error())
+	}
+
+	if ok {
+		return nil, cause
+	}
+
+	return nil, nil //nolint:nilnil // nil map marks blob sidecars as unavailable
+}
+
+// blobsRetained reports whether slot is inside the beacon node's blob (pre-Fulu) or data column retention window.
 func (b *ExecutionTransactionDeriver) blobsRetained(version spec.DataVersion, slot phase0.Slot) (bool, error) {
 	sp, err := b.beacon.Node().Spec()
 	if err != nil {
@@ -365,8 +379,7 @@ func withinBlobRetention(epoch, currentEpoch, window uint64) bool {
 	return epoch+window >= currentEpoch
 }
 
-// deriveEvents builds one event per execution transaction. A nil blobSidecars map leaves the
-// blob sizes of blob transactions unknown (NULL) rather than zero.
+// deriveEvents builds one event per execution transaction; a nil blobSidecars map leaves blob sizes NULL.
 func (b *ExecutionTransactionDeriver) deriveEvents(
 	ctx context.Context,
 	block *spec.VersionedSignedBeaconBlock,
@@ -463,9 +476,7 @@ func (b *ExecutionTransactionDeriver) deriveEvents(
 	return events, nil
 }
 
-// blobSidecarSizes sums the blob and empty byte sizes of a blob transaction's sidecars. When any
-// sidecar is unavailable both sizes are empty, which is stored as NULL, and missing lists the
-// versioned hashes without a sidecar.
+// blobSidecarSizes sums a blob transaction's sidecar sizes, or returns empty sizes (NULL) and the missing hashes.
 func blobSidecarSizes(versionedHashes []string, sidecars map[string]*deneb.BlobSidecar) (size, emptySize string, missing []string) {
 	total, empty := 0, 0
 

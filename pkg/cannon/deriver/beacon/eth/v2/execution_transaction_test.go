@@ -1,11 +1,17 @@
 package v2
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"io"
 	"math/big"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/bellatrix"
 	"github.com/ethpandaops/go-eth2-client/spec/capella"
@@ -13,12 +19,13 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/golang/snappy"
 	"github.com/holiman/uint256"
+	dynssz "github.com/pk910/dynamic-ssz"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -271,12 +278,11 @@ func TestWithinBlobRetention(t *testing.T) {
 	assert.True(t, withinBlobRetention(current, current, window))
 	assert.True(t, withinBlobRetention(current-window, current, window))
 	assert.False(t, withinBlobRetention(current-window-1, current, window))
-	// Mainnet execution transaction backfill stalled here on 2026-03-19.
+	// Mainnet epoch 431117 (slot 13795744) is long past retention at current 483421.
 	assert.False(t, withinBlobRetention(431117, current, window))
 }
 
-// Mainnet slot 13795744 (Fulu): its blobs are long pruned, so the beacon node answers
-// 400 "Insufficient data columns to reconstruct blobs" and the deriver used to stall.
+// Mainnet slot 13795744 (Fulu) has one blob transaction whose blob is past the data column retention window.
 func TestExecutionTransactionDeriver_PrunedBlobsFuluBlock(t *testing.T) {
 	block := loadEraBlock(t, "mainnet-13795744", spec.DataVersionFulu)
 
@@ -326,22 +332,6 @@ func TestExecutionTransactionDeriver_PrunedBlobsFuluBlock(t *testing.T) {
 		assert.Equal(t, uint64(736379), first.GetNonce().GetValue())
 	})
 
-	t.Run("blob sidecars available", func(t *testing.T) {
-		commitments, err := block.BlobKZGCommitments()
-		require.NoError(t, err)
-		require.Len(t, commitments, 1)
-
-		sidecar := &deneb.BlobSidecar{KZGCommitment: commitments[0]}
-		hash := ethereum.ConvertKzgCommitmentToVersionedHash(commitments[0][:]).String()
-
-		events, err := deriver.deriveEvents(context.Background(), block, nil, map[string]*deneb.BlobSidecar{hash: sidecar}, testBlockIdentifier(), big.NewInt(1))
-		require.NoError(t, err)
-
-		additional := events[blobTx].GetMeta().GetClient().GetEthV2BeaconBlockExecutionTransaction()
-		assert.Equal(t, "131072", additional.GetBlobSidecarsSize())
-		assert.Equal(t, "131072", additional.GetBlobSidecarsEmptySize())
-	})
-
 	t.Run("blob sidecar missing", func(t *testing.T) {
 		events, err := deriver.deriveEvents(context.Background(), block, nil, map[string]*deneb.BlobSidecar{}, testBlockIdentifier(), big.NewInt(1))
 		require.NoError(t, err)
@@ -350,4 +340,137 @@ func TestExecutionTransactionDeriver_PrunedBlobsFuluBlock(t *testing.T) {
 		assert.Empty(t, additional.GetBlobSidecarsSize())
 		assert.Empty(t, additional.GetBlobSidecarsEmptySize())
 	})
+}
+
+// loadBlobSidecars decodes testdata/blob_sidecars/<name>.ssz.snappy, an SSZ blob sidecar list from the beacon API.
+func loadBlobSidecars(t *testing.T, name string) []*deneb.BlobSidecar {
+	t.Helper()
+
+	framed, err := os.ReadFile(filepath.Join("testdata", "blob_sidecars", name+".ssz.snappy"))
+	require.NoError(t, err)
+
+	data, err := io.ReadAll(snappy.NewReader(bytes.NewReader(framed)))
+	require.NoError(t, err)
+
+	sidecar := &deneb.BlobSidecar{}
+	size, err := dynssz.GetGlobalDynSsz().SizeSSZ(sidecar)
+	require.NoError(t, err)
+	require.Zero(t, len(data)%size)
+
+	sidecars := make([]*deneb.BlobSidecar, 0, len(data)/size)
+
+	for offset := 0; offset < len(data); offset += size {
+		sidecar := &deneb.BlobSidecar{}
+		require.NoError(t, dynssz.GetGlobalDynSsz().UnmarshalSSZ(sidecar, data[offset:offset+size]))
+
+		sidecars = append(sidecars, sidecar)
+	}
+
+	return sidecars
+}
+
+// Mainnet slot 15416308 (Fulu) and its blob sidecar as served by the beacon node; expected sizes are the stored rows.
+func TestExecutionTransactionDeriver_RealBlobSidecars(t *testing.T) {
+	block := loadEraBlock(t, "mainnet-15416308", spec.DataVersionFulu)
+	sidecars := loadBlobSidecars(t, "mainnet-15416308")
+	require.Len(t, sidecars, 1)
+
+	byHash, err := resolveBlobSidecars(block, sidecars, nil, func() (bool, error) {
+		t.Fatal("retention must not be consulted for a complete sidecar list")
+
+		return true, nil
+	})
+	require.NoError(t, err)
+
+	deriver := &ExecutionTransactionDeriver{
+		log:        logrus.New(),
+		clientMeta: &xatu.ClientMeta{Name: "cannon-test"},
+	}
+
+	events, err := deriver.deriveEvents(context.Background(), block, nil, byHash, testBlockIdentifier(), big.NewInt(1))
+	require.NoError(t, err)
+	require.Len(t, events, 71)
+
+	totalGasPrice := new(big.Int)
+
+	for i, event := range events {
+		tx := event.GetEthV2BeaconBlockExecutionTransaction()
+		additional := event.GetMeta().GetClient().GetEthV2BeaconBlockExecutionTransaction()
+
+		gasPrice, ok := new(big.Int).SetString(tx.GetGasPrice(), 10)
+		require.True(t, ok)
+		totalGasPrice.Add(totalGasPrice, gasPrice)
+
+		if i != 70 {
+			assert.Equal(t, "0", additional.GetBlobSidecarsSize())
+
+			continue
+		}
+
+		assert.Equal(t, "0x70f27dcbed4a07e7430694d4b8be4f9e84923a06b4a2c719fae42803ed1bed03", tx.GetHash())
+		assert.Equal(t, []string{"0x010527b04814534648ad8d0d594b4e8b723c88ca2ac0ee40f8723cd6d541dfd2"}, tx.GetBlobHashes())
+		assert.Equal(t, "131072", additional.GetBlobSidecarsSize())
+		assert.Equal(t, "131063", additional.GetBlobSidecarsEmptySize())
+	}
+
+	assert.Equal(t, "59488816877", totalGasPrice.String())
+}
+
+func TestResolveBlobSidecars(t *testing.T) {
+	block := loadEraBlock(t, "mainnet-15416308", spec.DataVersionFulu)
+	sidecars := loadBlobSidecars(t, "mainnet-15416308")
+
+	inside := func() (bool, error) { return true, nil }
+	past := func() (bool, error) { return false, nil }
+	unknown := func() (bool, error) {
+		return false, errors.New("spec has no MIN_EPOCHS_FOR_DATA_COLUMN_SIDECARS_REQUESTS")
+	}
+
+	status := func(code int) error { return &api.Error{StatusCode: code} }
+
+	tests := []struct {
+		name        string
+		block       *spec.VersionedSignedBeaconBlock
+		sidecars    []*deneb.BlobSidecar
+		fetchErr    error
+		retained    func() (bool, error)
+		wantErr     bool
+		unavailable bool
+	}{
+		{name: "complete list", block: block, sidecars: sidecars, retained: inside},
+		{name: "empty list inside retention", block: block, sidecars: nil, retained: inside, wantErr: true},
+		{name: "empty list past retention", block: block, sidecars: nil, retained: past, unavailable: true},
+		{name: "400 inside retention", block: block, fetchErr: status(400), retained: inside, wantErr: true},
+		{name: "400 past retention", block: block, fetchErr: status(400), retained: past, unavailable: true},
+		{name: "404 inside retention", block: block, fetchErr: status(404), retained: inside, wantErr: true},
+		{name: "404 past retention", block: block, fetchErr: status(404), retained: past, unavailable: true},
+		{name: "404 with unknown retention", block: block, fetchErr: status(404), retained: unknown, wantErr: true},
+		{name: "500 past retention", block: block, fetchErr: status(500), retained: past, wantErr: true},
+		{name: "503 past retention", block: block, fetchErr: status(503), retained: past, wantErr: true},
+		{name: "timeout past retention", block: block, fetchErr: context.DeadlineExceeded, retained: past, wantErr: true},
+		{name: "connection error past retention", block: block, fetchErr: errors.New("dial tcp: connection refused"), retained: past, wantErr: true},
+		{name: "gloas reconstruction failure inside retention", block: gloasBlock(5), fetchErr: status(500), retained: inside, unavailable: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			byHash, err := resolveBlobSidecars(tt.block, tt.sidecars, tt.fetchErr, tt.retained)
+			if tt.wantErr {
+				require.Error(t, err)
+
+				return
+			}
+
+			require.NoError(t, err)
+
+			if tt.unavailable {
+				assert.Nil(t, byHash)
+
+				return
+			}
+
+			require.Len(t, byHash, 1)
+			assert.Contains(t, byHash, "0x010527b04814534648ad8d0d594b4e8b723c88ca2ac0ee40f8723cd6d541dfd2")
+		})
+	}
 }

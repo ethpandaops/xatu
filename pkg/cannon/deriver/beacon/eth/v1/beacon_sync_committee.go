@@ -199,13 +199,7 @@ func (b *BeaconSyncCommitteeDeriver) run(rctx context.Context) {
 	}
 }
 
-// calculatePeriodBoundary calculates the appropriate sync committee period boundary epoch
-// based on the current epoch and direction. Returns the boundary epoch, whether it should
-// be processed, and any error. A period that began before Altair has its boundary at the
-// Altair fork epoch, the first epoch with a sync committee.
-//
-// For head direction: only process if we're exactly at a period boundary, otherwise skip.
-// For backfill direction: always process the current period's boundary and jump to it.
+// calculatePeriodBoundary returns epoch's sync committee boundary and whether to derive it; head skips non-boundaries.
 func (b *BeaconSyncCommitteeDeriver) calculatePeriodBoundary(
 	_ context.Context,
 	epoch phase0.Epoch,

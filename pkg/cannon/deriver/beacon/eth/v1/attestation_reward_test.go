@@ -14,8 +14,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-// TestAttestationRewardDeriver_InactivityLeakEpoch uses the lighthouse response for mainnet
-// epoch 200759 (May 2023 inactivity leak), trimmed to the first 64 validators.
+// Lighthouse rewards for mainnet epoch 200759 (May 2023 inactivity leak), trimmed to the first 64 validators.
 func TestAttestationRewardDeriver_InactivityLeakEpoch(t *testing.T) {
 	raw, err := os.ReadFile(filepath.Join("testdata", "mainnet-attestation-rewards-200759.json"))
 	require.NoError(t, err)

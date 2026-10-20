@@ -6,8 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// SyncCommitteeStateEpoch returns the epoch whose state serves the sync committee active at epoch:
-// the start of its sync committee period, or the Altair fork epoch when the period began before Altair.
+// SyncCommitteeStateEpoch is the first epoch of epoch's sync committee period that has an Altair state.
 func (b *BeaconNode) SyncCommitteeStateEpoch(epoch phase0.Epoch) (phase0.Epoch, error) {
 	sp, err := b.beacon.Spec()
 	if err != nil {

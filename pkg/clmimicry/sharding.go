@@ -6,6 +6,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"gopkg.in/yaml.v3"
 
@@ -15,6 +17,9 @@ import (
 const (
 	// DefaultTotalShards is the default number of shards if not specified
 	DefaultTotalShards = 512
+
+	// maxTopicConfigCacheEntries caps the topic config memo, since RPC meta topics are peer-supplied.
+	maxTopicConfigCacheEntries = 4096
 )
 
 // UnifiedSharder provides a single sharding decision point for all events
@@ -22,6 +27,15 @@ type UnifiedSharder struct {
 	config           *ShardingConfig
 	eventCategorizer *EventCategorizer
 	enabled          bool
+
+	// topicConfigs memoizes findTopicConfig per topicConfigKey; config is fixed after construction.
+	topicConfigs     sync.Map
+	topicConfigCount atomic.Int64
+}
+
+type topicConfigKey struct {
+	eventType xatu.Event_Name
+	topic     string
 }
 
 // ShardingConfig represents the sharding configuration
@@ -203,8 +217,30 @@ type ShardableEvent struct {
 	Topic string
 }
 
-// findTopicConfig finds the matching topic configuration for a given topic and event type
+// findTopicConfig finds the matching topic configuration for a given topic and event type.
+// Results are memoized, as RPC meta events ask this once per message ID with few distinct topics.
 func (s *UnifiedSharder) findTopicConfig(topic string, eventType xatu.Event_Name) *TopicShardingConfig {
+	key := topicConfigKey{eventType: eventType, topic: topic}
+
+	if cached, ok := s.topicConfigs.Load(key); ok {
+		if config, isConfig := cached.(*TopicShardingConfig); isConfig {
+			return config
+		}
+	}
+
+	config := s.matchTopicConfig(topic, eventType)
+
+	if s.topicConfigCount.Load() < maxTopicConfigCacheEntries {
+		if _, loaded := s.topicConfigs.LoadOrStore(key, config); !loaded {
+			s.topicConfigCount.Add(1)
+		}
+	}
+
+	return config
+}
+
+// matchTopicConfig evaluates the configured patterns for a topic and event type.
+func (s *UnifiedSharder) matchTopicConfig(topic string, eventType xatu.Event_Name) *TopicShardingConfig {
 	if s.config.compiledPatterns == nil {
 		return nil
 	}

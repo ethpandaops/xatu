@@ -10,8 +10,8 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-func TestSnapshot_canonical_beacon_elaborated_attestation(t *testing.T) {
-	testfixture.AssertSnapshot(t, newcanonicalBeaconElaboratedAttestationBatch(), &xatu.DecoratedEvent{
+func elaboratedAttestationEvent(payloadPresent *wrapperspb.BoolValue) *xatu.DecoratedEvent {
+	return &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_ELABORATED_ATTESTATION,
 			DateTime: testfixture.TS(),
@@ -55,9 +55,14 @@ func TestSnapshot_canonical_beacon_elaborated_attestation(t *testing.T) {
 						Root:  "0x3333333333333333333333333333333333333333333333333333333333333333",
 					},
 				},
+				PayloadPresent: payloadPresent,
 			},
 		},
-	}, 1, map[string]any{
+	}
+}
+
+func TestSnapshot_canonical_beacon_elaborated_attestation(t *testing.T) {
+	testfixture.AssertSnapshot(t, newcanonicalBeaconElaboratedAttestationBatch(), elaboratedAttestationEvent(nil), 1, map[string]any{
 		"meta_network_name": "mainnet",
 		"beacon_block_root": "0x1111111111111111111111111111111111111111111111111111111111111111",
 		"source_root":       "0x2222222222222222222222222222222222222222222222222222222222222222",
@@ -65,5 +70,13 @@ func TestSnapshot_canonical_beacon_elaborated_attestation(t *testing.T) {
 		"block_root":        "0x4444444444444444444444444444444444444444444444444444444444444444",
 		"committee_index":   "0",
 		"validators":        []uint32{11, 22},
+		"payload_present":   nil,
+	})
+}
+
+func TestSnapshot_canonical_beacon_elaborated_attestation_payload_vote(t *testing.T) {
+	testfixture.AssertSnapshot(t, newcanonicalBeaconElaboratedAttestationBatch(), elaboratedAttestationEvent(wrapperspb.Bool(true)), 1, map[string]any{
+		"committee_index": "0",
+		"payload_present": true,
 	})
 }

@@ -74,7 +74,7 @@ type CanonicalBeaconBlock struct {
 	BidValue *wrapperspb.UInt64Value `protobuf:"bytes,34,opt,name=bid_value,json=bidValue,proto3" json:"bid_value,omitempty"`
 	// Execution payment in Gwei (Gloas+)
 	ExecutionPayment *wrapperspb.UInt64Value `protobuf:"bytes,35,opt,name=execution_payment,json=executionPayment,proto3" json:"execution_payment,omitempty"`
-	// Whether execution payload was delivered (Gloas+)
+	// Whether the builder revealed the execution payload (Gloas+)
 	PayloadPresent *wrapperspb.BoolValue `protobuf:"bytes,36,opt,name=payload_present,json=payloadPresent,proto3" json:"payload_present,omitempty"`
 	// Gas limit for execution payload
 	ExecutionPayloadGasLimit *wrapperspb.UInt64Value `protobuf:"bytes,37,opt,name=execution_payload_gas_limit,json=executionPayloadGasLimit,proto3" json:"execution_payload_gas_limit,omitempty"`
@@ -422,7 +422,7 @@ type ListCanonicalBeaconBlockRequest struct {
 	BidValue *NullableUInt64Filter `protobuf:"bytes,25,opt,name=bid_value,json=bidValue,proto3" json:"bid_value,omitempty"`
 	// Filter by execution_payment - Execution payment in Gwei (Gloas+) (optional)
 	ExecutionPayment *NullableUInt64Filter `protobuf:"bytes,26,opt,name=execution_payment,json=executionPayment,proto3" json:"execution_payment,omitempty"`
-	// Filter by payload_present - Whether execution payload was delivered (Gloas+) (optional)
+	// Filter by payload_present - Whether the builder revealed the execution payload (Gloas+) (optional)
 	PayloadPresent *NullableBoolFilter `protobuf:"bytes,27,opt,name=payload_present,json=payloadPresent,proto3" json:"payload_present,omitempty"`
 	// Filter by execution_payload_gas_limit - Gas limit for execution payload (optional)
 	ExecutionPayloadGasLimit *NullableUInt64Filter `protobuf:"bytes,28,opt,name=execution_payload_gas_limit,json=executionPayloadGasLimit,proto3" json:"execution_payload_gas_limit,omitempty"`

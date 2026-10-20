@@ -298,7 +298,7 @@ func (b *BeaconBlockDeriver) createEventFromBlock(ctx context.Context, block *sp
 	return decoratedEvent, nil
 }
 
-func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.VersionedSignedBeaconBlock) (*xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, error) {
+func (b *BeaconBlockDeriver) getAdditionalData(ctx context.Context, block *spec.VersionedSignedBeaconBlock) (*xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
 
 	slotI, err := block.Slot()
@@ -322,6 +322,10 @@ func (b *BeaconBlockDeriver) getAdditionalData(_ context.Context, block *spec.Ve
 	extra.Version = block.Version.String()
 
 	if err := setBlockSizes(extra, block); err != nil {
+		return nil, err
+	}
+
+	if err := setPayloadPresent(ctx, extra, b.beacon, block); err != nil {
 		return nil, err
 	}
 
@@ -352,32 +356,52 @@ func setBlockSizes(extra *xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, bloc
 	extra.TotalBytes = wrapperspb.UInt64(uint64(len(sszData)))
 	extra.TotalBytesCompressed = wrapperspb.UInt64(uint64(len(snappy.Encode(nil, sszData))))
 
-	// Phase0 and Altair blocks have no execution payload, so their transaction stats stay unset.
-	if block.Version < spec.DataVersionBellatrix {
+	// Pre-Bellatrix blocks have no payload and Gloas bodies carry none inline (EIP-7732).
+	if block.Version < spec.DataVersionBellatrix || block.Version >= spec.DataVersionGloas {
 		return nil
+	}
+
+	transactions, err := block.ExecutionTransactions()
+	if err != nil {
+		return errors.Wrap(err, "failed to get execution transactions")
 	}
 
 	var transactionsBytes []byte
 
-	txCount := 0
-
-	// Gloas (EIP-7732) bodies carry no transactions; they ride the payload envelope.
-	if block.Version < spec.DataVersionGloas {
-		transactions, err := block.ExecutionTransactions()
-		if err != nil {
-			return errors.Wrap(err, "failed to get execution transactions")
-		}
-
-		txCount = len(transactions)
-
-		for _, tx := range transactions {
-			transactionsBytes = append(transactionsBytes, tx...)
-		}
+	for _, tx := range transactions {
+		transactionsBytes = append(transactionsBytes, tx...)
 	}
 
-	extra.TransactionsCount = wrapperspb.UInt64(uint64(txCount))
+	extra.TransactionsCount = wrapperspb.UInt64(uint64(len(transactions)))
 	extra.TransactionsTotalBytes = wrapperspb.UInt64(uint64(len(transactionsBytes)))
 	extra.TransactionsTotalBytesCompressed = wrapperspb.UInt64(uint64(len(snappy.Encode(nil, transactionsBytes))))
+
+	return nil
+}
+
+// setPayloadPresent sets whether the builder revealed a Gloas+ block's execution payload.
+func setPayloadPresent(
+	ctx context.Context,
+	extra *xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data,
+	envelopes executionPayloadEnvelopeProvider,
+	block *spec.VersionedSignedBeaconBlock,
+) error {
+	if block.Version < spec.DataVersionGloas {
+		return nil
+	}
+
+	slot, err := block.Slot()
+	if err != nil {
+		return errors.Wrap(err, "failed to obtain block slot")
+	}
+
+	envelope, err := envelopes.GetExecutionPayloadEnvelope(ctx, xatuethv1.SlotAsString(slot))
+	if err != nil {
+		return errors.Wrapf(err, "failed to get execution payload envelope for slot %d", slot)
+	}
+
+	// A missing envelope means the builder withheld the payload.
+	extra.PayloadPresent = wrapperspb.Bool(envelope != nil && envelope.Message != nil && envelope.Message.Payload != nil)
 
 	return nil
 }

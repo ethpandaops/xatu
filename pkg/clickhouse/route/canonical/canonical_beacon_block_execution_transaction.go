@@ -8,6 +8,7 @@ import (
 	"github.com/ClickHouse/ch-go/proto"
 
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
+	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
@@ -128,6 +129,17 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) appendRuntime(_ *xatu.De
 
 func (b *canonicalBeaconBlockExecutionTransactionBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	tx := event.GetEthV2BeaconBlockExecutionTransaction()
+
+	authorizations, err := newAuthorizationColumns(tx.GetAuthorizationList())
+	if err != nil {
+		return err
+	}
+
+	b.AuthorizationChainIds.Append(authorizations.chainIDs)
+	b.AuthorizationAddresses.Append(authorizations.addresses)
+	b.AuthorizationNonces.Append(authorizations.nonces)
+	b.AuthorizationAuthorities.Append(authorizations.authorities)
+
 	b.Hash.Append([]byte(tx.GetHash()))
 	b.From.Append([]byte(tx.GetFrom()))
 
@@ -213,6 +225,37 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) appendPayload(event *xat
 	}
 
 	return nil
+}
+
+// authorizationColumns is an EIP-7702 authorization list as parallel column arrays.
+type authorizationColumns struct {
+	chainIDs    []proto.UInt256
+	addresses   [][]byte
+	nonces      []uint64
+	authorities []string
+}
+
+func newAuthorizationColumns(authorizations []*ethv1.SetCodeAuthorization) (authorizationColumns, error) {
+	cols := authorizationColumns{
+		chainIDs:    make([]proto.UInt256, 0, len(authorizations)),
+		addresses:   make([][]byte, 0, len(authorizations)),
+		nonces:      make([]uint64, 0, len(authorizations)),
+		authorities: make([]string, 0, len(authorizations)),
+	}
+
+	for _, auth := range authorizations {
+		chainID, err := route.ParseUInt256(auth.GetChainId())
+		if err != nil {
+			return authorizationColumns{}, fmt.Errorf("parsing authorization chain_id: %w: %w", err, route.ErrInvalidEvent)
+		}
+
+		cols.chainIDs = append(cols.chainIDs, chainID)
+		cols.addresses = append(cols.addresses, []byte(auth.GetAddress()))
+		cols.nonces = append(cols.nonces, auth.GetNonce().GetValue())
+		cols.authorities = append(cols.authorities, auth.GetAuthority())
+	}
+
+	return cols, nil
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema

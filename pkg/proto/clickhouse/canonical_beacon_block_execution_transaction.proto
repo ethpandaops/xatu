@@ -61,6 +61,14 @@ message CanonicalBeaconBlockExecutionTransaction {
   google.protobuf.UInt32Value blob_sidecars_empty_size = 35;
   // Ethereum network name
   string meta_network_name = 36;
+  // The chain ID of each EIP-7702 authorization in a set code transaction
+  repeated string authorization_chain_ids = 37;
+  // The address each EIP-7702 authorization delegates its authority's code to
+  repeated string authorization_addresses = 38;
+  // The authority nonce of each EIP-7702 authorization
+  repeated uint64 authorization_nonces = 39;
+  // The account that signed each EIP-7702 authorization, recovered from its signature. Empty when the signature does not recover
+  repeated string authorization_authorities = 40;
 }
 
 // Request for listing canonical_beacon_block_execution_transaction records
@@ -123,18 +131,26 @@ message ListCanonicalBeaconBlockExecutionTransactionRequest {
   NullableUInt32Filter blob_sidecars_size = 25;
   // Filter by blob_sidecars_empty_size - The total empty size of the sidecars for blob transactions in bytes (optional)
   NullableUInt32Filter blob_sidecars_empty_size = 26;
+  // Filter by authorization_chain_ids - The chain ID of each EIP-7702 authorization in a set code transaction (optional)
+  ArrayStringFilter authorization_chain_ids = 27;
+  // Filter by authorization_addresses - The address each EIP-7702 authorization delegates its authority's code to (optional)
+  ArrayStringFilter authorization_addresses = 28;
+  // Filter by authorization_nonces - The authority nonce of each EIP-7702 authorization (optional)
+  ArrayUInt64Filter authorization_nonces = 29;
+  // Filter by authorization_authorities - The account that signed each EIP-7702 authorization, recovered from its signature. Empty when the signature does not recover (optional)
+  ArrayStringFilter authorization_authorities = 30;
 
   // The maximum number of canonical_beacon_block_execution_transaction to return.
   // If unspecified, at most 100 items will be returned.
   // The maximum value is 10000; values above 10000 will be coerced to 10000.
-  int32 page_size = 27;
+  int32 page_size = 31;
   // A page token, received from a previous `ListCanonicalBeaconBlockExecutionTransaction` call.
   // Provide this to retrieve the subsequent page.
-  string page_token = 28;
+  string page_token = 32;
   // The order of results. Format: comma-separated list of fields.
   // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
   // If unspecified, results will be returned in the default order.
-  string order_by = 29;
+  string order_by = 33;
 }
 
 // Response for listing canonical_beacon_block_execution_transaction records

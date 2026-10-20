@@ -3,6 +3,7 @@ syntax = "proto3";
 package clickhouse.v1;
 
 import "common.proto";
+import "google/protobuf/wrappers.proto";
 
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
 // Contains elaborated attestations from beacon blocks.
@@ -47,6 +48,8 @@ message CanonicalBeaconElaboratedAttestation {
   string target_root = 30;
   // Ethereum network name
   string meta_network_name = 31;
+  // Whether the attesters saw the execution payload of the voted block (attestation data index 1). Always false when the voted block is from the attestation's own slot. Null before Gloas
+  google.protobuf.BoolValue payload_present = 32;
 }
 
 // Request for listing canonical_beacon_elaborated_attestation records
@@ -103,18 +106,20 @@ message ListCanonicalBeaconElaboratedAttestationRequest {
   UInt32Filter target_epoch = 20;
   // Filter by target_epoch_start_date_time - The wall clock time when the target epoch started (optional)
   UInt32Filter target_epoch_start_date_time = 21;
+  // Filter by payload_present - Whether the attesters saw the execution payload of the voted block (attestation data index 1). Always false when the voted block is from the attestation's own slot. Null before Gloas (optional)
+  NullableBoolFilter payload_present = 22;
 
   // The maximum number of canonical_beacon_elaborated_attestation to return.
   // If unspecified, at most 100 items will be returned.
   // The maximum value is 10000; values above 10000 will be coerced to 10000.
-  int32 page_size = 22;
+  int32 page_size = 23;
   // A page token, received from a previous `ListCanonicalBeaconElaboratedAttestation` call.
   // Provide this to retrieve the subsequent page.
-  string page_token = 23;
+  string page_token = 24;
   // The order of results. Format: comma-separated list of fields.
   // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
   // If unspecified, results will be returned in the default order.
-  string order_by = 24;
+  string order_by = 25;
 }
 
 // Response for listing canonical_beacon_elaborated_attestation records

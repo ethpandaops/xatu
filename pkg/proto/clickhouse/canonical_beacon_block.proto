@@ -57,7 +57,7 @@ message CanonicalBeaconBlock {
   google.protobuf.UInt64Value bid_value = 34;
   // Execution payment in Gwei (Gloas+)
   google.protobuf.UInt64Value execution_payment = 35;
-  // Whether execution payload was delivered (Gloas+)
+  // Whether the builder revealed the execution payload (Gloas+)
   google.protobuf.BoolValue payload_present = 36;
   // Gas limit for execution payload
   google.protobuf.UInt64Value execution_payload_gas_limit = 37;
@@ -133,7 +133,7 @@ message ListCanonicalBeaconBlockRequest {
   NullableUInt64Filter bid_value = 25;
   // Filter by execution_payment - Execution payment in Gwei (Gloas+) (optional)
   NullableUInt64Filter execution_payment = 26;
-  // Filter by payload_present - Whether execution payload was delivered (Gloas+) (optional)
+  // Filter by payload_present - Whether the builder revealed the execution payload (Gloas+) (optional)
   NullableBoolFilter payload_present = 27;
   // Filter by execution_payload_gas_limit - Gas limit for execution payload (optional)
   NullableUInt64Filter execution_payload_gas_limit = 28;

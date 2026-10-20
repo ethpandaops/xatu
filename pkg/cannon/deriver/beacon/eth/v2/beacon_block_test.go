@@ -2,6 +2,8 @@ package v2
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -102,10 +104,10 @@ func TestSetBlockSizes(t *testing.T) {
 			txCount: uint64Ptr(80), txBytes: uint64Ptr(17884), txCompBytes: uint64Ptr(12808),
 		},
 		{
+			// Gloas transaction stats come from the payload envelope, not the body.
 			fixture: "sepolia-11374000", version: spec.DataVersionGloas,
 			root:  "0x1a4161ae68d3aa561f4463754b17b53523972882f5ac745d50ecb57e1e01e7b6",
 			total: 1802, totalCompressed: 1482,
-			txCount: uint64Ptr(0), txBytes: uint64Ptr(0), txCompBytes: uint64Ptr(1),
 		},
 	}
 
@@ -142,4 +144,42 @@ func TestSetBlockSizes(t *testing.T) {
 			assert.NotNil(t, event.GetMessage())
 		})
 	}
+}
+
+func TestSetPayloadPresent(t *testing.T) {
+	t.Run("revealed payload is present", func(t *testing.T) {
+		provider := &fakeEnvelopeProvider{envelope: envelopeWithBAL(nil)}
+		extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
+
+		require.NoError(t, setPayloadPresent(context.Background(), extra, provider, gloasBlock(123)))
+		assert.Equal(t, []string{"123"}, provider.blockIDs)
+		require.NotNil(t, extra.GetPayloadPresent())
+		assert.True(t, extra.GetPayloadPresent().GetValue())
+	})
+
+	t.Run("withheld payload is not present", func(t *testing.T) {
+		provider := &fakeEnvelopeProvider{}
+		extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
+
+		require.NoError(t, setPayloadPresent(context.Background(), extra, provider, gloasBlock(123)))
+		require.NotNil(t, extra.GetPayloadPresent())
+		assert.False(t, extra.GetPayloadPresent().GetValue())
+	})
+
+	t.Run("pre gloas block is left alone without fetching an envelope", func(t *testing.T) {
+		provider := &fakeEnvelopeProvider{}
+		extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
+
+		require.NoError(t, setPayloadPresent(context.Background(), extra, provider,
+			electraBlockWithRequests(spec.DataVersionFulu, nil)))
+		assert.Empty(t, provider.blockIDs)
+		assert.Nil(t, extra.GetPayloadPresent())
+	})
+
+	t.Run("envelope fetch error is returned", func(t *testing.T) {
+		provider := &fakeEnvelopeProvider{err: errors.New("beacon node unavailable")}
+		extra := &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{}
+
+		require.Error(t, setPayloadPresent(context.Background(), extra, provider, gloasBlock(123)))
+	})
 }

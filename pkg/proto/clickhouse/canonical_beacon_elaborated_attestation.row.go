@@ -3,6 +3,10 @@
 
 package clickhouse
 
+import (
+	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
+)
+
 // CanonicalBeaconElaboratedAttestationRow is a ClickHouse-scannable result row for the canonical_beacon_elaborated_attestation table.
 // Field types match the SELECT column expressions produced by
 // BuildListCanonicalBeaconElaboratedAttestationQuery and BuildGetCanonicalBeaconElaboratedAttestationQuery: DateTime columns are unix
@@ -31,6 +35,7 @@ type CanonicalBeaconElaboratedAttestationRow struct {
 	TargetEpochStartDateTime uint32 `ch:"target_epoch_start_date_time" json:"target_epoch_start_date_time"`
 	TargetRoot *string `ch:"target_root" json:"target_root"`
 	MetaNetworkName string `ch:"meta_network_name" json:"meta_network_name"`
+	PayloadPresent *bool `ch:"payload_present" json:"payload_present"`
 }
 
 // TableName returns the ClickHouse table this row maps to.
@@ -71,5 +76,8 @@ func (r *CanonicalBeaconElaboratedAttestationRow) ToProto() *CanonicalBeaconElab
 		p.TargetRoot = *r.TargetRoot
 	}
 	p.MetaNetworkName = r.MetaNetworkName
+	if r.PayloadPresent != nil {
+		p.PayloadPresent = wrapperspb.Bool(*r.PayloadPresent)
+	}
 	return p
 }

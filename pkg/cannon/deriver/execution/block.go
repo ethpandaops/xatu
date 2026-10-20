@@ -44,18 +44,26 @@ var blockColumns = []string{
 	"extra_data",
 	"timestamp",
 	"base_fee_per_gas",
+	"parent_hash",
+	"state_root",
+	"blob_gas_used",
+	"excess_blob_gas",
 }
 
 // blockRow mirrors the cryo `blocks` parquet schema collected with --hex.
 type blockRow struct {
-	BlockNumber   uint32 `parquet:"block_number"`
-	BlockHash     string `parquet:"block_hash"`
-	Author        string `parquet:"author"`
-	GasUsed       uint64 `parquet:"gas_used"`
-	GasLimit      uint64 `parquet:"gas_limit"`
-	ExtraData     string `parquet:"extra_data"`
-	Timestamp     uint32 `parquet:"timestamp"`
-	BaseFeePerGas uint64 `parquet:"base_fee_per_gas"`
+	BlockNumber   uint32  `parquet:"block_number"`
+	BlockHash     string  `parquet:"block_hash"`
+	Author        string  `parquet:"author"`
+	GasUsed       uint64  `parquet:"gas_used"`
+	GasLimit      uint64  `parquet:"gas_limit"`
+	ExtraData     string  `parquet:"extra_data"`
+	Timestamp     uint32  `parquet:"timestamp"`
+	BaseFeePerGas uint64  `parquet:"base_fee_per_gas"`
+	ParentHash    string  `parquet:"parent_hash"`
+	StateRoot     string  `parquet:"state_root"`
+	BlobGasUsed   *uint64 `parquet:"blob_gas_used,optional"`
+	ExcessBlobGas *uint64 `parquet:"excess_blob_gas,optional"`
 }
 
 // BlockDeriverConfig configures the block deriver.
@@ -208,6 +216,22 @@ func blockRowToProto(row *blockRow) *xatu.ExecutionBlock {
 
 	if row.Author != "" {
 		out.Author = wrapperspb.String(row.Author)
+	}
+
+	if row.ParentHash != "" {
+		out.ParentHash = wrapperspb.String(row.ParentHash)
+	}
+
+	if row.StateRoot != "" {
+		out.StateRoot = wrapperspb.String(row.StateRoot)
+	}
+
+	if row.BlobGasUsed != nil {
+		out.BlobGasUsed = wrapperspb.UInt64(*row.BlobGasUsed)
+	}
+
+	if row.ExcessBlobGas != nil {
+		out.ExcessBlobGas = wrapperspb.UInt64(*row.ExcessBlobGas)
 	}
 
 	// The legacy pipeline stores empty extra_data as '' (not NULL). cryo --hex

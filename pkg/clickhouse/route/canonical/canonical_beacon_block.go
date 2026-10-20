@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	ethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
@@ -177,11 +178,11 @@ func (b *canonicalBeaconBlockBatch) appendRuntime(_ *xatu.DecoratedEvent) {
 func (b *canonicalBeaconBlockBatch) appendPayload(event *xatu.DecoratedEvent) error {
 	eventBlock := event.GetEthV2BeaconBlockV2()
 
-	return b.appendPayloadFromEventBlockV2(eventBlock)
+	return b.appendPayloadFromEventBlockV2(eventBlock, event.GetMeta().GetClient().GetEthV2BeaconBlockV2())
 }
 
 //nolint:gosec // G115: proto uint64 values are bounded by ClickHouse uint32 column schema
-func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *ethv2.EventBlockV2) error {
+func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *ethv2.EventBlockV2, additional *xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data) error {
 	if phase0Block := eventBlock.GetPhase0Block(); phase0Block != nil {
 		if slot := phase0Block.GetSlot(); slot != nil {
 			b.Slot.Append(uint32(slot.GetValue()))
@@ -357,7 +358,7 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 		// via the ExecutionPayloadEnvelope event. EPBS columns are
 		// populated from the bid in the block body.
 		b.appendNullInlinePayloadFields()
-		b.appendEpbsFromBid(body.GetSignedExecutionPayloadBid())
+		b.appendEpbsFromBid(body.GetSignedExecutionPayloadBid(), additional.GetPayloadPresent())
 
 		return nil
 	}
@@ -417,12 +418,8 @@ func (b *canonicalBeaconBlockBatch) appendNullEpbsColumns() {
 	b.PayloadPresent.Append(proto.Nullable[bool]{})
 }
 
-// appendEpbsFromBid populates the four EPBS columns from a Gloas block's
-// SignedExecutionPayloadBid. payload_present cannot be determined at block
-// time (it requires the post-fact PTC vote / envelope arrival), so it stays
-// NULL here — downstream queries can fold it in by joining against the
-// payload_attestation aggregate.
-func (b *canonicalBeaconBlockBatch) appendEpbsFromBid(bid *ethv1.SignedExecutionPayloadBid) {
+// appendEpbsFromBid populates the four EPBS columns from a Gloas block's bid and payload reveal status.
+func (b *canonicalBeaconBlockBatch) appendEpbsFromBid(bid *ethv1.SignedExecutionPayloadBid, present *wrapperspb.BoolValue) {
 	if bid == nil || bid.GetMessage() == nil {
 		b.appendNullEpbsColumns()
 
@@ -450,8 +447,11 @@ func (b *canonicalBeaconBlockBatch) appendEpbsFromBid(bid *ethv1.SignedExecution
 		b.ExecutionPayment.Append(proto.Nullable[uint64]{})
 	}
 
-	// payload_present is a post-fact determination — left NULL here.
-	b.PayloadPresent.Append(proto.Nullable[bool]{})
+	if present != nil {
+		b.PayloadPresent.Append(proto.NewNullable(present.GetValue()))
+	} else {
+		b.PayloadPresent.Append(proto.Nullable[bool]{})
+	}
 }
 
 //nolint:gosec // G115

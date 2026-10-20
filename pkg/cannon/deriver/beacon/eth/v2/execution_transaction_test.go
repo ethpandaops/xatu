@@ -220,15 +220,15 @@ func TestGetGasPrice_Gloas_WithEnvelope(t *testing.T) {
 		},
 	}
 
-	block := &spec.VersionedSignedBeaconBlock{Version: spec.DataVersionGloas}
+	for _, version := range []spec.DataVersion{spec.DataVersionGloas, spec.DataVersionHeze} {
+		got, err := GetGasPrice(&spec.VersionedSignedBeaconBlock{Version: version}, tx, envelope)
+		if err != nil {
+			t.Fatalf("%s: unexpected error: %v", version, err)
+		}
 
-	got, err := GetGasPrice(block, tx, envelope)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if got.Cmp(big.NewInt(53)) != 0 {
-		t.Errorf("Gloas gas price: got %s want 53 (baseFee 50 + tip 3)", got)
+		if got.Cmp(big.NewInt(53)) != 0 {
+			t.Errorf("%s gas price: got %s want 53 (baseFee 50 + tip 3)", version, got)
+		}
 	}
 }
 

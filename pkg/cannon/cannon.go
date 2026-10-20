@@ -55,7 +55,10 @@ type Cannon struct {
 
 	scheduler gocron.Scheduler
 
+	// deriversMu guards eventDerivers and stopping, which the beacon's OnReady callback and Shutdown both touch.
+	deriversMu    sync.Mutex
 	eventDerivers []deriver.EventDeriver
+	stopping      bool
 
 	coordinatorClient *coordinator.Client
 
@@ -238,7 +241,12 @@ func (c *Cannon) Shutdown(ctx context.Context) error {
 		errs = append(errs, fmt.Errorf("scheduler: %w", err))
 	}
 
-	for _, deriver := range c.eventDerivers {
+	c.deriversMu.Lock()
+	c.stopping = true
+	derivers := c.eventDerivers
+	c.deriversMu.Unlock()
+
+	for _, deriver := range derivers {
 		if err := deriver.Stop(ctx); err != nil {
 			errs = append(errs, fmt.Errorf("deriver %s: %w", deriver.Name(), err))
 		}
@@ -1216,6 +1224,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 			)
 		}
 
+		c.deriversMu.Lock()
+		defer c.deriversMu.Unlock()
+
+		// Derivers started after Shutdown would feed sinks that are already stopping.
+		if c.stopping {
+			return nil
+		}
+
 		c.eventDerivers = eventDerivers
 
 		// Refresh the spec every epoch
@@ -1235,6 +1251,10 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 
 			go func() {
 				if err := c.startDeriverWhenReady(ctx, d); err != nil {
+					if ctx.Err() != nil {
+						return
+					}
+
 					c.log.
 						WithField("deriver", d.Name()).
 						WithError(err).WithContext(ctx).Fatal("Failed to start deriver")

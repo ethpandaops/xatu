@@ -39,25 +39,25 @@ type Config struct {
 	// Headers is a map of headers to send to the execution client.
 	Headers map[string]string `yaml:"headers"`
 	// FetchInterval is how often to fetch txpool_content (in seconds).
-	FetchInterval int `yaml:"fetchInterval" default:"15"`
+	FetchInterval int `yaml:"fetchInterval" default:"45"`
 	// PruneDuration is how long to keep pending transactions in memory before pruning (in seconds).
-	PruneDuration int `yaml:"pruneDuration" default:"300"`
+	PruneDuration int `yaml:"pruneDuration" default:"384"`
 	// ProcessorWorkerCount is the number of worker goroutines for processing transactions.
-	ProcessorWorkerCount int `yaml:"processorWorkerCount" default:"50"`
+	ProcessorWorkerCount int `yaml:"processorWorkerCount" default:"40"`
 	// RpcBatchSize is the number of transactions to include in a single RPC batch call.
-	RpcBatchSize int `yaml:"rpcBatchSize" default:"40"`
+	RpcBatchSize int `yaml:"rpcBatchSize" default:"15"`
 	// QueueSize is the size of the transaction processing queue.
-	QueueSize int `yaml:"queueSize" default:"5000"`
+	QueueSize int `yaml:"queueSize" default:"10000"`
 	// ProcessingInterval is the interval at which to process batches of transactions (in milliseconds).
-	ProcessingInterval int `yaml:"processingInterval" default:"500"`
+	ProcessingInterval int `yaml:"processingInterval" default:"3000"`
 	// MaxConcurrency is the maximum number of concurrent batch RPC requests.
-	MaxConcurrency int `yaml:"maxConcurrency" default:"5"`
+	MaxConcurrency int `yaml:"maxConcurrency" default:"3"`
 	// CircuitBreakerFailureThreshold is the number of consecutive failures before opening the circuit breaker.
 	CircuitBreakerFailureThreshold int `yaml:"circuitBreakerFailureThreshold" default:"5"`
 	// CircuitBreakerResetTimeout is the time to wait before transitioning from open to half-open (in seconds).
 	CircuitBreakerResetTimeout int `yaml:"circuitBreakerResetTimeout" default:"30"`
 	// StateSize is the configuration for state size monitoring.
-	StateSize *StateSizeConfig `yaml:"stateSize"`
+	StateSize *StateSizeConfig `yaml:"stateSize" default:"{}"`
 }
 
 // PendingTxRecord represents a transaction hash and when it was first seen.

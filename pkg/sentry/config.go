@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/creasty/defaults"
 	"github.com/ethpandaops/beacon/pkg/human"
+	"gopkg.in/yaml.v3"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -29,7 +31,7 @@ type Config struct {
 	Ethereum ethereum.Config `yaml:"ethereum"`
 
 	// Execution client configuration
-	Execution *execution.Config `yaml:"execution" default:"{'enabled': false}"`
+	Execution *execution.Config `yaml:"execution" default:"{\"enabled\": false}"`
 
 	// Outputs configuration
 	Outputs []output.Config `yaml:"outputs"`
@@ -41,25 +43,94 @@ type Config struct {
 	NTPServer string `yaml:"ntpServer" default:"time.google.com"`
 
 	// ForkChoice configuration
-	ForkChoice *ForkChoiceConfig `yaml:"forkChoice" default:"{'enabled': false}"`
+	ForkChoice *ForkChoiceConfig `yaml:"forkChoice" default:"{\"enabled\": false}"`
 
 	// BeaconCommittees configuration
-	BeaconCommittees *BeaconCommitteesConfig `yaml:"beaconCommittees" default:"{'enabled': false}"`
+	BeaconCommittees *BeaconCommitteesConfig `yaml:"beaconCommittees" default:"{\"enabled\": false}"`
 
 	// AttestationData configuration
-	AttestationData *AttestationDataConfig `yaml:"attestationData" default:"{'enabled': false}"`
+	AttestationData *AttestationDataConfig `yaml:"attestationData" default:"{\"enabled\": false}"`
 
 	// ProposerDuty configuration
-	ProposerDuty *ProposerDutyConfig `yaml:"proposerDuty" default:"{'enabled': true}"`
+	ProposerDuty *ProposerDutyConfig `yaml:"proposerDuty" default:"{\"enabled\": true}"`
 
 	// ValidatorBlock configuration
-	ValidatorBlock *ValidatorBlockConfig `yaml:"validatorBlock" default:"{'enabled': false}"`
+	ValidatorBlock *ValidatorBlockConfig `yaml:"validatorBlock" default:"{\"enabled\": false}"`
 
 	// BeaconBlob configuration
-	BeaconBlob *BeaconBlobConfig `yaml:"beaconBlob" default:"{'enabled': false}"`
+	BeaconBlob *BeaconBlobConfig `yaml:"beaconBlob" default:"{\"enabled\": false}"`
 
 	// Tracing configuration
 	Tracing observability.TracingConfig `yaml:"tracing"`
+}
+
+// DefaultConfig returns a Config with every default applied.
+func DefaultConfig() (*Config, error) {
+	config := &Config{}
+
+	if err := defaults.Set(config); err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+// ParseConfig applies the defaults first, then the YAML document on top of them.
+func ParseConfig(data []byte) (*Config, error) {
+	config, err := DefaultConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	type plain Config
+
+	if err := yaml.Unmarshal(data, (*plain)(config)); err != nil {
+		return nil, err
+	}
+
+	if err := config.defaultNilSubConfigs(); err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+// defaultNilSubConfigs gives sub-configs left nil, e.g. by an explicit YAML null, their defaults.
+func (c *Config) defaultNilSubConfigs() error {
+	d, err := DefaultConfig()
+	if err != nil {
+		return err
+	}
+
+	if c.Execution == nil {
+		c.Execution = d.Execution
+	}
+
+	if c.ForkChoice == nil {
+		c.ForkChoice = d.ForkChoice
+	}
+
+	if c.BeaconCommittees == nil {
+		c.BeaconCommittees = d.BeaconCommittees
+	}
+
+	if c.AttestationData == nil {
+		c.AttestationData = d.AttestationData
+	}
+
+	if c.ProposerDuty == nil {
+		c.ProposerDuty = d.ProposerDuty
+	}
+
+	if c.ValidatorBlock == nil {
+		c.ValidatorBlock = d.ValidatorBlock
+	}
+
+	if c.BeaconBlob == nil {
+		c.BeaconBlob = d.BeaconBlob
+	}
+
+	return nil
 }
 
 func (c *Config) Validate() error {

@@ -132,6 +132,10 @@ func New(ctx context.Context, log observability.ContextualLogger, config *Config
 		config.MetricsAddr = overrides.MetricsAddr.Value
 	}
 
+	if err := config.defaultNilSubConfigs(); err != nil {
+		return nil, fmt.Errorf("failed to default config: %w", err)
+	}
+
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
@@ -890,18 +894,13 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return err
 		}
 
+		// The execution watchers start independently, and an unreachable execution node never stops the sentry.
 		if err := s.startMempoolTransactionWatcher(ctx); err != nil {
-			// If we can't reach the execution node, we can't start the mempool transaction watcher.
-			// Instead of preventing the sentry from starting, we'll log an error and continue.
 			s.log.WithError(err).WithContext(ctx).Error("failed to start mempool transaction watcher")
-
-			return nil
 		}
 
 		if err := s.startExecutionStateSizeWatcher(ctx); err != nil {
 			s.log.WithError(err).WithContext(ctx).Error("failed to start execution debug state size watcher")
-
-			return err
 		}
 
 		return nil

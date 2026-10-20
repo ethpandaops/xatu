@@ -168,3 +168,34 @@ derivers:
 `), (*plain)(config)))
 	assert.False(t, config.Derivers.Consensus.BeaconBlockGraffitiConfig.Enabled)
 }
+
+// TestConfig_Validate_BatchLookAheadFitsBlockCache rejects batch sizes whose preloads would evict each other.
+func TestConfig_Validate_BatchLookAheadFitsBlockCache(t *testing.T) {
+	mk := func(cacheSize, graffitiBatch, blockBatch uint64) *Config {
+		cfg := &Config{
+			Name:        "test",
+			Ethereum:    ethereum.Config{Beacon: ethereum.BeaconConfig{Address: "http://localhost:5052", BlockCacheSize: cacheSize}},
+			Coordinator: coordinator.Config{Address: "localhost:8080"},
+			Outputs:     []output.Config{{Name: "out", SinkType: output.SinkTypeClickhouse}},
+		}
+
+		graffiti := &cfg.Derivers.Consensus.BeaconBlockGraffitiConfig
+		graffiti.Enabled = true
+		graffiti.Iterator.Backfill.Enabled = true
+		graffiti.Iterator.Backfill.EpochsPerBatch = graffitiBatch
+
+		block := &cfg.Derivers.Consensus.BeaconBlockConfig
+		block.Enabled = true
+		block.Iterator.Backfill.Enabled = true
+		block.Iterator.Backfill.EpochsPerBatch = blockBatch
+
+		return cfg
+	}
+
+	require.NoError(t, mk(3000, 32, 1).Validate(), "2048 preloaded blocks fit 3000")
+	require.NoError(t, mk(6000, 32, 8).Validate(), "2560 preloaded blocks fit 6000")
+
+	err := mk(3000, 32, 16).Validate()
+	require.Error(t, err, "3072 preloaded blocks do not fit 3000")
+	assert.Contains(t, err.Error(), "ethereum.beacon.blockCacheSize")
+}

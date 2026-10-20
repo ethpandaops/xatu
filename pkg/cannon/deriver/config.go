@@ -6,6 +6,7 @@ import (
 	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"
 	v2 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver/execution"
+	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 )
 
 // Config groups cannon's derivers by layer: `consensus` derivers read the
@@ -67,10 +68,100 @@ type ConsensusConfig struct {
 	BlockAccessListSummaryConfig         v2.BlockAccessListSummaryDeriverConfig         `yaml:"blockAccessListSummary"`
 }
 
+// lookAheadSlotsPerEpoch sizes batch look-aheads with the mainnet preset, the largest SLOTS_PER_EPOCH in use.
+const lookAheadSlotsPerEpoch = 32
+
 func (c *Config) Validate() error {
 	if err := c.Consensus.BlockAccessListConfig.Validate(); err != nil {
 		return fmt.Errorf("consensus.blockAccessList: %w", err)
 	}
 
+	// These derivers do not derive a step epoch by epoch, or share one beacon state download per epoch.
+	singleEpoch := map[*iterator.BackfillingCheckpointConfig]bool{
+		&c.Consensus.BeaconSyncCommitteeConfig.Iterator:                     true,
+		&c.Consensus.BeaconValidatorsConfig.Iterator:                        true,
+		&c.Consensus.BlockAccessListConfig.Iterator:                         true,
+		&c.Consensus.BeaconStatePtcMemberConfig.Iterator:                    true,
+		&c.Consensus.BeaconStateBuilderConfig.Iterator:                      true,
+		&c.Consensus.BeaconStateBuilderPendingPaymentConfig.Iterator:        true,
+		&c.Consensus.BeaconStateBuilderPendingWithdrawalConfig.Iterator:     true,
+		&c.Consensus.BeaconStateExecutionPayloadAvailabilityConfig.Iterator: true,
+	}
+
+	for name, d := range c.Consensus.iterators() {
+		if err := d.iterator.Validate(); err != nil {
+			return fmt.Errorf("consensus.%s: %w", name, err)
+		}
+
+		if singleEpoch[d.iterator] && d.iterator.Backfill.EpochsPerBatch > 1 {
+			return fmt.Errorf("consensus.%s: iterator.backfill.epochsPerBatch is not supported, got %d", name, d.iterator.Backfill.EpochsPerBatch)
+		}
+	}
+
 	return nil
+}
+
+// BatchLookAheadSlots is how many blocks the enabled batching backfills preload at once: two batches each.
+func (c *Config) BatchLookAheadSlots() uint64 {
+	var slots uint64
+
+	for _, d := range c.Consensus.iterators() {
+		if !d.enabled || !d.iterator.Backfill.Enabled || d.iterator.Backfill.EpochsPerBatch <= 1 {
+			continue
+		}
+
+		slots += 2 * d.iterator.Backfill.EpochsPerBatch * lookAheadSlotsPerEpoch
+	}
+
+	return slots
+}
+
+// consensusIterator is one consensus deriver's enabled flag and iterator config.
+type consensusIterator struct {
+	enabled  bool
+	iterator *iterator.BackfillingCheckpointConfig
+}
+
+// iterators returns every consensus deriver's iterator config keyed by its YAML name.
+func (c *ConsensusConfig) iterators() map[string]consensusIterator {
+	return map[string]consensusIterator{
+		"attesterSlashing":                        {enabled: c.AttesterSlashingConfig.Enabled, iterator: &c.AttesterSlashingConfig.Iterator},
+		"blsToExecutionChange":                    {enabled: c.BLSToExecutionConfig.Enabled, iterator: &c.BLSToExecutionConfig.Iterator},
+		"deposit":                                 {enabled: c.DepositConfig.Enabled, iterator: &c.DepositConfig.Iterator},
+		"executionTransaction":                    {enabled: c.ExecutionTransactionConfig.Enabled, iterator: &c.ExecutionTransactionConfig.Iterator},
+		"proposerSlashing":                        {enabled: c.ProposerSlashingConfig.Enabled, iterator: &c.ProposerSlashingConfig.Iterator},
+		"voluntaryExit":                           {enabled: c.VoluntaryExitConfig.Enabled, iterator: &c.VoluntaryExitConfig.Iterator},
+		"withdrawal":                              {enabled: c.WithdrawalConfig.Enabled, iterator: &c.WithdrawalConfig.Iterator},
+		"beaconBlock":                             {enabled: c.BeaconBlockConfig.Enabled, iterator: &c.BeaconBlockConfig.Iterator},
+		"beaconBlobSidecar":                       {enabled: c.BeaconBlobSidecarConfig.Enabled, iterator: &c.BeaconBlobSidecarConfig.Iterator},
+		"proposerDuty":                            {enabled: c.ProposerDutyConfig.Enabled, iterator: &c.ProposerDutyConfig.Iterator},
+		"elaboratedAttestation":                   {enabled: c.ElaboratedAttestationConfig.Enabled, iterator: &c.ElaboratedAttestationConfig.Iterator},
+		"beaconValidators":                        {enabled: c.BeaconValidatorsConfig.Enabled, iterator: &c.BeaconValidatorsConfig.Iterator},
+		"beaconCommittee":                         {enabled: c.BeaconCommitteeConfig.Enabled, iterator: &c.BeaconCommitteeConfig.Iterator},
+		"beaconSyncCommittee":                     {enabled: c.BeaconSyncCommitteeConfig.Enabled, iterator: &c.BeaconSyncCommitteeConfig.Iterator},
+		"beaconBlockSyncAggregate":                {enabled: c.BeaconBlockSyncAggregateConfig.Enabled, iterator: &c.BeaconBlockSyncAggregateConfig.Iterator},
+		"beaconBlockGraffiti":                     {enabled: c.BeaconBlockGraffitiConfig.Enabled, iterator: &c.BeaconBlockGraffitiConfig.Iterator},
+		"executionRequestDeposit":                 {enabled: c.ExecutionRequestDepositConfig.Enabled, iterator: &c.ExecutionRequestDepositConfig.Iterator},
+		"executionRequestWithdrawal":              {enabled: c.ExecutionRequestWithdrawalConfig.Enabled, iterator: &c.ExecutionRequestWithdrawalConfig.Iterator},
+		"executionRequestConsolidation":           {enabled: c.ExecutionRequestConsolidationConfig.Enabled, iterator: &c.ExecutionRequestConsolidationConfig.Iterator},
+		"blockReward":                             {enabled: c.BlockRewardConfig.Enabled, iterator: &c.BlockRewardConfig.Iterator},
+		"attestationReward":                       {enabled: c.AttestationRewardConfig.Enabled, iterator: &c.AttestationRewardConfig.Iterator},
+		"syncCommitteeReward":                     {enabled: c.SyncCommitteeRewardConfig.Enabled, iterator: &c.SyncCommitteeRewardConfig.Iterator},
+		"randao":                                  {enabled: c.RandaoConfig.Enabled, iterator: &c.RandaoConfig.Iterator},
+		"finalityCheckpoint":                      {enabled: c.FinalityCheckpointConfig.Enabled, iterator: &c.FinalityCheckpointConfig.Iterator},
+		"beaconStatePendingDeposit":               {enabled: c.BeaconStatePendingDepositConfig.Enabled, iterator: &c.BeaconStatePendingDepositConfig.Iterator},
+		"beaconStatePendingPartialWithdrawal":     {enabled: c.BeaconStatePendingPartialWithdrawalConfig.Enabled, iterator: &c.BeaconStatePendingPartialWithdrawalConfig.Iterator},
+		"beaconStatePendingConsolidation":         {enabled: c.BeaconStatePendingConsolidationConfig.Enabled, iterator: &c.BeaconStatePendingConsolidationConfig.Iterator},
+		"beaconStatePtcMember":                    {enabled: c.BeaconStatePtcMemberConfig.Enabled, iterator: &c.BeaconStatePtcMemberConfig.Iterator},
+		"beaconStateBuilder":                      {enabled: c.BeaconStateBuilderConfig.Enabled, iterator: &c.BeaconStateBuilderConfig.Iterator},
+		"beaconStateBuilderPendingPayment":        {enabled: c.BeaconStateBuilderPendingPaymentConfig.Enabled, iterator: &c.BeaconStateBuilderPendingPaymentConfig.Iterator},
+		"beaconStateBuilderPendingWithdrawal":     {enabled: c.BeaconStateBuilderPendingWithdrawalConfig.Enabled, iterator: &c.BeaconStateBuilderPendingWithdrawalConfig.Iterator},
+		"beaconStateExecutionPayloadAvailability": {enabled: c.BeaconStateExecutionPayloadAvailabilityConfig.Enabled, iterator: &c.BeaconStateExecutionPayloadAvailabilityConfig.Iterator},
+		"blockAccessList":                         {enabled: c.BlockAccessListConfig.Enabled, iterator: &c.BlockAccessListConfig.Iterator},
+		"payloadAttestation":                      {enabled: c.PayloadAttestationConfig.Enabled, iterator: &c.PayloadAttestationConfig.Iterator},
+		"executionPayloadBid":                     {enabled: c.ExecutionPayloadBidConfig.Enabled, iterator: &c.ExecutionPayloadBidConfig.Iterator},
+		"executionRequestBuilderDeposit":          {enabled: c.ExecutionRequestBuilderDepositConfig.Enabled, iterator: &c.ExecutionRequestBuilderDepositConfig.Iterator},
+		"executionRequestBuilderExit":             {enabled: c.ExecutionRequestBuilderExitConfig.Enabled, iterator: &c.ExecutionRequestBuilderExitConfig.Iterator},
+		"blockAccessListSummary":                  {enabled: c.BlockAccessListSummaryConfig.Enabled, iterator: &c.BlockAccessListSummaryConfig.Iterator},
+	}
 }

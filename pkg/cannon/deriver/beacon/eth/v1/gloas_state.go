@@ -164,9 +164,9 @@ func (g *gloasStateDeriver) run(rctx context.Context) {
 					return "", err
 				}
 
-				events, err := g.processEpoch(ctx, position.Next)
+				events, err := iterator.DeriveEpochs(ctx, position.Epochs(), g.processEpoch)
 				if err != nil {
-					g.log.WithError(err).WithField("epoch", position.Next).WithContext(ctx).Error("Failed to process epoch")
+					g.log.WithError(err).WithField("epoch", iterator.FailedEpoch(err, position.Next)).WithContext(ctx).Error("Failed to process epoch")
 
 					span.SetStatus(codes.Error, err.Error())
 
@@ -181,7 +181,7 @@ func (g *gloasStateDeriver) run(rctx context.Context) {
 					}
 				}
 
-				if err := g.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
+				if err := g.iterator.UpdateLocation(ctx, position.LastEpoch(), position.Direction); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return "", err

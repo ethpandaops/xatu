@@ -623,7 +623,7 @@ func GetGasPrice(
 		case spec.DataVersionFulu:
 			executionPayload := block.Fulu.Message.Body.ExecutionPayload
 			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
-		case spec.DataVersionGloas:
+		case spec.DataVersionGloas, spec.DataVersionHeze:
 			if envelope == nil || envelope.Message == nil || envelope.Message.Payload == nil {
 				return nil, errors.New("gloas envelope required to compute gas price but was nil")
 			}

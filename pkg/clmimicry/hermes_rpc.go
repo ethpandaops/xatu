@@ -23,6 +23,9 @@ type RpcMeta struct {
 type RpcMetaSub struct {
 	Subscribe bool
 	TopicID   string
+	// RequestsPartial and SupportsSendingPartial are nil when the tracer cannot see the gossipsub partial messages SubOpts.
+	RequestsPartial        *bool
+	SupportsSendingPartial *bool
 }
 
 // RpcMetaMsg represents a message in an RPC.

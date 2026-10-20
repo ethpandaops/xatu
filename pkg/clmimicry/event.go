@@ -18,8 +18,11 @@ const (
 	unknown = "unknown"
 
 	// libp2p pubsub events.
-	TraceEvent_HANDLE_MESSAGE            = "HANDLE_MESSAGE"
-	TraceEvent_GOSSIPSUB_MESSAGE_PAYLOAD = "GOSSIPSUB_MESSAGE_PAYLOAD"
+	TraceEvent_HANDLE_MESSAGE                        = "HANDLE_MESSAGE"
+	TraceEvent_GOSSIPSUB_MESSAGE_PAYLOAD             = "GOSSIPSUB_MESSAGE_PAYLOAD"
+	TraceEvent_GOSSIPSUB_PARTIAL_DATA_COLUMN         = "GOSSIPSUB_PARTIAL_DATA_COLUMN"
+	TraceEvent_GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME = "GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME"
+	TraceEvent_DATA_COLUMN_COMPLETED                 = "DATA_COLUMN_COMPLETED"
 
 	// libp2p core networking events.
 	TraceEvent_CONNECTED    = "CONNECTED"

@@ -166,9 +166,7 @@ func (c *Config) createSink(out *output.Config, log observability.ContextualLogg
 	)
 }
 
-// newCannonClickhouseSink decodes the clickhouse sink config as
-// output.NewSink does, then fills cannon-specific values the YAML left
-// empty before the sink constructor. User-supplied values always win.
+// newCannonClickhouseSink decodes the clickhouse sink config like output.NewSink, then fills the cannon values YAML left empty.
 func newCannonClickhouseSink(out *output.Config, log observability.ContextualLogger) (output.Sink, error) {
 	conf := &chSink.Config{}
 

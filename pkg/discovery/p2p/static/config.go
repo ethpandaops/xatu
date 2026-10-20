@@ -98,5 +98,9 @@ func (c *ConsensusConfig) Validate() error {
 		return errors.New("connectionTimeout must be greater than 0")
 	}
 
+	if c.CooloffDuration <= 0 {
+		return errors.New("cooloffDuration must be greater than 0")
+	}
+
 	return nil
 }

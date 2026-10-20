@@ -3098,6 +3098,12 @@ message ExecutionBlock {
       [ json_name = "extra_data_string" ];
   google.protobuf.UInt64Value base_fee_per_gas = 9
       [ json_name = "base_fee_per_gas" ];
+  google.protobuf.StringValue parent_hash = 10 [ json_name = "parent_hash" ];
+  google.protobuf.StringValue state_root = 11 [ json_name = "state_root" ];
+  google.protobuf.UInt64Value blob_gas_used = 12
+      [ json_name = "blob_gas_used" ];
+  google.protobuf.UInt64Value excess_blob_gas = 13
+      [ json_name = "excess_blob_gas" ];
 }
 
 // ExecutionCanonicalTransaction is a batch (chunk) of canonical execution-layer

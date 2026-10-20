@@ -1,3 +1,15 @@
+ALTER TABLE canonical_execution_block ON CLUSTER '{cluster}'
+    DROP COLUMN IF EXISTS excess_blob_gas,
+    DROP COLUMN IF EXISTS blob_gas_used,
+    DROP COLUMN IF EXISTS state_root,
+    DROP COLUMN IF EXISTS parent_hash;
+
+ALTER TABLE canonical_execution_block_local ON CLUSTER '{cluster}'
+    DROP COLUMN IF EXISTS excess_blob_gas,
+    DROP COLUMN IF EXISTS blob_gas_used,
+    DROP COLUMN IF EXISTS state_root,
+    DROP COLUMN IF EXISTS parent_hash;
+
 ALTER TABLE canonical_beacon_block ON CLUSTER '{cluster}'
     COMMENT COLUMN payload_present 'Whether execution payload was delivered (Gloas+)';
 

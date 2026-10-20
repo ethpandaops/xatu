@@ -25,6 +25,10 @@ type CanonicalExecutionBlockRow struct {
 	ExtraDataString *string `ch:"extra_data_string" json:"extra_data_string"`
 	BaseFeePerGas *uint64 `ch:"base_fee_per_gas" json:"base_fee_per_gas"`
 	MetaNetworkName string `ch:"meta_network_name" json:"meta_network_name"`
+	ParentHash *string `ch:"parent_hash" json:"parent_hash"`
+	StateRoot *string `ch:"state_root" json:"state_root"`
+	BlobGasUsed *uint64 `ch:"blob_gas_used" json:"blob_gas_used"`
+	ExcessBlobGas *uint64 `ch:"excess_blob_gas" json:"excess_blob_gas"`
 }
 
 // TableName returns the ClickHouse table this row maps to.
@@ -59,5 +63,17 @@ func (r *CanonicalExecutionBlockRow) ToProto() *CanonicalExecutionBlock {
 		p.BaseFeePerGas = wrapperspb.UInt64(*r.BaseFeePerGas)
 	}
 	p.MetaNetworkName = r.MetaNetworkName
+	if r.ParentHash != nil {
+		p.ParentHash = wrapperspb.String(*r.ParentHash)
+	}
+	if r.StateRoot != nil {
+		p.StateRoot = wrapperspb.String(*r.StateRoot)
+	}
+	if r.BlobGasUsed != nil {
+		p.BlobGasUsed = wrapperspb.UInt64(*r.BlobGasUsed)
+	}
+	if r.ExcessBlobGas != nil {
+		p.ExcessBlobGas = wrapperspb.UInt64(*r.ExcessBlobGas)
+	}
 	return p
 }

@@ -41,3 +41,25 @@ ALTER TABLE canonical_beacon_block_local ON CLUSTER '{cluster}'
 
 ALTER TABLE canonical_beacon_block ON CLUSTER '{cluster}'
     COMMENT COLUMN payload_present 'Whether the builder revealed the execution payload (Gloas+)';
+
+-- canonical_execution_block: the remaining payload header fields that
+-- canonical_beacon_block carries before Gloas, so every fork has them here.
+ALTER TABLE canonical_execution_block_local ON CLUSTER '{cluster}'
+    ADD COLUMN IF NOT EXISTS parent_hash Nullable(FixedString(66))
+        COMMENT 'The parent block hash' CODEC(ZSTD(1)),
+    ADD COLUMN IF NOT EXISTS state_root Nullable(FixedString(66))
+        COMMENT 'The state root after executing the block' CODEC(ZSTD(1)),
+    ADD COLUMN IF NOT EXISTS blob_gas_used Nullable(UInt64)
+        COMMENT 'The blob gas used by the block (EIP-4844). Null before Cancun' CODEC(ZSTD(1)),
+    ADD COLUMN IF NOT EXISTS excess_blob_gas Nullable(UInt64)
+        COMMENT 'The excess blob gas of the block (EIP-4844). Null before Cancun' CODEC(ZSTD(1));
+
+ALTER TABLE canonical_execution_block ON CLUSTER '{cluster}'
+    ADD COLUMN IF NOT EXISTS parent_hash Nullable(FixedString(66))
+        COMMENT 'The parent block hash' CODEC(ZSTD(1)),
+    ADD COLUMN IF NOT EXISTS state_root Nullable(FixedString(66))
+        COMMENT 'The state root after executing the block' CODEC(ZSTD(1)),
+    ADD COLUMN IF NOT EXISTS blob_gas_used Nullable(UInt64)
+        COMMENT 'The blob gas used by the block (EIP-4844). Null before Cancun' CODEC(ZSTD(1)),
+    ADD COLUMN IF NOT EXISTS excess_blob_gas Nullable(UInt64)
+        COMMENT 'The excess blob gas of the block (EIP-4844). Null before Cancun' CODEC(ZSTD(1));

@@ -1,0 +1,22 @@
+diff --git a/crates/freeze/src/datasets/blocks.rs b/crates/freeze/src/datasets/blocks.rs
+index d259a79..3f9efca 100644
+--- a/crates/freeze/src/datasets/blocks.rs
++++ b/crates/freeze/src/datasets/blocks.rs
+@@ -29,6 +29,8 @@ pub struct Blocks {
+     mix_hash: Vec<Option<Vec<u8>>>,
+     nonce: Vec<Option<Vec<u8>>>,
+     base_fee_per_gas: Vec<Option<u64>>,
++    blob_gas_used: Vec<Option<u64>>,
++    excess_blob_gas: Vec<Option<u64>>,
+     withdrawals_root: Vec<Option<Vec<u8>>>,
+     chain_id: Vec<u64>,
+ }
+@@ -117,6 +119,8 @@ pub(crate) fn process_block<TX>(block: Block<TX>, columns: &mut Blocks, schema:
+     store!(schema, columns, difficulty, block.header.difficulty.wrapping_to::<u64>());
+     store!(schema, columns, total_difficulty, block.header.total_difficulty);
+     store!(schema, columns, base_fee_per_gas, block.header.base_fee_per_gas);
++    store!(schema, columns, blob_gas_used, block.header.blob_gas_used);
++    store!(schema, columns, excess_blob_gas, block.header.excess_blob_gas);
+     store!(schema, columns, size, block.header.size.map(|v| v.wrapping_to::<u64>()));
+     store!(schema, columns, mix_hash, Some(block.header.mix_hash.to_vec()));
+     store!(schema, columns, nonce, Some(block.header.nonce.0.to_vec()));

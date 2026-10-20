@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
+	"github.com/ethpandaops/xatu/pkg/internal/configdecode"
 	"github.com/ethpandaops/xatu/pkg/output/http"
 	"github.com/ethpandaops/xatu/pkg/output/xatu"
 )
@@ -22,10 +23,10 @@ func rawSinkConfig(t *testing.T, in string) *RawMessage {
 	return out.Config
 }
 
-func TestDecodeSinkConfigKeepsExplicitFalse(t *testing.T) {
+func TestSinkConfigKeepsExplicitFalse(t *testing.T) {
 	conf := &xatu.Config{}
 
-	require.NoError(t, decodeSinkConfig(rawSinkConfig(t, "  address: localhost:8080\n  retry:\n    enabled: false\n"), conf))
+	require.NoError(t, configdecode.Decode(rawSinkConfig(t, "  address: localhost:8080\n  retry:\n    enabled: false\n"), conf))
 
 	assert.False(t, conf.Retry.Enabled)
 	assert.Equal(t, 3, conf.Retry.MaxAttempts)
@@ -33,10 +34,10 @@ func TestDecodeSinkConfigKeepsExplicitFalse(t *testing.T) {
 	assert.Equal(t, "localhost:8080", conf.Address)
 }
 
-func TestDecodeSinkConfigAppliesDefaults(t *testing.T) {
+func TestSinkConfigAppliesDefaults(t *testing.T) {
 	conf := &xatu.Config{}
 
-	require.NoError(t, decodeSinkConfig(rawSinkConfig(t, "  address: localhost:8080\n  maxQueueSize: 10\n"), conf))
+	require.NoError(t, configdecode.Decode(rawSinkConfig(t, "  address: localhost:8080\n  maxQueueSize: 10\n"), conf))
 
 	assert.True(t, conf.Retry.Enabled)
 	assert.Equal(t, 10, conf.MaxQueueSize)
@@ -45,10 +46,10 @@ func TestDecodeSinkConfigAppliesDefaults(t *testing.T) {
 	assert.True(t, *conf.KeepAlive.Enabled)
 }
 
-func TestDecodeSinkConfigWithoutConfigBlock(t *testing.T) {
+func TestSinkConfigWithoutConfigBlock(t *testing.T) {
 	conf := &http.Config{}
 
-	require.NoError(t, decodeSinkConfig(nil, conf))
+	require.NoError(t, configdecode.Decode((*RawMessage)(nil), conf))
 
 	require.NotNil(t, conf.KeepAlive)
 	assert.True(t, *conf.KeepAlive)

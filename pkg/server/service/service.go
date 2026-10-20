@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/creasty/defaults"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 
@@ -36,10 +35,6 @@ func CreateGRPCServices(ctx context.Context, log observability.ContextualLogger,
 	services := []GRPCService{}
 
 	if cfg.EventIngester.Enabled {
-		if err := defaults.Set(&cfg.EventIngester); err != nil {
-			return nil, err
-		}
-
 		service, err := eventingester.NewIngester(ctx, log, &cfg.EventIngester, clockDrift, g, c, healthServer)
 		if err != nil {
 			return nil, err
@@ -49,10 +44,6 @@ func CreateGRPCServices(ctx context.Context, log observability.ContextualLogger,
 	}
 
 	if cfg.Coordinator.Enabled {
-		if err := defaults.Set(&cfg.Coordinator); err != nil {
-			return nil, err
-		}
-
 		service, err := coordinator.NewClient(ctx, log, &cfg.Coordinator, p, g, healthServer)
 		if err != nil {
 			return nil, err

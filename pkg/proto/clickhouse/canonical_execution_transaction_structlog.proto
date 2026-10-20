@@ -37,7 +37,7 @@ message CanonicalExecutionTransactionStructlog {
   uint64 gas_self = 23;
   // The depth
   uint64 depth = 24;
-  // The return data
+  // Return data buffer left by the CALL/CREATE-family opcode that just returned in this frame, set only on the first opcode after that call returns (NULL if empty). The buffer at any other opcode is the return_data of the latest such row in the same call_frame_id. Before execution-processor v0.3.0 (2026-10-20) the buffer was repeated on every opcode
   google.protobuf.StringValue return_data = 25;
   // The refund
   google.protobuf.UInt64Value refund = 26;
@@ -89,7 +89,7 @@ message ListCanonicalExecutionTransactionStructlogRequest {
   UInt64Filter gas_self = 14;
   // Filter by depth - The depth (optional)
   UInt64Filter depth = 15;
-  // Filter by return_data - The return data (optional)
+  // Filter by return_data - Return data buffer left by the CALL/CREATE-family opcode that just returned in this frame, set only on the first opcode after that call returns (NULL if empty). The buffer at any other opcode is the return_data of the latest such row in the same call_frame_id. Before execution-processor v0.3.0 (2026-10-20) the buffer was repeated on every opcode (optional)
   NullableStringFilter return_data = 16;
   // Filter by refund - The refund (optional)
   NullableUInt64Filter refund = 17;

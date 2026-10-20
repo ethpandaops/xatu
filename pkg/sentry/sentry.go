@@ -923,26 +923,33 @@ func (s *Sentry) Start(ctx context.Context) error {
 		s.log.WithField("network", s.Config.Ethereum.OverrideNetworkName).WithContext(ctx).Info("Overriding network name")
 	}
 
-	if err := s.beacon.Start(ctx); err != nil {
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
+
+	// The beacon node runs until it fails, so the signal has to be watched alongside it.
+	beaconErr := make(chan error, 1)
+
+	go func() {
+		beaconErr <- s.beacon.Start(ctx)
+	}()
+
+	select {
+	case err := <-beaconErr:
 		return err
+	case sig := <-signals:
+		s.log.WithContext(ctx).Printf("Caught signal: %v", sig)
 	}
 
-	cancel := make(chan os.Signal, 1)
-	signal.Notify(cancel, syscall.SIGTERM, syscall.SIGINT)
-
-	sig := <-cancel
-	s.log.WithContext(ctx).Printf("Caught signal: %v", sig)
+	for _, f := range s.shutdownFuncs {
+		if err := f(ctx); err != nil {
+			return err
+		}
+	}
 
 	s.log.WithContext(ctx).Printf("Flushing sinks")
 
 	for _, sink := range s.sinks {
 		if err := sink.Stop(ctx); err != nil {
-			return err
-		}
-	}
-
-	for _, f := range s.shutdownFuncs {
-		if err := f(ctx); err != nil {
 			return err
 		}
 	}

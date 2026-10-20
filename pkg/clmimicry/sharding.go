@@ -217,8 +217,7 @@ type ShardableEvent struct {
 	Topic string
 }
 
-// findTopicConfig finds the matching topic configuration for a given topic and event type.
-// Results are memoized, as RPC meta events ask this once per message ID with few distinct topics.
+// findTopicConfig returns the matching topic config for a topic and event type, memoized.
 func (s *UnifiedSharder) findTopicConfig(topic string, eventType xatu.Event_Name) *TopicShardingConfig {
 	key := topicConfigKey{eventType: eventType, topic: topic}
 

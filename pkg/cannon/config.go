@@ -4,12 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/creasty/defaults"
-
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cryo"
+	"github.com/ethpandaops/xatu/pkg/internal/configdecode"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	chSink "github.com/ethpandaops/xatu/pkg/output/clickhouse"
@@ -167,21 +166,14 @@ func (c *Config) createSink(out *output.Config, log observability.ContextualLogg
 	)
 }
 
-// newCannonClickhouseSink mirrors the unmarshal+defaults flow that
-// output.NewSink does internally for the clickhouse sink, but inserts
-// cannon-specific defaults between the YAML decode and the sink
-// constructor. User-supplied values always win.
+// newCannonClickhouseSink decodes the clickhouse sink config as
+// output.NewSink does, then fills cannon-specific values the YAML left
+// empty before the sink constructor. User-supplied values always win.
 func newCannonClickhouseSink(out *output.Config, log observability.ContextualLogger) (output.Sink, error) {
 	conf := &chSink.Config{}
 
-	if out.Config != nil {
-		if err := out.Config.Unmarshal(conf); err != nil {
-			return nil, fmt.Errorf("decoding clickhouse sink config: %w", err)
-		}
-	}
-
-	if err := defaults.Set(conf); err != nil {
-		return nil, fmt.Errorf("applying clickhouse sink defaults: %w", err)
+	if err := configdecode.Decode(out.Config, conf); err != nil {
+		return nil, fmt.Errorf("decoding clickhouse sink config: %w", err)
 	}
 
 	if conf.MetricsSubsystem == "" {

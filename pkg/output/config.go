@@ -4,8 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/creasty/defaults"
-
+	"github.com/ethpandaops/xatu/pkg/internal/configdecode"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	chSink "github.com/ethpandaops/xatu/pkg/output/clickhouse"
 	"github.com/ethpandaops/xatu/pkg/output/http"
@@ -45,13 +44,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log observabili
 	case SinkTypeHTTP:
 		conf := &http.Config{}
 
-		if config != nil {
-			if err := config.Unmarshal(conf); err != nil {
-				return nil, err
-			}
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := configdecode.Decode(config, conf); err != nil {
 			return nil, err
 		}
 
@@ -59,13 +52,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log observabili
 	case SinkTypeStdOut:
 		conf := &stdout.Config{}
 
-		if config != nil {
-			if err := config.Unmarshal(conf); err != nil {
-				return nil, err
-			}
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := configdecode.Decode(config, conf); err != nil {
 			return nil, err
 		}
 
@@ -73,13 +60,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log observabili
 	case SinkTypeXatu:
 		conf := &xatu.Config{}
 
-		if config != nil {
-			if err := config.Unmarshal(conf); err != nil {
-				return nil, err
-			}
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := configdecode.Decode(config, conf); err != nil {
 			return nil, err
 		}
 
@@ -87,13 +68,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log observabili
 	case SinkTypeKafka:
 		conf := &kafka.Config{}
 
-		if config != nil {
-			if err := config.Unmarshal(conf); err != nil {
-				return nil, err
-			}
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := configdecode.Decode(config, conf); err != nil {
 			return nil, err
 		}
 
@@ -101,13 +76,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log observabili
 	case SinkTypeClickhouse:
 		conf := &chSink.Config{}
 
-		if config != nil {
-			if err := config.Unmarshal(conf); err != nil {
-				return nil, err
-			}
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := configdecode.Decode(config, conf); err != nil {
 			return nil, err
 		}
 
@@ -115,13 +84,7 @@ func NewSink(name string, sinkType SinkType, config *RawMessage, log observabili
 	case SinkTypeS3BlobStore:
 		conf := &s3blobstore.Config{}
 
-		if config != nil {
-			if err := config.Unmarshal(conf); err != nil {
-				return nil, err
-			}
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := configdecode.Decode(config, conf); err != nil {
 			return nil, err
 		}
 

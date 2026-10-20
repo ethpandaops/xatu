@@ -54,7 +54,7 @@ type CanonicalExecutionTransactionStructlog struct {
 	GasSelf uint64 `protobuf:"varint,23,opt,name=gas_self,json=gasSelf,proto3" json:"gas_self,omitempty"`
 	// The depth
 	Depth uint64 `protobuf:"varint,24,opt,name=depth,proto3" json:"depth,omitempty"`
-	// The return data
+	// Return data buffer left by the CALL/CREATE-family opcode that just returned in this frame, set only on the first opcode after that call returns (NULL if empty). The buffer at any other opcode is the return_data of the latest such row in the same call_frame_id. Before execution-processor v0.3.0 (2026-10-20) the buffer was repeated on every opcode
 	ReturnData *wrapperspb.StringValue `protobuf:"bytes,25,opt,name=return_data,json=returnData,proto3" json:"return_data,omitempty"`
 	// The refund
 	Refund *wrapperspb.UInt64Value `protobuf:"bytes,26,opt,name=refund,proto3" json:"refund,omitempty"`
@@ -285,7 +285,7 @@ type ListCanonicalExecutionTransactionStructlogRequest struct {
 	GasSelf *UInt64Filter `protobuf:"bytes,14,opt,name=gas_self,json=gasSelf,proto3" json:"gas_self,omitempty"`
 	// Filter by depth - The depth (optional)
 	Depth *UInt64Filter `protobuf:"bytes,15,opt,name=depth,proto3" json:"depth,omitempty"`
-	// Filter by return_data - The return data (optional)
+	// Filter by return_data - Return data buffer left by the CALL/CREATE-family opcode that just returned in this frame, set only on the first opcode after that call returns (NULL if empty). The buffer at any other opcode is the return_data of the latest such row in the same call_frame_id. Before execution-processor v0.3.0 (2026-10-20) the buffer was repeated on every opcode (optional)
 	ReturnData *NullableStringFilter `protobuf:"bytes,16,opt,name=return_data,json=returnData,proto3" json:"return_data,omitempty"`
 	// Filter by refund - The refund (optional)
 	Refund *NullableUInt64Filter `protobuf:"bytes,17,opt,name=refund,proto3" json:"refund,omitempty"`

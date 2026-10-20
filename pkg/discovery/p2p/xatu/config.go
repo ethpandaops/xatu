@@ -1,6 +1,8 @@
 package xatu
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ethpandaops/xatu/pkg/networks"
@@ -70,8 +72,50 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if c.Restart <= 0 {
+		return errors.New("restart must be greater than 0")
+	}
+
+	if err := c.Execution.Validate(); err != nil {
+		return fmt.Errorf("execution: %w", err)
+	}
+
+	if err := c.Consensus.Validate(); err != nil {
+		return fmt.Errorf("consensus: %w", err)
+	}
+
 	if c.NetworkConfig != nil {
 		return c.NetworkConfig.Validate()
+	}
+
+	return nil
+}
+
+// Validate rejects values that stop execution dialing from working.
+func (c *ExecutionConfig) Validate() error {
+	if c.RetryAttempts == 0 {
+		return errors.New("retryAttempts must be greater than 0")
+	}
+
+	if c.DialTimeout <= 0 {
+		return errors.New("dialTimeout must be greater than 0")
+	}
+
+	return nil
+}
+
+// Validate rejects values that stop consensus dialing from working.
+func (c *ConsensusConfig) Validate() error {
+	if c.DialTimeout <= 0 {
+		return errors.New("dialTimeout must be greater than 0")
+	}
+
+	if c.DialConcurrency <= 0 {
+		return errors.New("dialConcurrency must be greater than 0")
+	}
+
+	if c.ConnectionTimeout <= 0 {
+		return errors.New("connectionTimeout must be greater than 0")
 	}
 
 	return nil

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/p2p/enode"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p/static"
 	"github.com/ethpandaops/xatu/pkg/discovery/p2p/xatu"
+	"github.com/ethpandaops/xatu/pkg/internal/configdecode"
 	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
@@ -45,130 +45,57 @@ func (c *Config) GetNetworkIDs() []uint64 {
 }
 
 // GetExecutionConfig extracts execution layer config from the p2p config.
-// Returns a config with default values if not configured or on error.
+// Returns the defaults if not configured or on error.
 func (c *Config) GetExecutionConfig() *static.ExecutionConfig {
-	defaultConfig := &static.ExecutionConfig{
-		RetryAttempts: 1,
-		RetryDelay:    60 * time.Second,
-		DialTimeout:   15 * time.Second,
-	}
-
-	if c.Config == nil {
-		return defaultConfig
-	}
-
 	switch c.Type {
 	case TypeStatic:
 		conf := &static.Config{}
-		if err := c.Config.Unmarshal(conf); err != nil {
-			return defaultConfig
+		if err := configdecode.Decode(c.Config, conf); err == nil {
+			return &conf.Execution
 		}
-
-		return c.applyExecutionDefaults(&conf.Execution)
 	case TypeXatu:
 		conf := &xatu.Config{}
-		if err := c.Config.Unmarshal(conf); err != nil {
-			return defaultConfig
+		if err := configdecode.Decode(c.Config, conf); err == nil {
+			return &static.ExecutionConfig{
+				RetryAttempts:   conf.Execution.RetryAttempts,
+				RetryDelay:      conf.Execution.RetryDelay,
+				DialTimeout:     conf.Execution.DialTimeout,
+				BootstrapRPCURL: conf.Execution.BootstrapRPCURL,
+			}
 		}
-
-		// Convert xatu.ExecutionConfig to static.ExecutionConfig
-		return c.applyExecutionDefaults(&static.ExecutionConfig{
-			RetryAttempts:   conf.Execution.RetryAttempts,
-			RetryDelay:      conf.Execution.RetryDelay,
-			DialTimeout:     conf.Execution.DialTimeout,
-			BootstrapRPCURL: conf.Execution.BootstrapRPCURL,
-		})
-	default:
-		return defaultConfig
-	}
-}
-
-// applyExecutionDefaults applies default values for zero-valued fields.
-func (c *Config) applyExecutionDefaults(exec *static.ExecutionConfig) *static.ExecutionConfig {
-	if exec.RetryAttempts == 0 {
-		exec.RetryAttempts = 1
 	}
 
-	if exec.RetryDelay == 0 {
-		exec.RetryDelay = 60 * time.Second
-	}
-
-	if exec.DialTimeout == 0 {
-		exec.DialTimeout = 15 * time.Second
-	}
+	exec := &static.ExecutionConfig{}
+	defaults.MustSet(exec)
 
 	return exec
 }
 
 // GetConsensusConfig extracts consensus layer config from the p2p config.
-// Returns a config with default values if not configured or on error.
+// Returns the defaults if not configured or on error.
 func (c *Config) GetConsensusConfig() *static.ConsensusConfig {
-	defaultConfig := &static.ConsensusConfig{
-		RetryAttempts:     1,
-		RetryDelay:        2 * time.Second,
-		DialTimeout:       5 * time.Second,
-		DialConcurrency:   10,
-		CooloffDuration:   10 * time.Second,
-		ConnectionTimeout: 30 * time.Second,
-	}
-
-	if c.Config == nil {
-		return defaultConfig
-	}
-
 	switch c.Type {
 	case TypeStatic:
 		conf := &static.Config{}
-		if err := c.Config.Unmarshal(conf); err != nil {
-			return defaultConfig
+		if err := configdecode.Decode(c.Config, conf); err == nil {
+			return &conf.Consensus
 		}
-
-		return c.applyConsensusDefaults(&conf.Consensus)
 	case TypeXatu:
 		conf := &xatu.Config{}
-		if err := c.Config.Unmarshal(conf); err != nil {
-			return defaultConfig
+		if err := configdecode.Decode(c.Config, conf); err == nil {
+			return &static.ConsensusConfig{
+				RetryAttempts:     conf.Consensus.RetryAttempts,
+				RetryDelay:        conf.Consensus.RetryDelay,
+				DialTimeout:       conf.Consensus.DialTimeout,
+				DialConcurrency:   conf.Consensus.DialConcurrency,
+				CooloffDuration:   conf.Consensus.CooloffDuration,
+				ConnectionTimeout: conf.Consensus.ConnectionTimeout,
+			}
 		}
-
-		// Convert xatu.ConsensusConfig to static.ConsensusConfig
-		return c.applyConsensusDefaults(&static.ConsensusConfig{
-			RetryAttempts:     conf.Consensus.RetryAttempts,
-			RetryDelay:        conf.Consensus.RetryDelay,
-			DialTimeout:       conf.Consensus.DialTimeout,
-			DialConcurrency:   conf.Consensus.DialConcurrency,
-			CooloffDuration:   conf.Consensus.CooloffDuration,
-			ConnectionTimeout: conf.Consensus.ConnectionTimeout,
-		})
-	default:
-		return defaultConfig
-	}
-}
-
-// applyConsensusDefaults applies default values for zero-valued fields.
-func (c *Config) applyConsensusDefaults(cons *static.ConsensusConfig) *static.ConsensusConfig {
-	if cons.RetryAttempts == 0 {
-		cons.RetryAttempts = 1
 	}
 
-	if cons.RetryDelay == 0 {
-		cons.RetryDelay = 2 * time.Second
-	}
-
-	if cons.DialTimeout == 0 {
-		cons.DialTimeout = 5 * time.Second
-	}
-
-	if cons.DialConcurrency == 0 {
-		cons.DialConcurrency = 10
-	}
-
-	if cons.CooloffDuration == 0 {
-		cons.CooloffDuration = 10 * time.Second
-	}
-
-	if cons.ConnectionTimeout == 0 {
-		cons.ConnectionTimeout = 30 * time.Second
-	}
+	cons := &static.ConsensusConfig{}
+	defaults.MustSet(cons)
 
 	return cons
 }
@@ -198,11 +125,7 @@ func NewP2P(ctx context.Context, p2pType Type, config *RawMessage, handler func(
 	case TypeStatic:
 		conf := &static.Config{}
 
-		if err := config.Unmarshal(conf); err != nil {
-			return nil, err
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := configdecode.Decode(config, conf); err != nil {
 			return nil, err
 		}
 
@@ -210,11 +133,7 @@ func NewP2P(ctx context.Context, p2pType Type, config *RawMessage, handler func(
 	case TypeXatu:
 		conf := &xatu.Config{}
 
-		if err := config.Unmarshal(conf); err != nil {
-			return nil, err
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := configdecode.Decode(config, conf); err != nil {
 			return nil, err
 		}
 

@@ -432,17 +432,17 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 				// Add to the set of known txs in the txpool.
 				allTxHashes[txHash] = true
 
-				// Convert the txData into a JSON byte array for later processing.
-				txDataBytes, err := json.Marshal(txData)
-				if err != nil {
-					w.log.WithError(err).WithField("tx_hash", txHash).WithContext(ctx).Error("Failed to marshal transaction data")
+				// Check if we've already processed this transaction.
+				if w.txQueue.isProcessed(txHash) {
+					duplicateCount++
 
 					continue
 				}
 
-				// Check if we've already processed this transaction.
-				if w.txQueue.isProcessed(txHash) {
-					duplicateCount++
+				// Convert the txData into a JSON byte array for later processing.
+				txDataBytes, err := json.Marshal(txData)
+				if err != nil {
+					w.log.WithError(err).WithField("tx_hash", txHash).WithContext(ctx).Error("Failed to marshal transaction data")
 
 					continue
 				}

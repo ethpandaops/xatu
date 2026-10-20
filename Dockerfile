@@ -34,9 +34,22 @@ RUN go build \
 # 1.97.0. The floating rust:1 tag only bit when a new stable invalidated the
 # cryo-buildcache layer. Unpin (or bump) together with CRYO_GIT_REF once
 # cryo's lockfile moves to an ethnum that builds on current stable.
+# The lockfile's alloy-eip7702 0.4.1 decodes an authorization chain_id as u64 and
+# fails the whole block on a larger one; the patch saturates it (cryo never outputs it).
 FROM rust:1.96-bookworm AS cryo-builder
 ARG CRYO_GIT_REF=559b65455d7ef6b03e8e9e96a0e50fd4fe8a9c86
-RUN cargo install --git https://github.com/paradigmxyz/cryo --rev "${CRYO_GIT_REF}" --locked cryo_cli
+COPY deploy/cryo/alloy-eip7702-uint256-auth-chain-id.patch /tmp/alloy-eip7702.patch
+RUN git clone --quiet https://github.com/paradigmxyz/cryo /src/cryo \
+  && git -C /src/cryo checkout --quiet "${CRYO_GIT_REF}" \
+  && cd /src/cryo \
+  && cargo fetch --locked \
+  && cp -R "${CARGO_HOME}"/registry/src/*/alloy-eip7702-0.4.1 alloy-eip7702 \
+  && git apply --directory=alloy-eip7702 /tmp/alloy-eip7702.patch \
+  && printf '\n[patch.crates-io]\nalloy-eip7702 = { path = "alloy-eip7702" }\n' >> Cargo.toml \
+  && sed -i '/^name = "alloy-eip7702"$/,/^$/{/^source = /d;/^checksum = /d}' Cargo.lock \
+  && cargo build --release --locked -p cryo_cli \
+  && install -m 0755 target/release/cryo /usr/local/cargo/bin/cryo \
+  && rm -rf /src/cryo
 
 FROM ubuntu:latest
 RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-recommends \

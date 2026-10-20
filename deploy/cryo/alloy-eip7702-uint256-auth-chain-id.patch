@@ -1,0 +1,29 @@
+--- a/src/auth_list.rs
++++ b/src/auth_list.rs
+@@ -47,7 +47,10 @@
+ #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+ pub struct Authorization {
+     /// The chain ID of the authorization.
+-    #[cfg_attr(feature = "serde", serde(with = "quantity"))]
++    #[cfg_attr(
++        feature = "serde",
++        serde(serialize_with = "quantity::serialize", deserialize_with = "quantity::deserialize_saturating")
++    )]
+     pub chain_id: u64,
+     /// The address of the authorization.
+     pub address: Address,
+@@ -366,6 +369,14 @@
+     {
+         U64::deserialize(deserializer).map(|value| value.to())
+     }
++
++    /// Deserializes a uint256 "quantity" hex string, saturating at `u64::MAX`.
++    pub(crate) fn deserialize_saturating<'de, D>(deserializer: D) -> Result<u64, D::Error>
++    where
++        D: Deserializer<'de>,
++    {
++        alloy_primitives::U256::deserialize(deserializer).map(|value| value.saturating_to())
++    }
+ }
+ 
+ #[cfg(test)]

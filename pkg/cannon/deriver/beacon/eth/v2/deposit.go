@@ -257,6 +257,11 @@ func (b *DepositDeriver) processSlot(ctx context.Context, slot phase0.Slot) ([]*
 func (b *DepositDeriver) getDeposits(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.DepositV2, error) {
 	deposits := []*xatuethv1.DepositV2{}
 
+	// EIP-8015 removes deposits from Heze block bodies.
+	if block.Version >= spec.DataVersionHeze {
+		return deposits, nil
+	}
+
 	dps, err := block.Deposits()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain deposits")

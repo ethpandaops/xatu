@@ -123,17 +123,20 @@ func (b *BackfillingBlock) maxRange() uint64 {
 }
 
 // minBackfillBlock is the lowest block a dataset can be collected from. The
-// state-read datasets (balance/storage/nonce reads) cannot be traced at the
-// genesis block — block 0 has no parent state, so cryo's state-access tracer
-// fails on it. Clamping their floor to 1 avoids requesting (and then retrying
-// forever) an untraceable range. Block 0 carries no state reads anyway, so this
-// loses no data. All other datasets keep a floor of 0 (genesis is valid for
-// e.g. the block row and the genesis premine balance_diffs).
+// datasets cryo builds from debug_traceBlockByNumber (balance/storage/nonce
+// reads via the prestate tracer, four_byte_counts via the 4byte tracer) cannot
+// be traced at the genesis block: block 0 has no parent state, so the node
+// answers "genesis is not traceable". Clamping their floor to 1 avoids
+// requesting (and then retrying forever) an untraceable range. Block 0 has no
+// transactions, so this loses no data. All other datasets keep a floor of 0
+// (genesis is valid for e.g. the block row and the genesis premine
+// balance_diffs).
 func minBackfillBlock(cannonType xatu.CannonType) uint64 {
 	switch cannonType {
 	case xatu.CannonType_EXECUTION_CANONICAL_BALANCE_READS,
 		xatu.CannonType_EXECUTION_CANONICAL_STORAGE_READS,
-		xatu.CannonType_EXECUTION_CANONICAL_NONCE_READS:
+		xatu.CannonType_EXECUTION_CANONICAL_NONCE_READS,
+		xatu.CannonType_EXECUTION_CANONICAL_FOUR_BYTE_COUNTS:
 		return 1
 	default:
 		return 0

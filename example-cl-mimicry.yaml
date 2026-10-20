@@ -131,6 +131,9 @@ outputs:
 #   gossipSubBlobSidecarEnabled: false
 #   gossipSubDataColumnSidecarEnabled: false
 #   gossipSubMessagePayloadEnabled: false
+#   gossipSubPartialDataColumnEnabled: false
+#   gossipSubPartialDataColumnOutcomeEnabled: false
+#   dataColumnCompletedEnabled: false
 
 tracing:
   enabled: false

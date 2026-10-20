@@ -92,6 +92,12 @@ func (p *Processor) HandleHermesEvent(ctx context.Context, event *TraceEvent) er
 	case event.Type == TraceEvent_GOSSIPSUB_MESSAGE_PAYLOAD:
 		return p.handleGossipsubMessagePayloadEvent(ctx, event, clientMeta)
 
+	// Gossipsub partial messages extension events.
+	case event.Type == TraceEvent_GOSSIPSUB_PARTIAL_DATA_COLUMN,
+		event.Type == TraceEvent_GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME,
+		event.Type == TraceEvent_DATA_COLUMN_COMPLETED:
+		return p.handlePartialDataColumnEvent(ctx, event, clientMeta)
+
 	// libp2p pubsub protocol level events.
 	case isLibp2pEvent(event):
 		return p.handleHermesLibp2pEvent(ctx, event, clientMeta, traceMeta)

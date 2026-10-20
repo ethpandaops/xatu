@@ -46,6 +46,11 @@ type EventConfig struct {
 	BeaconSyntheticPayloadStatusResolvedEnabled           bool `yaml:"beaconSyntheticPayloadStatusResolvedEnabled" default:"true"`
 	BeaconSyntheticBuilderPendingPaymentSettlementEnabled bool `yaml:"beaconSyntheticBuilderPendingPaymentSettlementEnabled" default:"true"`
 	BeaconSyntheticPayloadAttestationProcessedEnabled     bool `yaml:"beaconSyntheticPayloadAttestationProcessedEnabled" default:"true"`
+
+	// Gossipsub partial messages extension (cell-level data column dissemination).
+	GossipSubPartialDataColumnEnabled        bool `yaml:"gossipSubPartialDataColumnEnabled" default:"false"`
+	GossipSubPartialDataColumnOutcomeEnabled bool `yaml:"gossipSubPartialDataColumnOutcomeEnabled" default:"false"`
+	DataColumnCompletedEnabled               bool `yaml:"dataColumnCompletedEnabled" default:"false"`
 }
 
 // Validate validates the event config.

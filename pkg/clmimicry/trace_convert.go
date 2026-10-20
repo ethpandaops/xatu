@@ -388,12 +388,23 @@ func convertRPCSubscriptions(subs []RpcMetaSub) []*libp2p.SubMeta {
 
 	for i, sub := range subs {
 		ourSubs[i] = &libp2p.SubMeta{
-			Subscribe: wrapperspb.Bool(sub.Subscribe),
-			TopicId:   wrapperspb.String(sub.TopicID),
+			Subscribe:              wrapperspb.Bool(sub.Subscribe),
+			TopicId:                wrapperspb.String(sub.TopicID),
+			RequestsPartial:        optionalBool(sub.RequestsPartial),
+			SupportsSendingPartial: optionalBool(sub.SupportsSendingPartial),
 		}
 	}
 
 	return ourSubs
+}
+
+// optionalBool keeps an unknown flag unset instead of reporting it as false.
+func optionalBool(v *bool) *wrapperspb.BoolValue {
+	if v == nil {
+		return nil
+	}
+
+	return wrapperspb.Bool(*v)
 }
 
 func convertRPCControl(ctrl *RpcMetaControl) *libp2p.ControlMeta {

@@ -47,10 +47,10 @@ func (w *StateSizeWatcher) Start(parentCtx context.Context) error {
 	w.ctx, w.cancel = context.WithCancel(parentCtx)
 
 	switch w.config.TriggerMode {
-	case "interval":
+	case StateSizeTriggerInterval:
 		w.log.WithField("interval_seconds", w.config.IntervalSeconds).WithContext(parentCtx).Info("Starting state size watcher in interval mode")
 		w.startPeriodicPoller()
-	case "block":
+	case StateSizeTriggerBlock:
 		w.log.WithContext(parentCtx).Info("Starting state size watcher in block mode (subscribing to execution layer blocks)")
 
 		if err := w.startBlockSubscription(); err != nil {
@@ -80,7 +80,7 @@ func (w *StateSizeWatcher) Stop() error {
 // OnHeadEvent should be called when a new head event is received from the consensus layer.
 // This is only used when TriggerMode is "head".
 func (w *StateSizeWatcher) OnHeadEvent(ctx context.Context) error {
-	if w.config.TriggerMode != "head" {
+	if w.config.TriggerMode != StateSizeTriggerHead {
 		return nil
 	}
 

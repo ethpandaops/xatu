@@ -2,6 +2,7 @@ package sentry
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,70 +12,31 @@ import (
 	"github.com/ethpandaops/xatu/pkg/sentry/execution"
 )
 
-// stateSizeWatcher holds the state size watcher instance.
-var stateSizeWatcher *execution.StateSizeWatcher
-
-// startExecutionStateSizeWatcher initializes and starts the execution state size watcher.
+// startExecutionStateSizeWatcher starts the execution state size watcher on the shared execution client.
 func (s *Sentry) startExecutionStateSizeWatcher(ctx context.Context) error {
-	// Check if execution is enabled and state size monitoring is configured.
-	if s.Config.Execution == nil || !s.Config.Execution.Enabled {
-		s.log.WithContext(ctx).Info("Execution debug state size watcher disabled (execution not enabled)")
-
-		return nil
+	client, err := s.executionClient(ctx)
+	if err != nil {
+		return err
 	}
 
-	if s.Config.Execution.StateSize == nil || !s.Config.Execution.StateSize.Enabled {
-		s.log.WithContext(ctx).Info("Execution debug state size watcher disabled")
-
-		return nil
-	}
-
-	// Ensure execution client is initialized.
-	// If mempool watcher was started, the client should already exist.
-	if s.execution == nil {
-		// Initialize the execution client.
-		client, err := execution.NewClient(
-			ctx,
-			s.log,
-			s.Config.Execution,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to create execution client: %w", err)
-		}
-
-		// Start the execution client.
-		if err := client.Start(ctx); err != nil {
-			return fmt.Errorf("failed to start execution client: %w", err)
-		}
-
-		s.execution = client
-
-		// Add shutdown function for the client if it wasn't added already.
-		s.shutdownFuncs = append(s.shutdownFuncs, func(ctx context.Context) error {
-			return client.Stop(ctx)
-		})
-	}
-
-	// Create state size callback.
 	callback := func(ctx context.Context, data *execution.DebugStateSizeResponse) error {
 		return s.processStateSizeData(ctx, data)
 	}
 
-	// Create and start the state size watcher.
-	stateSizeWatcher = execution.NewStateSizeWatcher(
-		s.execution,
+	watcher := execution.NewStateSizeWatcher(
+		client,
 		s.log,
 		s.Config.Execution.StateSize,
 		callback,
 	)
 
-	if err := stateSizeWatcher.Start(ctx); err != nil {
-		return fmt.Errorf("failed to start state size watcher: %w", err)
+	if err := watcher.Start(ctx); err != nil {
+		return errors.Join(fmt.Errorf("failed to start state size watcher: %w", err), watcher.Stop())
 	}
 
-	// Add shutdown function for the watcher.
-	s.shutdownFuncs = append(s.shutdownFuncs, func(ctx context.Context) error {
-		return stateSizeWatcher.Stop()
+	s.stateSizeWatcher.Store(watcher)
+	s.addExecutionStop(func(_ context.Context) error {
+		return watcher.Stop()
 	})
 
 	s.log.WithField("trigger_mode", s.Config.Execution.StateSize.TriggerMode).WithContext(ctx).Info("Execution debug state size watcher started")
@@ -163,9 +125,10 @@ func (s *Sentry) processStateSizeData(ctx context.Context, data *execution.Debug
 // onHeadEventForStateSize should be called when a new head event is received.
 // This triggers state size polling if the watcher is in "head" mode.
 func (s *Sentry) onHeadEventForStateSize(ctx context.Context) error {
-	if stateSizeWatcher == nil {
+	watcher := s.stateSizeWatcher.Load()
+	if watcher == nil {
 		return nil
 	}
 
-	return stateSizeWatcher.OnHeadEvent(ctx)
+	return watcher.OnHeadEvent(ctx)
 }

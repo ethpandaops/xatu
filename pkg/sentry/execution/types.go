@@ -3,6 +3,8 @@ package execution
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"time"
 )
 
@@ -20,6 +22,13 @@ const (
 	RPCMethodGetTransactionByHash = "eth_getTransactionByHash"
 	// RPCMethodDebugStateSize is the RPC method for getting the execution layer state size.
 	RPCMethodDebugStateSize = "debug_stateSize"
+)
+
+// State size trigger modes.
+const (
+	StateSizeTriggerHead     = "head"
+	StateSizeTriggerBlock    = "block"
+	StateSizeTriggerInterval = "interval"
 )
 
 // Config defines configuration for connecting to an execution client.
@@ -60,6 +69,31 @@ type Config struct {
 	StateSize *StateSizeConfig `yaml:"stateSize" default:"{}"`
 }
 
+// Validate checks the settings the execution watchers need before they start.
+func (c *Config) Validate() error {
+	if c.RPCAddress == "" {
+		return errors.New("rpcAddress is required")
+	}
+
+	if c.WebsocketEnabled && c.WSAddress == "" {
+		return errors.New("wsAddress is required when websocketEnabled is set")
+	}
+
+	if c.StateSize == nil || !c.StateSize.Enabled {
+		return nil
+	}
+
+	if err := c.StateSize.Validate(); err != nil {
+		return fmt.Errorf("stateSize: %w", err)
+	}
+
+	if c.StateSize.TriggerMode == StateSizeTriggerBlock && !c.WebsocketEnabled {
+		return errors.New("stateSize: triggerMode \"block\" needs websocketEnabled")
+	}
+
+	return nil
+}
+
 // PendingTxRecord represents a transaction hash and when it was first seen.
 type PendingTxRecord struct {
 	Hash             string
@@ -85,6 +119,21 @@ type StateSizeConfig struct {
 	TriggerMode string `yaml:"triggerMode" default:"head"`
 	// IntervalSeconds is the polling interval in seconds (used when TriggerMode is "interval").
 	IntervalSeconds int `yaml:"intervalSeconds" default:"12"`
+}
+
+// Validate checks the state size trigger settings.
+func (c *StateSizeConfig) Validate() error {
+	switch c.TriggerMode {
+	case StateSizeTriggerHead, StateSizeTriggerBlock, StateSizeTriggerInterval:
+	default:
+		return fmt.Errorf("triggerMode must be %q, %q or %q, got %q", StateSizeTriggerHead, StateSizeTriggerBlock, StateSizeTriggerInterval, c.TriggerMode)
+	}
+
+	if c.IntervalSeconds <= 0 {
+		return fmt.Errorf("intervalSeconds must be positive, got %d", c.IntervalSeconds)
+	}
+
+	return nil
 }
 
 // DebugStateSizeResponse represents the response from debug_stateSize RPC call.

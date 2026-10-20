@@ -148,6 +148,12 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid forkChoice config: %w", err)
 	}
 
+	if c.Execution != nil && c.Execution.Enabled {
+		if err := c.Execution.Validate(); err != nil {
+			return fmt.Errorf("invalid execution config: %w", err)
+		}
+	}
+
 	if err := c.Tracing.Validate(); err != nil {
 		return fmt.Errorf("invalid tracing config: %w", err)
 	}

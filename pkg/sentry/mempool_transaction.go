@@ -16,73 +16,33 @@ import (
 	"github.com/ethpandaops/xatu/pkg/sentry/execution"
 )
 
-// startMempoolTransactionWatcher initializes and starts the mempool transaction watcher.
-func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context) error {
-	if s.Config.Execution == nil || !s.Config.Execution.Enabled {
-		s.log.WithContext(ctx).Info("Mempool transaction watcher disabled")
-
-		return nil
-	}
-
-	// Validate execution config
-	if s.Config.Execution.RPCAddress == "" {
-		return fmt.Errorf("execution.rpcAddress is required when execution is enabled")
-	}
-
-	if s.Config.Execution.WebsocketEnabled && s.Config.Execution.WSAddress == "" {
-		return fmt.Errorf("execution.wsAddress is required when execution is enabled")
-	}
-
-	// Initialize the unified execution client that handles both WebSocket and RPC connections.
-	client, err := execution.NewClient(
-		ctx,
-		s.log,
-		s.Config.Execution,
-	)
+// startMempoolTransactionWatcher starts the mempool transaction watcher on the shared execution client.
+func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context, metrics *execution.Metrics) error {
+	client, err := s.executionClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create execution client: %w", err)
+		return err
 	}
 
-	// Start the execution client.
-	if err := client.Start(ctx); err != nil {
-		return fmt.Errorf("failed to start execution client: %w", err)
-	}
-
-	// Store the client in the sentry.
-	s.execution = client
-
-	// Get network ID for metrics.
-	networkName := s.beacon.Metadata().Network.Name
-	if networkName == "" {
-		networkName = unknown
-	}
-
-	// Create execution metrics for the mempool watcher.
-	mempoolMetrics := execution.NewMetrics("execution", string(networkName))
-
-	// Create mempool transaction processor callback.
 	processTxCallback := func(ctx context.Context, record *execution.PendingTxRecord, txData json.RawMessage) error {
 		return s.processMempoolTransaction(ctx, record, txData)
 	}
 
-	// Create and start the mempool watcher with metrics.
 	watcher := execution.NewMempoolWatcher(
 		client,
 		s.log,
 		s.Config.Execution,
 		processTxCallback,
-		mempoolMetrics,
+		metrics,
 	)
 
 	if err := watcher.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start mempool watcher: %w", err)
 	}
 
-	// Add shutdown functions for the client.
-	s.shutdownFuncs = append(s.shutdownFuncs, func(ctx context.Context) error {
+	s.addExecutionStop(func(_ context.Context) error {
 		watcher.Stop()
 
-		return client.Stop(ctx)
+		return nil
 	})
 
 	return nil

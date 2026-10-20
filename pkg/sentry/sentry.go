@@ -55,7 +55,12 @@ type Sentry struct {
 
 	beacon *ethereum.BeaconNode
 
-	execution *execution.Client
+	// execution is the client the execution watchers share; executionMu guards it and executionStops.
+	execution        *execution.Client
+	executionMu      sync.Mutex
+	executionStops   []func(context.Context) error
+	executionWG      sync.WaitGroup
+	stateSizeWatcher atomic.Pointer[execution.StateSizeWatcher]
 
 	clockDrift time.Duration
 
@@ -894,14 +899,8 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return err
 		}
 
-		// The execution watchers start independently, and an unreachable execution node never stops the sentry.
-		if err := s.startMempoolTransactionWatcher(ctx); err != nil {
-			s.log.WithError(err).WithContext(ctx).Error("failed to start mempool transaction watcher")
-		}
-
-		if err := s.startExecutionStateSizeWatcher(ctx); err != nil {
-			s.log.WithError(err).WithContext(ctx).Error("failed to start execution debug state size watcher")
-		}
+		// An unreachable execution node never stops the sentry; each watcher retries until it starts.
+		s.startExecutionWatchers(ctx)
 
 		return nil
 	})

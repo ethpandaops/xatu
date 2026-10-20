@@ -7442,12 +7442,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubExecutionPayloadEnvelopeData) 
 		dAtA[i] = 0x3a
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x32
 	}
@@ -7565,12 +7577,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubExecutionPayloadBidData) Marsh
 		dAtA[i] = 0x3a
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x32
 	}
@@ -7688,12 +7712,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubPayloadAttestationMessageData)
 		dAtA[i] = 0x3a
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x32
 	}
@@ -7811,12 +7847,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubProposerPreferencesData) Marsh
 		dAtA[i] = 0x3a
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x32
 	}
@@ -8276,12 +8324,24 @@ func (m *ClientMeta_AdditionalBeaconP2PAttestationData) MarshalToSizedBufferVT(d
 		dAtA[i] = 0x42
 	}
 	if m.Peer != nil {
-		size, err := m.Peer.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Peer).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Peer)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x3a
 	}
@@ -8532,12 +8592,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceAddPeerData) MarshalToSizedBufferVT(dAt
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -8575,12 +8647,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceRemovePeerData) MarshalToSizedBufferVT(
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -8618,12 +8702,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceRecvRPCData) MarshalToSizedBufferVT(dAt
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -8661,12 +8757,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceSendRPCData) MarshalToSizedBufferVT(dAt
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -8704,12 +8812,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceDropRPCData) MarshalToSizedBufferVT(dAt
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -8747,12 +8867,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData) MarshalToSized
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -8790,12 +8922,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData) MarshalToSized
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -8833,12 +8977,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData) MarshalToS
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -8876,12 +9032,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData) MarshalToSized
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -8919,12 +9087,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData) MarshalToSized
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -8969,12 +9149,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceJoinData) MarshalToSizedBufferVT(dAtA [
 		dAtA[i] = 0x12
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9019,12 +9211,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceLeaveData) MarshalToSizedBufferVT(dAtA 
 		dAtA[i] = 0x12
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9062,12 +9266,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceGraftData) MarshalToSizedBufferVT(dAtA 
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9105,12 +9321,24 @@ func (m *ClientMeta_AdditionalLibP2PTracePruneData) MarshalToSizedBufferVT(dAtA 
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9148,12 +9376,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceDuplicateMessageData) MarshalToSizedBuf
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9191,12 +9431,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceDeliverMessageData) MarshalToSizedBuffe
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9234,12 +9486,24 @@ func (m *ClientMeta_AdditionalLibP2PTracePublishMessageData) MarshalToSizedBuffe
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9277,12 +9541,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceRejectMessageData) MarshalToSizedBuffer
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9320,12 +9596,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceConnectedData) MarshalToSizedBufferVT(d
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9363,12 +9651,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceDisconnectedData) MarshalToSizedBufferV
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9406,12 +9706,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) MarshalToSizedB
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9449,12 +9761,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceHandleMetadataData) MarshalToSizedBuffe
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9492,12 +9816,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceHandleStatusData) MarshalToSizedBufferV
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9535,12 +9871,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceIdentifyData) MarshalToSizedBufferVT(dA
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9618,12 +9966,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) MarshalT
 		dAtA[i] = 0x12
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9661,12 +10021,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData) MarshalToSized
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9704,12 +10076,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData) MarshalToSizedBuffe
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -9777,12 +10161,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) MarshalToSize
 		dAtA[i] = 0x3a
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x32
 	}
@@ -9986,12 +10382,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) Marshal
 		dAtA[i] = 0x52
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x4a
 	}
@@ -10139,12 +10547,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) Marshal
 		dAtA[i] = 0x42
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x3a
 	}
@@ -10272,12 +10692,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) MarshalToSize
 		dAtA[i] = 0x3a
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x32
 	}
@@ -10395,12 +10827,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) Marshal
 		dAtA[i] = 0x3a
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x32
 	}
@@ -10518,12 +10962,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubMessagePayloadData) MarshalToS
 		dAtA[i] = 0x22
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x1a
 	}
@@ -10601,12 +11057,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubPartialDataColumnData) Marshal
 		dAtA[i] = 0x3a
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x32
 	}
@@ -10704,12 +11172,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceDataColumnCompletedData) MarshalToSized
 		dAtA[i] = 0x3a
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x32
 	}
@@ -10807,12 +11287,24 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubPartialDataColumnOutcomeData) 
 		dAtA[i] = 0x32
 	}
 	if m.Metadata != nil {
-		size, err := m.Metadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x2a
 	}
@@ -19617,12 +20109,24 @@ func (m *DecoratedEvent_Libp2PTraceAddPeer) MarshalToVT(dAtA []byte) (int, error
 func (m *DecoratedEvent_Libp2PTraceAddPeer) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceAddPeer != nil {
-		size, err := m.Libp2PTraceAddPeer.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceAddPeer).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceAddPeer)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x2
 		i--
@@ -19638,12 +20142,24 @@ func (m *DecoratedEvent_Libp2PTraceRemovePeer) MarshalToVT(dAtA []byte) (int, er
 func (m *DecoratedEvent_Libp2PTraceRemovePeer) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceRemovePeer != nil {
-		size, err := m.Libp2PTraceRemovePeer.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceRemovePeer).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceRemovePeer)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x2
 		i--
@@ -19659,12 +20175,24 @@ func (m *DecoratedEvent_Libp2PTraceRecvRpc) MarshalToVT(dAtA []byte) (int, error
 func (m *DecoratedEvent_Libp2PTraceRecvRpc) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceRecvRpc != nil {
-		size, err := m.Libp2PTraceRecvRpc.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceRecvRpc).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceRecvRpc)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x2
 		i--
@@ -19680,12 +20208,24 @@ func (m *DecoratedEvent_Libp2PTraceSendRpc) MarshalToVT(dAtA []byte) (int, error
 func (m *DecoratedEvent_Libp2PTraceSendRpc) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceSendRpc != nil {
-		size, err := m.Libp2PTraceSendRpc.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceSendRpc).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceSendRpc)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x2
 		i--
@@ -19701,12 +20241,24 @@ func (m *DecoratedEvent_Libp2PTraceJoin) MarshalToVT(dAtA []byte) (int, error) {
 func (m *DecoratedEvent_Libp2PTraceJoin) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceJoin != nil {
-		size, err := m.Libp2PTraceJoin.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceJoin).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceJoin)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x2
 		i--
@@ -19722,12 +20274,24 @@ func (m *DecoratedEvent_Libp2PTraceConnected) MarshalToVT(dAtA []byte) (int, err
 func (m *DecoratedEvent_Libp2PTraceConnected) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceConnected != nil {
-		size, err := m.Libp2PTraceConnected.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceConnected).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceConnected)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x2
 		i--
@@ -19743,12 +20307,24 @@ func (m *DecoratedEvent_Libp2PTraceDisconnected) MarshalToVT(dAtA []byte) (int, 
 func (m *DecoratedEvent_Libp2PTraceDisconnected) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceDisconnected != nil {
-		size, err := m.Libp2PTraceDisconnected.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceDisconnected).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceDisconnected)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x2
 		i--
@@ -19764,12 +20340,24 @@ func (m *DecoratedEvent_Libp2PTraceHandleMetadata) MarshalToVT(dAtA []byte) (int
 func (m *DecoratedEvent_Libp2PTraceHandleMetadata) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceHandleMetadata != nil {
-		size, err := m.Libp2PTraceHandleMetadata.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceHandleMetadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceHandleMetadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x2
 		i--
@@ -19785,12 +20373,24 @@ func (m *DecoratedEvent_Libp2PTraceHandleStatus) MarshalToVT(dAtA []byte) (int, 
 func (m *DecoratedEvent_Libp2PTraceHandleStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceHandleStatus != nil {
-		size, err := m.Libp2PTraceHandleStatus.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceHandleStatus).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceHandleStatus)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x3
 		i--
@@ -19806,12 +20406,24 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubBeaconBlock) MarshalToVT(dAtA []byte
 func (m *DecoratedEvent_Libp2PTraceGossipsubBeaconBlock) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceGossipsubBeaconBlock != nil {
-		size, err := m.Libp2PTraceGossipsubBeaconBlock.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceGossipsubBeaconBlock).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceGossipsubBeaconBlock)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x3
 		i--
@@ -19860,12 +20472,24 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubBlobSidecar) MarshalToVT(dAtA []byte
 func (m *DecoratedEvent_Libp2PTraceGossipsubBlobSidecar) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceGossipsubBlobSidecar != nil {
-		size, err := m.Libp2PTraceGossipsubBlobSidecar.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceGossipsubBlobSidecar).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceGossipsubBlobSidecar)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x3
 		i--
@@ -20067,12 +20691,24 @@ func (m *DecoratedEvent_Libp2PTraceDropRpc) MarshalToVT(dAtA []byte) (int, error
 func (m *DecoratedEvent_Libp2PTraceDropRpc) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceDropRpc != nil {
-		size, err := m.Libp2PTraceDropRpc.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceDropRpc).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceDropRpc)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x3
 		i--
@@ -20088,12 +20724,24 @@ func (m *DecoratedEvent_Libp2PTraceLeave) MarshalToVT(dAtA []byte) (int, error) 
 func (m *DecoratedEvent_Libp2PTraceLeave) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceLeave != nil {
-		size, err := m.Libp2PTraceLeave.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceLeave).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceLeave)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x3
 		i--
@@ -20109,12 +20757,24 @@ func (m *DecoratedEvent_Libp2PTraceGraft) MarshalToVT(dAtA []byte) (int, error) 
 func (m *DecoratedEvent_Libp2PTraceGraft) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceGraft != nil {
-		size, err := m.Libp2PTraceGraft.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceGraft).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceGraft)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x3
 		i--
@@ -20130,12 +20790,24 @@ func (m *DecoratedEvent_Libp2PTracePrune) MarshalToVT(dAtA []byte) (int, error) 
 func (m *DecoratedEvent_Libp2PTracePrune) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTracePrune != nil {
-		size, err := m.Libp2PTracePrune.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTracePrune).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTracePrune)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x3
 		i--
@@ -20151,12 +20823,24 @@ func (m *DecoratedEvent_Libp2PTraceDuplicateMessage) MarshalToVT(dAtA []byte) (i
 func (m *DecoratedEvent_Libp2PTraceDuplicateMessage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceDuplicateMessage != nil {
-		size, err := m.Libp2PTraceDuplicateMessage.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceDuplicateMessage).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceDuplicateMessage)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x3
 		i--
@@ -20172,12 +20856,24 @@ func (m *DecoratedEvent_Libp2PTraceDeliverMessage) MarshalToVT(dAtA []byte) (int
 func (m *DecoratedEvent_Libp2PTraceDeliverMessage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceDeliverMessage != nil {
-		size, err := m.Libp2PTraceDeliverMessage.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceDeliverMessage).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceDeliverMessage)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x3
 		i--
@@ -20193,12 +20889,24 @@ func (m *DecoratedEvent_Libp2PTracePublishMessage) MarshalToVT(dAtA []byte) (int
 func (m *DecoratedEvent_Libp2PTracePublishMessage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTracePublishMessage != nil {
-		size, err := m.Libp2PTracePublishMessage.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTracePublishMessage).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTracePublishMessage)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x4
 		i--
@@ -20214,12 +20922,24 @@ func (m *DecoratedEvent_Libp2PTraceRejectMessage) MarshalToVT(dAtA []byte) (int,
 func (m *DecoratedEvent_Libp2PTraceRejectMessage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceRejectMessage != nil {
-		size, err := m.Libp2PTraceRejectMessage.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceRejectMessage).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceRejectMessage)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x4
 		i--
@@ -20235,12 +20955,24 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaControlIhave) MarshalToVT(dAtA []byte)
 func (m *DecoratedEvent_Libp2PTraceRpcMetaControlIhave) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceRpcMetaControlIhave != nil {
-		size, err := m.Libp2PTraceRpcMetaControlIhave.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceRpcMetaControlIhave).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceRpcMetaControlIhave)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x4
 		i--
@@ -20256,12 +20988,24 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaControlIwant) MarshalToVT(dAtA []byte)
 func (m *DecoratedEvent_Libp2PTraceRpcMetaControlIwant) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceRpcMetaControlIwant != nil {
-		size, err := m.Libp2PTraceRpcMetaControlIwant.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceRpcMetaControlIwant).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceRpcMetaControlIwant)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x4
 		i--
@@ -20277,12 +21021,24 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaControlIdontwant) MarshalToVT(dAtA []b
 func (m *DecoratedEvent_Libp2PTraceRpcMetaControlIdontwant) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceRpcMetaControlIdontwant != nil {
-		size, err := m.Libp2PTraceRpcMetaControlIdontwant.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceRpcMetaControlIdontwant).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceRpcMetaControlIdontwant)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x4
 		i--
@@ -20298,12 +21054,24 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaControlGraft) MarshalToVT(dAtA []byte)
 func (m *DecoratedEvent_Libp2PTraceRpcMetaControlGraft) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceRpcMetaControlGraft != nil {
-		size, err := m.Libp2PTraceRpcMetaControlGraft.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceRpcMetaControlGraft).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceRpcMetaControlGraft)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x4
 		i--
@@ -20319,12 +21087,24 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaControlPrune) MarshalToVT(dAtA []byte)
 func (m *DecoratedEvent_Libp2PTraceRpcMetaControlPrune) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceRpcMetaControlPrune != nil {
-		size, err := m.Libp2PTraceRpcMetaControlPrune.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceRpcMetaControlPrune).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceRpcMetaControlPrune)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x4
 		i--
@@ -20340,12 +21120,24 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaSubscription) MarshalToVT(dAtA []byte)
 func (m *DecoratedEvent_Libp2PTraceRpcMetaSubscription) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceRpcMetaSubscription != nil {
-		size, err := m.Libp2PTraceRpcMetaSubscription.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceRpcMetaSubscription).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceRpcMetaSubscription)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x4
 		i--
@@ -20361,12 +21153,24 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaMessage) MarshalToVT(dAtA []byte) (int
 func (m *DecoratedEvent_Libp2PTraceRpcMetaMessage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceRpcMetaMessage != nil {
-		size, err := m.Libp2PTraceRpcMetaMessage.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceRpcMetaMessage).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceRpcMetaMessage)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x4
 		i--
@@ -20514,12 +21318,24 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubDataColumnSidecar) MarshalToVT(dAtA 
 func (m *DecoratedEvent_Libp2PTraceGossipsubDataColumnSidecar) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceGossipsubDataColumnSidecar != nil {
-		size, err := m.Libp2PTraceGossipsubDataColumnSidecar.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceGossipsubDataColumnSidecar).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceGossipsubDataColumnSidecar)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x4
 		i--
@@ -20535,12 +21351,24 @@ func (m *DecoratedEvent_Libp2PTraceSyntheticHeartbeat) MarshalToVT(dAtA []byte) 
 func (m *DecoratedEvent_Libp2PTraceSyntheticHeartbeat) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceSyntheticHeartbeat != nil {
-		size, err := m.Libp2PTraceSyntheticHeartbeat.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceSyntheticHeartbeat).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceSyntheticHeartbeat)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x4
 		i--
@@ -20556,12 +21384,24 @@ func (m *DecoratedEvent_Libp2PTraceIdentify) MarshalToVT(dAtA []byte) (int, erro
 func (m *DecoratedEvent_Libp2PTraceIdentify) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceIdentify != nil {
-		size, err := m.Libp2PTraceIdentify.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceIdentify).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceIdentify)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x4
 		i--
@@ -20577,12 +21417,24 @@ func (m *DecoratedEvent_Libp2PTraceRpcDataColumnCustodyProbe) MarshalToVT(dAtA [
 func (m *DecoratedEvent_Libp2PTraceRpcDataColumnCustodyProbe) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceRpcDataColumnCustodyProbe != nil {
-		size, err := m.Libp2PTraceRpcDataColumnCustodyProbe.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceRpcDataColumnCustodyProbe).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceRpcDataColumnCustodyProbe)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xc
 		i--
@@ -21477,12 +22329,24 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubMessagePayload) MarshalToVT(dAtA []b
 func (m *DecoratedEvent_Libp2PTraceGossipsubMessagePayload) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceGossipsubMessagePayload != nil {
-		size, err := m.Libp2PTraceGossipsubMessagePayload.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceGossipsubMessagePayload).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceGossipsubMessagePayload)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xf
 		i--
@@ -21630,12 +22494,24 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubExecutionPayloadEnvelope) MarshalToV
 func (m *DecoratedEvent_Libp2PTraceGossipsubExecutionPayloadEnvelope) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceGossipsubExecutionPayloadEnvelope != nil {
-		size, err := m.Libp2PTraceGossipsubExecutionPayloadEnvelope.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceGossipsubExecutionPayloadEnvelope).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceGossipsubExecutionPayloadEnvelope)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xf
 		i--
@@ -21651,12 +22527,24 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubExecutionPayloadBid) MarshalToVT(dAt
 func (m *DecoratedEvent_Libp2PTraceGossipsubExecutionPayloadBid) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceGossipsubExecutionPayloadBid != nil {
-		size, err := m.Libp2PTraceGossipsubExecutionPayloadBid.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceGossipsubExecutionPayloadBid).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceGossipsubExecutionPayloadBid)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xf
 		i--
@@ -21672,12 +22560,24 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubPayloadAttestationMessage) MarshalTo
 func (m *DecoratedEvent_Libp2PTraceGossipsubPayloadAttestationMessage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceGossipsubPayloadAttestationMessage != nil {
-		size, err := m.Libp2PTraceGossipsubPayloadAttestationMessage.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceGossipsubPayloadAttestationMessage).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceGossipsubPayloadAttestationMessage)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xf
 		i--
@@ -21693,12 +22593,24 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubProposerPreferences) MarshalToVT(dAt
 func (m *DecoratedEvent_Libp2PTraceGossipsubProposerPreferences) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceGossipsubProposerPreferences != nil {
-		size, err := m.Libp2PTraceGossipsubProposerPreferences.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceGossipsubProposerPreferences).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceGossipsubProposerPreferences)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xf
 		i--
@@ -22236,12 +23148,24 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubPartialDataColumn) MarshalToVT(dAtA 
 func (m *DecoratedEvent_Libp2PTraceGossipsubPartialDataColumn) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceGossipsubPartialDataColumn != nil {
-		size, err := m.Libp2PTraceGossipsubPartialDataColumn.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceGossipsubPartialDataColumn).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceGossipsubPartialDataColumn)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x10
 		i--
@@ -22257,12 +23181,24 @@ func (m *DecoratedEvent_Libp2PTraceDataColumnCompleted) MarshalToVT(dAtA []byte)
 func (m *DecoratedEvent_Libp2PTraceDataColumnCompleted) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceDataColumnCompleted != nil {
-		size, err := m.Libp2PTraceDataColumnCompleted.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceDataColumnCompleted).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceDataColumnCompleted)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x10
 		i--
@@ -22278,12 +23214,24 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubPartialDataColumnOutcome) MarshalToV
 func (m *DecoratedEvent_Libp2PTraceGossipsubPartialDataColumnOutcome) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Libp2PTraceGossipsubPartialDataColumnOutcome != nil {
-		size, err := m.Libp2PTraceGossipsubPartialDataColumnOutcome.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.Libp2PTraceGossipsubPartialDataColumnOutcome).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceGossipsubPartialDataColumnOutcome)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x10
 		i--
@@ -31125,7 +32073,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubExecutionPayloadEnvelopeData) 
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Topic != nil {
@@ -31171,7 +32125,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubExecutionPayloadBidData) SizeV
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Topic != nil {
@@ -31217,7 +32177,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubPayloadAttestationMessageData)
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Topic != nil {
@@ -31263,7 +32229,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubProposerPreferencesData) SizeV
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Topic != nil {
@@ -31439,7 +32411,13 @@ func (m *ClientMeta_AdditionalBeaconP2PAttestationData) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Peer != nil {
-		l = m.Peer.SizeVT()
+		if size, ok := interface{}(m.Peer).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Peer)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Subnet != nil {
@@ -31517,7 +32495,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceAddPeerData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31531,7 +32515,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceRemovePeerData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31545,7 +32535,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceRecvRPCData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31559,7 +32555,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceSendRPCData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31573,7 +32575,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceDropRPCData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31587,7 +32595,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData) SizeVT() (n in
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31601,7 +32615,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData) SizeVT() (n in
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31615,7 +32635,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData) SizeVT() (
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31629,7 +32655,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData) SizeVT() (n in
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31643,7 +32675,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData) SizeVT() (n in
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31657,7 +32695,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceJoinData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.LocalPeerId)
@@ -31675,7 +32719,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceLeaveData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.LocalPeerId)
@@ -31693,7 +32743,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceGraftData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31707,7 +32763,13 @@ func (m *ClientMeta_AdditionalLibP2PTracePruneData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31721,7 +32783,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceDuplicateMessageData) SizeVT() (n int) 
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31735,7 +32803,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceDeliverMessageData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31749,7 +32823,13 @@ func (m *ClientMeta_AdditionalLibP2PTracePublishMessageData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31763,7 +32843,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceRejectMessageData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31777,7 +32863,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceConnectedData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31791,7 +32883,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceDisconnectedData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31805,7 +32903,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) SizeVT() (n int
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31819,7 +32923,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceHandleMetadataData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31833,7 +32943,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceHandleStatusData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31847,7 +32963,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceIdentifyData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31861,7 +32983,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) SizeVT()
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Epoch != nil {
@@ -31891,7 +33019,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData) SizeVT() (n in
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31905,7 +33039,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -31939,7 +33079,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) SizeVT() (n i
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Topic != nil {
@@ -32025,7 +33171,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) SizeVT(
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Topic != nil {
@@ -32075,7 +33227,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) SizeVT(
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Topic != nil {
@@ -32121,7 +33279,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) SizeVT() (n i
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Topic != nil {
@@ -32167,7 +33331,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) SizeVT(
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Topic != nil {
@@ -32201,7 +33371,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubMessagePayloadData) SizeVT() (
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Topic != nil {
@@ -32247,7 +33423,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubPartialDataColumnData) SizeVT(
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Topic != nil {
@@ -32289,7 +33471,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceDataColumnCompletedData) SizeVT() (n in
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Topic != nil {
@@ -32323,7 +33511,13 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubPartialDataColumnOutcomeData) 
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		l = m.Metadata.SizeVT()
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Topic != nil {
@@ -36482,7 +37676,13 @@ func (m *DecoratedEvent_Libp2PTraceAddPeer) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceAddPeer != nil {
-		l = m.Libp2PTraceAddPeer.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceAddPeer).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceAddPeer)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36494,7 +37694,13 @@ func (m *DecoratedEvent_Libp2PTraceRemovePeer) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceRemovePeer != nil {
-		l = m.Libp2PTraceRemovePeer.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceRemovePeer).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceRemovePeer)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36506,7 +37712,13 @@ func (m *DecoratedEvent_Libp2PTraceRecvRpc) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceRecvRpc != nil {
-		l = m.Libp2PTraceRecvRpc.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceRecvRpc).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceRecvRpc)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36518,7 +37730,13 @@ func (m *DecoratedEvent_Libp2PTraceSendRpc) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceSendRpc != nil {
-		l = m.Libp2PTraceSendRpc.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceSendRpc).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceSendRpc)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36530,7 +37748,13 @@ func (m *DecoratedEvent_Libp2PTraceJoin) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceJoin != nil {
-		l = m.Libp2PTraceJoin.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceJoin).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceJoin)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36542,7 +37766,13 @@ func (m *DecoratedEvent_Libp2PTraceConnected) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceConnected != nil {
-		l = m.Libp2PTraceConnected.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceConnected).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceConnected)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36554,7 +37784,13 @@ func (m *DecoratedEvent_Libp2PTraceDisconnected) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceDisconnected != nil {
-		l = m.Libp2PTraceDisconnected.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceDisconnected).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceDisconnected)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36566,7 +37802,13 @@ func (m *DecoratedEvent_Libp2PTraceHandleMetadata) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceHandleMetadata != nil {
-		l = m.Libp2PTraceHandleMetadata.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceHandleMetadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceHandleMetadata)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36578,7 +37820,13 @@ func (m *DecoratedEvent_Libp2PTraceHandleStatus) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceHandleStatus != nil {
-		l = m.Libp2PTraceHandleStatus.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceHandleStatus).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceHandleStatus)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36590,7 +37838,13 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubBeaconBlock) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceGossipsubBeaconBlock != nil {
-		l = m.Libp2PTraceGossipsubBeaconBlock.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceGossipsubBeaconBlock).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceGossipsubBeaconBlock)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36620,7 +37874,13 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubBlobSidecar) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceGossipsubBlobSidecar != nil {
-		l = m.Libp2PTraceGossipsubBlobSidecar.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceGossipsubBlobSidecar).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceGossipsubBlobSidecar)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36734,7 +37994,13 @@ func (m *DecoratedEvent_Libp2PTraceDropRpc) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceDropRpc != nil {
-		l = m.Libp2PTraceDropRpc.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceDropRpc).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceDropRpc)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36746,7 +38012,13 @@ func (m *DecoratedEvent_Libp2PTraceLeave) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceLeave != nil {
-		l = m.Libp2PTraceLeave.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceLeave).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceLeave)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36758,7 +38030,13 @@ func (m *DecoratedEvent_Libp2PTraceGraft) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceGraft != nil {
-		l = m.Libp2PTraceGraft.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceGraft).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceGraft)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36770,7 +38048,13 @@ func (m *DecoratedEvent_Libp2PTracePrune) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTracePrune != nil {
-		l = m.Libp2PTracePrune.SizeVT()
+		if size, ok := interface{}(m.Libp2PTracePrune).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTracePrune)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36782,7 +38066,13 @@ func (m *DecoratedEvent_Libp2PTraceDuplicateMessage) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceDuplicateMessage != nil {
-		l = m.Libp2PTraceDuplicateMessage.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceDuplicateMessage).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceDuplicateMessage)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36794,7 +38084,13 @@ func (m *DecoratedEvent_Libp2PTraceDeliverMessage) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceDeliverMessage != nil {
-		l = m.Libp2PTraceDeliverMessage.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceDeliverMessage).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceDeliverMessage)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36806,7 +38102,13 @@ func (m *DecoratedEvent_Libp2PTracePublishMessage) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTracePublishMessage != nil {
-		l = m.Libp2PTracePublishMessage.SizeVT()
+		if size, ok := interface{}(m.Libp2PTracePublishMessage).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTracePublishMessage)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36818,7 +38120,13 @@ func (m *DecoratedEvent_Libp2PTraceRejectMessage) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceRejectMessage != nil {
-		l = m.Libp2PTraceRejectMessage.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceRejectMessage).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceRejectMessage)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36830,7 +38138,13 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaControlIhave) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceRpcMetaControlIhave != nil {
-		l = m.Libp2PTraceRpcMetaControlIhave.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceRpcMetaControlIhave).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceRpcMetaControlIhave)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36842,7 +38156,13 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaControlIwant) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceRpcMetaControlIwant != nil {
-		l = m.Libp2PTraceRpcMetaControlIwant.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceRpcMetaControlIwant).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceRpcMetaControlIwant)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36854,7 +38174,13 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaControlIdontwant) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceRpcMetaControlIdontwant != nil {
-		l = m.Libp2PTraceRpcMetaControlIdontwant.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceRpcMetaControlIdontwant).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceRpcMetaControlIdontwant)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36866,7 +38192,13 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaControlGraft) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceRpcMetaControlGraft != nil {
-		l = m.Libp2PTraceRpcMetaControlGraft.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceRpcMetaControlGraft).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceRpcMetaControlGraft)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36878,7 +38210,13 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaControlPrune) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceRpcMetaControlPrune != nil {
-		l = m.Libp2PTraceRpcMetaControlPrune.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceRpcMetaControlPrune).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceRpcMetaControlPrune)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36890,7 +38228,13 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaSubscription) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceRpcMetaSubscription != nil {
-		l = m.Libp2PTraceRpcMetaSubscription.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceRpcMetaSubscription).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceRpcMetaSubscription)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36902,7 +38246,13 @@ func (m *DecoratedEvent_Libp2PTraceRpcMetaMessage) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceRpcMetaMessage != nil {
-		l = m.Libp2PTraceRpcMetaMessage.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceRpcMetaMessage).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceRpcMetaMessage)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36986,7 +38336,13 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubDataColumnSidecar) SizeVT() (n int) 
 	var l int
 	_ = l
 	if m.Libp2PTraceGossipsubDataColumnSidecar != nil {
-		l = m.Libp2PTraceGossipsubDataColumnSidecar.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceGossipsubDataColumnSidecar).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceGossipsubDataColumnSidecar)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -36998,7 +38354,13 @@ func (m *DecoratedEvent_Libp2PTraceSyntheticHeartbeat) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceSyntheticHeartbeat != nil {
-		l = m.Libp2PTraceSyntheticHeartbeat.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceSyntheticHeartbeat).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceSyntheticHeartbeat)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -37010,7 +38372,13 @@ func (m *DecoratedEvent_Libp2PTraceIdentify) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceIdentify != nil {
-		l = m.Libp2PTraceIdentify.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceIdentify).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceIdentify)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -37022,7 +38390,13 @@ func (m *DecoratedEvent_Libp2PTraceRpcDataColumnCustodyProbe) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceRpcDataColumnCustodyProbe != nil {
-		l = m.Libp2PTraceRpcDataColumnCustodyProbe.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceRpcDataColumnCustodyProbe).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceRpcDataColumnCustodyProbe)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -37532,7 +38906,13 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubMessagePayload) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceGossipsubMessagePayload != nil {
-		l = m.Libp2PTraceGossipsubMessagePayload.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceGossipsubMessagePayload).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceGossipsubMessagePayload)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -37616,7 +38996,13 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubExecutionPayloadEnvelope) SizeVT() (
 	var l int
 	_ = l
 	if m.Libp2PTraceGossipsubExecutionPayloadEnvelope != nil {
-		l = m.Libp2PTraceGossipsubExecutionPayloadEnvelope.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceGossipsubExecutionPayloadEnvelope).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceGossipsubExecutionPayloadEnvelope)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -37628,7 +39014,13 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubExecutionPayloadBid) SizeVT() (n int
 	var l int
 	_ = l
 	if m.Libp2PTraceGossipsubExecutionPayloadBid != nil {
-		l = m.Libp2PTraceGossipsubExecutionPayloadBid.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceGossipsubExecutionPayloadBid).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceGossipsubExecutionPayloadBid)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -37640,7 +39032,13 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubPayloadAttestationMessage) SizeVT() 
 	var l int
 	_ = l
 	if m.Libp2PTraceGossipsubPayloadAttestationMessage != nil {
-		l = m.Libp2PTraceGossipsubPayloadAttestationMessage.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceGossipsubPayloadAttestationMessage).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceGossipsubPayloadAttestationMessage)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -37652,7 +39050,13 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubProposerPreferences) SizeVT() (n int
 	var l int
 	_ = l
 	if m.Libp2PTraceGossipsubProposerPreferences != nil {
-		l = m.Libp2PTraceGossipsubProposerPreferences.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceGossipsubProposerPreferences).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceGossipsubProposerPreferences)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -37952,7 +39356,13 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubPartialDataColumn) SizeVT() (n int) 
 	var l int
 	_ = l
 	if m.Libp2PTraceGossipsubPartialDataColumn != nil {
-		l = m.Libp2PTraceGossipsubPartialDataColumn.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceGossipsubPartialDataColumn).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceGossipsubPartialDataColumn)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -37964,7 +39374,13 @@ func (m *DecoratedEvent_Libp2PTraceDataColumnCompleted) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Libp2PTraceDataColumnCompleted != nil {
-		l = m.Libp2PTraceDataColumnCompleted.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceDataColumnCompleted).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceDataColumnCompleted)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -37976,7 +39392,13 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubPartialDataColumnOutcome) SizeVT() (
 	var l int
 	_ = l
 	if m.Libp2PTraceGossipsubPartialDataColumnOutcome != nil {
-		l = m.Libp2PTraceGossipsubPartialDataColumnOutcome.SizeVT()
+		if size, ok := interface{}(m.Libp2PTraceGossipsubPartialDataColumnOutcome).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceGossipsubPartialDataColumnOutcome)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -57138,8 +58560,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubExecutionPayloadEnvelopeData) 
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -57513,8 +58943,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubExecutionPayloadBidData) Unmar
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -57888,8 +59326,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubPayloadAttestationMessageData)
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -58263,8 +59709,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubProposerPreferencesData) Unmar
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -59609,8 +61063,16 @@ func (m *ClientMeta_AdditionalBeaconP2PAttestationData) UnmarshalVT(dAtA []byte)
 			if m.Peer == nil {
 				m.Peer = libp2p.PeerFromVTPool()
 			}
-			if err := m.Peer.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Peer).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Peer); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -60190,8 +61652,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceAddPeerData) UnmarshalVT(dAtA []byte) e
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -60277,8 +61747,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceRemovePeerData) UnmarshalVT(dAtA []byte
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -60364,8 +61842,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceRecvRPCData) UnmarshalVT(dAtA []byte) e
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -60451,8 +61937,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceSendRPCData) UnmarshalVT(dAtA []byte) e
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -60538,8 +62032,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceDropRPCData) UnmarshalVT(dAtA []byte) e
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -60625,8 +62127,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIHaveData) UnmarshalVT(dA
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -60712,8 +62222,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIWantData) UnmarshalVT(dA
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -60799,8 +62317,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlIDontWantData) UnmarshalV
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -60886,8 +62412,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlGraftData) UnmarshalVT(dA
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -60973,8 +62507,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaControlPruneData) UnmarshalVT(dA
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -61060,8 +62602,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceJoinData) UnmarshalVT(dAtA []byte) erro
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 2:
@@ -61179,8 +62729,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceLeaveData) UnmarshalVT(dAtA []byte) err
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 2:
@@ -61298,8 +62856,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceGraftData) UnmarshalVT(dAtA []byte) err
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -61385,8 +62951,16 @@ func (m *ClientMeta_AdditionalLibP2PTracePruneData) UnmarshalVT(dAtA []byte) err
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -61472,8 +63046,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceDuplicateMessageData) UnmarshalVT(dAtA 
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -61559,8 +63141,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceDeliverMessageData) UnmarshalVT(dAtA []
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -61646,8 +63236,16 @@ func (m *ClientMeta_AdditionalLibP2PTracePublishMessageData) UnmarshalVT(dAtA []
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -61733,8 +63331,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceRejectMessageData) UnmarshalVT(dAtA []b
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -61820,8 +63426,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceConnectedData) UnmarshalVT(dAtA []byte)
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -61907,8 +63521,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceDisconnectedData) UnmarshalVT(dAtA []by
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -61994,8 +63616,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceSyntheticHeartbeatData) UnmarshalVT(dAt
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -62081,8 +63711,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceHandleMetadataData) UnmarshalVT(dAtA []
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -62168,8 +63806,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceHandleStatusData) UnmarshalVT(dAtA []by
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -62255,8 +63901,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceIdentifyData) UnmarshalVT(dAtA []byte) 
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -62342,8 +63996,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) Unmarsha
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 2:
@@ -62573,8 +64235,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaSubscriptionData) UnmarshalVT(dA
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -62660,8 +64330,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceRPCMetaMessageData) UnmarshalVT(dAtA []
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -62927,8 +64605,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconBlockData) UnmarshalVT(d
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -63584,8 +65270,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBeaconAttestationData) Unmarsh
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 10:
@@ -63995,8 +65689,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubAggregateAndProofData) Unmarsh
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 8:
@@ -64370,8 +66072,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubBlobSidecarData) UnmarshalVT(d
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -64745,8 +66455,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubDataColumnSidecarData) Unmarsh
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -65012,8 +66730,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubMessagePayloadData) UnmarshalV
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 4:
@@ -65387,8 +67113,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubPartialDataColumnData) Unmarsh
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -65726,8 +67460,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceDataColumnCompletedData) UnmarshalVT(dA
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 7:
@@ -65993,8 +67735,16 @@ func (m *ClientMeta_AdditionalLibP2PTraceGossipSubPartialDataColumnOutcomeData) 
 			if m.Metadata == nil {
 				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -87413,13 +89163,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceAddPeer); ok {
-				if err := oneof.Libp2PTraceAddPeer.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceAddPeer).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceAddPeer); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.AddPeerFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceAddPeer{Libp2PTraceAddPeer: v}
 			}
@@ -87454,13 +89220,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRemovePeer); ok {
-				if err := oneof.Libp2PTraceRemovePeer.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceRemovePeer).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceRemovePeer); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.RemovePeerFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceRemovePeer{Libp2PTraceRemovePeer: v}
 			}
@@ -87495,13 +89277,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRecvRpc); ok {
-				if err := oneof.Libp2PTraceRecvRpc.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceRecvRpc).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceRecvRpc); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.RecvRPCFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceRecvRpc{Libp2PTraceRecvRpc: v}
 			}
@@ -87536,13 +89334,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceSendRpc); ok {
-				if err := oneof.Libp2PTraceSendRpc.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceSendRpc).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceSendRpc); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.SendRPCFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceSendRpc{Libp2PTraceSendRpc: v}
 			}
@@ -87577,13 +89391,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceJoin); ok {
-				if err := oneof.Libp2PTraceJoin.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceJoin).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceJoin); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.JoinFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceJoin{Libp2PTraceJoin: v}
 			}
@@ -87618,13 +89448,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceConnected); ok {
-				if err := oneof.Libp2PTraceConnected.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceConnected).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceConnected); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.ConnectedFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceConnected{Libp2PTraceConnected: v}
 			}
@@ -87659,13 +89505,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceDisconnected); ok {
-				if err := oneof.Libp2PTraceDisconnected.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceDisconnected).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceDisconnected); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.DisconnectedFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceDisconnected{Libp2PTraceDisconnected: v}
 			}
@@ -87700,13 +89562,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceHandleMetadata); ok {
-				if err := oneof.Libp2PTraceHandleMetadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceHandleMetadata).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceHandleMetadata); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.HandleMetadataFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceHandleMetadata{Libp2PTraceHandleMetadata: v}
 			}
@@ -87741,13 +89619,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceHandleStatus); ok {
-				if err := oneof.Libp2PTraceHandleStatus.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceHandleStatus).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceHandleStatus); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.HandleStatusFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceHandleStatus{Libp2PTraceHandleStatus: v}
 			}
@@ -87782,13 +89676,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubBeaconBlock); ok {
-				if err := oneof.Libp2PTraceGossipsubBeaconBlock.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceGossipsubBeaconBlock).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGossipsubBeaconBlock); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := gossipsub.BeaconBlockFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceGossipsubBeaconBlock{Libp2PTraceGossipsubBeaconBlock: v}
 			}
@@ -87880,13 +89790,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubBlobSidecar); ok {
-				if err := oneof.Libp2PTraceGossipsubBlobSidecar.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceGossipsubBlobSidecar).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGossipsubBlobSidecar); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := gossipsub.BlobSidecarFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceGossipsubBlobSidecar{Libp2PTraceGossipsubBlobSidecar: v}
 			}
@@ -88247,13 +90173,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceDropRpc); ok {
-				if err := oneof.Libp2PTraceDropRpc.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceDropRpc).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceDropRpc); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.DropRPCFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceDropRpc{Libp2PTraceDropRpc: v}
 			}
@@ -88288,13 +90230,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceLeave); ok {
-				if err := oneof.Libp2PTraceLeave.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceLeave).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceLeave); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.LeaveFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceLeave{Libp2PTraceLeave: v}
 			}
@@ -88329,13 +90287,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGraft); ok {
-				if err := oneof.Libp2PTraceGraft.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceGraft).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGraft); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.GraftFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceGraft{Libp2PTraceGraft: v}
 			}
@@ -88370,13 +90344,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTracePrune); ok {
-				if err := oneof.Libp2PTracePrune.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTracePrune).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTracePrune); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.PruneFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTracePrune{Libp2PTracePrune: v}
 			}
@@ -88411,13 +90401,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceDuplicateMessage); ok {
-				if err := oneof.Libp2PTraceDuplicateMessage.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceDuplicateMessage).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceDuplicateMessage); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.DuplicateMessageFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceDuplicateMessage{Libp2PTraceDuplicateMessage: v}
 			}
@@ -88452,13 +90458,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceDeliverMessage); ok {
-				if err := oneof.Libp2PTraceDeliverMessage.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceDeliverMessage).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceDeliverMessage); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.DeliverMessageFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceDeliverMessage{Libp2PTraceDeliverMessage: v}
 			}
@@ -88493,13 +90515,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTracePublishMessage); ok {
-				if err := oneof.Libp2PTracePublishMessage.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTracePublishMessage).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTracePublishMessage); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.PublishMessageFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTracePublishMessage{Libp2PTracePublishMessage: v}
 			}
@@ -88534,13 +90572,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRejectMessage); ok {
-				if err := oneof.Libp2PTraceRejectMessage.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceRejectMessage).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceRejectMessage); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.RejectMessageFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceRejectMessage{Libp2PTraceRejectMessage: v}
 			}
@@ -88575,13 +90629,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaControlIhave); ok {
-				if err := oneof.Libp2PTraceRpcMetaControlIhave.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceRpcMetaControlIhave).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceRpcMetaControlIhave); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.ControlIHaveMetaItemFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceRpcMetaControlIhave{Libp2PTraceRpcMetaControlIhave: v}
 			}
@@ -88616,13 +90686,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaControlIwant); ok {
-				if err := oneof.Libp2PTraceRpcMetaControlIwant.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceRpcMetaControlIwant).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceRpcMetaControlIwant); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.ControlIWantMetaItemFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceRpcMetaControlIwant{Libp2PTraceRpcMetaControlIwant: v}
 			}
@@ -88657,13 +90743,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaControlIdontwant); ok {
-				if err := oneof.Libp2PTraceRpcMetaControlIdontwant.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceRpcMetaControlIdontwant).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceRpcMetaControlIdontwant); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.ControlIDontWantMetaItemFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceRpcMetaControlIdontwant{Libp2PTraceRpcMetaControlIdontwant: v}
 			}
@@ -88698,13 +90800,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaControlGraft); ok {
-				if err := oneof.Libp2PTraceRpcMetaControlGraft.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceRpcMetaControlGraft).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceRpcMetaControlGraft); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.ControlGraftMetaItemFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceRpcMetaControlGraft{Libp2PTraceRpcMetaControlGraft: v}
 			}
@@ -88739,13 +90857,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaControlPrune); ok {
-				if err := oneof.Libp2PTraceRpcMetaControlPrune.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceRpcMetaControlPrune).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceRpcMetaControlPrune); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.ControlPruneMetaItemFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceRpcMetaControlPrune{Libp2PTraceRpcMetaControlPrune: v}
 			}
@@ -88780,13 +90914,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaSubscription); ok {
-				if err := oneof.Libp2PTraceRpcMetaSubscription.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceRpcMetaSubscription).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceRpcMetaSubscription); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.SubMetaItemFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceRpcMetaSubscription{Libp2PTraceRpcMetaSubscription: v}
 			}
@@ -88821,13 +90971,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcMetaMessage); ok {
-				if err := oneof.Libp2PTraceRpcMetaMessage.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceRpcMetaMessage).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceRpcMetaMessage); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.MessageMetaItemFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceRpcMetaMessage{Libp2PTraceRpcMetaMessage: v}
 			}
@@ -89090,13 +91256,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubDataColumnSidecar); ok {
-				if err := oneof.Libp2PTraceGossipsubDataColumnSidecar.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceGossipsubDataColumnSidecar).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGossipsubDataColumnSidecar); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := gossipsub.DataColumnSidecarFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceGossipsubDataColumnSidecar{Libp2PTraceGossipsubDataColumnSidecar: v}
 			}
@@ -89131,13 +91313,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceSyntheticHeartbeat); ok {
-				if err := oneof.Libp2PTraceSyntheticHeartbeat.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceSyntheticHeartbeat).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceSyntheticHeartbeat); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.SyntheticHeartbeatFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceSyntheticHeartbeat{Libp2PTraceSyntheticHeartbeat: v}
 			}
@@ -89172,13 +91370,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceIdentify); ok {
-				if err := oneof.Libp2PTraceIdentify.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceIdentify).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceIdentify); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.IdentifyFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceIdentify{Libp2PTraceIdentify: v}
 			}
@@ -89213,13 +91427,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceRpcDataColumnCustodyProbe); ok {
-				if err := oneof.Libp2PTraceRpcDataColumnCustodyProbe.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceRpcDataColumnCustodyProbe).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceRpcDataColumnCustodyProbe); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := libp2p.DataColumnCustodyProbeFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceRpcDataColumnCustodyProbe{Libp2PTraceRpcDataColumnCustodyProbe: v}
 			}
@@ -90933,13 +93163,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubMessagePayload); ok {
-				if err := oneof.Libp2PTraceGossipsubMessagePayload.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceGossipsubMessagePayload).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGossipsubMessagePayload); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := gossipsub.MessagePayloadFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceGossipsubMessagePayload{Libp2PTraceGossipsubMessagePayload: v}
 			}
@@ -91202,13 +93448,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubExecutionPayloadEnvelope); ok {
-				if err := oneof.Libp2PTraceGossipsubExecutionPayloadEnvelope.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceGossipsubExecutionPayloadEnvelope).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGossipsubExecutionPayloadEnvelope); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := gossipsub.ExecutionPayloadEnvelopeFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceGossipsubExecutionPayloadEnvelope{Libp2PTraceGossipsubExecutionPayloadEnvelope: v}
 			}
@@ -91243,13 +93505,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubExecutionPayloadBid); ok {
-				if err := oneof.Libp2PTraceGossipsubExecutionPayloadBid.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceGossipsubExecutionPayloadBid).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGossipsubExecutionPayloadBid); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := gossipsub.ExecutionPayloadBidFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceGossipsubExecutionPayloadBid{Libp2PTraceGossipsubExecutionPayloadBid: v}
 			}
@@ -91284,13 +93562,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubPayloadAttestationMessage); ok {
-				if err := oneof.Libp2PTraceGossipsubPayloadAttestationMessage.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceGossipsubPayloadAttestationMessage).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGossipsubPayloadAttestationMessage); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := gossipsub.PayloadAttestationMessageFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceGossipsubPayloadAttestationMessage{Libp2PTraceGossipsubPayloadAttestationMessage: v}
 			}
@@ -91325,13 +93619,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubProposerPreferences); ok {
-				if err := oneof.Libp2PTraceGossipsubProposerPreferences.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceGossipsubProposerPreferences).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGossipsubProposerPreferences); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := gossipsub.ProposerPreferencesFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceGossipsubProposerPreferences{Libp2PTraceGossipsubProposerPreferences: v}
 			}
@@ -92296,13 +94606,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubPartialDataColumn); ok {
-				if err := oneof.Libp2PTraceGossipsubPartialDataColumn.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceGossipsubPartialDataColumn).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGossipsubPartialDataColumn); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := gossipsub.PartialDataColumnFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceGossipsubPartialDataColumn{Libp2PTraceGossipsubPartialDataColumn: v}
 			}
@@ -92337,13 +94663,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceDataColumnCompleted); ok {
-				if err := oneof.Libp2PTraceDataColumnCompleted.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceDataColumnCompleted).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceDataColumnCompleted); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := gossipsub.DataColumnCompletedFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceDataColumnCompleted{Libp2PTraceDataColumnCompleted: v}
 			}
@@ -92378,13 +94720,29 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubPartialDataColumnOutcome); ok {
-				if err := oneof.Libp2PTraceGossipsubPartialDataColumnOutcome.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceGossipsubPartialDataColumnOutcome).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGossipsubPartialDataColumnOutcome); err != nil {
+						return err
+					}
 				}
 			} else {
 				v := gossipsub.PartialDataColumnOutcomeFromVTPool()
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceGossipsubPartialDataColumnOutcome{Libp2PTraceGossipsubPartialDataColumnOutcome: v}
 			}

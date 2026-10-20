@@ -207,6 +207,23 @@ func TestHTTPSinkProcessorAttemptsSparseGroupsAfterEarlierGroupFailure(t *testin
 	assert.Equal(t, blockSpan.SpanContext().TraceID(), spanContextFromHTTPTraceparent(requests[2].traceparent).TraceID())
 }
 
+func TestHTTPSinkStopExportsQueuedEvents(t *testing.T) {
+	recorder := startRecordingHTTPServer(t)
+	sink := newTestHTTPSink(t, recorder.server.URL, 512)
+
+	require.NoError(t, sink.Start(context.Background()))
+
+	for i := range 3 {
+		require.NoError(t, sink.HandleNewDecoratedEvent(context.Background(), newHTTPTestEvent(xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK, fmt.Sprintf("id-%d", i))))
+	}
+
+	require.NoError(t, sink.Stop(context.Background()))
+
+	requests := recorder.snapshotRequests()
+	require.Len(t, requests, 1)
+	assert.Equal(t, []string{"id-0", "id-1", "id-2"}, requests[0].eventIDs)
+}
+
 func startRecordingHTTPServer(t *testing.T) *recordingHTTPServer {
 	t.Helper()
 

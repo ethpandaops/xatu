@@ -55,7 +55,10 @@ type Cannon struct {
 
 	scheduler gocron.Scheduler
 
+	// deriversMu guards eventDerivers and stopping, which the beacon's OnReady callback and Shutdown both touch.
+	deriversMu    sync.Mutex
 	eventDerivers []deriver.EventDeriver
+	stopping      bool
 
 	coordinatorClient *coordinator.Client
 
@@ -178,49 +181,94 @@ func (c *Cannon) Start(ctx context.Context) error {
 		c.log.WithField("network", c.Config.Ethereum.OverrideNetworkName).WithContext(ctx).Info("Overriding network name")
 	}
 
-	if err := c.beacon.Start(ctx); err != nil {
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
+
+	// The beacon node runs until it fails, so watch the signal alongside it; cancelling it stops the derivers.
+	beaconCtx, stopBeacon := context.WithCancel(ctx)
+	defer stopBeacon()
+
+	beaconErr := make(chan error, 1)
+
+	go func() {
+		beaconErr <- c.beacon.Start(beaconCtx)
+	}()
+
+	select {
+	case err := <-beaconErr:
 		return err
+	case sig := <-signals:
+		c.log.WithContext(ctx).Printf("Caught signal: %v", sig)
 	}
 
-	cancel := make(chan os.Signal, 1)
-	signal.Notify(cancel, syscall.SIGTERM, syscall.SIGINT)
+	stopBeacon()
 
-	sig := <-cancel
-	c.log.WithContext(ctx).Printf("Caught signal: %v", sig)
+	var errs []error
+
+	// Join the beacon node before the derivers and sinks it feeds are torn down.
+	select {
+	case err := <-beaconErr:
+		if err != nil && !errors.Is(err, context.Canceled) {
+			errs = append(errs, fmt.Errorf("beacon node: %w", err))
+		}
+	case <-time.After(beaconStopTimeout):
+		c.log.WithContext(ctx).Warn("Beacon node did not stop in time")
+	}
 
 	if err := c.Shutdown(ctx); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
 
+const (
+	// beaconStopTimeout and shutdownTimeout together stay below the chart's 90s terminationGracePeriodSeconds.
+	beaconStopTimeout = 10 * time.Second
+	shutdownTimeout   = 75 * time.Second
+)
+
+// Shutdown stops the producers first and then flushes the sinks, logging failures so one cannot skip the rest.
 func (c *Cannon) Shutdown(ctx context.Context) error {
 	c.log.WithContext(ctx).Printf("Shutting down")
 
-	for _, sink := range c.sinks {
-		if err := sink.Stop(ctx); err != nil {
-			return err
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), shutdownTimeout)
+	defer cancel()
+
+	var errs []error
+
+	if err := c.scheduler.Shutdown(); err != nil {
+		errs = append(errs, fmt.Errorf("scheduler: %w", err))
+	}
+
+	c.deriversMu.Lock()
+	c.stopping = true
+	derivers := c.eventDerivers
+	c.deriversMu.Unlock()
+
+	for _, deriver := range derivers {
+		if err := deriver.Stop(ctx); err != nil {
+			errs = append(errs, fmt.Errorf("deriver %s: %w", deriver.Name(), err))
 		}
 	}
 
 	for _, fun := range c.shutdownFuncs {
 		if err := fun(ctx); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
 
-	if err := c.scheduler.Shutdown(); err != nil {
-		return err
-	}
-
-	for _, deriver := range c.eventDerivers {
-		if err := deriver.Stop(ctx); err != nil {
-			return err
+	for _, sink := range c.sinks {
+		if err := sink.Stop(ctx); err != nil {
+			errs = append(errs, fmt.Errorf("sink %s: %w", sink.Name(), err))
 		}
 	}
 
-	return nil
+	for _, err := range errs {
+		c.log.WithError(err).WithContext(ctx).Error("Shutdown step failed")
+	}
+
+	return errors.Join(errs...)
 }
 
 func (c *Cannon) ServeMetrics(ctx context.Context) error {
@@ -1176,6 +1224,14 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 			)
 		}
 
+		c.deriversMu.Lock()
+		defer c.deriversMu.Unlock()
+
+		// Derivers started after Shutdown would feed sinks that are already stopping.
+		if c.stopping {
+			return nil
+		}
+
 		c.eventDerivers = eventDerivers
 
 		// Refresh the spec every epoch
@@ -1195,6 +1251,10 @@ func (c *Cannon) startBeaconBlockProcessor(ctx context.Context) error {
 
 			go func() {
 				if err := c.startDeriverWhenReady(ctx, d); err != nil {
+					if ctx.Err() != nil {
+						return
+					}
+
 					c.log.
 						WithField("deriver", d.Name()).
 						WithError(err).WithContext(ctx).Fatal("Failed to start deriver")

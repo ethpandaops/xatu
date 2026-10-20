@@ -69,6 +69,10 @@ func (ec *EventCategorizer) initializeEvents() {
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT, GroupB, true, false, true)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_PRUNE, GroupB, true, false, true)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_SUBSCRIPTION, GroupB, true, false, true)
+	// Partial messages are keyed by (topic, group ID) and carry no message ID.
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN, GroupB, true, false, false)
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME, GroupB, true, false, false)
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_DATA_COLUMN_COMPLETED, GroupB, true, false, false)
 
 	// Group C: Events with only MsgID
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT, GroupC, false, true, true)

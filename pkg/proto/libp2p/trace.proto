@@ -202,6 +202,8 @@ message MessageMetaItem {
 message SubMeta {
   google.protobuf.BoolValue subscribe = 1 [json_name = "subscribe"];
   google.protobuf.StringValue topic_id = 2 [json_name = "topic_id"];
+  google.protobuf.BoolValue requests_partial = 3 [json_name = "requests_partial"];
+  google.protobuf.BoolValue supports_sending_partial = 4 [json_name = "supports_sending_partial"];
 }
 
 // SubMetaItem represents a single subscription. This is used to represent the lowest level of the
@@ -212,6 +214,8 @@ message SubMetaItem {
   google.protobuf.StringValue topic_id = 3 [json_name = "topic_id"];
   google.protobuf.BoolValue subscribe = 4 [json_name = "subscribe"];
   google.protobuf.UInt32Value control_index = 5 [json_name = "control_index"];
+  google.protobuf.BoolValue requests_partial = 6 [json_name = "requests_partial"];
+  google.protobuf.BoolValue supports_sending_partial = 7 [json_name = "supports_sending_partial"];
 }
 
 message ControlMeta {

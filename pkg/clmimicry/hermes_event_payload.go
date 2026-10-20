@@ -185,6 +185,97 @@ type TraceEventMessagePayload struct {
 	RejectReason string
 }
 
+// Partial data column RPC directions.
+const (
+	PartialDirectionRecv = "RECV"
+	PartialDirectionSend = "SEND"
+	PartialDirectionDrop = "DROP"
+)
+
+// Partial data column capture points.
+const (
+	PartialCapturePointWire = "WIRE"
+	PartialCapturePointApp  = "APP"
+)
+
+// TraceEventPartialDataColumn represents one gossipsub partial messages extension
+// RPC part on a data column topic. PeerID is the remote peer: the sender for RECV,
+// the recipient for SEND and DROP. Slot is zero when the block slot is unknown.
+// Bitmaps are hex encoded SSZ bitlists. MsgSize is the encoded partial message size.
+type TraceEventPartialDataColumn struct {
+	TraceEventPayloadMetaData
+	Direction              string
+	CapturePoint           string
+	GroupID                string
+	GroupVersion           uint32
+	BlockRoot              string
+	Slot                   uint64
+	ColumnIndex            uint64
+	HasMessage             bool
+	CellsCount             uint32
+	CellsBitmap            string
+	BitmapLength           uint32
+	HasHeader              bool
+	KZGCommitmentsCount    uint32
+	ProposerIndex          uint64
+	HasMetadata            bool
+	MetadataSize           uint32
+	MetadataAvailableCount uint32
+	MetadataRequestsCount  uint32
+	MetadataAvailable      string
+	MetadataRequests       string
+}
+
+// Data column completion paths.
+const (
+	DataColumnCompletedViaFullGossip     = "FULL_GOSSIP"
+	DataColumnCompletedViaPartialGossip  = "PARTIAL_GOSSIP"
+	DataColumnCompletedViaEL             = "EL"
+	DataColumnCompletedViaReconstruction = "RECONSTRUCTION"
+	DataColumnCompletedViaUnknown        = "UNKNOWN"
+)
+
+// TraceEventDataColumnCompleted represents a custody data column becoming fully
+// available to the node. PeerID is the peer whose message completed it, if any.
+type TraceEventDataColumnCompleted struct {
+	TraceEventPayloadMetaData
+	BlockRoot           string
+	Slot                uint64
+	ColumnIndex         uint64
+	CompletedVia        string
+	CellsTotal          uint32
+	CellsFromGossip     uint32
+	CellsFromEL         uint32
+	ContributingPeers   uint32
+	KZGCommitmentsCount uint32
+}
+
+// Partial data column validation stages and outcomes.
+const (
+	PartialOutcomeStageDecode = "DECODE"
+	PartialOutcomeStageHeader = "HEADER"
+	PartialOutcomeStageCells  = "CELLS"
+
+	PartialOutcomeAccept = "ACCEPT"
+	PartialOutcomeIgnore = "IGNORE"
+	PartialOutcomeReject = "REJECT"
+)
+
+// TraceEventPartialDataColumnOutcome represents the validation verdict for one
+// received partial data column message. PeerID is the sender.
+type TraceEventPartialDataColumnOutcome struct {
+	TraceEventPayloadMetaData
+	GroupID       string
+	BlockRoot     string
+	Slot          uint64
+	ColumnIndex   uint64
+	Stage         string
+	Outcome       string
+	Reason        string
+	CellsCount    uint32
+	NewCellsCount uint32
+}
+
 // TraceEventCustodyProbe represents a data column custody probe event.
 //
 //nolint:tagliatelle // JSON tags match Hermes format for compatibility

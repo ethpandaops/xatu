@@ -2062,6 +2062,63 @@ message ClientMeta {
     google.protobuf.StringValue message_id = 6 [ json_name = "message_id" ];
   }
 
+  // AdditionalLibP2PTraceGossipSubPartialDataColumnData contains additional data about a partial data column RPC part.
+  message AdditionalLibP2PTraceGossipSubPartialDataColumnData {
+    // Epoch contains the epoch of the block the partial belongs to, when known.
+    EpochV2 epoch = 1;
+
+    // Slot contains the slot of the block the partial belongs to, when known.
+    SlotV2 slot = 2;
+
+    EpochV2 wallclock_epoch = 3 [ json_name = "wallclock_epoch" ];
+
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+
+    PropagationV2 propagation = 5;
+
+    // Metadata carries the remote peer: the sender for RECV, the recipient for SEND and DROP.
+    xatu.libp2p.TraceEventMetadata metadata = 6;
+
+    google.protobuf.StringValue topic = 7;
+
+    // MessageSize is the size of the encoded partial message in bytes, zero for metadata-only parts.
+    google.protobuf.UInt32Value message_size = 8 [ json_name = "message_size" ];
+  }
+
+  // AdditionalLibP2PTraceDataColumnCompletedData contains additional data about a data column completion.
+  message AdditionalLibP2PTraceDataColumnCompletedData {
+    EpochV2 epoch = 1;
+
+    SlotV2 slot = 2;
+
+    EpochV2 wallclock_epoch = 3 [ json_name = "wallclock_epoch" ];
+
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+
+    PropagationV2 propagation = 5;
+
+    // Metadata carries the peer whose message completed the column, when one did.
+    xatu.libp2p.TraceEventMetadata metadata = 6;
+
+    google.protobuf.StringValue topic = 7;
+  }
+
+  // AdditionalLibP2PTraceGossipSubPartialDataColumnOutcomeData contains additional data about a partial data column validation verdict.
+  message AdditionalLibP2PTraceGossipSubPartialDataColumnOutcomeData {
+    EpochV2 epoch = 1;
+
+    SlotV2 slot = 2;
+
+    EpochV2 wallclock_epoch = 3 [ json_name = "wallclock_epoch" ];
+
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+
+    // Metadata carries the peer that sent the partial message.
+    xatu.libp2p.TraceEventMetadata metadata = 5;
+
+    google.protobuf.StringValue topic = 6;
+  }
+
   // AdditionalEthV1ValidatorsData contains additional data about the eth v1 validators.
   message AdditionalEthV1ValidatorsData {
     EpochV2 epoch = 1;
@@ -2517,6 +2574,10 @@ message ClientMeta {
     AdditionalEthV1BeaconStateExecutionPayloadAvailabilityData eth_v1_beacon_state_execution_payload_availability = 132 [ json_name = "BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY" ];
 
     AdditionalEthV2BeaconBlockGraffitiData eth_v2_beacon_block_graffiti = 133 [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI" ];
+
+    AdditionalLibP2PTraceGossipSubPartialDataColumnData libp2p_trace_gossipsub_partial_data_column = 134 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN" ];
+    AdditionalLibP2PTraceDataColumnCompletedData libp2p_trace_data_column_completed = 135 [ json_name = "LIBP2P_TRACE_DATA_COLUMN_COMPLETED" ];
+    AdditionalLibP2PTraceGossipSubPartialDataColumnOutcomeData libp2p_trace_gossipsub_partial_data_column_outcome = 136 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2811,6 +2872,10 @@ message Event {
     BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY = 144;
 
     BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI = 145;
+
+    LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN = 146;
+    LIBP2P_TRACE_DATA_COLUMN_COMPLETED = 147;
+    LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME = 148;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -3574,6 +3639,13 @@ message DecoratedEvent {
 
     BeaconBlockGraffitiData eth_v2_beacon_block_graffiti = 266
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI" ];
+
+    xatu.libp2p.gossipsub.eth.PartialDataColumn libp2p_trace_gossipsub_partial_data_column = 267
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN" ];
+    xatu.libp2p.gossipsub.eth.DataColumnCompleted libp2p_trace_data_column_completed = 268
+        [ json_name = "LIBP2P_TRACE_DATA_COLUMN_COMPLETED" ];
+    xatu.libp2p.gossipsub.eth.PartialDataColumnOutcome libp2p_trace_gossipsub_partial_data_column_outcome = 269
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME" ];
   };
 }
 

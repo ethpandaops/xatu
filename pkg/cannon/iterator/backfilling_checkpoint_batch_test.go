@@ -124,6 +124,7 @@ func TestDeriveEpochs(t *testing.T) {
 		events, err := DeriveEpochs(ctx, []phase0.Epoch{10, 9, 8}, failing)
 		require.ErrorIs(t, err, errBoom)
 		assert.Contains(t, err.Error(), "epoch 9")
+		assert.Equal(t, phase0.Epoch(9), FailedEpoch(err, 10))
 		assert.Nil(t, events)
 		assert.Equal(t, []phase0.Epoch{10}, derived, "epochs after the failure are not derived")
 	})
@@ -135,6 +136,7 @@ func TestDeriveEpochs(t *testing.T) {
 
 		_, err := DeriveEpochs(ctx, []phase0.Epoch{10}, failing)
 		assert.Equal(t, errBoom, err)
+		assert.Equal(t, phase0.Epoch(10), FailedEpoch(err, 10))
 	})
 
 	t.Run("cancelled context stops the batch", func(t *testing.T) {

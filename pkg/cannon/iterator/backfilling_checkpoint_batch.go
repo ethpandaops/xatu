@@ -2,15 +2,40 @@ package iterator
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
-	"github.com/pkg/errors"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // EpochDeriveFunc derives the events of one epoch.
 type EpochDeriveFunc func(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error)
+
+// EpochError is a failure to derive one epoch of a multi-epoch step.
+type EpochError struct {
+	Epoch phase0.Epoch
+	Err   error
+}
+
+func (e *EpochError) Error() string {
+	return fmt.Sprintf("failed to derive epoch %d: %v", e.Epoch, e.Err)
+}
+
+func (e *EpochError) Unwrap() error {
+	return e.Err
+}
+
+// FailedEpoch is the epoch a DeriveEpochs error came from, or fallback for a single-epoch step.
+func FailedEpoch(err error, fallback phase0.Epoch) phase0.Epoch {
+	var epochErr *EpochError
+	if errors.As(err, &epochErr) {
+		return epochErr.Epoch
+	}
+
+	return fallback
+}
 
 // DeriveEpochs derives every epoch in order and returns all their events, or none if any epoch fails.
 func DeriveEpochs(ctx context.Context, epochs []phase0.Epoch, derive EpochDeriveFunc) ([]*xatu.DecoratedEvent, error) {
@@ -31,7 +56,7 @@ func DeriveEpochs(ctx context.Context, epochs []phase0.Epoch, derive EpochDerive
 
 		events, err := derive(ctx, epoch)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to derive epoch %d", epoch)
+			return nil, &EpochError{Epoch: epoch, Err: err}
 		}
 
 		all = append(all, events...)

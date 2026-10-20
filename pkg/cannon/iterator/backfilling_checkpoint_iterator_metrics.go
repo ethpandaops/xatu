@@ -7,6 +7,7 @@ type BackfillingCheckpointMetrics struct {
 	FinalizedEpoch           *prometheus.GaugeVec
 	FinalizedCheckpointEpoch *prometheus.GaugeVec
 	Lag                      *prometheus.GaugeVec
+	BackfillBatchFallbacks   *prometheus.CounterVec
 }
 
 func NewBackfillingCheckpointMetrics(namespace string) BackfillingCheckpointMetrics {
@@ -16,6 +17,7 @@ func NewBackfillingCheckpointMetrics(namespace string) BackfillingCheckpointMetr
 	prometheus.MustRegister(s.FinalizedEpoch)
 	prometheus.MustRegister(s.FinalizedCheckpointEpoch)
 	prometheus.MustRegister(s.Lag)
+	prometheus.MustRegister(s.BackfillBatchFallbacks)
 
 	return s
 }
@@ -45,6 +47,11 @@ func newBackfillingCheckpointMetrics(namespace string) BackfillingCheckpointMetr
 			Name:      "lag_epochs",
 			Help:      "The lag of the iterator in epochs",
 		}, []string{"cannon_type", "network", "direction"}),
+		BackfillBatchFallbacks: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "backfill_batch_fallbacks_total",
+			Help:      "Backfill batches that did not commit and were retried one epoch at a time",
+		}, []string{"cannon_type", "network"}),
 	}
 
 	return s
@@ -64,4 +71,8 @@ func (s *BackfillingCheckpointMetrics) SetFinalizedCheckpointEpoch(network strin
 
 func (s *BackfillingCheckpointMetrics) SetLag(cannonType, network string, direction BackfillingCheckpointDirection, lag float64) {
 	s.Lag.WithLabelValues(cannonType, network, string(direction)).Set(lag)
+}
+
+func (s *BackfillingCheckpointMetrics) IncBackfillBatchFallbacks(cannonType, network string) {
+	s.BackfillBatchFallbacks.WithLabelValues(cannonType, network).Inc()
 }

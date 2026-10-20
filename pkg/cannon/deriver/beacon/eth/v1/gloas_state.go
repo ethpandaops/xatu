@@ -166,7 +166,7 @@ func (g *gloasStateDeriver) run(rctx context.Context) {
 
 				events, err := iterator.DeriveEpochs(ctx, position.Epochs(), g.processEpoch)
 				if err != nil {
-					g.log.WithError(err).WithField("epoch", position.Next).WithContext(ctx).Error("Failed to process epoch")
+					g.log.WithError(err).WithField("epoch", iterator.FailedEpoch(err, position.Next)).WithContext(ctx).Error("Failed to process epoch")
 
 					span.SetStatus(codes.Error, err.Error())
 

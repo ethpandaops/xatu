@@ -38,6 +38,8 @@ type BackfillingCheckpoint struct {
 	lastBackfill *backfillStep
 	// isolateFrom is the lowest epoch of an uncommitted batch; steps at or above it cover one epoch.
 	isolateFrom *phase0.Epoch
+	// unrecorded is a backfill step whose events were written but whose marker update failed.
+	unrecorded *backfillStep
 }
 
 // backfillStep is the epoch range of one backfill step, walking down from first to lowest.
@@ -74,6 +76,11 @@ func (s beaconCheckpointSource) ForkEpoch(fork spec.DataVersion) (phase0.Epoch, 
 
 	return forkEpoch.Epoch, nil
 }
+
+const (
+	logKeyNextEpoch   = "next_epoch"
+	logKeyLowestEpoch = "lowest_epoch"
+)
 
 type BackfillingCheckpointDirection string
 
@@ -156,7 +163,65 @@ func (c *BackfillingCheckpoint) Start(ctx context.Context, activationFork spec.D
 	return nil
 }
 
+// UpdateLocation records epoch as processed in direction; callers only call it once the epoch's events are written.
 func (c *BackfillingCheckpoint) UpdateLocation(ctx context.Context, epoch phase0.Epoch, direction BackfillingCheckpointDirection) error {
+	err := c.updateLocation(ctx, epoch, direction)
+
+	if direction == BackfillingCheckpointDirectionBackfill {
+		switch last := c.lastBackfill; {
+		case err == nil:
+			c.unrecorded = nil
+		case last != nil && epoch == last.lowest:
+			c.unrecorded = last
+		}
+	}
+
+	return err
+}
+
+// recordWrittenStep retries the marker update of a backfill step whose events are already written, instead of deriving it again.
+func (c *BackfillingCheckpoint) recordWrittenStep(ctx context.Context) error {
+	step := c.unrecorded
+	if step == nil {
+		return nil
+	}
+
+	location, err := c.coordinator.GetCannonLocation(ctx, c.cannonType, c.networkID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get cannon location")
+	}
+
+	if location == nil {
+		c.unrecorded = nil
+
+		return nil
+	}
+
+	marker, err := c.GetMarker(location)
+	if err != nil {
+		return errors.Wrap(err, "failed to get marker from location")
+	}
+
+	// Something else moved the marker since the step was handed out; carry on from where it points now.
+	if marker.GetBackfillEpoch() != int64(step.first)+1 { //nolint:gosec // epochs fit int64
+		c.unrecorded = nil
+
+		return nil
+	}
+
+	c.log.WithFields(logrus.Fields{
+		logKeyNextEpoch:   step.first,
+		logKeyLowestEpoch: step.lowest,
+	}).WithContext(ctx).Warn("Retrying the marker update of a written backfill step")
+
+	if err := c.UpdateLocation(ctx, step.lowest, BackfillingCheckpointDirectionBackfill); err != nil {
+		return errors.Wrap(err, "failed to record written backfill step")
+	}
+
+	return nil
+}
+
+func (c *BackfillingCheckpoint) updateLocation(ctx context.Context, epoch phase0.Epoch, direction BackfillingCheckpointDirection) error {
 	location, err := c.coordinator.GetCannonLocation(ctx, c.cannonType, c.networkID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get cannon location")
@@ -223,9 +288,9 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 			span.RecordError(err)
 		} else if rsp != nil {
 			c.log.WithFields(logrus.Fields{
-				"next_epoch":  rsp.Next,
-				"direction":   rsp.Direction,
-				"look_aheads": rsp.LookAheads,
+				logKeyNextEpoch: rsp.Next,
+				"direction":     rsp.Direction,
+				"look_aheads":   rsp.LookAheads,
 			}).WithContext(ctx).Debug("Returning next epoch")
 
 			span.SetAttributes(attribute.Int64("next_epoch", int64(rsp.Next)))
@@ -243,6 +308,10 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 
 		span.End()
 	}()
+
+	if err := c.recordWrittenStep(ctx); err != nil {
+		return nil, err
+	}
 
 	for {
 		// Grab the current checkpoint from the beacon node
@@ -358,9 +427,9 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 			c.lastBackfill = &backfillStep{first: epochs[0], lowest: epochs[len(epochs)-1]}
 
 			c.log.WithFields(logrus.Fields{
-				"next_epoch":   next,
-				"last_epoch":   epochs[len(epochs)-1],
-				"target_epoch": backfillTargetEpoch,
+				logKeyNextEpoch: next,
+				"last_epoch":    epochs[len(epochs)-1],
+				"target_epoch":  backfillTargetEpoch,
 			}).WithContext(ctx).Info("Derived next backfill epoch to process")
 
 			return &BackFillingCheckpointNextResponse{
@@ -439,9 +508,11 @@ func (c *BackfillingCheckpoint) backfillStepSize(ctx context.Context, next phase
 		lowest := last.lowest
 		c.isolateFrom = &lowest
 
+		c.metrics.IncBackfillBatchFallbacks(c.cannonType.String(), c.networkName)
+
 		c.log.WithFields(logrus.Fields{
-			"next_epoch":   next,
-			"lowest_epoch": lowest,
+			logKeyNextEpoch:   next,
+			logKeyLowestEpoch: lowest,
 		}).WithContext(ctx).Warn("Backfill batch did not commit, retrying its epochs one at a time")
 	}
 

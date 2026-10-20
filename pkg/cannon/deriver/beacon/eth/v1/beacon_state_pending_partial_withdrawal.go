@@ -142,7 +142,7 @@ func (b *BeaconStatePendingPartialWithdrawalDeriver) run(rctx context.Context) {
 
 				events, err := iterator.DeriveEpochs(ctx, position.Epochs(), b.processEpoch)
 				if err != nil {
-					b.log.WithError(err).WithField("epoch", position.Next).WithContext(ctx).Error("Failed to process epoch")
+					b.log.WithError(err).WithField("epoch", iterator.FailedEpoch(err, position.Next)).WithContext(ctx).Error("Failed to process epoch")
 
 					span.SetStatus(codes.Error, err.Error())
 

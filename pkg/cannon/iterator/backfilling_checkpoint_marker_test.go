@@ -13,6 +13,7 @@ import (
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -236,6 +237,15 @@ func (h *harness) boot() {
 	h.it = newTestIterator(h.t, h.store, h.chain, &h.metrics, h.cannonType, h.fork, h.cfg)
 }
 
+func (h *harness) fallbacks() float64 {
+	h.t.Helper()
+
+	var m dto.Metric
+	require.NoError(h.t, h.metrics.BackfillBatchFallbacks.WithLabelValues(h.cannonType.String(), "test").Write(&m))
+
+	return m.GetCounter().GetValue()
+}
+
 func (h *harness) marker() *xatu.BackfillingCheckpointMarker {
 	h.t.Helper()
 
@@ -258,12 +268,17 @@ func (h *harness) target() phase0.Epoch {
 	return target
 }
 
-// done reports whether both directions are caught up, where Next would sleep.
+// done reports whether both directions are caught up once Next records a written step, where Next would sleep.
 func (h *harness) done() bool {
 	m := h.marker()
 
+	backfill := m.GetBackfillEpoch()
+	if u := h.it.unrecorded; u != nil && backfill == int64(u.first)+1 {
+		backfill = int64(u.lowest)
+	}
+
 	return phase0.Epoch(m.GetFinalizedEpoch()) >= h.chain.finalizedEpoch() &&
-		phase0.Epoch(m.GetBackfillEpoch()) <= h.target()
+		phase0.Epoch(backfill) <= h.target()
 }
 
 func (h *harness) derive(_ context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
@@ -303,6 +318,13 @@ func (h *harness) step(ctx context.Context, fail failurePoint, rng *rand.Rand) e
 		h.steps = append(h.steps, stepRecord{position: position, err: err})
 
 		if errors.Is(err, errCrash) {
+			// A crash loses the note of a written but unrecorded step, so it is derived and written again.
+			if u := h.it.unrecorded; u != nil {
+				for e := u.lowest; e <= u.first; e++ {
+					h.rewritable[e] = true
+				}
+			}
+
 			h.boot()
 		}
 
@@ -344,7 +366,6 @@ func (h *harness) step(ctx context.Context, fail failurePoint, rng *rand.Rand) e
 
 		return record(errCrash)
 	case failMarker:
-		h.markRewritable(events)
 		h.store.failNextUpsert()
 	case failNone, crashAfterNext, failDerive, failWrite:
 	}
@@ -401,6 +422,8 @@ func (h *harness) run(ctx context.Context, failures func(step int) failurePoint,
 
 		h.assertNoGap(start)
 	}
+
+	require.NoError(h.t, h.it.recordWrittenStep(ctx))
 }
 
 func noFailures(int) failurePoint { return failNone }
@@ -565,6 +588,42 @@ func TestBackfillBatches_TransientDeriveErrorResumesBatching(t *testing.T) {
 	for e, n := range h.written[BackfillingCheckpointDirectionBackfill] {
 		assert.Equal(t, 1, n, "epoch %d: a failed derive writes nothing", e)
 	}
+
+	assert.InDelta(t, 1, h.fallbacks(), 0)
+}
+
+func TestBackfillBatches_MarkerFailureIsRecordedWithoutRewriting(t *testing.T) {
+	const start, size = phase0.Epoch(500), uint64(50)
+
+	chain := &staticChain{finalized: start}
+	h := newHarness(t, xatu.CannonType_BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI, spec.DataVersionPhase0, chain, backfillConfig(0, size))
+	h.seed(start, int64(start))
+	h.boot()
+
+	ctx := context.Background()
+
+	require.NoError(t, h.step(ctx, failNone, nil))
+	require.ErrorIs(t, h.step(ctx, failMarker, nil), errInjected)
+	assert.Equal(t, int64(450), h.marker().GetBackfillEpoch(), "a failed marker update leaves the marker")
+
+	// The coordinator is still down when the next step is asked for.
+	h.store.failNextUpsert()
+
+	_, err := h.it.Next(ctx)
+	require.ErrorIs(t, err, errInjected)
+	assert.Equal(t, int64(450), h.marker().GetBackfillEpoch())
+
+	require.NoError(t, h.step(ctx, failNone, nil))
+	assert.Equal(t, int64(350), h.marker().GetBackfillEpoch(), "the written step is recorded, then the next batch runs")
+
+	last := h.steps[len(h.steps)-1].position
+	assert.Equal(t, epochRange(399, 350), last.Epochs(), "no single-epoch fallback after a marker failure")
+
+	for e, n := range h.written[BackfillingCheckpointDirectionBackfill] {
+		assert.Equal(t, 1, n, "epoch %d written again", e)
+	}
+
+	assert.Zero(t, h.fallbacks())
 }
 
 func TestBackfillBatches_WriteFailureRewritesOnlyThatBatch(t *testing.T) {

@@ -45,7 +45,8 @@ func TestConsensusIteratorsCoverEveryDeriver(t *testing.T) {
 		require.True(t, ok, "consensus.%s is missing from iterators()", name)
 
 		want := consensus.Field(i).FieldByName("Iterator").Addr().Interface()
-		assert.Same(t, want, got, "consensus.%s points at another deriver's iterator", name)
+		assert.Same(t, want, got.iterator, "consensus.%s points at another deriver's iterator", name)
+		assert.Equal(t, consensus.Field(i).FieldByName("Enabled").Bool(), got.enabled, "consensus.%s enabled flag", name)
 
 		seen++
 	}
@@ -59,8 +60,10 @@ func TestValidateEpochsPerBatch(t *testing.T) {
 		require.NoError(t, cfg.Validate())
 
 		for name, it := range cfg.Consensus.iterators() {
-			assert.Equal(t, uint64(1), it.Backfill.EpochsPerBatch, name)
+			assert.Equal(t, uint64(1), it.iterator.Backfill.EpochsPerBatch, name)
 		}
+
+		assert.Zero(t, cfg.BatchLookAheadSlots())
 	})
 
 	t.Run("block derivers accept batches", func(t *testing.T) {
@@ -86,6 +89,17 @@ func TestValidateEpochsPerBatch(t *testing.T) {
 		{name: "beaconSyncCommittee", set: func(c *Config) { c.Consensus.BeaconSyncCommitteeConfig.Iterator.Backfill.EpochsPerBatch = 2 }},
 		{name: "beaconValidators", set: func(c *Config) { c.Consensus.BeaconValidatorsConfig.Iterator.Backfill.EpochsPerBatch = 2 }},
 		{name: "blockAccessList", set: func(c *Config) { c.Consensus.BlockAccessListConfig.Iterator.Backfill.EpochsPerBatch = 2 }},
+		{name: "beaconStatePtcMember", set: func(c *Config) { c.Consensus.BeaconStatePtcMemberConfig.Iterator.Backfill.EpochsPerBatch = 2 }},
+		{name: "beaconStateBuilder", set: func(c *Config) { c.Consensus.BeaconStateBuilderConfig.Iterator.Backfill.EpochsPerBatch = 2 }},
+		{name: "beaconStateBuilderPendingPayment", set: func(c *Config) {
+			c.Consensus.BeaconStateBuilderPendingPaymentConfig.Iterator.Backfill.EpochsPerBatch = 2
+		}},
+		{name: "beaconStateBuilderPendingWithdrawal", set: func(c *Config) {
+			c.Consensus.BeaconStateBuilderPendingWithdrawalConfig.Iterator.Backfill.EpochsPerBatch = 2
+		}},
+		{name: "beaconStateExecutionPayloadAvailability", set: func(c *Config) {
+			c.Consensus.BeaconStateExecutionPayloadAvailabilityConfig.Iterator.Backfill.EpochsPerBatch = 2
+		}},
 	} {
 		t.Run(tt.name+" rejects batches", func(t *testing.T) {
 			cfg := defaultConfig(t)
@@ -96,4 +110,26 @@ func TestValidateEpochsPerBatch(t *testing.T) {
 			assert.Contains(t, err.Error(), "consensus."+tt.name)
 		})
 	}
+}
+
+func TestBatchLookAheadSlots(t *testing.T) {
+	cfg := defaultConfig(t)
+
+	graffiti := &cfg.Consensus.BeaconBlockGraffitiConfig
+	graffiti.Iterator.Backfill.Enabled = true
+	graffiti.Iterator.Backfill.EpochsPerBatch = 32
+
+	block := &cfg.Consensus.BeaconBlockConfig
+	block.Iterator.Backfill.Enabled = true
+	block.Iterator.Backfill.EpochsPerBatch = 8
+
+	assert.Equal(t, uint64(2*32*32+2*8*32), cfg.BatchLookAheadSlots())
+
+	block.Enabled = false
+
+	assert.Equal(t, uint64(2*32*32), cfg.BatchLookAheadSlots(), "disabled derivers preload nothing")
+
+	graffiti.Iterator.Backfill.Enabled = false
+
+	assert.Zero(t, cfg.BatchLookAheadSlots(), "batch size only applies while backfilling")
 }

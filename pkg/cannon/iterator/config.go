@@ -7,7 +7,7 @@ import (
 )
 
 // MaxEpochsPerBatch bounds iterator.backfill.epochsPerBatch: a batch is held in memory until it is written.
-const MaxEpochsPerBatch = 256
+const MaxEpochsPerBatch = 64
 
 type BackfillingCheckpointConfig struct {
 	Backfill struct {
@@ -18,7 +18,6 @@ type BackfillingCheckpointConfig struct {
 	} `yaml:"backfill"`
 }
 
-// Validate checks the iterator config.
 func (c *BackfillingCheckpointConfig) Validate() error {
 	if c.Backfill.EpochsPerBatch > MaxEpochsPerBatch {
 		return fmt.Errorf("iterator.backfill.epochsPerBatch must be at most %d, got %d", MaxEpochsPerBatch, c.Backfill.EpochsPerBatch)

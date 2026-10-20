@@ -1,4 +1,4 @@
--- Swap the pre-021 table back in, carry over every row written since, and drop the rebuilt table.
+-- Swap the old-key table back in, carry over every row written since, and drop the rebuilt table.
 
 CREATE TABLE IF NOT EXISTS canonical_execution_four_byte_counts_migrate_bak ON CLUSTER '{cluster}'
 AS canonical_execution_four_byte_counts_migrate_bak_local

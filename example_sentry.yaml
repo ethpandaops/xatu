@@ -23,6 +23,8 @@ execution:
   enabled: false
   # Websocket enabled (should we subscribe to newPendingTransactions).
   websocketEnabled: false
+  # Poll txpool_content for pending transactions. Set to false on Besu.
+  txPoolContentEnabled: true
   # WebSocket address for streaming transactions
   wsAddress: ws://localhost:8545
   # RPC address for txpool_content calls
@@ -84,6 +86,10 @@ attestationData:
 beaconCommittees:
   enabled: true
 
+# Publish each epoch's proposer duties (one duties request and 32 events per epoch).
+proposerDuty:
+  enabled: true
+
 validatorBlock:
   enabled: false
 
@@ -96,9 +102,8 @@ validatorBlock:
     slotTimes:
       - 4s
 
-# Blob sidecar configuration
-# When enabled, proactively fetches blob sidecars when blocks are received.
-blobSidecar:
+# Blob metadata (versioned hashes) derived from each block's blob_kzg_commitments.
+beaconBlob:
   enabled: false
 
 outputs:

@@ -4,9 +4,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/creasty/defaults"
 	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v3"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -216,27 +214,14 @@ func loadSentryConfigFromFile(file string, allowMissingFile bool) (*sentry.Confi
 		file = "sentry.yaml"
 	}
 
-	config := &sentry.Config{}
-
-	if err := defaults.Set(config); err != nil {
-		return nil, err
-	}
-
 	yamlFile, err := os.ReadFile(file)
-
 	if err != nil {
 		if os.IsNotExist(err) && allowMissingFile {
-			return config, nil
+			return sentry.DefaultConfig()
 		}
 
 		return nil, err
 	}
 
-	type plain sentry.Config
-
-	if err := yaml.Unmarshal(yamlFile, (*plain)(config)); err != nil {
-		return nil, err
-	}
-
-	return config, nil
+	return sentry.ParseConfig(yamlFile)
 }

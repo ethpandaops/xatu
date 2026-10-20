@@ -49,6 +49,25 @@ Sentry requires a single `yaml` config file. An example file can be found [here]
 | ethereum.beaconNodeAddress | string |  | [Ethereum consensus client](https://ethereum.org/en/developers/docs/nodes-and-clients/#consensus-clients) http server endpoint                |
 | ethereum.beaconSubscriptions | array<string> |  | List of [topcis](https://ethereum.github.io/beacon-APIs/#/Events/eventstream) to subscribe to. If empty, all subscriptions are subscribed to. 
 | ntpServer | string | `pool.ntp.org` | NTP server to calculate clock drift for events                                                                                                |
+| proposerDuty.enabled | bool | `true` | Publish each epoch's proposer duties (one duties request and 32 events per epoch) |
+| beaconCommittees.enabled | bool | `false` | Fetch and publish each epoch's beacon committees |
+| attestationData.enabled | bool | `false` | Fetch attestation data from the beacon node on a schedule |
+| attestationData.interval.every | string | `12s` | How often to fetch attestation data when `attestationData.interval.enabled` is set |
+| forkChoice.enabled | bool | `false` | Fetch the beacon node's fork choice on a schedule |
+| forkChoice.interval.every | string | `12s` | How often to fetch the fork choice when `forkChoice.interval.enabled` is set |
+| execution.enabled | bool | `false` | Watch the execution client's mempool |
+| execution.rpcAddress | string |  | Execution client JSON-RPC address, required when `execution.enabled` is set |
+| execution.txPoolContentEnabled | bool | `true` | Poll `txpool_content` for pending transactions. Set to `false` on Besu |
+| execution.fetchInterval | int | `45` | Seconds between `txpool_content` polls |
+| execution.processingInterval | int | `3000` | Milliseconds between transaction processing batches |
+| execution.rpcBatchSize | int | `15` | Transactions per batched RPC call |
+| execution.maxConcurrency | int | `3` | Maximum concurrent batched RPC calls |
+| execution.queueSize | int | `10000` | Size of the transaction processing queue |
+| execution.processorWorkerCount | int | `40` | Transaction processing workers |
+| execution.pruneDuration | int | `384` | Seconds to keep pending transactions before pruning |
+| execution.stateSize.enabled | bool | `false` | Poll the execution client's state size (`debug_stateSize`) |
+| execution.stateSize.triggerMode | string | `head` | When to poll the state size: `head`, `block` or `interval` |
+| execution.stateSize.intervalSeconds | int | `12` | Seconds between state size polls in `interval` mode |
 | outputs | array<object> |  | List of outputs for the sentry to send data to                                                                                                |
 | outputs[].name | string |  | Name of the output                                                                                                                            |
 | outputs[].type | string |  | Type of output (`xatu`, `http`, `kafka`, stdout`)                                                                                             |

@@ -4,8 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/creasty/defaults"
-
+	"github.com/ethpandaops/xatu/pkg/internal/configdecode"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/server/geoip/maxmind"
 )
@@ -38,11 +37,7 @@ func NewProvider(providerType Type, config *RawMessage, log observability.Contex
 	case TypeMaxmind:
 		conf := &maxmind.Config{}
 
-		if err := config.Unmarshal(conf); err != nil {
-			return nil, err
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := configdecode.Decode(config, conf); err != nil {
 			return nil, err
 		}
 

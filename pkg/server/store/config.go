@@ -4,8 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/creasty/defaults"
-
+	"github.com/ethpandaops/xatu/pkg/internal/configdecode"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/server/store/memory"
 	redisCluster "github.com/ethpandaops/xatu/pkg/server/store/redis/cluster"
@@ -39,11 +38,7 @@ func NewCache(cacheType Type, config *RawMessage, log observability.ContextualLo
 	case TypeRedisServer:
 		conf := &redisServer.Config{}
 
-		if err := config.Unmarshal(conf); err != nil {
-			return nil, err
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := configdecode.Decode(config, conf); err != nil {
 			return nil, err
 		}
 
@@ -51,11 +46,7 @@ func NewCache(cacheType Type, config *RawMessage, log observability.ContextualLo
 	case TypeRedisCluster:
 		conf := &redisCluster.Config{}
 
-		if err := config.Unmarshal(conf); err != nil {
-			return nil, err
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := configdecode.Decode(config, conf); err != nil {
 			return nil, err
 		}
 

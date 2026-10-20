@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/creasty/defaults"
-
+	"github.com/ethpandaops/xatu/pkg/internal/configdecode"
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/static"
 	"github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu"
 	xatuCoordinator "github.com/ethpandaops/xatu/pkg/mimicry/coordinator/xatu/coordinator"
@@ -39,11 +38,7 @@ func NewCoordinator(ctx context.Context, name string, coordinatorType Type, conf
 	case TypeStatic:
 		conf := &static.Config{}
 
-		if err := config.Unmarshal(conf); err != nil {
-			return nil, err
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := configdecode.Decode(config, conf); err != nil {
 			return nil, err
 		}
 
@@ -51,11 +46,7 @@ func NewCoordinator(ctx context.Context, name string, coordinatorType Type, conf
 	case TypeXatu:
 		conf := &xatuCoordinator.Config{}
 
-		if err := config.Unmarshal(conf); err != nil {
-			return nil, err
-		}
-
-		if err := defaults.Set(conf); err != nil {
+		if err := configdecode.Decode(config, conf); err != nil {
 			return nil, err
 		}
 

@@ -335,6 +335,7 @@ func TestMinBackfillBlock(t *testing.T) {
 		{"balance_reads floors at 1 (genesis untraceable)", xatu.CannonType_EXECUTION_CANONICAL_BALANCE_READS, 1},
 		{"storage_reads floors at 1 (genesis untraceable)", xatu.CannonType_EXECUTION_CANONICAL_STORAGE_READS, 1},
 		{"nonce_reads floors at 1 (genesis untraceable)", xatu.CannonType_EXECUTION_CANONICAL_NONCE_READS, 1},
+		{"four_byte_counts floors at 1 (genesis untraceable)", xatu.CannonType_EXECUTION_CANONICAL_FOUR_BYTE_COUNTS, 1},
 		{"block floors at 0", xatu.CannonType_EXECUTION_CANONICAL_BLOCK, 0},
 		{"balance_diffs floors at 0 (genesis premine is valid)", xatu.CannonType_EXECUTION_CANONICAL_BALANCE_DIFFS, 0},
 		{"transaction floors at 0", xatu.CannonType_EXECUTION_CANONICAL_TRANSACTION, 0},

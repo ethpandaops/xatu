@@ -14,13 +14,16 @@ import (
 
 	"github.com/beevik/ntp"
 	"github.com/go-co-op/gocron/v2"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/server/geoip"
@@ -296,15 +299,29 @@ func (x *Xatu) startGrpcServer(ctx context.Context) error {
 		),
 	)
 
+	// recoveryHandler logs the full panic + stack server-side (so it's diagnosable)
+	// but returns a generic Internal status to the caller rather than leaking the
+	// panic value/stack trace over the wire. This is the last line of defense
+	// against a handler bug crashing the entire process (a bare Go panic in any
+	// goroutine, including a gRPC stream handler's, is otherwise fatal to the
+	// whole server, not just the one request).
+	recoveryHandler := func(ctx context.Context, p any) error {
+		x.log.WithField("panic", p).WithContext(ctx).Error("Recovered from panic in gRPC handler")
+
+		return status.Error(codes.Internal, "internal error")
+	}
+
 	// MaxConnectionAge/MaxConnectionAgeGrace should exceed NGINX's grpc_read_timeout and grpc_send_timeout to
 	// prevent NGINX from terminating connections before the server's age limit is reached.
 	opts := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(mb100),
 		observability.GRPCServerOption(),
 		grpc.ChainStreamInterceptor(
+			recovery.StreamServerInterceptor(recovery.WithRecoveryHandlerContext(recoveryHandler)),
 			grpc.StreamServerInterceptor(grpc_prometheus.StreamServerInterceptor),
 		),
 		grpc.ChainUnaryInterceptor(
+			recovery.UnaryServerInterceptor(recovery.WithRecoveryHandlerContext(recoveryHandler)),
 			grpc.UnaryServerInterceptor(grpc_prometheus.UnaryServerInterceptor),
 			func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 				start := time.Now()

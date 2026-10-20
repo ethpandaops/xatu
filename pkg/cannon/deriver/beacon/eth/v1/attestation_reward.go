@@ -257,11 +257,11 @@ func (b *AttestationRewardDeriver) createEventFromAttestationReward(reward apiv1
 		Data: &xatu.DecoratedEvent_EthV1BeaconAttestationReward{
 			EthV1BeaconAttestationReward: &xatu.AttestationRewardData{
 				ValidatorIndex: wrapperspb.UInt64(uint64(reward.ValidatorIndex)),
-				Head:           wrapperspb.Int64(int64(reward.Head)), //nolint:gosec // reward value is bounded well within int64 range
+				Head:           wrapperspb.Int64(reward.Head),
 				Target:         wrapperspb.Int64(reward.Target),
 				Source:         wrapperspb.Int64(reward.Source),
 				InclusionDelay: inclusionDelay,
-				Inactivity:     wrapperspb.Int64(int64(reward.Inactivity)), //nolint:gosec // reward value is bounded well within int64 range
+				Inactivity:     wrapperspb.Int64(reward.Inactivity),
 			},
 		},
 	}

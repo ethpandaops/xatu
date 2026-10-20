@@ -178,49 +178,70 @@ func (c *Cannon) Start(ctx context.Context) error {
 		c.log.WithField("network", c.Config.Ethereum.OverrideNetworkName).WithContext(ctx).Info("Overriding network name")
 	}
 
-	if err := c.beacon.Start(ctx); err != nil {
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
+
+	// The beacon node runs until it fails, so watch the signal alongside it; cancelling it stops the derivers.
+	beaconCtx, stopBeacon := context.WithCancel(ctx)
+	defer stopBeacon()
+
+	beaconErr := make(chan error, 1)
+
+	go func() {
+		beaconErr <- c.beacon.Start(beaconCtx)
+	}()
+
+	select {
+	case err := <-beaconErr:
 		return err
+	case sig := <-signals:
+		c.log.WithContext(ctx).Printf("Caught signal: %v", sig)
 	}
 
-	cancel := make(chan os.Signal, 1)
-	signal.Notify(cancel, syscall.SIGTERM, syscall.SIGINT)
+	stopBeacon()
 
-	sig := <-cancel
-	c.log.WithContext(ctx).Printf("Caught signal: %v", sig)
-
-	if err := c.Shutdown(ctx); err != nil {
-		return err
-	}
-
-	return nil
+	return c.Shutdown(ctx)
 }
 
+// shutdownTimeout bounds Shutdown below the chart's 90s terminationGracePeriodSeconds.
+const shutdownTimeout = 75 * time.Second
+
+// Shutdown stops the producers first and then flushes the sinks, logging failures so one cannot skip the rest.
 func (c *Cannon) Shutdown(ctx context.Context) error {
 	c.log.WithContext(ctx).Printf("Shutting down")
 
-	for _, sink := range c.sinks {
-		if err := sink.Stop(ctx); err != nil {
-			return err
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), shutdownTimeout)
+	defer cancel()
+
+	var errs []error
+
+	if err := c.scheduler.Shutdown(); err != nil {
+		errs = append(errs, fmt.Errorf("scheduler: %w", err))
+	}
+
+	for _, deriver := range c.eventDerivers {
+		if err := deriver.Stop(ctx); err != nil {
+			errs = append(errs, fmt.Errorf("deriver %s: %w", deriver.Name(), err))
 		}
 	}
 
 	for _, fun := range c.shutdownFuncs {
 		if err := fun(ctx); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
 
-	if err := c.scheduler.Shutdown(); err != nil {
-		return err
-	}
-
-	for _, deriver := range c.eventDerivers {
-		if err := deriver.Stop(ctx); err != nil {
-			return err
+	for _, sink := range c.sinks {
+		if err := sink.Stop(ctx); err != nil {
+			errs = append(errs, fmt.Errorf("sink %s: %w", sink.Name(), err))
 		}
 	}
 
-	return nil
+	for _, err := range errs {
+		c.log.WithError(err).WithContext(ctx).Error("Shutdown step failed")
+	}
+
+	return errors.Join(errs...)
 }
 
 func (c *Cannon) ServeMetrics(ctx context.Context) error {

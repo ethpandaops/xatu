@@ -46,6 +46,14 @@ func TestConfigValidate(t *testing.T) {
 			wantErr: "intervalSeconds must be positive",
 		},
 		{
+			name: "interval only matters in interval mode",
+			modify: func(c *Config) {
+				c.StateSize.Enabled = true
+				c.StateSize.TriggerMode = StateSizeTriggerHead
+				c.StateSize.IntervalSeconds = 0
+			},
+		},
+		{
 			name: "block trigger without a websocket",
 			modify: func(c *Config) {
 				c.StateSize.Enabled = true

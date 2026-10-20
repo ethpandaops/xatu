@@ -129,7 +129,7 @@ func (c *StateSizeConfig) Validate() error {
 		return fmt.Errorf("triggerMode must be %q, %q or %q, got %q", StateSizeTriggerHead, StateSizeTriggerBlock, StateSizeTriggerInterval, c.TriggerMode)
 	}
 
-	if c.IntervalSeconds <= 0 {
+	if c.TriggerMode == StateSizeTriggerInterval && c.IntervalSeconds <= 0 {
 		return fmt.Errorf("intervalSeconds must be positive, got %d", c.IntervalSeconds)
 	}
 

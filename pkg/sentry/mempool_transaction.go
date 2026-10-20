@@ -17,14 +17,9 @@ import (
 )
 
 // startMempoolTransactionWatcher starts the mempool transaction watcher on the shared execution client.
-func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context, metrics *execution.Metrics) error {
-	client, err := s.executionClient(ctx)
-	if err != nil {
-		return err
-	}
-
+func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context, client *execution.Client, metrics *execution.Metrics) (*runningWatcher, error) {
 	processTxCallback := func(ctx context.Context, record *execution.PendingTxRecord, txData json.RawMessage) error {
-		return s.processMempoolTransaction(ctx, record, txData)
+		return s.processMempoolTransaction(ctx, client.GetSigner(), record, txData)
 	}
 
 	watcher := execution.NewMempoolWatcher(
@@ -36,20 +31,21 @@ func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context, metrics *ex
 	)
 
 	if err := watcher.Start(ctx); err != nil {
-		return fmt.Errorf("failed to start mempool watcher: %w", err)
+		return nil, fmt.Errorf("failed to start mempool watcher: %w", err)
 	}
 
-	s.addExecutionStop(func(_ context.Context) error {
-		watcher.Stop()
+	return &runningWatcher{
+		healthy: watcher.Healthy,
+		stop: func() error {
+			watcher.Stop()
 
-		return nil
-	})
-
-	return nil
+			return nil
+		},
+	}, nil
 }
 
 // processMempoolTransaction is called when a full transaction is found in txpool_content.
-func (s *Sentry) processMempoolTransaction(ctx context.Context, record *execution.PendingTxRecord, txData json.RawMessage) error {
+func (s *Sentry) processMempoolTransaction(ctx context.Context, signer types.Signer, record *execution.PendingTxRecord, txData json.RawMessage) error {
 	// Get the hash from the record.
 	txHash := common.HexToHash(record.Hash)
 
@@ -76,7 +72,7 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 	}
 
 	// Parse the transaction.
-	tx, err := parseRawTransactionFromTxPool(txData, s.execution.GetSigner(), txHash)
+	tx, err := parseRawTransactionFromTxPool(txData, signer, txHash)
 	if err != nil {
 		s.log.WithError(err).WithField("tx_hash", record.Hash).WithContext(ctx).Error("Failed to parse transaction data")
 
@@ -101,7 +97,7 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, record *executio
 		record.FirstSeen.Add(s.clockDrift),
 		s.duplicateCache.MempoolTransaction,
 		meta,
-		s.execution.GetSigner(),
+		signer,
 	)
 
 	// Decorate the event.

@@ -13,14 +13,9 @@ import (
 )
 
 // startExecutionStateSizeWatcher starts the execution state size watcher on the shared execution client.
-func (s *Sentry) startExecutionStateSizeWatcher(ctx context.Context) error {
-	client, err := s.executionClient(ctx)
-	if err != nil {
-		return err
-	}
-
+func (s *Sentry) startExecutionStateSizeWatcher(ctx context.Context, client *execution.Client) (*runningWatcher, error) {
 	callback := func(ctx context.Context, data *execution.DebugStateSizeResponse) error {
-		return s.processStateSizeData(ctx, data)
+		return s.processStateSizeData(ctx, client, data)
 	}
 
 	watcher := execution.NewStateSizeWatcher(
@@ -31,25 +26,24 @@ func (s *Sentry) startExecutionStateSizeWatcher(ctx context.Context) error {
 	)
 
 	if err := watcher.Start(ctx); err != nil {
-		return errors.Join(fmt.Errorf("failed to start state size watcher: %w", err), watcher.Stop())
+		return nil, errors.Join(fmt.Errorf("failed to start state size watcher: %w", err), watcher.Stop())
 	}
-
-	s.stateSizeWatcher.Store(watcher)
-	s.addExecutionStop(func(_ context.Context) error {
-		return watcher.Stop()
-	})
 
 	s.log.WithField("trigger_mode", s.Config.Execution.StateSize.TriggerMode).WithContext(ctx).Info("Execution debug state size watcher started")
 
-	return nil
+	return &runningWatcher{
+		healthy:    watcher.Healthy,
+		stop:       watcher.Stop,
+		registered: func() { s.stateSizeWatcher.Store(watcher) },
+	}, nil
 }
 
 // processStateSizeData processes state size data from the execution client.
-func (s *Sentry) processStateSizeData(ctx context.Context, data *execution.DebugStateSizeResponse) error {
+func (s *Sentry) processStateSizeData(ctx context.Context, client *execution.Client, data *execution.DebugStateSizeResponse) error {
 	now := time.Now().Add(s.clockDrift)
 
 	// Get execution client metadata.
-	execMetadata := s.execution.GetClientMetadata()
+	execMetadata := client.GetClientMetadata()
 	if !execMetadata.Initialized {
 		s.log.WithContext(ctx).Debug("Skipping state size event - execution client metadata not yet initialized")
 

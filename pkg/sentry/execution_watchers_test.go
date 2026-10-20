@@ -3,6 +3,7 @@ package sentry
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -42,18 +43,18 @@ func TestRetryExecutionWatcherBacksOffUntilStarted(t *testing.T) {
 
 		var attempts []time.Time
 
-		start := func(context.Context) error {
+		start := func(context.Context) (*runningWatcher, error) {
 			attempts = append(attempts, time.Now())
 			if len(attempts) < 4 {
-				return errors.New("execution node unreachable")
+				return nil, errors.New("execution node unreachable")
 			}
 
-			return nil
+			return &runningWatcher{}, nil
 		}
 
 		began := time.Now()
 
-		s.retryExecutionWatcher(t.Context(), executionWatcherMempool, start)
+		require.NotNil(t, s.retryExecutionWatcher(t.Context(), executionWatcherMempool, start))
 
 		require.Len(t, attempts, 4)
 		assert.Equal(t, time.Duration(0), attempts[0].Sub(began))
@@ -73,20 +74,76 @@ func TestRetryExecutionWatcherCapsBackoff(t *testing.T) {
 
 		var attempts []time.Time
 
-		start := func(context.Context) error {
+		start := func(context.Context) (*runningWatcher, error) {
 			attempts = append(attempts, time.Now())
 			if len(attempts) == 10 {
 				cancel()
 			}
 
-			return errors.New("execution node unreachable")
+			return nil, errors.New("execution node unreachable")
 		}
 
-		s.retryExecutionWatcher(ctx, executionWatcherStateSize, start)
+		assert.Nil(t, s.retryExecutionWatcher(ctx, executionWatcherStateSize, start))
 
 		require.Len(t, attempts, 10)
 		assert.Equal(t, executionWatcherMaxBackoff, attempts[9].Sub(attempts[8]))
 		assert.InDelta(t, 0, watcherUp(t, s, executionWatcherStateSize), 0)
+	})
+}
+
+func TestWatchExecutionHealthRebuildsAfterSustainedFailure(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		s := newWatcherTestSentry(&execution.Config{})
+
+		var healthy atomic.Bool
+		healthy.Store(true)
+
+		running := map[string]*runningWatcher{executionWatcherMempool: {healthy: healthy.Load}}
+
+		rebuild := make(chan bool, 1)
+
+		go func() { rebuild <- s.watchExecutionHealth(t.Context(), running) }()
+
+		time.Sleep(executionHealthInterval + time.Second)
+		assert.InDelta(t, 1, watcherUp(t, s, executionWatcherMempool), 0)
+
+		healthy.Store(false)
+
+		failedAt := time.Now()
+
+		time.Sleep(executionHealthInterval)
+		assert.InDelta(t, 0, watcherUp(t, s, executionWatcherMempool), 0)
+
+		require.True(t, <-rebuild)
+		assert.GreaterOrEqual(t, time.Since(failedAt), executionRebuildAfter)
+		assert.Less(t, time.Since(failedAt), executionRebuildAfter+2*executionHealthInterval)
+	})
+}
+
+func TestWatchExecutionHealthRecoveryResetsTheClock(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		s := newWatcherTestSentry(&execution.Config{})
+
+		var healthy atomic.Bool
+
+		running := map[string]*runningWatcher{executionWatcherStateSize: {healthy: healthy.Load}}
+
+		ctx, cancel := context.WithCancel(t.Context())
+		rebuild := make(chan bool, 1)
+
+		go func() { rebuild <- s.watchExecutionHealth(ctx, running) }()
+
+		for range 3 {
+			healthy.Store(false)
+			time.Sleep(executionRebuildAfter - executionHealthInterval)
+			healthy.Store(true)
+			time.Sleep(2 * executionHealthInterval)
+		}
+
+		assert.InDelta(t, 1, watcherUp(t, s, executionWatcherStateSize), 0)
+
+		cancel()
+		assert.False(t, <-rebuild)
 	})
 }
 
@@ -106,14 +163,46 @@ func TestStopExecutionStopsWatchersInReverseOrder(t *testing.T) {
 	var stopped []string
 
 	for _, name := range []string{"first", "second"} {
-		s.addExecutionStop(func(context.Context) error {
+		require.True(t, s.addExecutionStop(func() error {
 			stopped = append(stopped, name)
 
 			return nil
-		})
+		}))
 	}
 
-	require.NoError(t, s.stopExecution(t.Context()))
+	require.NoError(t, s.stopExecution(t.Context(), false))
 	assert.Equal(t, []string{"second", "first"}, stopped)
 	assert.Empty(t, s.executionStops)
+
+	require.True(t, s.addExecutionStop(func() error { return nil }), "a rebuild leaves watchers free to start again")
+}
+
+func TestWatcherStartedAfterFinalStopStopsItself(t *testing.T) {
+	s := newWatcherTestSentry(&execution.Config{})
+
+	require.NoError(t, s.stopExecution(t.Context(), true))
+
+	stopped := false
+	w := &runningWatcher{stop: func() error {
+		stopped = true
+
+		return nil
+	}}
+
+	_, err := s.startExecutionWatcher(t.Context(), executionWatcherSpec{
+		name:  executionWatcherMempool,
+		start: func(context.Context, *execution.Client) (*runningWatcher, error) { return w, nil },
+	})
+	require.ErrorIs(t, err, errExecutionStopped)
+	assert.False(t, stopped, "no client is handed out once stopped, so the watcher never starts")
+
+	assert.False(t, s.addExecutionStop(w.stop))
+}
+
+func TestShutdownFuncsRejectedOnceShutdownBegins(t *testing.T) {
+	s := newWatcherTestSentry(&execution.Config{})
+
+	require.True(t, s.addShutdownFunc(func(context.Context) error { return nil }))
+	assert.Len(t, s.takeShutdownFuncs(), 1)
+	assert.False(t, s.addShutdownFunc(func(context.Context) error { return nil }))
 }

@@ -55,7 +55,7 @@ Sentry requires a single `yaml` config file. An example file can be found [here]
 | attestationData.interval.every | string | `12s` | How often to fetch attestation data when `attestationData.interval.enabled` is set |
 | forkChoice.enabled | bool | `false` | Fetch the beacon node's fork choice on a schedule |
 | forkChoice.interval.every | string | `12s` | How often to fetch the fork choice when `forkChoice.interval.enabled` is set |
-| execution.enabled | bool | `false` | Watch the execution client's mempool. A watcher whose execution client is unreachable retries in the background, and `xatu_sentry_execution_watcher_up{watcher}` shows whether it is running |
+| execution.enabled | bool | `false` | Watch the execution client's mempool. A watcher whose execution client is unreachable retries in the background. `xatu_sentry_execution_watcher_up{watcher}` is 1 while it runs with its websocket or block subscription up; one that stays down for 2 minutes rebuilds the execution client and every watcher |
 | execution.rpcAddress | string |  | Execution client JSON-RPC address, required when `execution.enabled` is set |
 | execution.websocketEnabled | bool | `false` | Subscribe to new pending transactions over the WebSocket |
 | execution.wsAddress | string |  | Execution client WebSocket address, required when `execution.websocketEnabled` is set |

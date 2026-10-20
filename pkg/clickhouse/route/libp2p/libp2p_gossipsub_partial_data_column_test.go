@@ -101,8 +101,7 @@ func TestSnapshot_libp2p_gossipsub_partial_data_column(t *testing.T) {
 	})
 }
 
-// A metadata-only part whose block slot the capture point could not resolve:
-// slot columns fall back to zero while the wallclock columns stay populated.
+// An unresolved block slot zeroes the slot columns but keeps the wallclock columns.
 //
 //nolint:goconst // map keys and literals are deliberately reused across sibling event tests
 func TestSnapshot_libp2p_gossipsub_partial_data_column_UnknownSlot(t *testing.T) {

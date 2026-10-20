@@ -164,8 +164,7 @@ AS libp2p_gossipsub_partial_data_column_outcome_local
 ENGINE = Distributed('{cluster}', currentDatabase(), 'libp2p_gossipsub_partial_data_column_outcome_local', cityHash64(wallclock_slot_start_date_time, meta_network_name, meta_client_name, peer_id_unique_key, column_index, unique_key))
 COMMENT 'Contains validation verdicts for received gossipsub partial data column messages';
 
--- New columns are appended (no AFTER) so the generated pkg/proto/clickhouse
--- field numbers of existing columns stay stable.
+-- Appended (no AFTER) so existing pkg/proto/clickhouse field numbers stay stable.
 ALTER TABLE libp2p_rpc_meta_subscription_local ON CLUSTER '{cluster}'
     ADD COLUMN IF NOT EXISTS requests_partial Nullable(Bool)
         COMMENT 'Whether the peer asked to receive gossipsub partial messages on the topic. Null when the tracer cannot see the partial messages subscription options' CODEC(ZSTD(1)),

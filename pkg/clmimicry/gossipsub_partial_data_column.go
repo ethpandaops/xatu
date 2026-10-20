@@ -16,8 +16,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-// handlePartialDataColumnEvent routes the gossipsub partial messages extension
-// events through the enabled/metrics/sharding gates shared by all gossipsub events.
+// handlePartialDataColumnEvent applies the enabled/metrics/sharding gates shared by all gossipsub events.
 func (p *Processor) handlePartialDataColumnEvent(
 	ctx context.Context,
 	event *TraceEvent,
@@ -269,8 +268,7 @@ func (p *Processor) partialWallclock(timestamp time.Time) (*xatu.SlotV2, *xatu.E
 		}, nil
 }
 
-// partialBlockSlot returns the block slot, epoch and propagation, all nil when
-// the capture point could not resolve the block slot (zero).
+// partialBlockSlot returns nil slot, epoch and propagation when the block slot is unknown (zero).
 //
 //nolint:gosec // int64 -> uint64 common conversion pattern in xatu.
 func (p *Processor) partialBlockSlot(

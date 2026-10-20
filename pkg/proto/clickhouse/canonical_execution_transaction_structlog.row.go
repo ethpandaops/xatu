@@ -35,6 +35,7 @@ type CanonicalExecutionTransactionStructlogRow struct {
 	CallFrameId uint32 `ch:"call_frame_id" json:"call_frame_id"`
 	CallFramePath []uint32 `ch:"call_frame_path" json:"call_frame_path"`
 	MetaNetworkName string `ch:"meta_network_name" json:"meta_network_name"`
+	Synthetic bool `ch:"synthetic" json:"synthetic"`
 }
 
 // TableName returns the ClickHouse table this row maps to.
@@ -79,5 +80,6 @@ func (r *CanonicalExecutionTransactionStructlogRow) ToProto() *CanonicalExecutio
 	p.CallFrameId = r.CallFrameId
 	p.CallFramePath = r.CallFramePath
 	p.MetaNetworkName = r.MetaNetworkName
+	p.Synthetic = r.Synthetic
 	return p
 }

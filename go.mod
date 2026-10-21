@@ -1,6 +1,6 @@
 module github.com/ethpandaops/xatu
 
-go 1.26.9
+go 1.26.10
 
 // release-xatu branch.
 

@@ -88,7 +88,7 @@ jobs:
             -e DOCKER_PASSWORD=${{ secrets.DOCKERHUB_TOKEN }} \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e RELEASE_SUFFIX=${{ env.RELEASE_SUFFIX }} \
-            goreleaser/goreleaser-cross:v1.26 release --clean --config .goreleaser.yaml.new
+            goreleaser/goreleaser-cross:v1.27.3 release --clean --config .goreleaser.yaml.new
 
       # The xatu+cryo image is the EL-cannon variant: it bundles the cryo binary
       # alongside xatu. cryo is built from Rust source (./Dockerfile), so it does

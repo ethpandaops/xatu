@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -308,7 +311,7 @@ func (o *xatuClickHouseOutput) Close(ctx context.Context) error {
 // The caller's accumulated batchErr is threaded through so that failures
 // from earlier phases (e.g. decode errors) are preserved.
 //
-// Transient failures are retried with exponential backoff.
+// Transient failures retry in place until success, a permanent error, ctx cancellation or groupRetryMaxAttempts (0 means no cap).
 func (o *xatuClickHouseOutput) processGroup(
 	ctx context.Context,
 	msgs service.MessageBatch,
@@ -366,22 +369,17 @@ func (o *xatuClickHouseOutput) processGroup(
 	var (
 		allInvalidEvents []*xatu.DecoratedEvent
 		lastResult       *clickhouse.FlushResult
+		delay            = min(o.groupRetryBaseDelay, o.groupRetryMaxDelay)
 	)
 
-	// Group-level retry loop for partial table failures.
-	for attempt := range o.groupRetryMaxAttempts + 1 {
-		if attempt > 0 && len(tableEvents) > 0 {
-			delay := min(
-				o.groupRetryBaseDelay*time.Duration(1<<(attempt-1)),
-				o.groupRetryMaxDelay,
-			)
+	// Retry transient failures here: nacked messages replay one at a time and block new reads.
+	for attempt := 0; ; attempt++ {
+		if attempt > 0 {
+			if err := ctx.Err(); err != nil {
+				return failGroup(batchErr, msgs, g, err)
+			}
 
-			o.log.WithFields(logrus.Fields{
-				"attempt":       attempt,
-				"max_attempts":  o.groupRetryMaxAttempts,
-				"delay":         delay,
-				"failed_tables": len(tableEvents),
-			}).WithContext(ctx).Warn("Retrying failed tables with backoff")
+			o.logGroupRetry(ctx, tableEvents, attempt, delay, lastResult.Err())
 
 			o.metrics.GroupRetries().WithLabelValues(
 				g.messages[0].event.GetEvent().GetName().String(),
@@ -389,13 +387,11 @@ func (o *xatuClickHouseOutput) processGroup(
 
 			select {
 			case <-ctx.Done():
-				for _, gm := range g.messages {
-					batchErr = addBatchFailure(batchErr, msgs, gm.batchIndex, ctx.Err())
-				}
-
-				return batchErr
+				return failGroup(batchErr, msgs, g, ctx.Err())
 			case <-time.After(delay):
 			}
+
+			delay = min(delay*2, o.groupRetryMaxDelay)
 		}
 
 		result := o.writer.FlushTableEvents(ctx, tableEvents)
@@ -422,6 +418,10 @@ func (o *xatuClickHouseOutput) processGroup(
 		}
 
 		if !anyTransient {
+			break
+		}
+
+		if o.groupRetryMaxAttempts > 0 && attempt >= o.groupRetryMaxAttempts {
 			break
 		}
 
@@ -469,11 +469,48 @@ func (o *xatuClickHouseOutput) processGroup(
 			WithField("dlq_enabled", o.rejectSink != nil && o.rejectSink.Enabled()).WithContext(ctx).
 			Warn("Permanent write error during group flush")
 	} else {
-		for _, gm := range g.messages {
-			batchErr = addBatchFailure(
-				batchErr, msgs, gm.batchIndex, err,
-			)
-		}
+		batchErr = failGroup(batchErr, msgs, g, err)
+	}
+
+	return batchErr
+}
+
+// logGroupRetry warns on the first retry for a table set, then at most once per sampler interval.
+func (o *xatuClickHouseOutput) logGroupRetry(
+	ctx context.Context,
+	tableEvents map[string][]*xatu.DecoratedEvent,
+	attempt int,
+	delay time.Duration,
+	err error,
+) {
+	tables := slices.Sorted(maps.Keys(tableEvents))
+
+	ok, suppressed := o.logSampler.Allow("group_retry:" + strings.Join(tables, ","))
+	if !ok {
+		return
+	}
+
+	entry := o.log.WithError(err).WithFields(logrus.Fields{
+		"tables":       tables,
+		"attempt":      attempt,
+		"max_attempts": o.groupRetryMaxAttempts,
+		"delay":        delay,
+	}).WithContext(ctx)
+	if suppressed > 0 {
+		entry = entry.WithField("suppressed", suppressed)
+	}
+
+	entry.Warn("Retrying failed tables with backoff")
+}
+
+func failGroup(
+	batchErr *service.BatchError,
+	msgs service.MessageBatch,
+	g *eventGroup,
+	err error,
+) *service.BatchError {
+	for _, gm := range g.messages {
+		batchErr = addBatchFailure(batchErr, msgs, gm.batchIndex, err)
 	}
 
 	return batchErr

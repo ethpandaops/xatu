@@ -19,10 +19,7 @@ import (
 
 const benthosOutputType = "xatu_clickhouse"
 
-// GroupRetryConfig configures group-level retry behavior for partial table
-// failures in processGroup. When a fanout flush partially fails (some tables
-// succeed, others fail transiently), only the failed tables are retried with
-// exponential backoff to limit write amplification.
+// GroupRetryConfig configures in-place retries of transiently failed tables in processGroup; MaxAttempts 0 means no cap.
 type GroupRetryConfig struct {
 	MaxAttempts int
 	BaseDelay   time.Duration

@@ -65,6 +65,9 @@ clickhouse:
   #   connMaxIdleTime: 10m
   #   healthCheckPeriod: 30s
   #   poolMetricsInterval: 15s
+  #   groupRetryMaxAttempts: 0  # 0 retries transient write failures until they succeed; N > 0 nacks to Kafka after N
+  #   groupRetryBaseDelay: 1s
+  #   groupRetryMaxDelay: 30s
   #   adaptiveLimiter:
   #     enabled: true        # per-table adaptive concurrency limiting (AIMD)
   #     minLimit: 1          # minimum concurrent INSERTs per table

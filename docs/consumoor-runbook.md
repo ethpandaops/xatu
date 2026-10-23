@@ -97,7 +97,7 @@ All metrics use the prefix `xatu_consumoor_`.
 
 **What happens internally:**
 1. Table writer flush fails with a transient error (connection refused, timeout, etc.)
-2. `FlushTables` returns the error to `processGroup`, which NAKs the Kafka messages (they will be re-delivered by Kafka)
+2. `FlushTables` returns the error to `processGroup`, which retries only the failed tables in place with exponential backoff (`groupRetryBaseDelay` doubling up to `groupRetryMaxDelay`) until they succeed. Messages are NAK'd only on shutdown or after `groupRetryMaxAttempts` when that is set above 0
 3. Each flush attempt uses exponential backoff via `doWithRetry` (default 3 retries, 100ms base delay, 2s max delay)
 4. The buffer channel fills up, blocking `Write()` calls, which backs up Benthos output and stalls Kafka consumption
 
@@ -279,6 +279,8 @@ Common causes of startup failure:
 | `maxConns` | `clickhouse.chgo.maxConns` | 64 | Increase when `chgo_pool_empty_acquire_total` is high |
 | `queryTimeout` | `clickhouse.chgo.queryTimeout` | 30s | Increase if large batches legitimately take longer to insert |
 | `maxRetries` | `clickhouse.chgo.maxRetries` | 3 | Increase if transient ClickHouse errors are frequent but recover quickly |
+| `groupRetryMaxAttempts` | `clickhouse.chgo.groupRetryMaxAttempts` | 0 | 0 retries transient write failures in place until they succeed, so backpressure pauses the Kafka input. N > 0 NAKs the messages after N retries; Benthos then replays them one at a time with a 0.5-1s sleep each and reads nothing new until they drain, so keep it at 0 unless you need that |
+| `groupRetryMaxDelay` | `clickhouse.chgo.groupRetryMaxDelay` | 30s | Cap on the in-place retry backoff (starts at `groupRetryBaseDelay`, default 1s); lower it to resume sooner after ClickHouse recovers |
 | `sessionTimeoutMs` | `kafka.sessionTimeoutMs` | 30000 | Increase if rebalances are frequent due to slow processing |
 | `adaptiveLimiter.enabled` | `clickhouse.chgo.adaptiveLimiter.enabled` | true | Per-table AIMD concurrency limiting; disable if all tables have uniform latency |
 | `adaptiveLimiter.initialLimit` | `clickhouse.chgo.adaptiveLimiter.initialLimit` | 8 | Starting concurrent INSERTs per table before adaptation |

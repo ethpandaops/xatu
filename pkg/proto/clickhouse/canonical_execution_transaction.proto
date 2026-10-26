@@ -23,7 +23,7 @@ message CanonicalExecutionTransaction {
   string from_address = 16;
   // The transaction to address
   google.protobuf.StringValue to_address = 17;
-  // The transaction value in float64
+  // The transaction value in wei
   string value = 18;
   // The transaction input in hex
   google.protobuf.StringValue input = 19;
@@ -72,7 +72,7 @@ message ListCanonicalExecutionTransactionRequest {
   StringFilter from_address = 7;
   // Filter by to_address - The transaction to address (optional)
   NullableStringFilter to_address = 8;
-  // Filter by value - The transaction value in float64 (optional)
+  // Filter by value - The transaction value in wei (optional)
   StringFilter value = 9;
   // Filter by input - The transaction input in hex (optional)
   NullableStringFilter input = 10;

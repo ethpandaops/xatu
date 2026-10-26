@@ -40,7 +40,7 @@ type CanonicalExecutionTransaction struct {
 	FromAddress string `protobuf:"bytes,16,opt,name=from_address,json=fromAddress,proto3" json:"from_address,omitempty"`
 	// The transaction to address
 	ToAddress *wrapperspb.StringValue `protobuf:"bytes,17,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
-	// The transaction value in float64
+	// The transaction value in wei
 	Value string `protobuf:"bytes,18,opt,name=value,proto3" json:"value,omitempty"`
 	// The transaction input in hex
 	Input *wrapperspb.StringValue `protobuf:"bytes,19,opt,name=input,proto3" json:"input,omitempty"`
@@ -262,7 +262,7 @@ type ListCanonicalExecutionTransactionRequest struct {
 	FromAddress *StringFilter `protobuf:"bytes,7,opt,name=from_address,json=fromAddress,proto3" json:"from_address,omitempty"`
 	// Filter by to_address - The transaction to address (optional)
 	ToAddress *NullableStringFilter `protobuf:"bytes,8,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
-	// Filter by value - The transaction value in float64 (optional)
+	// Filter by value - The transaction value in wei (optional)
 	Value *StringFilter `protobuf:"bytes,9,opt,name=value,proto3" json:"value,omitempty"`
 	// Filter by input - The transaction input in hex (optional)
 	Input *NullableStringFilter `protobuf:"bytes,10,opt,name=input,proto3" json:"input,omitempty"`

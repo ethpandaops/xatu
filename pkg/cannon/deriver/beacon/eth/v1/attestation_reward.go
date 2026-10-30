@@ -84,7 +84,10 @@ func (b *AttestationRewardDeriver) Start(ctx context.Context) error {
 
 	b.log.WithContext(ctx).Info("Attestation reward deriver enabled")
 
-	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
+	// Epoch E's rewards are paid at the end of epoch E+1, so the last phase0 epoch's attestations are rewarded by
+	// Altair's first transition, under Altair's rules, and the rewards endpoint serves them (Lighthouse does; Prysm
+	// rejects epochs before Altair). The phase0 reward deriver leaves that epoch to this one.
+	if err := b.iterator.StartEarly(ctx, b.ActivationFork(), 1); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
 	}
 

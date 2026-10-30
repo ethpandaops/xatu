@@ -30,6 +30,39 @@ func TestBackfillTargetEpoch(t *testing.T) {
 	}
 }
 
+func TestGetEarliestPossibleBackfillEpoch_EpochsBeforeFork(t *testing.T) {
+	tests := []struct {
+		name      string
+		forkEpoch phase0.Epoch
+		toEpoch   phase0.Epoch
+		want      phase0.Epoch
+	}{
+		{name: "reaches the epoch before the fork", forkEpoch: 74240, want: 74239},
+		{name: "toEpoch at the epoch before the fork", forkEpoch: 74240, toEpoch: 74239, want: 74239},
+		{name: "later toEpoch wins", forkEpoch: 74240, toEpoch: 80000, want: 80000},
+		{name: "fork at genesis stays at genesis", forkEpoch: 0, want: 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &BackfillingCheckpointConfig{}
+			config.Backfill.Enabled = true
+			config.Backfill.ToEpoch = tt.toEpoch
+
+			c := &BackfillingCheckpoint{
+				config:           config,
+				activationFork:   spec.DataVersionAltair,
+				epochsBeforeFork: 1,
+				chain:            &staticChain{forkEpochs: map[spec.DataVersion]phase0.Epoch{spec.DataVersionAltair: tt.forkEpoch}},
+			}
+
+			got, err := c.getEarliestPossibleBackfillEpoch()
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestGetEarliestPossibleBackfillEpoch_Phase0HonoursToEpoch(t *testing.T) {
 	config := &BackfillingCheckpointConfig{}
 	config.Backfill.Enabled = true

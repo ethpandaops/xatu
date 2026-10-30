@@ -44,6 +44,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.24.1
 	github.com/prometheus/client_model v0.6.2
+	github.com/protolambda/zrnt v0.34.1
+	github.com/protolambda/ztyp v0.2.2
 	github.com/redis/go-redis/v9 v9.14.0
 	github.com/redpanda-data/benthos/v4 v4.64.1
 	github.com/redpanda-data/connect/v4 v4.80.1
@@ -266,8 +268,6 @@ require (
 	github.com/prometheus/common v0.70.1 // indirect
 	github.com/prometheus/procfs v0.21.1 // indirect
 	github.com/protolambda/bls12-381-util v0.1.0 // indirect
-	github.com/protolambda/zrnt v0.34.1 // indirect
-	github.com/protolambda/ztyp v0.2.2 // indirect
 	github.com/prysmaticlabs/fastssz v0.0.0-20260421202104-7a6eb71e6e45 // indirect
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20240618144021-706c95b2dd15 // indirect
 	github.com/prysmaticlabs/gohashtree v0.0.5-beta // indirect

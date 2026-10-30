@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains the proposer reward breakdown for a canonical phase0 beacon block, computed from beacon states.
+
+message CanonicalBeaconPhase0BlockReward {
+  // When this row was last updated
+  uint32 updated_date_time = 11;
+  // The slot number of the block
+  uint32 slot = 12;
+  // The wall clock time when the slot started
+  uint32 slot_start_date_time = 13;
+  // The epoch number of the block
+  uint32 epoch = 14;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 15;
+  // The root hash of the beacon block
+  string block_root = 16;
+  // The validator index of the block proposer
+  uint32 proposer_index = 17;
+  // The total proposer reward for the block in gwei
+  uint64 total = 18;
+  // The proposer inclusion reward for the attestations the block was first to include in gwei, paid at the following epoch transitions
+  uint64 attestations = 19;
+  // The whistleblower reward from including proposer slashings in gwei
+  uint64 proposer_slashings = 20;
+  // The whistleblower reward from including attester slashings in gwei
+  uint64 attester_slashings = 21;
+  // Ethereum network name
+  string meta_network_name = 22;
+}
+
+// Request for listing canonical_beacon_phase0_block_reward records
+message ListCanonicalBeaconPhase0BlockRewardRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by slot_start_date_time - The wall clock time when the slot started (ORDER BY column 2 - optional)
+  UInt32Filter slot_start_date_time = 2;
+
+  // Filter by slot - The slot number of the block (ORDER BY column 3 - optional)
+  UInt32Filter slot = 3;
+
+  // Filter by block_root - The root hash of the beacon block (ORDER BY column 4 - optional)
+  StringFilter block_root = 4;
+
+  // Filter by updated_date_time - When this row was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by epoch - The epoch number of the block (optional)
+  UInt32Filter epoch = 6;
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (optional)
+  UInt32Filter epoch_start_date_time = 7;
+  // Filter by proposer_index - The validator index of the block proposer (optional)
+  UInt32Filter proposer_index = 8;
+  // Filter by total - The total proposer reward for the block in gwei (optional)
+  UInt64Filter total = 9;
+  // Filter by attestations - The proposer inclusion reward for the attestations the block was first to include in gwei, paid at the following epoch transitions (optional)
+  UInt64Filter attestations = 10;
+  // Filter by proposer_slashings - The whistleblower reward from including proposer slashings in gwei (optional)
+  UInt64Filter proposer_slashings = 11;
+  // Filter by attester_slashings - The whistleblower reward from including attester slashings in gwei (optional)
+  UInt64Filter attester_slashings = 12;
+
+  // The maximum number of canonical_beacon_phase0_block_reward to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 13;
+  // A page token, received from a previous `ListCanonicalBeaconPhase0BlockReward` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 14;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 15;
+}
+
+// Response for listing canonical_beacon_phase0_block_reward records
+message ListCanonicalBeaconPhase0BlockRewardResponse {
+  // The list of canonical_beacon_phase0_block_reward.
+  repeated CanonicalBeaconPhase0BlockReward canonical_beacon_phase0_block_reward = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_beacon_phase0_block_reward record by primary key
+message GetCanonicalBeaconPhase0BlockRewardRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_beacon_phase0_block_reward record
+message GetCanonicalBeaconPhase0BlockRewardResponse {
+  CanonicalBeaconPhase0BlockReward item = 1;
+}
+
+// Query canonical_beacon_phase0_block_reward data
+service CanonicalBeaconPhase0BlockRewardService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalBeaconPhase0BlockRewardRequest) returns (ListCanonicalBeaconPhase0BlockRewardResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalBeaconPhase0BlockRewardRequest) returns (GetCanonicalBeaconPhase0BlockRewardResponse);
+}

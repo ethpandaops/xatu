@@ -805,3 +805,30 @@ func TestBackfillBatches_ConcurrentDerivers(t *testing.T) {
 		}
 	})
 }
+
+// TestBackfillBatches_EndForkHoldsTheHead walks a type that ends at Altair while finality moves on: the head stays at
+// the last epoch before the fork and the backfill covers every earlier epoch once.
+func TestBackfillBatches_EndForkHoldsTheHead(t *testing.T) {
+	const altair = phase0.Epoch(50)
+
+	chain := &staticChain{finalized: 400, forkEpochs: map[spec.DataVersion]phase0.Epoch{spec.DataVersionAltair: altair}}
+	h := newHarness(t, xatu.CannonType_BEACON_API_ETH_V1_BEACON_PHASE0_REWARD, spec.DataVersionPhase0, chain, backfillConfig(0, 1))
+	h.boot()
+	require.NoError(t, h.it.StartUntil(context.Background(), spec.DataVersionPhase0, spec.DataVersionAltair))
+
+	for i := 0; i == 0 || h.marker().GetBackfillEpoch() > 0; i++ {
+		require.Less(t, i, 200, "walk did not finish")
+		require.NoError(t, h.step(context.Background(), failNone, nil))
+
+		chain.advance()
+	}
+
+	assert.Equal(t, uint64(altair-1), h.marker().GetFinalizedEpoch())
+	assert.Equal(t, map[phase0.Epoch]int{altair - 1: 1}, h.written[BackfillingCheckpointDirectionHead])
+
+	for e := phase0.Epoch(0); e < altair-1; e++ {
+		assert.Equal(t, 1, h.written[BackfillingCheckpointDirectionBackfill][e], "epoch %d", e)
+	}
+
+	assert.Len(t, h.written[BackfillingCheckpointDirectionBackfill], int(altair-1))
+}

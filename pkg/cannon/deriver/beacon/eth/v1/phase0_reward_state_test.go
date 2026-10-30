@@ -57,7 +57,7 @@ func TestPhase0EpochRewardsMatchSpecDeltas(t *testing.T) {
 
 			// The spec's inclusion delay deltas pay the proposer's share to the proposer's own index.
 			for inclusion, gwei := range rewards.ProposerCredits {
-				got["inclusion_delay"][inclusion.ProposerIndex] += int64(gwei) //nolint:gosec // small
+				got["inclusion_delay"][inclusion.ProposerIndex] += int64(gwei)
 			}
 
 			for component, values := range got {
@@ -104,7 +104,7 @@ func reconcileFixtureChain(t *testing.T, dir string) {
 
 	expected := make([]int64, 0, len(preFlats))
 	for _, balance := range fixtureBalances(t, pre) {
-		expected = append(expected, int64(balance)) //nolint:gosec // test balances are small
+		expected = append(expected, int64(balance))
 	}
 
 	stateCopy, err := pre.CopyState()
@@ -122,8 +122,8 @@ func reconcileFixtureChain(t *testing.T, dir string) {
 	// reconciled with the computed rewards, and its process_slashings penalties are applied from the spec formula.
 	advance := func(target zcommon.Slot, reconcile bool) {
 		for {
-			slot, err := state.Slot()
-			require.NoError(t, err)
+			slot, slotErr := state.Slot()
+			require.NoError(t, slotErr)
 
 			if slot >= target {
 				return
@@ -133,8 +133,8 @@ func reconcileFixtureChain(t *testing.T, dir string) {
 				view, ok := state.BeaconState.(*zphase0.BeaconStateView)
 				require.True(t, ok)
 
-				rewards, err := computePhase0EpochRewards(ctx, spec, view)
-				require.NoError(t, err)
+				rewards, rewardsErr := computePhase0EpochRewards(ctx, spec, view)
+				require.NoError(t, rewardsErr)
 
 				if _, ok := endOfEpoch[rewards.StateEpoch]; !ok {
 					endOfEpoch[rewards.StateEpoch] = rewards
@@ -144,15 +144,15 @@ func reconcileFixtureChain(t *testing.T, dir string) {
 					transitions++
 
 					for _, a := range rewards.Attesters {
-						expected[a.ValidatorIndex] += a.Head + a.Target + a.Source + int64(a.InclusionDelay) + a.Inactivity //nolint:gosec // small
+						expected[a.ValidatorIndex] += a.Head + a.Target + a.Source + int64(a.InclusionDelay) + a.Inactivity
 					}
 
 					for inclusion, gwei := range rewards.ProposerCredits {
-						expected[inclusion.ProposerIndex] += int64(gwei) //nolint:gosec // small
+						expected[inclusion.ProposerIndex] += int64(gwei)
 					}
 
 					for index, penalty := range specSlashingsPenalties(t, spec, view) {
-						expected[index] -= int64(penalty) //nolint:gosec // small
+						expected[index] -= int64(penalty)
 					}
 				}
 			}
@@ -195,7 +195,7 @@ func reconcileFixtureChain(t *testing.T, dir string) {
 			pubkey := [48]byte(deposit.Data.PublicKey)
 
 			if index, ok := pubkeys[pubkey]; ok {
-				expected[index] += int64(deposit.Data.Amount) //nolint:gosec // small
+				expected[index] += int64(deposit.Data.Amount)
 
 				continue
 			}
@@ -204,14 +204,15 @@ func reconcileFixtureChain(t *testing.T, dir string) {
 				require.Equal(t, len(expected), index)
 
 				pubkeys[pubkey] = index
-				expected = append(expected, int64(deposit.Data.Amount)) //nolint:gosec // small
+
+				expected = append(expected, int64(deposit.Data.Amount))
 			}
 		}
 
 		// slash_validator's initial penalty; the whistleblower reward is the computed block reward checked below.
 		for index := range before {
 			if !before[index].Slashed && after[index].Slashed {
-				expected[index] -= int64(before[index].EffectiveBalance / zcommon.Gwei(spec.MIN_SLASHING_PENALTY_QUOTIENT)) //nolint:gosec // small
+				expected[index] -= int64(before[index].EffectiveBalance / zcommon.Gwei(spec.MIN_SLASHING_PENALTY_QUOTIENT))
 			}
 		}
 
@@ -263,13 +264,13 @@ func reconcileFixtureChain(t *testing.T, dir string) {
 		require.NoError(t, err)
 
 		for _, row := range rows {
-			expected[row.ProposerIndex] += int64(row.ProposerSlashings + row.AttesterSlashings) //nolint:gosec // small
+			expected[row.ProposerIndex] += int64(row.ProposerSlashings + row.AttesterSlashings)
 		}
 	}
 
 	got := make([]int64, 0, len(expected))
 	for _, balance := range fixtureBalances(t, post) {
-		got = append(got, int64(balance)) //nolint:gosec // test balances are small
+		got = append(got, int64(balance))
 	}
 
 	require.Positive(t, transitions, "the chain must cross at least one epoch transition")
@@ -373,7 +374,7 @@ func loadFixtureDeltas(t *testing.T, path string) []int64 {
 
 	out := make([]int64, len(rewards)/8)
 	for i := range out {
-		out[i] = int64(binary.LittleEndian.Uint64(rewards[i*8:])) - int64(binary.LittleEndian.Uint64(penalties[i*8:])) //nolint:gosec // small
+		out[i] = int64(binary.LittleEndian.Uint64(rewards[i*8:])) - int64(binary.LittleEndian.Uint64(penalties[i*8:]))
 	}
 
 	return out
@@ -427,7 +428,7 @@ func fixturePubkeyIndices(t *testing.T, state zcommon.BeaconState) map[[48]byte]
 		pubkey, err := val.Pubkey()
 		require.NoError(t, err)
 
-		out[pubkey] = int(i) //nolint:gosec // small
+		out[pubkey] = int(i)
 	}
 
 	return out

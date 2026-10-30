@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ethpandaops/beacon/pkg/beacon"
+	"github.com/ethpandaops/beacon/pkg/beacon/state"
 	eth2client "github.com/ethpandaops/go-eth2-client"
 	"github.com/ethpandaops/go-eth2-client/api"
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
@@ -35,6 +36,10 @@ type fakeBeaconNode struct {
 	envelopes []string
 	// headers are the blocks the node has, by slot.
 	headers map[string]blockarchive.BlockID
+	// blocks, when set, are the only blocks FetchBlock finds, by identifier; others 404.
+	blocks map[string]*spec.VersionedSignedBeaconBlock
+	// headerSlots are the slots of the block headers the node has, by root.
+	headerSlots map[string]phase0.Slot
 }
 
 // fakeEnvelopeService answers envelope requests the way the beacon API does for a revealed payload.
@@ -56,6 +61,12 @@ func (f *fakeEnvelopeService) SignedExecutionPayloadEnvelope(_ context.Context, 
 }
 
 func (f *fakeEnvelopeService) BeaconBlockHeader(_ context.Context, opts *api.BeaconBlockHeaderOpts) (*api.Response[*apiv1.BeaconBlockHeader], error) {
+	if slot, ok := f.node.headerSlots[opts.Block]; ok {
+		return &api.Response[*apiv1.BeaconBlockHeader]{Data: &apiv1.BeaconBlockHeader{
+			Header: &phase0.SignedBeaconBlockHeader{Message: &phase0.BeaconBlockHeader{Slot: slot}},
+		}}, nil
+	}
+
 	id, ok := f.node.headers[opts.Block]
 	if !ok {
 		return nil, &api.Error{StatusCode: 404}
@@ -81,7 +92,15 @@ func (f *fakeBeaconNode) FetchBlock(_ context.Context, id string) (*spec.Version
 
 	f.fetched = append(f.fetched, id)
 
+	if f.blocks != nil {
+		return f.blocks[id], nil
+	}
+
 	return testVersionedBlock(999), nil
+}
+
+func (f *fakeBeaconNode) Spec() (*state.Spec, error) {
+	return &state.Spec{SlotsPerEpoch: 8}, nil
 }
 
 type fakeBlockArchive struct {

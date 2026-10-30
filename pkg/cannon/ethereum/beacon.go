@@ -430,6 +430,13 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 			return nil, err
 		}
 
+		// Only slot numbers are checked: a root or named identifier has no slot to confirm.
+		if slot, parseErr := strconv.ParseUint(identifier, 10, 64); block == nil && parseErr == nil {
+			if err := b.confirmMissedSlot(ctx, slot); err != nil {
+				return nil, err
+			}
+		}
+
 		span.AddEvent("Block fetched from beacon node.")
 
 		// Add it to the cache.
@@ -450,6 +457,78 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 	span.AddEvent("Block fetching complete.", trace.WithAttributes(attribute.Bool("shared", shared)))
 
 	return x.(*spec.VersionedSignedBeaconBlock), nil
+}
+
+// confirmMissedSlot checks that a slot the beacon node has no block for is empty on the canonical chain: the next
+// block's parent must be older than the slot. A node whose block history does not reach the slot (checkpoint synced,
+// still backfilling, or pruned) answers 404 for it and has no such parent, so its 404 is an error the caller retries
+// instead of a missed slot.
+func (b *BeaconNode) confirmMissedSlot(ctx context.Context, slot uint64) error {
+	sp, err := b.beacon.Spec()
+	if err != nil {
+		return errors.Wrap(err, "failed to obtain spec")
+	}
+
+	lookahead := 2 * uint64(sp.SlotsPerEpoch)
+
+	for next := slot + 1; next <= slot+lookahead; next++ {
+		block, err := b.beacon.FetchBlock(ctx, strconv.FormatUint(next, 10))
+		if err != nil {
+			return errors.Wrapf(err, "failed to get block at slot %d to confirm slot %d is empty", next, slot)
+		}
+
+		if block == nil {
+			continue
+		}
+
+		b.blockCache.Set(strconv.FormatUint(next, 10), block, time.Hour)
+
+		parentRoot, err := block.ParentRoot()
+		if err != nil {
+			return errors.Wrapf(err, "failed to get the parent root of the block at slot %d", next)
+		}
+
+		parentSlot, ok, err := b.blockHeaderSlot(ctx, parentRoot.String())
+		if err != nil {
+			return err
+		}
+
+		if !ok {
+			return errors.Errorf("beacon node has no block at slot %d nor the parent of the block at slot %d: its block history does not reach slot %d", slot, next, slot)
+		}
+
+		if uint64(parentSlot) >= slot {
+			return errors.Errorf("beacon node has no block at slot %d, but the block at slot %d builds on a block at slot %d", slot, next, parentSlot)
+		}
+
+		return nil
+	}
+
+	return errors.Errorf("beacon node has no block at slot %d nor in the %d slots after it to confirm the slot is empty", slot, lookahead)
+}
+
+// blockHeaderSlot is the slot of the block with the given root; ok is false when the node does not have it.
+func (b *BeaconNode) blockHeaderSlot(ctx context.Context, root string) (phase0.Slot, bool, error) {
+	provider, ok := b.beacon.Service().(client.BeaconBlockHeadersProvider)
+	if !ok {
+		return 0, false, errors.New("beacon block headers provider not available")
+	}
+
+	resp, err := provider.BeaconBlockHeader(ctx, &api.BeaconBlockHeaderOpts{Block: root})
+	if err != nil {
+		var apiErr *api.Error
+		if errors.As(err, &apiErr) && apiErr.StatusCode == 404 {
+			return 0, false, nil
+		}
+
+		return 0, false, errors.Wrapf(err, "failed to fetch block header %s", root)
+	}
+
+	if resp == nil || resp.Data == nil || resp.Data.Header == nil || resp.Data.Header.Message == nil {
+		return 0, false, errors.Errorf("empty block header response for %s", root)
+	}
+
+	return resp.Data.Header.Message.Slot, true, nil
 }
 
 // blockFromArchive serves a slot identifier from the block archive; ok is false when the beacon node must answer.

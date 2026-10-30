@@ -238,6 +238,8 @@ func (l *Location) Marshal(msg *xatu.CannonLocation) error {
 		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_BLOCK_REWARD", msg.GetEthV1BeaconBlockReward())
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD:
 		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD", msg.GetEthV1BeaconAttestationReward())
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_PHASE0_REWARD:
+		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_PHASE0_REWARD", msg.GetEthV1BeaconPhase0Reward())
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD:
 		return l.marshalLocationData("BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD", msg.GetEthV1BeaconSyncCommitteeReward())
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_RANDAO:
@@ -585,6 +587,16 @@ func (l *Location) Unmarshal() (*xatu.CannonLocation, error) {
 		}
 
 		msg.Data = &xatu.CannonLocation_EthV1BeaconAttestationReward{EthV1BeaconAttestationReward: data}
+	case "BEACON_API_ETH_V1_BEACON_PHASE0_REWARD":
+		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_PHASE0_REWARD
+
+		data := &xatu.CannonLocationEthV1BeaconPhase0Reward{}
+
+		if err := unmarshalLocationData(l.Value, data); err != nil {
+			return nil, err
+		}
+
+		msg.Data = &xatu.CannonLocation_EthV1BeaconPhase0Reward{EthV1BeaconPhase0Reward: data}
 	case "BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD":
 		msg.Type = xatu.CannonType_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD
 

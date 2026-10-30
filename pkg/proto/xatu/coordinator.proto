@@ -243,6 +243,10 @@ enum CannonType {
   BEACON_API_ETH_V1_BEACON_STATE_EXECUTION_PAYLOAD_AVAILABILITY = 53;
 
   BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI = 54;
+
+  // Phase0 attestation and block rewards computed from beacon states, for
+  // the epochs before Altair that the Beacon API rewards endpoints do not serve.
+  BEACON_API_ETH_V1_BEACON_PHASE0_REWARD = 55;
 }
 
 message BackfillingCheckpointMarker {
@@ -447,6 +451,10 @@ message CannonLocationEthV2BeaconBlockGraffiti {
   BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
 }
 
+message CannonLocationEthV1BeaconPhase0Reward {
+  BackfillingCheckpointMarker backfilling_checkpoint_marker = 1;
+}
+
 message CannonLocation {
   string network_id = 1;
   CannonType type = 2;
@@ -575,6 +583,9 @@ message CannonLocation {
 
     CannonLocationEthV2BeaconBlockGraffiti eth_v2_beacon_block_graffiti = 57
         [ json_name = "BEACON_API_ETH_V2_BEACON_BLOCK_GRAFFITI" ];
+
+    CannonLocationEthV1BeaconPhase0Reward eth_v1_beacon_phase0_reward = 58
+        [ json_name = "BEACON_API_ETH_V1_BEACON_PHASE0_REWARD" ];
   }
 }
 

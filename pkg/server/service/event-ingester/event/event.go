@@ -122,6 +122,8 @@ var (
 	TypeBeaconEthV2BeaconBlockExecutionRequestConsolidation Type = v2.BeaconBlockExecutionRequestConsolidationType
 	TypeBeaconEthV1BeaconBlockReward                        Type = v1.BlockRewardType
 	TypeBeaconEthV1BeaconAttestationReward                  Type = v1.BeaconAttestationRewardType
+	TypeBeaconEthV1BeaconPhase0AttestationReward            Type = v1.BeaconPhase0AttestationRewardType
+	TypeBeaconEthV1BeaconPhase0BlockReward                  Type = v1.BeaconPhase0BlockRewardType
 	TypeBeaconEthV1BeaconSyncCommitteeReward                Type = v1.BeaconSyncCommitteeRewardType
 	TypeBeaconETHV1BeaconStateRandao                        Type = Type(v1.RandaoType)
 	TypeBeaconETHV1BeaconStateFinalityCheckpoint            Type = Type(v1.FinalityCheckpointType)
@@ -329,6 +331,12 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	})
 	router.RegisterHandler(TypeBeaconEthV1BeaconAttestationReward, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewBeaconAttestationReward(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV1BeaconPhase0AttestationReward, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconPhase0AttestationReward(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV1BeaconPhase0BlockReward, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconPhase0BlockReward(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconEthV1BeaconSyncCommitteeReward, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewBeaconSyncCommitteeReward(router.log, event), nil

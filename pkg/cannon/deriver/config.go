@@ -42,6 +42,7 @@ type ConsensusConfig struct {
 	ExecutionRequestConsolidationConfig       v2.ExecutionRequestConsolidationDeriverConfig       `yaml:"executionRequestConsolidation"`
 	BlockRewardConfig                         v1.BlockRewardDeriverConfig                         `yaml:"blockReward"`
 	AttestationRewardConfig                   v1.AttestationRewardDeriverConfig                   `yaml:"attestationReward"`
+	Phase0RewardConfig                        v1.Phase0RewardDeriverConfig                        `yaml:"phase0Reward"`
 	SyncCommitteeRewardConfig                 v1.SyncCommitteeRewardDeriverConfig                 `yaml:"syncCommitteeReward"`
 	RandaoConfig                              v1.RandaoDeriverConfig                              `yaml:"randao"`
 	FinalityCheckpointConfig                  v1.FinalityCheckpointDeriverConfig                  `yaml:"finalityCheckpoint"`
@@ -86,6 +87,7 @@ func (c *Config) Validate() error {
 		&c.Consensus.BeaconStateBuilderPendingPaymentConfig.Iterator:        true,
 		&c.Consensus.BeaconStateBuilderPendingWithdrawalConfig.Iterator:     true,
 		&c.Consensus.BeaconStateExecutionPayloadAvailabilityConfig.Iterator: true,
+		&c.Consensus.Phase0RewardConfig.Iterator:                            true,
 	}
 
 	for name, d := range c.Consensus.iterators() {
@@ -146,6 +148,7 @@ func (c *ConsensusConfig) iterators() map[string]consensusIterator {
 		"executionRequestConsolidation":           {enabled: c.ExecutionRequestConsolidationConfig.Enabled, iterator: &c.ExecutionRequestConsolidationConfig.Iterator},
 		"blockReward":                             {enabled: c.BlockRewardConfig.Enabled, iterator: &c.BlockRewardConfig.Iterator},
 		"attestationReward":                       {enabled: c.AttestationRewardConfig.Enabled, iterator: &c.AttestationRewardConfig.Iterator},
+		"phase0Reward":                            {enabled: c.Phase0RewardConfig.Enabled, iterator: &c.Phase0RewardConfig.Iterator},
 		"syncCommitteeReward":                     {enabled: c.SyncCommitteeRewardConfig.Enabled, iterator: &c.SyncCommitteeRewardConfig.Iterator},
 		"randao":                                  {enabled: c.RandaoConfig.Enabled, iterator: &c.RandaoConfig.Iterator},
 		"finalityCheckpoint":                      {enabled: c.FinalityCheckpointConfig.Enabled, iterator: &c.FinalityCheckpointConfig.Iterator},

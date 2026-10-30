@@ -159,7 +159,8 @@ message SyncAggregateData {
 }
 
 // BlockRewardData contains the proposer reward breakdown for a single block,
-// derived from the beacon API /eth/v1/beacon/rewards/blocks/{block_id} endpoint.
+// derived from the beacon API /eth/v1/beacon/rewards/blocks/{block_id} endpoint,
+// or for phase0 blocks computed from beacon states (no sync aggregate).
 message BlockRewardData {
   // ProposerIndex is the validator index of the block proposer.
   google.protobuf.UInt64Value proposer_index = 1 [ json_name = "proposer_index" ];
@@ -178,7 +179,8 @@ message BlockRewardData {
 
 // AttestationRewardData contains the per-validator attestation reward components
 // for a single epoch, derived from the beacon API
-// /eth/v1/beacon/rewards/attestations/{epoch} endpoint.
+// /eth/v1/beacon/rewards/attestations/{epoch} endpoint, or for phase0 epochs
+// computed from beacon states.
 message AttestationRewardData {
   // ValidatorIndex is the validator index the reward applies to.
   google.protobuf.UInt64Value validator_index = 1 [ json_name = "validator_index" ];
@@ -188,7 +190,8 @@ message AttestationRewardData {
   google.protobuf.Int64Value target = 3 [ json_name = "target" ];
   // Source is the reward for correctly attesting to the source in gwei.
   google.protobuf.Int64Value source = 4 [ json_name = "source" ];
-  // InclusionDelay is the reward for inclusion delay in gwei.
+  // InclusionDelay is the reward for inclusion delay in gwei (phase0 only),
+  // excluding the share paid to the including block's proposer.
   google.protobuf.UInt64Value inclusion_delay = 5 [ json_name = "inclusion_delay" ];
   // Inactivity is the inactivity penalty in gwei.
   google.protobuf.Int64Value inactivity = 6 [ json_name = "inactivity" ];
@@ -2582,6 +2585,10 @@ message ClientMeta {
     AdditionalLibP2PTraceGossipSubPartialDataColumnData libp2p_trace_gossipsub_partial_data_column = 134 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN" ];
     AdditionalLibP2PTraceDataColumnCompletedData libp2p_trace_data_column_completed = 135 [ json_name = "LIBP2P_TRACE_DATA_COLUMN_COMPLETED" ];
     AdditionalLibP2PTraceGossipSubPartialDataColumnOutcomeData libp2p_trace_gossipsub_partial_data_column_outcome = 136 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME" ];
+
+    // Phase0 rewards computed from beacon states. They reuse the Beacon API reward additional data.
+    AdditionalEthV1BeaconAttestationRewardData eth_v1_beacon_phase0_attestation_reward = 137 [ json_name = "BEACON_API_ETH_V1_BEACON_PHASE0_ATTESTATION_REWARD" ];
+    AdditionalEthV1BeaconBlockRewardData eth_v1_beacon_phase0_block_reward = 138 [ json_name = "BEACON_API_ETH_V1_BEACON_PHASE0_BLOCK_REWARD" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2880,6 +2887,10 @@ message Event {
     LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN = 146;
     LIBP2P_TRACE_DATA_COLUMN_COMPLETED = 147;
     LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME = 148;
+
+    // Phase0 rewards computed from beacon states, for the epochs before Altair.
+    BEACON_API_ETH_V1_BEACON_PHASE0_ATTESTATION_REWARD = 149;
+    BEACON_API_ETH_V1_BEACON_PHASE0_BLOCK_REWARD = 150;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -3656,6 +3667,12 @@ message DecoratedEvent {
         [ json_name = "LIBP2P_TRACE_DATA_COLUMN_COMPLETED" ];
     xatu.libp2p.gossipsub.eth.PartialDataColumnOutcome libp2p_trace_gossipsub_partial_data_column_outcome = 269
         [ json_name = "LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME" ];
+
+    // Phase0 rewards computed from beacon states with the consensus spec's phase0 logic.
+    AttestationRewardData eth_v1_beacon_phase0_attestation_reward = 270
+        [ json_name = "BEACON_API_ETH_V1_BEACON_PHASE0_ATTESTATION_REWARD" ];
+    BlockRewardData eth_v1_beacon_phase0_block_reward = 271
+        [ json_name = "BEACON_API_ETH_V1_BEACON_PHASE0_BLOCK_REWARD" ];
   };
 }
 

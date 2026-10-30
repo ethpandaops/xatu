@@ -14803,6 +14803,48 @@ func (m *ClientMeta_Libp2PTraceGossipsubPartialDataColumnOutcome) MarshalToSized
 	}
 	return len(dAtA) - i, nil
 }
+func (m *ClientMeta_EthV1BeaconPhase0AttestationReward) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_EthV1BeaconPhase0AttestationReward) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconPhase0AttestationReward != nil {
+		size, err := m.EthV1BeaconPhase0AttestationReward.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x8
+		i--
+		dAtA[i] = 0xca
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ClientMeta_EthV1BeaconPhase0BlockReward) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_EthV1BeaconPhase0BlockReward) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconPhase0BlockReward != nil {
+		size, err := m.EthV1BeaconPhase0BlockReward.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x8
+		i--
+		dAtA[i] = 0xd2
+	}
+	return len(dAtA) - i, nil
+}
 func (m *ServerMeta_Event) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -23289,6 +23331,48 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubPartialDataColumnOutcome) MarshalToS
 	}
 	return len(dAtA) - i, nil
 }
+func (m *DecoratedEvent_EthV1BeaconPhase0AttestationReward) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *DecoratedEvent_EthV1BeaconPhase0AttestationReward) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconPhase0AttestationReward != nil {
+		size, err := m.EthV1BeaconPhase0AttestationReward.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x10
+		i--
+		dAtA[i] = 0xf2
+	}
+	return len(dAtA) - i, nil
+}
+func (m *DecoratedEvent_EthV1BeaconPhase0BlockReward) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *DecoratedEvent_EthV1BeaconPhase0BlockReward) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EthV1BeaconPhase0BlockReward != nil {
+		size, err := m.EthV1BeaconPhase0BlockReward.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x10
+		i--
+		dAtA[i] = 0xfa
+	}
+	return len(dAtA) - i, nil
+}
 
 var vtprotoPool_CreateEventsRequest = sync.Pool{
 	New: func() interface{} {
@@ -27668,6 +27752,12 @@ func (m *ClientMeta) ResetVT() {
 		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceGossipsubPartialDataColumnOutcome); ok {
 			oneof.Libp2PTraceGossipsubPartialDataColumnOutcome.ReturnToVTPool()
 		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconPhase0AttestationReward); ok {
+			oneof.EthV1BeaconPhase0AttestationReward.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconPhase0BlockReward); ok {
+			oneof.EthV1BeaconPhase0BlockReward.ReturnToVTPool()
+		}
 		m.Reset()
 	}
 }
@@ -29354,6 +29444,12 @@ func (m *DecoratedEvent) ResetVT() {
 		}
 		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGossipsubPartialDataColumnOutcome); ok {
 			oneof.Libp2PTraceGossipsubPartialDataColumnOutcome.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconPhase0AttestationReward); ok {
+			oneof.EthV1BeaconPhase0AttestationReward.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconPhase0BlockReward); ok {
+			oneof.EthV1BeaconPhase0BlockReward.ReturnToVTPool()
 		}
 		m.Reset()
 	}
@@ -35389,6 +35485,30 @@ func (m *ClientMeta_Libp2PTraceGossipsubPartialDataColumnOutcome) SizeVT() (n in
 	}
 	return n
 }
+func (m *ClientMeta_EthV1BeaconPhase0AttestationReward) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconPhase0AttestationReward != nil {
+		l = m.EthV1BeaconPhase0AttestationReward.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *ClientMeta_EthV1BeaconPhase0BlockReward) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconPhase0BlockReward != nil {
+		l = m.EthV1BeaconPhase0BlockReward.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
 func (m *ServerMeta_Event) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -39469,6 +39589,30 @@ func (m *DecoratedEvent_Libp2PTraceGossipsubPartialDataColumnOutcome) SizeVT() (
 		} else {
 			l = proto.Size(m.Libp2PTraceGossipsubPartialDataColumnOutcome)
 		}
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *DecoratedEvent_EthV1BeaconPhase0AttestationReward) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconPhase0AttestationReward != nil {
+		l = m.EthV1BeaconPhase0AttestationReward.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *DecoratedEvent_EthV1BeaconPhase0BlockReward) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EthV1BeaconPhase0BlockReward != nil {
+		l = m.EthV1BeaconPhase0BlockReward.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -75359,6 +75503,88 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 				m.AdditionalData = &ClientMeta_Libp2PTraceGossipsubPartialDataColumnOutcome{Libp2PTraceGossipsubPartialDataColumnOutcome: v}
 			}
 			iNdEx = postIndex
+		case 137:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconPhase0AttestationReward", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconPhase0AttestationReward); ok {
+				if err := oneof.EthV1BeaconPhase0AttestationReward.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := ClientMeta_AdditionalEthV1BeaconAttestationRewardDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.AdditionalData = &ClientMeta_EthV1BeaconPhase0AttestationReward{EthV1BeaconPhase0AttestationReward: v}
+			}
+			iNdEx = postIndex
+		case 138:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconPhase0BlockReward", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconPhase0BlockReward); ok {
+				if err := oneof.EthV1BeaconPhase0BlockReward.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := ClientMeta_AdditionalEthV1BeaconBlockRewardDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.AdditionalData = &ClientMeta_EthV1BeaconPhase0BlockReward{EthV1BeaconPhase0BlockReward: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -94995,6 +95221,88 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					}
 				}
 				m.Data = &DecoratedEvent_Libp2PTraceGossipsubPartialDataColumnOutcome{Libp2PTraceGossipsubPartialDataColumnOutcome: v}
+			}
+			iNdEx = postIndex
+		case 270:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconPhase0AttestationReward", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconPhase0AttestationReward); ok {
+				if err := oneof.EthV1BeaconPhase0AttestationReward.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := AttestationRewardDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &DecoratedEvent_EthV1BeaconPhase0AttestationReward{EthV1BeaconPhase0AttestationReward: v}
+			}
+			iNdEx = postIndex
+		case 271:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EthV1BeaconPhase0BlockReward", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconPhase0BlockReward); ok {
+				if err := oneof.EthV1BeaconPhase0BlockReward.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := BlockRewardDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Data = &DecoratedEvent_EthV1BeaconPhase0BlockReward{EthV1BeaconPhase0BlockReward: v}
 			}
 			iNdEx = postIndex
 		default:

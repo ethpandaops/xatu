@@ -33,6 +33,8 @@ type BackfillingCheckpoint struct {
 	lookAheadDistance int
 	config            *BackfillingCheckpointConfig
 	activationFork    spec.DataVersion
+	// endFork, when set, is the fork the type stops at: the head never passes the epoch before it.
+	endFork *spec.DataVersion
 
 	// lastBackfill is the last backfill step handed out; seeing its first epoch again means it never committed.
 	lastBackfill *backfillStep
@@ -161,6 +163,13 @@ func (c *BackfillingCheckpoint) Start(ctx context.Context, activationFork spec.D
 	}
 
 	return nil
+}
+
+// StartUntil starts the iterator for a type that only exists before endFork.
+func (c *BackfillingCheckpoint) StartUntil(ctx context.Context, activationFork, endFork spec.DataVersion) error {
+	c.endFork = &endFork
+
+	return c.Start(ctx, activationFork)
 }
 
 // UpdateLocation records epoch as processed in direction; callers only call it once the epoch's events are written.
@@ -326,6 +335,11 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 
 		c.metrics.SetFinalizedCheckpointEpoch(c.networkName, float64(checkpoint.Epoch))
 
+		checkpoint, err = c.capAtEndFork(checkpoint)
+		if err != nil {
+			return nil, err
+		}
+
 		// Check where we are at from the coordinator
 		location, err := c.coordinator.GetCannonLocation(ctx, c.cannonType, c.networkID)
 		if err != nil {
@@ -476,6 +490,28 @@ func (c *BackfillingCheckpoint) Next(ctx context.Context) (rsp *BackFillingCheck
 	}
 }
 
+// capAtEndFork holds the checkpoint at the last epoch before the end fork, if the type has one.
+func (c *BackfillingCheckpoint) capAtEndFork(checkpoint *phase0.Checkpoint) (*phase0.Checkpoint, error) {
+	if c.endFork == nil {
+		return checkpoint, nil
+	}
+
+	forkEpoch, err := c.chain.ForkEpoch(*c.endFork)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to get epoch for fork: %s", *c.endFork))
+	}
+
+	if forkEpoch == 0 {
+		return nil, fmt.Errorf("no epochs before fork %s", *c.endFork)
+	}
+
+	if checkpoint.Epoch < forkEpoch {
+		return checkpoint, nil
+	}
+
+	return &phase0.Checkpoint{Epoch: forkEpoch - 1}, nil
+}
+
 func (c *BackfillingCheckpoint) shouldBackfill(ctx context.Context) bool {
 	return c.config.Backfill.Enabled
 }
@@ -598,6 +634,8 @@ func (c *BackfillingCheckpoint) GetMarker(location *xatu.CannonLocation) (*xatu.
 		marker = location.GetEthV1BeaconBlockReward().GetBackfillingCheckpointMarker()
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD:
 		marker = location.GetEthV1BeaconAttestationReward().GetBackfillingCheckpointMarker()
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_PHASE0_REWARD:
+		marker = location.GetEthV1BeaconPhase0Reward().GetBackfillingCheckpointMarker()
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_SYNC_COMMITTEE_REWARD:
 		marker = location.GetEthV1BeaconSyncCommitteeReward().GetBackfillingCheckpointMarker()
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_STATE_RANDAO:
@@ -801,6 +839,12 @@ func (c *BackfillingCheckpoint) createLocationFromEpochNumber(finalized, backfil
 	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_ATTESTATION_REWARD:
 		location.Data = &xatu.CannonLocation_EthV1BeaconAttestationReward{
 			EthV1BeaconAttestationReward: &xatu.CannonLocationEthV1BeaconAttestationReward{
+				BackfillingCheckpointMarker: marker,
+			},
+		}
+	case xatu.CannonType_BEACON_API_ETH_V1_BEACON_PHASE0_REWARD:
+		location.Data = &xatu.CannonLocation_EthV1BeaconPhase0Reward{
+			EthV1BeaconPhase0Reward: &xatu.CannonLocationEthV1BeaconPhase0Reward{
 				BackfillingCheckpointMarker: marker,
 			},
 		}

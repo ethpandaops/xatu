@@ -122,6 +122,16 @@ derivers:
     # attestationReward is per-active-validator-per-epoch: ~199M rows/day,
     # ~127 GB/yr on mainnet. Disable here if you don't need it.
     attestationReward:     { enabled: true }
+    # phase0Reward computes the phase0 (pre-Altair) attestation and block rewards
+    # the endpoints above cannot serve, from the full beacon state at the last
+    # slot of each epoch: one state download per epoch, so it needs a beacon node
+    # that serves historical phase0 states. Its head stays at the epoch before
+    # Altair; enable backfill (epochsPerBatch 1) to walk down to genesis.
+    # Mainnet: ~74k epochs, ~9B attestation rows.
+    phase0Reward:
+      enabled: false
+      iterator:
+        backfill: { enabled: true, toEpoch: 0 }
     # ── Beacon state metadata ──
     randao:                { enabled: false }
     finalityCheckpoint:    { enabled: false }

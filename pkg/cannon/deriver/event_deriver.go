@@ -42,6 +42,7 @@ var _ EventDeriver = &v2.ExecutionRequestWithdrawalDeriver{}
 var _ EventDeriver = &v2.ExecutionRequestConsolidationDeriver{}
 var _ EventDeriver = &v1.BlockRewardDeriver{}
 var _ EventDeriver = &v1.AttestationRewardDeriver{}
+var _ EventDeriver = &v1.Phase0RewardDeriver{}
 var _ EventDeriver = &v1.SyncCommitteeRewardDeriver{}
 var _ EventDeriver = &v1.RandaoDeriver{}
 var _ EventDeriver = &v1.FinalityCheckpointDeriver{}

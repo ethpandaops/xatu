@@ -35,6 +35,8 @@ type BackfillingCheckpoint struct {
 	activationFork    spec.DataVersion
 	// endFork, when set, is the fork the type stops at: the head never passes the epoch before it.
 	endFork *spec.DataVersion
+	// epochsBeforeFork is how many epochs before its activation fork the type's backfill reaches.
+	epochsBeforeFork phase0.Epoch
 
 	// lastBackfill is the last backfill step handed out; seeing its first epoch again means it never committed.
 	lastBackfill *backfillStep
@@ -168,6 +170,13 @@ func (c *BackfillingCheckpoint) Start(ctx context.Context, activationFork spec.D
 // StartUntil starts the iterator for a type that only exists before endFork.
 func (c *BackfillingCheckpoint) StartUntil(ctx context.Context, activationFork, endFork spec.DataVersion) error {
 	c.endFork = &endFork
+
+	return c.Start(ctx, activationFork)
+}
+
+// StartEarly starts the iterator for a type whose data starts epochsBeforeFork epochs before its activation fork.
+func (c *BackfillingCheckpoint) StartEarly(ctx context.Context, activationFork spec.DataVersion, epochsBeforeFork phase0.Epoch) error {
+	c.epochsBeforeFork = epochsBeforeFork
 
 	return c.Start(ctx, activationFork)
 }
@@ -695,7 +704,7 @@ func (c *BackfillingCheckpoint) getEarliestPossibleBackfillEpoch() (phase0.Epoch
 			return 0, errors.Wrap(err, "failed to get fork epoch")
 		}
 
-		activationEpoch = forkEpoch
+		activationEpoch = forkEpoch - min(forkEpoch, c.epochsBeforeFork)
 	}
 
 	return backfillTargetEpoch(activationEpoch, c.config.Backfill.ToEpoch), nil

@@ -16,6 +16,7 @@ const (
 	ClientGrandine   Client = "grandine"
 	ClientCaplin     Client = "caplin"
 	ClientTysm       Client = "tysm"
+	ClientSilver     Client = "silver"
 )
 
 var AllClients = []Client{
@@ -28,6 +29,7 @@ var AllClients = []Client{
 	ClientGrandine,
 	ClientCaplin,
 	ClientTysm,
+	ClientSilver,
 }
 
 func ClientFromString(client string) Client {
@@ -63,6 +65,10 @@ func ClientFromString(client string) Client {
 
 	if strings.Contains(asLower, "caplin") {
 		return ClientCaplin
+	}
+
+	if strings.Contains(asLower, "silver") {
+		return ClientSilver
 	}
 
 	return ClientUnknown

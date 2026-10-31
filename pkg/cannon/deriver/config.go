@@ -77,6 +77,10 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("consensus.blockAccessList: %w", err)
 	}
 
+	if err := c.Consensus.Phase0RewardConfig.Validate(); err != nil {
+		return fmt.Errorf("consensus.phase0Reward: %w", err)
+	}
+
 	// These derivers do not derive a step epoch by epoch, or share one beacon state download per epoch.
 	singleEpoch := map[*iterator.BackfillingCheckpointConfig]bool{
 		&c.Consensus.BeaconSyncCommitteeConfig.Iterator:                     true,
@@ -87,7 +91,6 @@ func (c *Config) Validate() error {
 		&c.Consensus.BeaconStateBuilderPendingPaymentConfig.Iterator:        true,
 		&c.Consensus.BeaconStateBuilderPendingWithdrawalConfig.Iterator:     true,
 		&c.Consensus.BeaconStateExecutionPayloadAvailabilityConfig.Iterator: true,
-		&c.Consensus.Phase0RewardConfig.Iterator:                            true,
 	}
 
 	for name, d := range c.Consensus.iterators() {

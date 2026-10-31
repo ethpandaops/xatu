@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"runtime/debug"
 	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec"
@@ -21,7 +20,7 @@ import (
 )
 
 // WithPhase0BeaconState downloads the phase0 beacon state stateID and calls fn with it and the matching consensus spec.
-// It holds the full-state semaphore while fn runs, so only one full state is in memory at a time.
+// The state is only referenced while fn runs; callers bound how many run at once, each holding a full state.
 func (b *BeaconNode) WithPhase0BeaconState(
 	ctx context.Context,
 	stateID string,
@@ -35,17 +34,6 @@ func (b *BeaconNode) WithPhase0BeaconState(
 	if err != nil {
 		return err
 	}
-
-	select {
-	case b.stateSem <- struct{}{}:
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-
-	defer func() { <-b.stateSem }()
-
-	// Return the state's heap to the OS once fn is done instead of waiting for the scavenger.
-	defer debug.FreeOSMemory()
 
 	start := time.Now()
 

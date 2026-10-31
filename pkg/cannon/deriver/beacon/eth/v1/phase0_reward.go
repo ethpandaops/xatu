@@ -32,14 +32,28 @@ const (
 	Phase0RewardDeriverName = xatu.CannonType_BEACON_API_ETH_V1_BEACON_PHASE0_REWARD
 )
 
+// MaxPhase0RewardWorkers bounds phase0Reward.workers: each worker holds a full beacon state while it is decoded.
+const MaxPhase0RewardWorkers = 16
+
 type Phase0RewardDeriverConfig struct {
-	Enabled  bool                                 `yaml:"enabled" default:"false"`
+	Enabled bool `yaml:"enabled" default:"false"`
+	// Workers is how many beacon states, and how many epoch writes, a backfill batch has in flight at once.
+	// It only helps with iterator.backfill.epochsPerBatch above 1.
+	Workers  int                                  `yaml:"workers" default:"1"`
 	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
+}
+
+func (c *Phase0RewardDeriverConfig) Validate() error {
+	if c.Workers > MaxPhase0RewardWorkers {
+		return fmt.Errorf("workers must be at most %d, got %d", MaxPhase0RewardWorkers, c.Workers)
+	}
+
+	return nil
 }
 
 // Phase0RewardDeriver computes the attestation and block rewards of phase0 epochs from beacon states, since the Beacon
 // API rewards endpoints only serve Altair onwards. Epoch E's rows need the states at the last slots of epochs E-1, E and
-// E+1; consecutive epochs share two of them, so each step downloads one new state.
+// E+1; consecutive epochs share two of them, so each epoch downloads one new state.
 type Phase0RewardDeriver struct {
 	log               observability.ContextualLogger
 	cfg               *Phase0RewardDeriverConfig
@@ -48,8 +62,8 @@ type Phase0RewardDeriver struct {
 	beacon            *ethereum.BeaconNode
 	clientMeta        *xatu.ClientMeta
 
-	// rewards caches computed epoch rewards by state epoch. Only the run loop touches it.
-	rewards map[phase0.Epoch]*phase0EpochRewards
+	slotsPerEpoch uint64
+	batch         *phase0BatchRunner
 }
 
 func NewPhase0RewardDeriver(log observability.ContextualLogger, config *Phase0RewardDeriverConfig, iter *iterator.BackfillingCheckpoint, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta) *Phase0RewardDeriver {
@@ -62,7 +76,6 @@ func NewPhase0RewardDeriver(log observability.ContextualLogger, config *Phase0Re
 		iterator:   iter,
 		beacon:     beacon,
 		clientMeta: clientMeta,
-		rewards:    map[phase0.Epoch]*phase0EpochRewards{},
 	}
 }
 
@@ -100,7 +113,18 @@ func (b *Phase0RewardDeriver) Start(ctx context.Context) error {
 		return nil
 	}
 
-	b.log.WithContext(ctx).WithField("altair_epoch", altair).Info("Phase0 reward deriver enabled")
+	sp, err := b.beacon.Node().Spec()
+	if err != nil {
+		return errors.Wrap(err, "failed to obtain spec")
+	}
+
+	b.slotsPerEpoch = uint64(sp.SlotsPerEpoch)
+	b.batch = &phase0BatchRunner{workers: b.cfg.Workers, altair: altair, load: b.loadRewards, emit: b.emitEpoch}
+
+	b.log.WithContext(ctx).WithFields(logrus.Fields{
+		"altair_epoch": altair,
+		"workers":      max(1, b.cfg.Workers),
+	}).Info("Phase0 reward deriver enabled")
 
 	if err := b.iterator.StartUntil(ctx, b.ActivationFork(), spec.DataVersionAltair); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
@@ -150,21 +174,13 @@ func (b *Phase0RewardDeriver) run(rctx context.Context) {
 
 				b.lookAhead(ctx, position.LookAheads)
 
-				events, err := iterator.DeriveEpochs(ctx, position.Epochs(), b.processEpoch)
-				if err != nil {
-					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
+				// Each epoch's events are written as soon as it is derived; the marker only moves once all are.
+				if err := b.batch.run(ctx, position.Epochs()); err != nil {
+					b.log.WithError(err).WithField("epoch", iterator.FailedEpoch(err, position.Next)).WithContext(ctx).Error("Failed to process epoch")
 
 					span.SetStatus(codes.Error, err.Error())
 
 					return "", err
-				}
-
-				for _, fn := range b.onEventsCallbacks {
-					if err := fn(ctx, events); err != nil {
-						span.SetStatus(codes.Error, err.Error())
-
-						return "", errors.Wrap(err, "failed to send events")
-					}
 				}
 
 				if err := b.iterator.UpdateLocation(ctx, position.LastEpoch(), position.Direction); err != nil {
@@ -222,65 +238,22 @@ func (b *Phase0RewardDeriver) altairEpoch() (phase0.Epoch, error) {
 	return fork.Epoch, nil
 }
 
-func (b *Phase0RewardDeriver) processEpoch(ctx context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
+// emitEpoch derives the epoch's block and attestation rows and writes them.
+func (b *Phase0RewardDeriver) emitEpoch(ctx context.Context, epoch phase0.Epoch, previous, current, next *phase0EpochRewards) error {
 	ctx, span := observability.Tracer().Start(ctx,
-		"Phase0RewardDeriver.processEpoch",
+		"Phase0RewardDeriver.emitEpoch",
 		trace.WithAttributes(attribute.Int64("epoch", int64(epoch))), //nolint:gosec // epoch fits int64
 	)
 	defer span.End()
 
-	sp, err := b.beacon.Node().Spec()
+	blocks, versioned, err := b.epochBlocks(ctx, epoch, b.slotsPerEpoch)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to obtain spec")
+		return err
 	}
 
-	slotsPerEpoch := uint64(sp.SlotsPerEpoch)
-
-	altair, err := b.altairEpoch()
+	blockRewards, err := computePhase0BlockRewards(blocks, b.slotsPerEpoch, previous, current, next)
 	if err != nil {
-		return nil, err
-	}
-
-	if epoch >= altair {
-		return nil, fmt.Errorf("epoch %d is not before altair (epoch %d)", epoch, altair)
-	}
-
-	var previous, next *phase0EpochRewards
-
-	if epoch > 0 {
-		if previous, err = b.epochRewards(ctx, epoch-1, slotsPerEpoch); err != nil {
-			return nil, err
-		}
-	}
-
-	current, err := b.epochRewards(ctx, epoch, slotsPerEpoch)
-	if err != nil {
-		return nil, err
-	}
-
-	// The transition ending the last phase0 epoch runs the phase0 rules, but upgrades the state to Altair: the
-	// attestations of that epoch are rewarded by Altair's rules, so it has no phase0 attestation rows.
-	if epoch+1 < altair {
-		if next, err = b.epochRewards(ctx, epoch+1, slotsPerEpoch); err != nil {
-			return nil, err
-		}
-	}
-
-	// Keep what the neighbouring epochs reuse, whichever direction the iterator walks.
-	for cached := range b.rewards {
-		if cached+1 < epoch || cached > epoch+1 {
-			delete(b.rewards, cached)
-		}
-	}
-
-	blocks, versioned, err := b.epochBlocks(ctx, epoch, slotsPerEpoch)
-	if err != nil {
-		return nil, err
-	}
-
-	blockRewards, err := computePhase0BlockRewards(blocks, slotsPerEpoch, previous, current, next)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to compute block rewards for epoch %d", epoch)
+		return errors.Wrapf(err, "failed to compute block rewards for epoch %d", epoch)
 	}
 
 	events := make([]*xatu.DecoratedEvent, 0, len(blockRewards))
@@ -288,37 +261,37 @@ func (b *Phase0RewardDeriver) processEpoch(ctx context.Context, epoch phase0.Epo
 	for i := range blockRewards {
 		event, err := b.createBlockRewardEvent(&blockRewards[i], versioned[i])
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		events = append(events, event)
 	}
 
-	if next == nil {
-		return events, nil
-	}
+	if next != nil {
+		additionalData := b.attestationRewardAdditionalData(epoch, b.slotsPerEpoch)
 
-	additionalData := b.attestationRewardAdditionalData(epoch, slotsPerEpoch)
+		for i := range next.Attesters {
+			event, err := b.createAttestationRewardEvent(&next.Attesters[i], additionalData)
+			if err != nil {
+				return err
+			}
 
-	for i := range next.Attesters {
-		event, err := b.createAttestationRewardEvent(&next.Attesters[i], additionalData)
-		if err != nil {
-			return nil, err
+			events = append(events, event)
 		}
-
-		events = append(events, event)
 	}
 
-	return events, nil
+	for _, fn := range b.onEventsCallbacks {
+		if err := fn(ctx, events); err != nil {
+			return errors.Wrapf(err, "failed to send events for epoch %d", epoch)
+		}
+	}
+
+	return nil
 }
 
-// epochRewards returns the rewards read from the state at the last slot of stateEpoch.
-func (b *Phase0RewardDeriver) epochRewards(ctx context.Context, stateEpoch phase0.Epoch, slotsPerEpoch uint64) (*phase0EpochRewards, error) {
-	if rewards, ok := b.rewards[stateEpoch]; ok {
-		return rewards, nil
-	}
-
-	slot := phase0.Slot((uint64(stateEpoch)+1)*slotsPerEpoch - 1)
+// loadRewards computes the rewards from the state at the last slot of stateEpoch.
+func (b *Phase0RewardDeriver) loadRewards(ctx context.Context, stateEpoch phase0.Epoch) (*phase0EpochRewards, error) {
+	slot := phase0.Slot((uint64(stateEpoch)+1)*b.slotsPerEpoch - 1)
 
 	var rewards *phase0EpochRewards
 
@@ -339,8 +312,6 @@ func (b *Phase0RewardDeriver) epochRewards(ctx context.Context, stateEpoch phase
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to compute rewards from the state at slot %d", slot)
 	}
-
-	b.rewards[stateEpoch] = rewards
 
 	return rewards, nil
 }

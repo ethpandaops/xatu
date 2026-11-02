@@ -207,6 +207,7 @@ func TestDeriveAndSendEpochs(t *testing.T) {
 
 			mu.Lock()
 			inFlight--
+
 			sent = append(sent, events[0].GetEvent().GetId())
 			mu.Unlock()
 

@@ -34,7 +34,10 @@ const (
 )
 
 type BlockRewardDeriverConfig struct {
-	Enabled  bool                                 `yaml:"enabled" default:"true"`
+	Enabled bool `yaml:"enabled" default:"true"`
+	// Workers is how many epochs of a backfill batch are derived and written at once.
+	// It only helps with iterator.backfill.epochsPerBatch above 1.
+	Workers  int                                  `yaml:"workers" default:"1"`
 	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
@@ -99,6 +102,16 @@ func (b *BlockRewardDeriver) Stop(ctx context.Context) error {
 	return nil
 }
 
+func (b *BlockRewardDeriver) sendEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
+	for _, fn := range b.onEventsCallbacks {
+		if err := fn(ctx, events); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (b *BlockRewardDeriver) run(rctx context.Context) {
 	bo := backoff.NewExponentialBackOff()
 	bo.MaxInterval = 3 * time.Minute
@@ -137,24 +150,12 @@ func (b *BlockRewardDeriver) run(rctx context.Context) {
 				b.lookAhead(ctx, position.LookAheads)
 
 				// Process the epoch
-				events, err := iterator.DeriveEpochs(ctx, position.Epochs(), b.processEpoch)
-				if err != nil {
-					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
+				if err := iterator.DeriveAndSendEpochs(ctx, position.Epochs(), b.cfg.Workers, b.processEpoch, b.sendEvents); err != nil {
+					b.log.WithError(err).WithField("epoch", iterator.FailedEpoch(err, position.Next)).WithContext(ctx).Error("Failed to process epoch")
 
 					span.SetStatus(codes.Error, err.Error())
 
 					return "", err
-				}
-
-				span.AddEvent("Epoch processing complete. Sending events...")
-
-				// Send the events
-				for _, fn := range b.onEventsCallbacks {
-					if err := fn(ctx, events); err != nil {
-						span.SetStatus(codes.Error, err.Error())
-
-						return "", errors.Wrap(err, "failed to send events")
-					}
 				}
 
 				span.AddEvent("Events sent. Updating location...")

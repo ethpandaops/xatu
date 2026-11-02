@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	v1 "github.com/ethpandaops/xatu/pkg/cannon/deriver/beacon/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 )
 
@@ -71,6 +72,17 @@ func TestValidateEpochsPerBatch(t *testing.T) {
 		cfg.Consensus.BeaconBlockGraffitiConfig.Iterator.Backfill.EpochsPerBatch = 64
 		cfg.Consensus.BeaconBlockConfig.Iterator.Backfill.EpochsPerBatch = iterator.MaxEpochsPerBatch
 		require.NoError(t, cfg.Validate())
+	})
+
+	t.Run("reward workers are bounded", func(t *testing.T) {
+		cfg := defaultConfig(t)
+		cfg.Consensus.AttestationRewardConfig.Workers = v1.MaxRewardWorkers
+		require.NoError(t, cfg.Validate())
+
+		cfg.Consensus.AttestationRewardConfig.Workers = v1.MaxRewardWorkers + 1
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "consensus.attestationReward")
 	})
 
 	t.Run("batch size is bounded", func(t *testing.T) {

@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"math"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/stretchr/testify/assert"
@@ -154,6 +156,80 @@ func TestDeriveEpochs(t *testing.T) {
 		require.ErrorIs(t, err, context.Canceled)
 		assert.Nil(t, events)
 		assert.Equal(t, []phase0.Epoch{10}, derived)
+	})
+}
+
+func TestDeriveAndSendEpochs(t *testing.T) {
+	ctx := context.Background()
+	epochs := []phase0.Epoch{10, 9, 8, 7, 6}
+
+	derive := func(_ context.Context, epoch phase0.Epoch) ([]*xatu.DecoratedEvent, error) {
+		return []*xatu.DecoratedEvent{epochEvent(epoch)}, nil
+	}
+
+	t.Run("one worker sends the whole step at once", func(t *testing.T) {
+		var sends [][]*xatu.DecoratedEvent
+
+		require.NoError(t, DeriveAndSendEpochs(ctx, epochs, 1, derive, func(_ context.Context, events []*xatu.DecoratedEvent) error {
+			sends = append(sends, events)
+
+			return nil
+		}))
+		require.Len(t, sends, 1)
+		assert.Len(t, sends[0], len(epochs))
+	})
+
+	t.Run("workers send every epoch once, that many at a time", func(t *testing.T) {
+		var (
+			mu             sync.Mutex
+			sent           []string
+			inFlight, peak int
+		)
+
+		release := make(chan struct{})
+		releaseOnce := sync.Once{}
+
+		send := func(_ context.Context, events []*xatu.DecoratedEvent) error {
+			mu.Lock()
+			inFlight++
+			peak = max(peak, inFlight)
+
+			if inFlight == 3 {
+				releaseOnce.Do(func() { close(release) })
+			}
+			mu.Unlock()
+
+			select {
+			case <-release:
+			case <-time.After(5 * time.Second):
+				return errors.New("sends never reached three in flight")
+			}
+
+			mu.Lock()
+			inFlight--
+			sent = append(sent, events[0].GetEvent().GetId())
+			mu.Unlock()
+
+			return nil
+		}
+
+		require.NoError(t, DeriveAndSendEpochs(ctx, epochs, 3, derive, send))
+		assert.Equal(t, 3, peak)
+		assert.ElementsMatch(t, []string{epochID(10), epochID(9), epochID(8), epochID(7), epochID(6)}, sent)
+	})
+
+	t.Run("a failed send names its epoch", func(t *testing.T) {
+		errBoom := errors.New("boom")
+
+		err := DeriveAndSendEpochs(ctx, epochs, 4, derive, func(_ context.Context, events []*xatu.DecoratedEvent) error {
+			if events[0].GetEvent().GetId() == epochID(8) {
+				return errBoom
+			}
+
+			return nil
+		})
+		require.ErrorIs(t, err, errBoom)
+		assert.Equal(t, phase0.Epoch(8), FailedEpoch(err, 10))
 	})
 }
 

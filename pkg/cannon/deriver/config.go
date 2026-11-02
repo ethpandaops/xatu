@@ -77,8 +77,15 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("consensus.blockAccessList: %w", err)
 	}
 
-	if err := c.Consensus.Phase0RewardConfig.Validate(); err != nil {
-		return fmt.Errorf("consensus.phase0Reward: %w", err)
+	for name, workers := range map[string]int{
+		"phase0Reward":        c.Consensus.Phase0RewardConfig.Workers,
+		"attestationReward":   c.Consensus.AttestationRewardConfig.Workers,
+		"syncCommitteeReward": c.Consensus.SyncCommitteeRewardConfig.Workers,
+		"blockReward":         c.Consensus.BlockRewardConfig.Workers,
+	} {
+		if workers > v1.MaxRewardWorkers {
+			return fmt.Errorf("consensus.%s: workers must be at most %d, got %d", name, v1.MaxRewardWorkers, workers)
+		}
 	}
 
 	// These derivers do not derive a step epoch by epoch, or share one beacon state download per epoch.

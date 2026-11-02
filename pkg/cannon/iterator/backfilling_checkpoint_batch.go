@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -63,6 +64,54 @@ func DeriveEpochs(ctx context.Context, epochs []phase0.Epoch, derive EpochDerive
 	}
 
 	return all, nil
+}
+
+// DeriveAndSendEpochs derives and sends every epoch of a step. With one worker it derives them all and sends them in
+// one call, as DeriveEpochs does; with more, up to workers epochs are derived and sent at once, each as soon as it is
+// derived. Either way the caller only moves the marker once it returns nil.
+func DeriveAndSendEpochs(
+	ctx context.Context,
+	epochs []phase0.Epoch,
+	workers int,
+	derive EpochDeriveFunc,
+	send func(ctx context.Context, events []*xatu.DecoratedEvent) error,
+) error {
+	if workers <= 1 {
+		events, err := DeriveEpochs(ctx, epochs, derive)
+		if err != nil {
+			return err
+		}
+
+		if err := send(ctx, events); err != nil {
+			return fmt.Errorf("failed to send events: %w", err)
+		}
+
+		return nil
+	}
+
+	if len(epochs) == 0 {
+		return errors.New("no epochs to derive")
+	}
+
+	group, groupCtx := errgroup.WithContext(ctx)
+	group.SetLimit(workers)
+
+	for _, epoch := range epochs {
+		group.Go(func() error {
+			events, err := derive(groupCtx, epoch)
+			if err == nil {
+				err = send(groupCtx, events)
+			}
+
+			if err != nil {
+				return &EpochError{Epoch: epoch, Err: err}
+			}
+
+			return nil
+		})
+	}
+
+	return group.Wait()
 }
 
 // backfillEpochs walks down from next for up to size epochs, never below target (callers guarantee next >= target).

@@ -32,8 +32,8 @@ const (
 	Phase0RewardDeriverName = xatu.CannonType_BEACON_API_ETH_V1_BEACON_PHASE0_REWARD
 )
 
-// MaxPhase0RewardWorkers bounds phase0Reward.workers: each worker holds a full beacon state while it is decoded.
-const MaxPhase0RewardWorkers = 16
+// MaxRewardWorkers bounds the reward derivers' workers: each holds an epoch's rows, and phase0Reward's a full state.
+const MaxRewardWorkers = 16
 
 type Phase0RewardDeriverConfig struct {
 	Enabled bool `yaml:"enabled" default:"false"`
@@ -41,14 +41,6 @@ type Phase0RewardDeriverConfig struct {
 	// It only helps with iterator.backfill.epochsPerBatch above 1.
 	Workers  int                                  `yaml:"workers" default:"1"`
 	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
-}
-
-func (c *Phase0RewardDeriverConfig) Validate() error {
-	if c.Workers > MaxPhase0RewardWorkers {
-		return fmt.Errorf("workers must be at most %d, got %d", MaxPhase0RewardWorkers, c.Workers)
-	}
-
-	return nil
 }
 
 // Phase0RewardDeriver computes the attestation and block rewards of phase0 epochs from beacon states, since the Beacon

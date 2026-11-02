@@ -98,7 +98,10 @@ func parseAgentVersion(raw string) agentVersion {
 		parsed.Version = parts[1]
 	}
 
-	if len(parts) > 2 && parsed.Implementation != "prysm" {
+	// The third segment is the platform for most clients, but a commit for
+	// some (Prysm's full sha, Lodestar's short one); it is kept either way so
+	// versions can be resolved to release commits.
+	if len(parts) > 2 {
 		parsed.Platform = parts[2]
 	}
 

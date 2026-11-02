@@ -9,6 +9,7 @@ import (
 	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/beacon/pkg/beacon/state"
+	"github.com/ethpandaops/ethcore/pkg/ethereum/clients"
 	"github.com/ethpandaops/ethwallclock"
 	v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/go-co-op/gocron/v2"
@@ -231,5 +232,5 @@ func (m *MetadataService) NodeVersion(_ context.Context) string {
 }
 
 func (m *MetadataService) Client(ctx context.Context) string {
-	return string(ClientFromString(m.NodeVersion(ctx)))
+	return string(clients.ClientFromString(m.NodeVersion(ctx)))
 }

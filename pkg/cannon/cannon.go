@@ -1351,3 +1351,4 @@ func (c *Cannon) startDeriverWhenReady(ctx context.Context, d deriver.EventDeriv
 		return d.Start(ctx)
 	}
 }
+// CI cache timing probe; do not merge.

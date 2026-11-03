@@ -1,6 +1,15 @@
 name: Go Test
 
 on:
+  # Running on master also seeds setup-go's module and build cache there,
+  # which PRs fall back to when they have no cache entry of their own.
+  push:
+    branches: [master]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/test.yaml'
   pull_request:
     paths:
       - '**.go'

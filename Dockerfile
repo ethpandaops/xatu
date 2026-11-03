@@ -1,7 +1,11 @@
 FROM golang:1.26.10 AS builder
 WORKDIR /src
 COPY go.sum go.mod ./
-RUN go mod download
+# Module and build caches live in cache mounts, not layers, so a source change
+# recompiles only the packages it touched. CI persists them across runs with
+# buildkit-cache-dance (see .github/workflows/build-cache.yaml).
+RUN --mount=type=cache,target=/go/pkg/mod \
+  go mod download
 COPY . .
 # Version metadata is injected at release time (see .github/workflows/goreleaser.yaml);
 # local/CI builds fall back to dev defaults. GOOS/GOARCH come from BuildKit's
@@ -11,7 +15,9 @@ ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION=dev
 ARG GIT_COMMIT=unknown
-RUN go build \
+RUN --mount=type=cache,target=/go/pkg/mod \
+  --mount=type=cache,target=/root/.cache/go-build \
+  go build \
   -ldflags="-s -w \
   -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release=${VERSION} \
   -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit=${GIT_COMMIT} \

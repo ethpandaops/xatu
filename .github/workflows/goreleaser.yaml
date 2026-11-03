@@ -116,6 +116,13 @@ jobs:
           # Match goreleaser's {{ .Version }} (tag with a single leading 'v' stripped).
           TAG_NAME=${GITHUB_REF#refs/tags/}
           echo "CRYO_IMAGE_VERSION=${TAG_NAME#v}" >> "$GITHUB_ENV"
+      # BuildKit's COPY cache key includes the source file's mode. This
+      # self-hosted runner checks out with umask 002 (0664), GitHub-hosted
+      # runners with 0644, so without this the cryo layers written to
+      # cryo-buildcache here never matched a PR build and every PR recompiled
+      # cryo. COPY --chmod does not help: the key uses the source mode.
+      - name: Normalize cryo patch permissions for the cache key
+        run: chmod 0644 deploy/cryo/*.patch
       - name: Build and push xatu+cryo image
         uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
         with:

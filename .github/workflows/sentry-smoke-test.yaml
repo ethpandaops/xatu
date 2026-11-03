@@ -100,10 +100,12 @@ jobs:
         # mode=min (final image layers only): still enough to skip an unchanged
         # cryo stage on a PR's later pushes, but mode=max wrote ~3 GB per PR and
         # kept the repo's 10 GB Actions cache evicting everything within a day.
+        # timeout/ignore-error: the gha backend can stall on GitHub's throttled
+        # cache API (default timeout 10m); a slow cache must not hang the job.
         cache-from: |
-          type=gha
+          type=gha,timeout=2m
           type=registry,ref=ethpandaops/xatu:cryo-buildcache
-        cache-to: type=gha,mode=min
+        cache-to: type=gha,mode=min,timeout=2m,ignore-error=true
     - name: Build sentry-logs image
       if: steps.canary.outputs.skip != 'true'
       uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
@@ -111,8 +113,8 @@ jobs:
         context: ./sentry-logs
         load: true
         tags: ethpandaops/xatu-sentry-logs:local
-        cache-from: type=gha,scope=sentry-logs
-        cache-to: type=gha,mode=max,scope=sentry-logs
+        cache-from: type=gha,scope=sentry-logs,timeout=2m
+        cache-to: type=gha,mode=max,scope=sentry-logs,timeout=2m,ignore-error=true
     - name: Create sentry-logs directory and log file
       if: steps.canary.outputs.skip != 'true'
       run: |

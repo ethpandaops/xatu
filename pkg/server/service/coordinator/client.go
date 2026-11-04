@@ -749,6 +749,10 @@ func (c *Client) UpsertCannonLocation(ctx context.Context, req *xatu.UpsertCanno
 		}
 	}
 
+	if req.Location == nil {
+		return nil, status.Error(codes.InvalidArgument, "location is required")
+	}
+
 	newLocation := &cannon.Location{}
 
 	err := newLocation.Marshal(req.Location)
@@ -807,6 +811,10 @@ func (c *Client) UpsertRelayMonitorLocation(ctx context.Context, req *xatu.Upser
 		if err := c.validateAuth(ctx, md); err != nil {
 			return nil, err
 		}
+	}
+
+	if req.Location == nil {
+		return nil, status.Error(codes.InvalidArgument, "location is required")
 	}
 
 	newLocation := &relaymonitor.Location{}

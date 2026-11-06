@@ -12,7 +12,7 @@ func TestDecodeGraffiti(t *testing.T) {
 		graffiti []byte
 		want     string
 	}{
-		"empty":            {graffiti: make([]byte, 32), want: ""},
+		"all null bytes":   {graffiti: make([]byte, 32), want: ""},
 		"full width":       {graffiti: []byte("0123456789abcdef0123456789abcdef"), want: "0123456789abcdef0123456789abcdef"},
 		"interior null":    {graffiti: append([]byte("a\x00b"), make([]byte, 29)...), want: "a\x00b"},
 		"emoji":            {graffiti: append([]byte("stake \xf0\x9f\x90\xa0"), make([]byte, 22)...), want: "stake \U0001F420"},
@@ -28,7 +28,7 @@ func TestDecodeGraffiti(t *testing.T) {
 		})
 	}
 
-	for name, graffiti := range map[string]string{"empty": "", "short": "0x4745", "non hex": "0xzz"} {
+	for name, graffiti := range map[string]string{"no graffiti": "", "short": "0x4745", "non hex": "0xzz"} {
 		t.Run("rejects "+name, func(t *testing.T) {
 			_, _, ok := DecodeGraffiti(graffiti)
 			assert.False(t, ok)

@@ -38,79 +38,83 @@ message BeaconApiEthV2BeaconBlock {
   string eth1_data_block_hash = 24;
   // The root of the deposit tree in the associated execution block
   string eth1_data_deposit_root = 25;
+  // The raw 32 byte graffiti from the beacon block body (hex encoded), NULL for rows written before it was recorded
+  google.protobuf.StringValue graffiti = 26;
+  // The graffiti decoded as UTF-8 with trailing null bytes removed and invalid sequences replaced, NULL for rows written before it was recorded
+  google.protobuf.StringValue graffiti_text = 27;
   // The block hash of the execution payload
-  google.protobuf.StringValue execution_payload_block_hash = 26;
+  google.protobuf.StringValue execution_payload_block_hash = 28;
   // The block number of the execution payload
-  google.protobuf.UInt32Value execution_payload_block_number = 27;
+  google.protobuf.UInt32Value execution_payload_block_number = 29;
   // The recipient of the fee for this execution payload
-  google.protobuf.StringValue execution_payload_fee_recipient = 28;
+  google.protobuf.StringValue execution_payload_fee_recipient = 30;
   // Base fee per gas for execution payload
-  google.protobuf.StringValue execution_payload_base_fee_per_gas = 29;
+  google.protobuf.StringValue execution_payload_base_fee_per_gas = 31;
   // Gas used for blobs in execution payload
-  google.protobuf.UInt64Value execution_payload_blob_gas_used = 30;
+  google.protobuf.UInt64Value execution_payload_blob_gas_used = 32;
   // Excess gas used for blobs in execution payload
-  google.protobuf.UInt64Value execution_payload_excess_blob_gas = 31;
-  google.protobuf.UInt64Value execution_payload_slot_number = 32;
+  google.protobuf.UInt64Value execution_payload_excess_blob_gas = 33;
+  google.protobuf.UInt64Value execution_payload_slot_number = 34;
   // Builder index from the bid (Gloas+). NULL for self-built payloads (BUILDER_INDEX_SELF_BUILD) and before Gloas
-  google.protobuf.UInt64Value builder_index = 33;
+  google.protobuf.UInt64Value builder_index = 35;
   // Bid value in Gwei (Gloas+)
-  google.protobuf.UInt64Value bid_value = 34;
+  google.protobuf.UInt64Value bid_value = 36;
   // Execution payment in Gwei (Gloas+)
-  google.protobuf.UInt64Value execution_payment = 35;
+  google.protobuf.UInt64Value execution_payment = 37;
   // Whether execution payload was delivered (Gloas+)
-  google.protobuf.BoolValue payload_present = 36;
+  google.protobuf.BoolValue payload_present = 38;
   // Gas limit for execution payload
-  google.protobuf.UInt64Value execution_payload_gas_limit = 37;
+  google.protobuf.UInt64Value execution_payload_gas_limit = 39;
   // Gas used for execution payload
-  google.protobuf.UInt64Value execution_payload_gas_used = 38;
+  google.protobuf.UInt64Value execution_payload_gas_used = 40;
   // The state root of the execution payload
-  string execution_payload_state_root = 39;
+  string execution_payload_state_root = 41;
   // The parent hash of the execution payload
-  string execution_payload_parent_hash = 40;
+  string execution_payload_parent_hash = 42;
   // The transaction count of the execution payload
-  google.protobuf.UInt32Value execution_payload_transactions_count = 41;
+  google.protobuf.UInt32Value execution_payload_transactions_count = 43;
   // The transaction total bytes of the execution payload
-  google.protobuf.UInt32Value execution_payload_transactions_total_bytes = 42;
+  google.protobuf.UInt32Value execution_payload_transactions_total_bytes = 44;
   // The transaction total bytes of the execution payload when compressed using snappy
-  google.protobuf.UInt32Value execution_payload_transactions_total_bytes_compressed = 43;
+  google.protobuf.UInt32Value execution_payload_transactions_total_bytes_compressed = 45;
   // Name of the client that generated the event
-  string meta_client_name = 44;
+  string meta_client_name = 46;
   // Version of the client that generated the event
-  string meta_client_version = 45;
+  string meta_client_version = 47;
   // Implementation of the client that generated the event
-  string meta_client_implementation = 46;
+  string meta_client_implementation = 48;
   // Operating system of the client that generated the event
-  string meta_client_os = 47;
+  string meta_client_os = 49;
   // IP address of the client that generated the event
-  google.protobuf.StringValue meta_client_ip = 48;
+  google.protobuf.StringValue meta_client_ip = 50;
   // City of the client that generated the event
-  string meta_client_geo_city = 49;
+  string meta_client_geo_city = 51;
   // Country of the client that generated the event
-  string meta_client_geo_country = 50;
+  string meta_client_geo_country = 52;
   // Country code of the client that generated the event
-  string meta_client_geo_country_code = 51;
+  string meta_client_geo_country_code = 53;
   // Continent code of the client that generated the event
-  string meta_client_geo_continent_code = 52;
+  string meta_client_geo_continent_code = 54;
   // Longitude of the client that generated the event
-  google.protobuf.DoubleValue meta_client_geo_longitude = 53;
+  google.protobuf.DoubleValue meta_client_geo_longitude = 55;
   // Latitude of the client that generated the event
-  google.protobuf.DoubleValue meta_client_geo_latitude = 54;
+  google.protobuf.DoubleValue meta_client_geo_latitude = 56;
   // Autonomous system number of the client that generated the event
-  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 55;
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 57;
   // Autonomous system organization of the client that generated the event
-  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 56;
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 58;
   // Ethereum network name
-  string meta_network_name = 57;
+  string meta_network_name = 59;
   // Ethereum consensus client version that generated the event
-  string meta_consensus_version = 58;
+  string meta_consensus_version = 60;
   // Ethereum consensus client major version that generated the event
-  string meta_consensus_version_major = 59;
+  string meta_consensus_version_major = 61;
   // Ethereum consensus client minor version that generated the event
-  string meta_consensus_version_minor = 60;
+  string meta_consensus_version_minor = 62;
   // Ethereum consensus client patch version that generated the event
-  string meta_consensus_version_patch = 61;
+  string meta_consensus_version_patch = 63;
   // Ethereum consensus client implementation that generated the event
-  string meta_consensus_implementation = 62;
+  string meta_consensus_implementation = 64;
 }
 
 // Request for listing beacon_api_eth_v2_beacon_block records
@@ -155,88 +159,92 @@ message ListBeaconApiEthV2BeaconBlockRequest {
   StringFilter eth1_data_block_hash = 16;
   // Filter by eth1_data_deposit_root - The root of the deposit tree in the associated execution block (optional)
   StringFilter eth1_data_deposit_root = 17;
+  // Filter by graffiti - The raw 32 byte graffiti from the beacon block body (hex encoded), NULL for rows written before it was recorded (optional)
+  NullableStringFilter graffiti = 18;
+  // Filter by graffiti_text - The graffiti decoded as UTF-8 with trailing null bytes removed and invalid sequences replaced, NULL for rows written before it was recorded (optional)
+  NullableStringFilter graffiti_text = 19;
   // Filter by execution_payload_block_hash - The block hash of the execution payload (optional)
-  NullableStringFilter execution_payload_block_hash = 18;
+  NullableStringFilter execution_payload_block_hash = 20;
   // Filter by execution_payload_block_number - The block number of the execution payload (optional)
-  NullableUInt32Filter execution_payload_block_number = 19;
+  NullableUInt32Filter execution_payload_block_number = 21;
   // Filter by execution_payload_fee_recipient - The recipient of the fee for this execution payload (optional)
-  NullableStringFilter execution_payload_fee_recipient = 20;
+  NullableStringFilter execution_payload_fee_recipient = 22;
   // Filter by execution_payload_base_fee_per_gas - Base fee per gas for execution payload (optional)
-  NullableStringFilter execution_payload_base_fee_per_gas = 21;
+  NullableStringFilter execution_payload_base_fee_per_gas = 23;
   // Filter by execution_payload_blob_gas_used - Gas used for blobs in execution payload (optional)
-  NullableUInt64Filter execution_payload_blob_gas_used = 22;
+  NullableUInt64Filter execution_payload_blob_gas_used = 24;
   // Filter by execution_payload_excess_blob_gas - Excess gas used for blobs in execution payload (optional)
-  NullableUInt64Filter execution_payload_excess_blob_gas = 23;
+  NullableUInt64Filter execution_payload_excess_blob_gas = 25;
   // Filter by execution_payload_slot_number (optional)
-  NullableUInt64Filter execution_payload_slot_number = 24;
+  NullableUInt64Filter execution_payload_slot_number = 26;
   // Filter by builder_index - Builder index from the bid (Gloas+). NULL for self-built payloads (BUILDER_INDEX_SELF_BUILD) and before Gloas (optional)
-  NullableUInt64Filter builder_index = 25;
+  NullableUInt64Filter builder_index = 27;
   // Filter by bid_value - Bid value in Gwei (Gloas+) (optional)
-  NullableUInt64Filter bid_value = 26;
+  NullableUInt64Filter bid_value = 28;
   // Filter by execution_payment - Execution payment in Gwei (Gloas+) (optional)
-  NullableUInt64Filter execution_payment = 27;
+  NullableUInt64Filter execution_payment = 29;
   // Filter by payload_present - Whether execution payload was delivered (Gloas+) (optional)
-  NullableBoolFilter payload_present = 28;
+  NullableBoolFilter payload_present = 30;
   // Filter by execution_payload_gas_limit - Gas limit for execution payload (optional)
-  NullableUInt64Filter execution_payload_gas_limit = 29;
+  NullableUInt64Filter execution_payload_gas_limit = 31;
   // Filter by execution_payload_gas_used - Gas used for execution payload (optional)
-  NullableUInt64Filter execution_payload_gas_used = 30;
+  NullableUInt64Filter execution_payload_gas_used = 32;
   // Filter by execution_payload_state_root - The state root of the execution payload (optional)
-  StringFilter execution_payload_state_root = 31;
+  StringFilter execution_payload_state_root = 33;
   // Filter by execution_payload_parent_hash - The parent hash of the execution payload (optional)
-  StringFilter execution_payload_parent_hash = 32;
+  StringFilter execution_payload_parent_hash = 34;
   // Filter by execution_payload_transactions_count - The transaction count of the execution payload (optional)
-  NullableUInt32Filter execution_payload_transactions_count = 33;
+  NullableUInt32Filter execution_payload_transactions_count = 35;
   // Filter by execution_payload_transactions_total_bytes - The transaction total bytes of the execution payload (optional)
-  NullableUInt32Filter execution_payload_transactions_total_bytes = 34;
+  NullableUInt32Filter execution_payload_transactions_total_bytes = 36;
   // Filter by execution_payload_transactions_total_bytes_compressed - The transaction total bytes of the execution payload when compressed using snappy (optional)
-  NullableUInt32Filter execution_payload_transactions_total_bytes_compressed = 35;
+  NullableUInt32Filter execution_payload_transactions_total_bytes_compressed = 37;
   // Filter by meta_client_version - Version of the client that generated the event (optional)
-  StringFilter meta_client_version = 36;
+  StringFilter meta_client_version = 38;
   // Filter by meta_client_implementation - Implementation of the client that generated the event (optional)
-  StringFilter meta_client_implementation = 37;
+  StringFilter meta_client_implementation = 39;
   // Filter by meta_client_os - Operating system of the client that generated the event (optional)
-  StringFilter meta_client_os = 38;
+  StringFilter meta_client_os = 40;
   // Filter by meta_client_ip - IP address of the client that generated the event (optional)
-  NullableStringFilter meta_client_ip = 39;
+  NullableStringFilter meta_client_ip = 41;
   // Filter by meta_client_geo_city - City of the client that generated the event (optional)
-  StringFilter meta_client_geo_city = 40;
+  StringFilter meta_client_geo_city = 42;
   // Filter by meta_client_geo_country - Country of the client that generated the event (optional)
-  StringFilter meta_client_geo_country = 41;
+  StringFilter meta_client_geo_country = 43;
   // Filter by meta_client_geo_country_code - Country code of the client that generated the event (optional)
-  StringFilter meta_client_geo_country_code = 42;
+  StringFilter meta_client_geo_country_code = 44;
   // Filter by meta_client_geo_continent_code - Continent code of the client that generated the event (optional)
-  StringFilter meta_client_geo_continent_code = 43;
+  StringFilter meta_client_geo_continent_code = 45;
   // Filter by meta_client_geo_longitude - Longitude of the client that generated the event (optional)
-  google.protobuf.DoubleValue meta_client_geo_longitude = 44;
+  google.protobuf.DoubleValue meta_client_geo_longitude = 46;
   // Filter by meta_client_geo_latitude - Latitude of the client that generated the event (optional)
-  google.protobuf.DoubleValue meta_client_geo_latitude = 45;
+  google.protobuf.DoubleValue meta_client_geo_latitude = 47;
   // Filter by meta_client_geo_autonomous_system_number - Autonomous system number of the client that generated the event (optional)
-  NullableUInt32Filter meta_client_geo_autonomous_system_number = 46;
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 48;
   // Filter by meta_client_geo_autonomous_system_organization - Autonomous system organization of the client that generated the event (optional)
-  NullableStringFilter meta_client_geo_autonomous_system_organization = 47;
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 49;
   // Filter by meta_consensus_version - Ethereum consensus client version that generated the event (optional)
-  StringFilter meta_consensus_version = 48;
+  StringFilter meta_consensus_version = 50;
   // Filter by meta_consensus_version_major - Ethereum consensus client major version that generated the event (optional)
-  StringFilter meta_consensus_version_major = 49;
+  StringFilter meta_consensus_version_major = 51;
   // Filter by meta_consensus_version_minor - Ethereum consensus client minor version that generated the event (optional)
-  StringFilter meta_consensus_version_minor = 50;
+  StringFilter meta_consensus_version_minor = 52;
   // Filter by meta_consensus_version_patch - Ethereum consensus client patch version that generated the event (optional)
-  StringFilter meta_consensus_version_patch = 51;
+  StringFilter meta_consensus_version_patch = 53;
   // Filter by meta_consensus_implementation - Ethereum consensus client implementation that generated the event (optional)
-  StringFilter meta_consensus_implementation = 52;
+  StringFilter meta_consensus_implementation = 54;
 
   // The maximum number of beacon_api_eth_v2_beacon_block to return.
   // If unspecified, at most 100 items will be returned.
   // The maximum value is 10000; values above 10000 will be coerced to 10000.
-  int32 page_size = 53;
+  int32 page_size = 55;
   // A page token, received from a previous `ListBeaconApiEthV2BeaconBlock` call.
   // Provide this to retrieve the subsequent page.
-  string page_token = 54;
+  string page_token = 56;
   // The order of results. Format: comma-separated list of fields.
   // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
   // If unspecified, results will be returned in the default order.
-  string order_by = 55;
+  string order_by = 57;
 }
 
 // Response for listing beacon_api_eth_v2_beacon_block records

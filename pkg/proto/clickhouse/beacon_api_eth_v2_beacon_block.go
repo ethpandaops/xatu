@@ -536,6 +536,74 @@ func BuildListBeaconApiEthV2BeaconBlockQuery(req *ListBeaconApiEthV2BeaconBlockR
 		}
 	}
 
+	// Add filter for column: graffiti
+	if req.Graffiti != nil {
+		switch filter := req.Graffiti.Filter.(type) {
+		case *NullableStringFilter_Eq:
+			qb.AddCondition("graffiti", "=", filter.Eq)
+		case *NullableStringFilter_Ne:
+			qb.AddCondition("graffiti", "!=", filter.Ne)
+		case *NullableStringFilter_Contains:
+			qb.AddLikeCondition("graffiti", "%" + filter.Contains + "%")
+		case *NullableStringFilter_StartsWith:
+			qb.AddLikeCondition("graffiti", filter.StartsWith + "%")
+		case *NullableStringFilter_EndsWith:
+			qb.AddLikeCondition("graffiti", "%" + filter.EndsWith)
+		case *NullableStringFilter_Like:
+			qb.AddLikeCondition("graffiti", filter.Like)
+		case *NullableStringFilter_NotLike:
+			qb.AddNotLikeCondition("graffiti", filter.NotLike)
+		case *NullableStringFilter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("graffiti", StringSliceToInterface(filter.In.Values))
+			}
+		case *NullableStringFilter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("graffiti", StringSliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableStringFilter_IsNull:
+			qb.AddIsNullCondition("graffiti")
+		case *NullableStringFilter_IsNotNull:
+			qb.AddIsNotNullCondition("graffiti")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: graffiti_text
+	if req.GraffitiText != nil {
+		switch filter := req.GraffitiText.Filter.(type) {
+		case *NullableStringFilter_Eq:
+			qb.AddCondition("graffiti_text", "=", filter.Eq)
+		case *NullableStringFilter_Ne:
+			qb.AddCondition("graffiti_text", "!=", filter.Ne)
+		case *NullableStringFilter_Contains:
+			qb.AddLikeCondition("graffiti_text", "%" + filter.Contains + "%")
+		case *NullableStringFilter_StartsWith:
+			qb.AddLikeCondition("graffiti_text", filter.StartsWith + "%")
+		case *NullableStringFilter_EndsWith:
+			qb.AddLikeCondition("graffiti_text", "%" + filter.EndsWith)
+		case *NullableStringFilter_Like:
+			qb.AddLikeCondition("graffiti_text", filter.Like)
+		case *NullableStringFilter_NotLike:
+			qb.AddNotLikeCondition("graffiti_text", filter.NotLike)
+		case *NullableStringFilter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("graffiti_text", StringSliceToInterface(filter.In.Values))
+			}
+		case *NullableStringFilter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("graffiti_text", StringSliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableStringFilter_IsNull:
+			qb.AddIsNullCondition("graffiti_text")
+		case *NullableStringFilter_IsNotNull:
+			qb.AddIsNotNullCondition("graffiti_text")
+		default:
+			// Unsupported filter type
+		}
+	}
+
 	// Add filter for column: execution_payload_block_hash
 	if req.ExecutionPayloadBlockHash != nil {
 		switch filter := req.ExecutionPayloadBlockHash.Filter.(type) {
@@ -1643,7 +1711,7 @@ func BuildListBeaconApiEthV2BeaconBlockQuery(req *ListBeaconApiEthV2BeaconBlockR
 	// Handle custom ordering if provided
 	var orderByClause string
 	if req.OrderBy != "" {
-		validFields := []string{"updated_date_time", "event_date_time", "slot", "slot_start_date_time", "epoch", "epoch_start_date_time", "block_root", "block_version", "block_total_bytes", "block_total_bytes_compressed", "parent_root", "state_root", "proposer_index", "eth1_data_block_hash", "eth1_data_deposit_root", "execution_payload_block_hash", "execution_payload_block_number", "execution_payload_fee_recipient", "execution_payload_base_fee_per_gas", "execution_payload_blob_gas_used", "execution_payload_excess_blob_gas", "execution_payload_slot_number", "builder_index", "bid_value", "execution_payment", "payload_present", "execution_payload_gas_limit", "execution_payload_gas_used", "execution_payload_state_root", "execution_payload_parent_hash", "execution_payload_transactions_count", "execution_payload_transactions_total_bytes", "execution_payload_transactions_total_bytes_compressed", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation"}
+		validFields := []string{"updated_date_time", "event_date_time", "slot", "slot_start_date_time", "epoch", "epoch_start_date_time", "block_root", "block_version", "block_total_bytes", "block_total_bytes_compressed", "parent_root", "state_root", "proposer_index", "eth1_data_block_hash", "eth1_data_deposit_root", "graffiti", "graffiti_text", "execution_payload_block_hash", "execution_payload_block_number", "execution_payload_fee_recipient", "execution_payload_base_fee_per_gas", "execution_payload_blob_gas_used", "execution_payload_excess_blob_gas", "execution_payload_slot_number", "builder_index", "bid_value", "execution_payment", "payload_present", "execution_payload_gas_limit", "execution_payload_gas_used", "execution_payload_state_root", "execution_payload_parent_hash", "execution_payload_transactions_count", "execution_payload_transactions_total_bytes", "execution_payload_transactions_total_bytes_compressed", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation"}
 		orderFields, err := ParseOrderBy(req.OrderBy, validFields)
 		if err != nil {
 			return SQLQuery{}, fmt.Errorf("invalid order_by: %w", err)
@@ -1655,7 +1723,7 @@ func BuildListBeaconApiEthV2BeaconBlockQuery(req *ListBeaconApiEthV2BeaconBlockR
 	}
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "block_total_bytes", "block_total_bytes_compressed", "NULLIF(`parent_root`, repeat('\x00', 66)) AS `parent_root`", "NULLIF(`state_root`, repeat('\x00', 66)) AS `state_root`", "proposer_index", "NULLIF(`eth1_data_block_hash`, repeat('\x00', 66)) AS `eth1_data_block_hash`", "NULLIF(`eth1_data_deposit_root`, repeat('\x00', 66)) AS `eth1_data_deposit_root`", "NULLIF(`execution_payload_block_hash`, repeat('\x00', 66)) AS `execution_payload_block_hash`", "execution_payload_block_number", "execution_payload_fee_recipient", "toString(`execution_payload_base_fee_per_gas`) AS `execution_payload_base_fee_per_gas`", "execution_payload_blob_gas_used", "execution_payload_excess_blob_gas", "execution_payload_slot_number", "builder_index", "bid_value", "execution_payment", "payload_present", "execution_payload_gas_limit", "execution_payload_gas_used", "NULLIF(`execution_payload_state_root`, repeat('\x00', 66)) AS `execution_payload_state_root`", "NULLIF(`execution_payload_parent_hash`, repeat('\x00', 66)) AS `execution_payload_parent_hash`", "execution_payload_transactions_count", "execution_payload_transactions_total_bytes", "execution_payload_transactions_total_bytes_compressed", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "block_total_bytes", "block_total_bytes_compressed", "NULLIF(`parent_root`, repeat('\x00', 66)) AS `parent_root`", "NULLIF(`state_root`, repeat('\x00', 66)) AS `state_root`", "proposer_index", "NULLIF(`eth1_data_block_hash`, repeat('\x00', 66)) AS `eth1_data_block_hash`", "NULLIF(`eth1_data_deposit_root`, repeat('\x00', 66)) AS `eth1_data_deposit_root`", "NULLIF(`graffiti`, repeat('\x00', 66)) AS `graffiti`", "graffiti_text", "NULLIF(`execution_payload_block_hash`, repeat('\x00', 66)) AS `execution_payload_block_hash`", "execution_payload_block_number", "execution_payload_fee_recipient", "toString(`execution_payload_base_fee_per_gas`) AS `execution_payload_base_fee_per_gas`", "execution_payload_blob_gas_used", "execution_payload_excess_blob_gas", "execution_payload_slot_number", "builder_index", "bid_value", "execution_payment", "payload_present", "execution_payload_gas_limit", "execution_payload_gas_used", "NULLIF(`execution_payload_state_root`, repeat('\x00', 66)) AS `execution_payload_state_root`", "NULLIF(`execution_payload_parent_hash`, repeat('\x00', 66)) AS `execution_payload_parent_hash`", "execution_payload_transactions_count", "execution_payload_transactions_total_bytes", "execution_payload_transactions_total_bytes_compressed", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation"}
 
 	return BuildParameterizedQuery("beacon_api_eth_v2_beacon_block", columns, qb, orderByClause, limit, offset, options...)
 }
@@ -1675,7 +1743,7 @@ func BuildGetBeaconApiEthV2BeaconBlockQuery(req *GetBeaconApiEthV2BeaconBlockReq
 	orderByClause := " ORDER BY meta_network_name, slot_start_date_time, meta_client_name, block_root, parent_root, state_root"
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "block_total_bytes", "block_total_bytes_compressed", "NULLIF(`parent_root`, repeat('\x00', 66)) AS `parent_root`", "NULLIF(`state_root`, repeat('\x00', 66)) AS `state_root`", "proposer_index", "NULLIF(`eth1_data_block_hash`, repeat('\x00', 66)) AS `eth1_data_block_hash`", "NULLIF(`eth1_data_deposit_root`, repeat('\x00', 66)) AS `eth1_data_deposit_root`", "NULLIF(`execution_payload_block_hash`, repeat('\x00', 66)) AS `execution_payload_block_hash`", "execution_payload_block_number", "execution_payload_fee_recipient", "toString(`execution_payload_base_fee_per_gas`) AS `execution_payload_base_fee_per_gas`", "execution_payload_blob_gas_used", "execution_payload_excess_blob_gas", "execution_payload_slot_number", "builder_index", "bid_value", "execution_payment", "payload_present", "execution_payload_gas_limit", "execution_payload_gas_used", "NULLIF(`execution_payload_state_root`, repeat('\x00', 66)) AS `execution_payload_state_root`", "NULLIF(`execution_payload_parent_hash`, repeat('\x00', 66)) AS `execution_payload_parent_hash`", "execution_payload_transactions_count", "execution_payload_transactions_total_bytes", "execution_payload_transactions_total_bytes_compressed", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "block_total_bytes", "block_total_bytes_compressed", "NULLIF(`parent_root`, repeat('\x00', 66)) AS `parent_root`", "NULLIF(`state_root`, repeat('\x00', 66)) AS `state_root`", "proposer_index", "NULLIF(`eth1_data_block_hash`, repeat('\x00', 66)) AS `eth1_data_block_hash`", "NULLIF(`eth1_data_deposit_root`, repeat('\x00', 66)) AS `eth1_data_deposit_root`", "NULLIF(`graffiti`, repeat('\x00', 66)) AS `graffiti`", "graffiti_text", "NULLIF(`execution_payload_block_hash`, repeat('\x00', 66)) AS `execution_payload_block_hash`", "execution_payload_block_number", "execution_payload_fee_recipient", "toString(`execution_payload_base_fee_per_gas`) AS `execution_payload_base_fee_per_gas`", "execution_payload_blob_gas_used", "execution_payload_excess_blob_gas", "execution_payload_slot_number", "builder_index", "bid_value", "execution_payment", "payload_present", "execution_payload_gas_limit", "execution_payload_gas_used", "NULLIF(`execution_payload_state_root`, repeat('\x00', 66)) AS `execution_payload_state_root`", "NULLIF(`execution_payload_parent_hash`, repeat('\x00', 66)) AS `execution_payload_parent_hash`", "execution_payload_transactions_count", "execution_payload_transactions_total_bytes", "execution_payload_transactions_total_bytes_compressed", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation"}
 
 	// Return single record
 	return BuildParameterizedQuery("beacon_api_eth_v2_beacon_block", columns, qb, orderByClause, 1, 0, options...)

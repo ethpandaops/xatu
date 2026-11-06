@@ -1,9 +1,7 @@
 package beacon
 
 import (
-	"encoding/hex"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -316,8 +314,8 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendEth1Data(eth1Data *ethv1.Eth1Data
 // appendGraffiti appends the block body graffiti (hex encoded) and its text. A graffiti that isn't 32 bytes of hex
 // is stored as NULL in both columns.
 func (b *beaconApiEthV2BeaconBlockBatch) appendGraffiti(graffiti string) {
-	raw, err := hex.DecodeString(strings.TrimPrefix(graffiti, "0x"))
-	if err != nil || len(raw) != 32 {
+	_, text, ok := route.DecodeGraffiti(graffiti)
+	if !ok {
 		b.Graffiti.Append(proto.Nullable[[]byte]{})
 		b.GraffitiText.Append(proto.Nullable[string]{})
 
@@ -325,7 +323,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendGraffiti(graffiti string) {
 	}
 
 	b.Graffiti.Append(proto.NewNullable([]byte(graffiti)))
-	b.GraffitiText.Append(proto.NewNullable(strings.ToValidUTF8(strings.TrimRight(string(raw), "\x00"), "\uFFFD")))
+	b.GraffitiText.Append(proto.NewNullable(text))
 }
 
 func (b *beaconApiEthV2BeaconBlockBatch) appendNoExecutionPayload() {

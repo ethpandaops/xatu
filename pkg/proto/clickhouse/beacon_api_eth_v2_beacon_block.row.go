@@ -31,6 +31,8 @@ type BeaconApiEthV2BeaconBlockRow struct {
 	ProposerIndex uint32 `ch:"proposer_index" json:"proposer_index"`
 	Eth1DataBlockHash *string `ch:"eth1_data_block_hash" json:"eth1_data_block_hash"`
 	Eth1DataDepositRoot *string `ch:"eth1_data_deposit_root" json:"eth1_data_deposit_root"`
+	Graffiti *string `ch:"graffiti" json:"graffiti"`
+	GraffitiText *string `ch:"graffiti_text" json:"graffiti_text"`
 	ExecutionPayloadBlockHash *string `ch:"execution_payload_block_hash" json:"execution_payload_block_hash"`
 	ExecutionPayloadBlockNumber *uint32 `ch:"execution_payload_block_number" json:"execution_payload_block_number"`
 	ExecutionPayloadFeeRecipient *string `ch:"execution_payload_fee_recipient" json:"execution_payload_fee_recipient"`
@@ -107,6 +109,12 @@ func (r *BeaconApiEthV2BeaconBlockRow) ToProto() *BeaconApiEthV2BeaconBlock {
 	}
 	if r.Eth1DataDepositRoot != nil {
 		p.Eth1DataDepositRoot = *r.Eth1DataDepositRoot
+	}
+	if r.Graffiti != nil {
+		p.Graffiti = wrapperspb.String(*r.Graffiti)
+	}
+	if r.GraffitiText != nil {
+		p.GraffitiText = wrapperspb.String(*r.GraffitiText)
 	}
 	if r.ExecutionPayloadBlockHash != nil {
 		p.ExecutionPayloadBlockHash = wrapperspb.String(*r.ExecutionPayloadBlockHash)

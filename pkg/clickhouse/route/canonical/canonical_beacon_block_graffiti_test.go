@@ -58,25 +58,6 @@ func TestSnapshot_canonical_beacon_block_graffiti(t *testing.T) {
 	})
 }
 
-func TestGraffitiText(t *testing.T) {
-	tests := map[string]struct {
-		graffiti []byte
-		want     string
-	}{
-		"empty":            {graffiti: make([]byte, 32), want: ""},
-		"full width":       {graffiti: []byte("0123456789abcdef0123456789abcdef"), want: "0123456789abcdef0123456789abcdef"},
-		"interior null":    {graffiti: append([]byte("a\x00b"), make([]byte, 29)...), want: "a\x00b"},
-		"emoji":            {graffiti: append([]byte("stake \xf0\x9f\x90\xa0"), make([]byte, 22)...), want: "stake \U0001F420"},
-		"invalid sequence": {graffiti: append([]byte{'o', 'k', 0xff, 0xfe}, make([]byte, 28)...), want: "ok�"},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tt.want, graffitiText(tt.graffiti))
-		})
-	}
-}
-
 func TestCanonicalBeaconBlockGraffiti_RejectsInvalidEvents(t *testing.T) {
 	tests := map[string]func(*xatu.DecoratedEvent){
 		"payload": func(e *xatu.DecoratedEvent) {

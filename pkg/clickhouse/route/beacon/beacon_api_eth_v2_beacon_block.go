@@ -1,7 +1,9 @@
 package beacon
 
 import (
+	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ClickHouse/ch-go/proto"
@@ -114,6 +116,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 		}
 
 		b.appendEth1Data(phase0Block.GetBody().GetEth1Data())
+		b.appendGraffiti(phase0Block.GetBody().GetGraffiti())
 		b.appendNoExecutionPayload()
 
 		return nil
@@ -136,6 +139,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 		}
 
 		b.appendEth1Data(altairBlock.GetBody().GetEth1Data())
+		b.appendGraffiti(altairBlock.GetBody().GetGraffiti())
 		b.appendNoExecutionPayload()
 
 		return nil
@@ -159,6 +163,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 
 		body := bellatrixBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
+		b.appendGraffiti(body.GetGraffiti())
 
 		return b.appendExecutionPayloadV2(body.GetExecutionPayload())
 	}
@@ -181,6 +186,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 
 		body := capellaBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
+		b.appendGraffiti(body.GetGraffiti())
 
 		return b.appendExecutionPayloadCapellaV2(body.GetExecutionPayload())
 	}
@@ -203,6 +209,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 
 		body := denebBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
+		b.appendGraffiti(body.GetGraffiti())
 
 		return b.appendExecutionPayloadDeneb(body.GetExecutionPayload())
 	}
@@ -225,6 +232,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 
 		body := electraBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
+		b.appendGraffiti(body.GetGraffiti())
 
 		return b.appendExecutionPayloadElectra(body.GetExecutionPayload())
 	}
@@ -247,6 +255,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 
 		body := fuluBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
+		b.appendGraffiti(body.GetGraffiti())
 
 		return b.appendExecutionPayloadElectra(body.GetExecutionPayload())
 	}
@@ -269,6 +278,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 
 		body := gloasBlock.GetBody()
 		b.appendEth1Data(body.GetEth1Data())
+		b.appendGraffiti(body.GetGraffiti())
 
 		// Gloas blocks have no inline execution payload — it arrives
 		// via the ExecutionPayloadEnvelope event. EPBS columns come
@@ -285,6 +295,7 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 	b.StateRoot.Append(nil)
 	b.ProposerIndex.Append(0)
 	b.appendEth1Data(nil)
+	b.appendGraffiti("")
 	b.appendNoExecutionPayload()
 
 	return nil
@@ -300,6 +311,21 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendEth1Data(eth1Data *ethv1.Eth1Data
 
 	b.Eth1DataBlockHash.Append([]byte(eth1Data.GetBlockHash()))
 	b.Eth1DataDepositRoot.Append([]byte(eth1Data.GetDepositRoot()))
+}
+
+// appendGraffiti appends the block body graffiti (hex encoded) and its text. A graffiti that isn't 32 bytes of hex
+// is stored as NULL in both columns.
+func (b *beaconApiEthV2BeaconBlockBatch) appendGraffiti(graffiti string) {
+	raw, err := hex.DecodeString(strings.TrimPrefix(graffiti, "0x"))
+	if err != nil || len(raw) != 32 {
+		b.Graffiti.Append(proto.Nullable[[]byte]{})
+		b.GraffitiText.Append(proto.Nullable[string]{})
+
+		return
+	}
+
+	b.Graffiti.Append(proto.NewNullable([]byte(graffiti)))
+	b.GraffitiText.Append(proto.NewNullable(strings.ToValidUTF8(strings.TrimRight(string(raw), "\x00"), "\uFFFD")))
 }
 
 func (b *beaconApiEthV2BeaconBlockBatch) appendNoExecutionPayload() {

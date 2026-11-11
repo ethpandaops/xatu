@@ -3095,13 +3095,16 @@ message MempoolTransactionRemoved {
 
 // MempoolBlobTransactionAnnouncement is one execution layer peer announcing a
 // blob transaction hash to mimicry over devp2p (NewPooledTransactionHashes).
-// The peer is described only by its client, never by its node ID or address.
+// The peer is described only by its client implementation and release version,
+// not by its node ID, address or full client name. A rare implementation and
+// version can still narrow it down.
 // Maps to the mempool_blob_transaction_announcement ClickHouse table.
 message MempoolBlobTransactionAnnouncement {
   string hash = 1 [ json_name = "hash" ];
   // Size is the transaction size in bytes the peer announced.
   google.protobuf.UInt32Value size = 2 [ json_name = "size" ];
   string peer_implementation = 3 [ json_name = "peer_implementation" ];
+  // PeerVersion is the release version only, such as "1.16.0".
   string peer_version = 4 [ json_name = "peer_version" ];
 }
 

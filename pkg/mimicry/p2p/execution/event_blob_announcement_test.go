@@ -63,7 +63,7 @@ func TestHandleBlobAnnouncements(t *testing.T) {
 		assert.Equal(t, want.hash.Hex(), got.GetHash())
 		assert.Equal(t, want.size, got.GetSize().GetValue())
 		assert.Equal(t, "geth", got.GetPeerImplementation())
-		assert.Equal(t, "v1.16.0-stable", got.GetPeerVersion())
+		assert.Equal(t, "1.16.0", got.GetPeerVersion(), "only the release version, not the operator's identity or build")
 		assert.Equal(t, receivedAt.Add(250*time.Millisecond), event.GetEvent().GetDateTime().AsTime())
 	}
 

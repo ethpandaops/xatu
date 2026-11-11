@@ -25,6 +25,8 @@ type chainStub struct {
 	latest uint64
 	blocks map[uint64][]string
 	nonces map[common.Address]uint64
+	// mined holds transactions the node has in a block that the blocks map does not show, such as after a reorg.
+	mined map[string]uint64
 }
 
 func (c *chainStub) CallContext(_ context.Context, result any, method string, _ ...any) error {
@@ -32,7 +34,12 @@ func (c *chainStub) CallContext(_ context.Context, result any, method string, _ 
 		return fmt.Errorf("unexpected method %s", method)
 	}
 
-	*result.(*hexutil.Uint64) = hexutil.Uint64(c.latest)
+	latest, ok := result.(*hexutil.Uint64)
+	if !ok {
+		return fmt.Errorf("unexpected result type %T", result)
+	}
+
+	*latest = hexutil.Uint64(c.latest)
 
 	return nil
 }
@@ -43,9 +50,37 @@ func (c *chainStub) BatchCall(_ context.Context, reqs []rpc.BatchElem) error {
 
 		switch reqs[i].Method {
 		case "eth_getBlockByNumber":
-			value = map[string]any{"transactions": c.blocks[uint64(reqs[i].Args[0].(hexutil.Uint64))]}
+			number, ok := reqs[i].Args[0].(hexutil.Uint64)
+			if !ok {
+				return fmt.Errorf("unexpected block number %v", reqs[i].Args[0])
+			}
+
+			txs, ok := c.blocks[uint64(number)]
+			if !ok {
+				value = nil
+
+				break
+			}
+
+			value = map[string]any{"transactions": txs}
 		case "eth_getTransactionCount":
-			value = hexutil.Uint64(c.nonces[reqs[i].Args[0].(common.Address)])
+			sender, ok := reqs[i].Args[0].(common.Address)
+			if !ok {
+				return fmt.Errorf("unexpected sender %v", reqs[i].Args[0])
+			}
+
+			value = hexutil.Uint64(c.nonces[sender])
+		case "eth_getTransactionByHash":
+			hash, ok := reqs[i].Args[0].(string)
+			if !ok {
+				return fmt.Errorf("unexpected hash %v", reqs[i].Args[0])
+			}
+
+			value = map[string]any{"hash": hash}
+
+			if block, ok := c.mined[hash]; ok {
+				value = map[string]any{"hash": hash, "blockNumber": hexutil.Uint64(block)}
+			}
 		default:
 			return fmt.Errorf("unexpected method %s", reqs[i].Method)
 		}
@@ -125,7 +160,7 @@ func TestPoolTrackerClassifiesRemovedTransactions(t *testing.T) {
 
 	chain := &chainStub{
 		latest: 100,
-		blocks: map[uint64][]string{},
+		blocks: map[uint64][]string{98: {}, 99: {}},
 		nonces: map[common.Address]uint64{
 			common.HexToAddress(y): 8, // moved past C's nonce 7 without C
 			common.HexToAddress(z): 3, // still waiting on D's nonce 3
@@ -188,6 +223,7 @@ func TestPoolTrackerClassifiesRemovedTransactions(t *testing.T) {
 
 	// E keeps the time it was first seen across snapshots.
 	chain.latest = 102
+	chain.blocks[102] = []string{}
 
 	removed, err = tracker.update(ctx, txpoolContent(t, poolEntry{"pending", hashOf(7), x, 6, 3, 20}), t3)
 	require.NoError(t, err)
@@ -207,7 +243,7 @@ func TestPoolTrackerSkipsWipedPool(t *testing.T) {
 
 	logger.SetOutput(io.Discard)
 
-	chain := &chainStub{latest: 10, blocks: map[uint64][]string{}, nonces: map[common.Address]uint64{}}
+	chain := &chainStub{latest: 10, blocks: map[uint64][]string{8: {}, 9: {}, 10: {}, 11: {}, 12: {}}, nonces: map[common.Address]uint64{}}
 	tracker := newPoolTracker(chain, logger)
 
 	entries := make([]poolEntry, 0, 300)
@@ -233,4 +269,51 @@ func TestPoolTrackerSkipsWipedPool(t *testing.T) {
 	removed, err = tracker.update(ctx, txpoolContent(t), time.Unix(135, 0))
 	require.NoError(t, err)
 	assert.Empty(t, removed)
+}
+
+func TestPoolTrackerChecksConsumedNoncesAgainstTheChain(t *testing.T) {
+	var (
+		ctx    = context.Background()
+		logger = logrus.New()
+		x      = "0x1111111111111111111111111111111111111111"
+		y      = "0x2222222222222222222222222222222222222222"
+	)
+
+	logger.SetOutput(io.Discard)
+
+	chain := &chainStub{
+		latest: 10,
+		blocks: map[uint64][]string{8: {}, 9: {}, 10: {}},
+		nonces: map[common.Address]uint64{common.HexToAddress(x): 1, common.HexToAddress(y): 1},
+		mined:  map[string]uint64{},
+	}
+	tracker := newPoolTracker(chain, logger)
+
+	_, err := tracker.update(ctx, txpoolContent(t,
+		poolEntry{"pending", hashOf(1), x, 0, 1, 10},
+		poolEntry{"pending", hashOf(2), y, 0, 1, 10},
+		poolEntry{"pending", hashOf(3), y, 5, 1, 10},
+	), time.Unix(0, 0))
+	require.NoError(t, err)
+
+	// Block 11 as first read did not include A, then a reorg replaced it with a block that did. The tracker already
+	// read block 11, so only the node can tell A was included.
+	chain.latest = 11
+	chain.blocks[11] = []string{}
+	chain.mined[hashOf(1)] = 11
+
+	stays := poolEntry{"pending", hashOf(3), y, 5, 1, 10}
+
+	removed, err := tracker.update(ctx, txpoolContent(t, stays), time.Unix(45, 0))
+	require.NoError(t, err)
+	require.Len(t, removed, 1)
+	assert.Equal(t, hashOf(2), removed[0].Hash)
+	assert.Equal(t, RemovalReasonNonceConsumed, removed[0].Reason)
+
+	// A block the node cannot return yet is an error, not an empty block.
+	chain.latest = 13
+	chain.blocks[13] = []string{}
+
+	_, err = tracker.update(ctx, txpoolContent(t, stays), time.Unix(90, 0))
+	require.Error(t, err)
 }

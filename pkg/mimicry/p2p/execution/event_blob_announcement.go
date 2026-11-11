@@ -2,6 +2,7 @@ package execution
 
 import (
 	"context"
+	"regexp"
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -13,9 +14,18 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
+// semverPattern finds the release version in a devp2p client name's version part.
+var semverPattern = regexp.MustCompile(`\d+\.\d+\.\d+`)
+
+// peerSemver keeps only the release version of a peer's devp2p name, such as "1.16.0" from
+// "myrig/v1.16.0-stable-abc123/linux-amd64/go1.24", so operator identities and build strings are not recorded.
+func peerSemver(version string) string {
+	return semverPattern.FindString(version)
+}
+
 // handleBlobAnnouncements emits a MEMPOOL_BLOB_TRANSACTION_ANNOUNCEMENT event for every blob transaction hash in a
 // peer's announcement when ethereum.blobAnnouncementsEnabled is set. The event names the peer only by its client
-// implementation and version.
+// implementation and release version.
 func (p *Peer) handleBlobAnnouncements(ctx context.Context, receivedAt time.Time, hashes *mimicry.NewPooledTransactionHashes) {
 	if p.ethereumConfig == nil || !p.ethereumConfig.BlobAnnouncementsEnabled {
 		return
@@ -36,7 +46,7 @@ func (p *Peer) handleBlobAnnouncements(ctx context.Context, receivedAt time.Time
 		announcement := &xatu.MempoolBlobTransactionAnnouncement{
 			Hash:               hash.String(),
 			PeerImplementation: p.implmentation,
-			PeerVersion:        p.version,
+			PeerVersion:        peerSemver(p.version),
 		}
 
 		if i < len(hashes.Sizes) {

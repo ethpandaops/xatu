@@ -36,7 +36,7 @@ type MempoolBlobTransactionAnnouncement struct {
 	Size uint32 `protobuf:"varint,14,opt,name=size,proto3" json:"size,omitempty"`
 	// Execution client implementation of the announcing peer, from its devp2p hello
 	PeerImplementation string `protobuf:"bytes,15,opt,name=peer_implementation,json=peerImplementation,proto3" json:"peer_implementation,omitempty"`
-	// Execution client version of the announcing peer, from its devp2p hello
+	// Release version (for example 1.16.0) of the announcing peer, from its devp2p hello, empty when it has none
 	PeerVersion string `protobuf:"bytes,16,opt,name=peer_version,json=peerVersion,proto3" json:"peer_version,omitempty"`
 	// Name of the client that generated the event
 	MetaClientName string `protobuf:"bytes,17,opt,name=meta_client_name,json=metaClientName,proto3" json:"meta_client_name,omitempty"`
@@ -278,7 +278,7 @@ type ListMempoolBlobTransactionAnnouncementRequest struct {
 	Size *UInt32Filter `protobuf:"bytes,6,opt,name=size,proto3" json:"size,omitempty"`
 	// Filter by peer_implementation - Execution client implementation of the announcing peer, from its devp2p hello (optional)
 	PeerImplementation *StringFilter `protobuf:"bytes,7,opt,name=peer_implementation,json=peerImplementation,proto3" json:"peer_implementation,omitempty"`
-	// Filter by peer_version - Execution client version of the announcing peer, from its devp2p hello (optional)
+	// Filter by peer_version - Release version (for example 1.16.0) of the announcing peer, from its devp2p hello, empty when it has none (optional)
 	PeerVersion *StringFilter `protobuf:"bytes,8,opt,name=peer_version,json=peerVersion,proto3" json:"peer_version,omitempty"`
 	// Filter by meta_client_version - Version of the client that generated the event (optional)
 	MetaClientVersion *StringFilter `protobuf:"bytes,9,opt,name=meta_client_version,json=metaClientVersion,proto3" json:"meta_client_version,omitempty"`

@@ -44,7 +44,8 @@ COMMENT 'Each row is a transaction that left a sentry execution client transacti
 
 CREATE TABLE IF NOT EXISTS mempool_transaction_removed ON CLUSTER '{cluster}'
 AS mempool_transaction_removed_local
-ENGINE = Distributed('{cluster}', currentDatabase(), 'mempool_transaction_removed_local', cityHash64(event_date_time, meta_network_name, meta_client_name, hash));
+ENGINE = Distributed('{cluster}', currentDatabase(), 'mempool_transaction_removed_local', cityHash64(event_date_time, meta_network_name, meta_client_name, hash))
+COMMENT 'Each row is a transaction that left a sentry execution client transaction pool without being included in a block, found by diffing successive txpool_content snapshots. Included transactions are not recorded.';
 
 CREATE TABLE IF NOT EXISTS mempool_blob_transaction_announcement_local ON CLUSTER '{cluster}'
 (
@@ -53,7 +54,7 @@ CREATE TABLE IF NOT EXISTS mempool_blob_transaction_announcement_local ON CLUSTE
     `hash` FixedString(66) COMMENT 'The hash of the announced blob transaction' CODEC(ZSTD(1)),
     `size` UInt32 COMMENT 'The transaction size in bytes the peer announced, including blobs' CODEC(ZSTD(1)),
     `peer_implementation` LowCardinality(String) COMMENT 'Execution client implementation of the announcing peer, from its devp2p hello',
-    `peer_version` LowCardinality(String) COMMENT 'Execution client version of the announcing peer, from its devp2p hello',
+    `peer_version` LowCardinality(String) COMMENT 'Release version (for example 1.16.0) of the announcing peer, from its devp2p hello, empty when it has none',
     `meta_client_name` LowCardinality(String) COMMENT 'Name of the client that generated the event',
     `meta_client_version` LowCardinality(String) COMMENT 'Version of the client that generated the event',
     `meta_client_implementation` LowCardinality(String) COMMENT 'Implementation of the client that generated the event',
@@ -74,8 +75,9 @@ CREATE TABLE IF NOT EXISTS mempool_blob_transaction_announcement_local ON CLUSTE
 ENGINE = ReplicatedMergeTree('/clickhouse/{installation}/{cluster}/tables/{shard}/{database}/{table}', '{replica}')
 PARTITION BY (meta_network_name, toYYYYMM(event_date_time))
 ORDER BY (meta_network_name, event_date_time, meta_client_name, hash)
-COMMENT 'Each row is one execution layer peer announcing a blob transaction hash to a mimicry client over devp2p. Peers are identified only by client implementation and version.';
+COMMENT 'Each row is one execution layer peer announcing a blob transaction hash to a mimicry client over devp2p. Peers are described only by client implementation and release version, not by node ID or address.';
 
 CREATE TABLE IF NOT EXISTS mempool_blob_transaction_announcement ON CLUSTER '{cluster}'
 AS mempool_blob_transaction_announcement_local
-ENGINE = Distributed('{cluster}', currentDatabase(), 'mempool_blob_transaction_announcement_local', cityHash64(event_date_time, meta_network_name, meta_client_name, hash));
+ENGINE = Distributed('{cluster}', currentDatabase(), 'mempool_blob_transaction_announcement_local', cityHash64(event_date_time, meta_network_name, meta_client_name, hash))
+COMMENT 'Each row is one execution layer peer announcing a blob transaction hash to a mimicry client over devp2p. Peers are described only by client implementation and release version, not by node ID or address.';

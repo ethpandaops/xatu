@@ -6,7 +6,7 @@ import "common.proto";
 import "google/protobuf/wrappers.proto";
 
 option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
-// Each row is one execution layer peer announcing a blob transaction hash to a mimicry client over devp2p. Peers are identified only by client implementation and version.
+// Each row is one execution layer peer announcing a blob transaction hash to a mimicry client over devp2p. Peers are described only by client implementation and release version, not by node ID or address.
 
 message MempoolBlobTransactionAnnouncement {
   // Timestamp when the record was last updated
@@ -19,7 +19,7 @@ message MempoolBlobTransactionAnnouncement {
   uint32 size = 14;
   // Execution client implementation of the announcing peer, from its devp2p hello
   string peer_implementation = 15;
-  // Execution client version of the announcing peer, from its devp2p hello
+  // Release version (for example 1.16.0) of the announcing peer, from its devp2p hello, empty when it has none
   string peer_version = 16;
   // Name of the client that generated the event
   string meta_client_name = 17;
@@ -75,7 +75,7 @@ message ListMempoolBlobTransactionAnnouncementRequest {
   UInt32Filter size = 6;
   // Filter by peer_implementation - Execution client implementation of the announcing peer, from its devp2p hello (optional)
   StringFilter peer_implementation = 7;
-  // Filter by peer_version - Execution client version of the announcing peer, from its devp2p hello (optional)
+  // Filter by peer_version - Release version (for example 1.16.0) of the announcing peer, from its devp2p hello, empty when it has none (optional)
   StringFilter peer_version = 8;
   // Filter by meta_client_version - Version of the client that generated the event (optional)
   StringFilter meta_client_version = 9;

@@ -2,7 +2,6 @@ package execution
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
@@ -117,8 +116,8 @@ func (t *poolTracker) update(ctx context.Context, content map[string]any, now ti
 	}
 
 	// On an error the previous snapshot stays, so the next poll still finds what left the pool since it.
-	if err = t.fetchIncluded(ctx, t.lastBlock+1, latest); err != nil {
-		return nil, err
+	if fetchErr := t.fetchIncluded(ctx, t.lastBlock+1, latest); fetchErr != nil {
+		return nil, fetchErr
 	}
 
 	t.txs = current
@@ -181,6 +180,8 @@ func (t *poolTracker) update(ctx context.Context, content map[string]any, now ti
 		return removed, err
 	}
 
+	var consumed []*RemovedTx
+
 	for _, r := range needsNonce {
 		nonce, ok := nonces[r.From]
 		if !ok {
@@ -191,14 +192,66 @@ func (t *poolTracker) update(ctx context.Context, content map[string]any, now ti
 
 		if nonce > r.Nonce {
 			r.Reason = RemovalReasonNonceConsumed
-		} else {
-			r.Reason = RemovalReasonDropped
+			consumed = append(consumed, r)
+
+			continue
 		}
 
+		r.Reason = RemovalReasonDropped
 		removed = append(removed, r)
 	}
 
+	// A transaction whose nonce was consumed may still have been included in a block the included set missed, such
+	// as one that replaced a reorged head, so ask the node.
+	mined, err := t.minedTransactions(ctx, consumed)
+	if err != nil {
+		return removed, err
+	}
+
+	for _, r := range consumed {
+		if !mined[r.Hash] {
+			removed = append(removed, r)
+		}
+	}
+
 	return removed, nil
+}
+
+// minedTransactions returns which of txs the node has in a block.
+func (t *poolTracker) minedTransactions(ctx context.Context, txs []*RemovedTx) (map[string]bool, error) {
+	mined := make(map[string]bool, len(txs))
+
+	for start := 0; start < len(txs); start += removalRPCBatchSize {
+		batch := txs[start:min(len(txs), start+removalRPCBatchSize)]
+		results := make([]*struct {
+			BlockNumber *hexutil.Uint64 `json:"blockNumber"`
+		}, len(batch))
+		reqs := make([]rpc.BatchElem, len(batch))
+
+		for i, tx := range batch {
+			reqs[i] = rpc.BatchElem{
+				Method: "eth_getTransactionByHash",
+				Args:   []any{tx.Hash},
+				Result: &results[i],
+			}
+		}
+
+		if err := t.client.BatchCall(ctx, reqs); err != nil {
+			return nil, fmt.Errorf("eth_getTransactionByHash batch: %w", err)
+		}
+
+		for i, req := range reqs {
+			if req.Error != nil {
+				return nil, fmt.Errorf("eth_getTransactionByHash %s: %w", batch[i].Hash, req.Error)
+			}
+
+			if results[i] != nil && results[i].BlockNumber != nil {
+				mined[batch[i].Hash] = true
+			}
+		}
+	}
+
+	return mined, nil
 }
 
 func (t *poolTracker) latestBlock(ctx context.Context) (uint64, error) {
@@ -215,7 +268,7 @@ func (t *poolTracker) fetchIncluded(ctx context.Context, from, to uint64) error 
 	for start := from; start <= to; start += removalRPCBatchSize {
 		end := min(to, start+removalRPCBatchSize-1)
 
-		blocks := make([]struct {
+		blocks := make([]*struct {
 			Transactions []string `json:"transactions"`
 		}, end-start+1)
 		reqs := make([]rpc.BatchElem, len(blocks))
@@ -235,6 +288,10 @@ func (t *poolTracker) fetchIncluded(ctx context.Context, from, to uint64) error 
 		for i, req := range reqs {
 			if req.Error != nil {
 				return fmt.Errorf("eth_getBlockByNumber %d: %w", start+uint64(i), req.Error)
+			}
+
+			if blocks[i] == nil {
+				return fmt.Errorf("eth_getBlockByNumber %d: block not found", start+uint64(i))
 			}
 
 			for _, hash := range blocks[i].Transactions {
@@ -343,63 +400,86 @@ func parsePoolSnapshot(content map[string]any, previous map[string]*PoolTx, now 
 	return snapshot
 }
 
-// poolTxJSON holds the txpool_content fields a PoolTx needs.
-type poolTxJSON struct {
-	Hash                 common.Hash     `json:"hash"`
-	From                 common.Address  `json:"from"`
-	To                   *common.Address `json:"to"`
-	Nonce                hexutil.Uint64  `json:"nonce"`
-	Type                 *hexutil.Uint64 `json:"type"`
-	Gas                  hexutil.Uint64  `json:"gas"`
-	GasPrice             *hexutil.Big    `json:"gasPrice"`
-	MaxPriorityFeePerGas *hexutil.Big    `json:"maxPriorityFeePerGas"`
-	MaxFeePerGas         *hexutil.Big    `json:"maxFeePerGas"`
-	MaxFeePerBlobGas     *hexutil.Big    `json:"maxFeePerBlobGas"`
-}
-
 func parsePoolTx(fields map[string]any) (*PoolTx, error) {
-	// Round-trip through JSON so hex quantities decode with go-ethereum's types.
-	raw, err := json.Marshal(fields)
+	hash, _ := fields["hash"].(string)
+	from, _ := fields["from"].(string)
+
+	if !common.IsHexAddress(from) || len(hash) != 66 {
+		return nil, fmt.Errorf("transaction without hash or sender")
+	}
+
+	nonce, err := hexUint(fields, "nonce")
 	if err != nil {
 		return nil, err
 	}
 
-	var dec poolTxJSON
-	if err := json.Unmarshal(raw, &dec); err != nil {
+	gas, err := hexUint(fields, "gas")
+	if err != nil {
 		return nil, err
 	}
 
-	if dec.Hash == (common.Hash{}) || dec.From == (common.Address{}) {
-		return nil, fmt.Errorf("transaction without hash or sender")
+	txType, err := hexUint(fields, "type")
+	if err != nil {
+		return nil, err
 	}
 
 	tx := &PoolTx{
-		Hash:  strings.ToLower(dec.Hash.Hex()),
-		From:  dec.From,
-		To:    dec.To,
-		Nonce: uint64(dec.Nonce),
-		Gas:   uint64(dec.Gas),
+		Hash:  strings.ToLower(hash),
+		From:  common.HexToAddress(from),
+		Nonce: nonce,
+		Gas:   gas,
+		Type:  uint8(txType), //nolint:gosec // transaction types fit in a byte
 	}
 
-	if dec.Type != nil {
-		tx.Type = uint8(*dec.Type) //nolint:gosec // transaction types fit in a byte
+	if to, ok := fields["to"].(string); ok && common.IsHexAddress(to) {
+		addr := common.HexToAddress(to)
+		tx.To = &addr
 	}
+
+	gasPrice := hexBig(fields, "gasPrice")
 
 	// Legacy and access list transactions pay their gas price as both the tip and the fee cap.
-	tx.GasTipCap = bigOr(dec.MaxPriorityFeePerGas, dec.GasPrice)
-	tx.GasFeeCap = bigOr(dec.MaxFeePerGas, dec.GasPrice)
-
-	if dec.MaxFeePerBlobGas != nil {
-		tx.BlobGasFeeCap = dec.MaxFeePerBlobGas.ToInt()
-	}
+	tx.GasTipCap = firstBig(hexBig(fields, "maxPriorityFeePerGas"), gasPrice)
+	tx.GasFeeCap = firstBig(hexBig(fields, "maxFeePerGas"), gasPrice)
+	tx.BlobGasFeeCap = hexBig(fields, "maxFeePerBlobGas")
 
 	return tx, nil
 }
 
-func bigOr(values ...*hexutil.Big) *big.Int {
+// hexUint decodes a hex quantity field, treating a missing field as zero.
+func hexUint(fields map[string]any, key string) (uint64, error) {
+	raw, ok := fields[key].(string)
+	if !ok {
+		return 0, nil
+	}
+
+	v, err := hexutil.DecodeUint64(raw)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", key, err)
+	}
+
+	return v, nil
+}
+
+// hexBig decodes a hex quantity field, returning nil when it is missing or malformed.
+func hexBig(fields map[string]any, key string) *big.Int {
+	raw, ok := fields[key].(string)
+	if !ok {
+		return nil
+	}
+
+	v, err := hexutil.DecodeBig(raw)
+	if err != nil {
+		return nil
+	}
+
+	return v
+}
+
+func firstBig(values ...*big.Int) *big.Int {
 	for _, v := range values {
 		if v != nil {
-			return v.ToInt()
+			return v
 		}
 	}
 

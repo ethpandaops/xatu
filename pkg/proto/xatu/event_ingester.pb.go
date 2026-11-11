@@ -6395,7 +6395,9 @@ func (x *MempoolTransactionRemoved) GetAccountNonce() *wrapperspb.UInt64Value {
 
 // MempoolBlobTransactionAnnouncement is one execution layer peer announcing a
 // blob transaction hash to mimicry over devp2p (NewPooledTransactionHashes).
-// The peer is described only by its client, never by its node ID or address.
+// The peer is described only by its client implementation and release version,
+// not by its node ID, address or full client name. A rare implementation and
+// version can still narrow it down.
 // Maps to the mempool_blob_transaction_announcement ClickHouse table.
 type MempoolBlobTransactionAnnouncement struct {
 	state         protoimpl.MessageState
@@ -6406,7 +6408,8 @@ type MempoolBlobTransactionAnnouncement struct {
 	// Size is the transaction size in bytes the peer announced.
 	Size               *wrapperspb.UInt32Value `protobuf:"bytes,2,opt,name=size,proto3" json:"size,omitempty"`
 	PeerImplementation string                  `protobuf:"bytes,3,opt,name=peer_implementation,proto3" json:"peer_implementation,omitempty"`
-	PeerVersion        string                  `protobuf:"bytes,4,opt,name=peer_version,proto3" json:"peer_version,omitempty"`
+	// PeerVersion is the release version only, such as "1.16.0".
+	PeerVersion string `protobuf:"bytes,4,opt,name=peer_version,proto3" json:"peer_version,omitempty"`
 }
 
 func (x *MempoolBlobTransactionAnnouncement) Reset() {

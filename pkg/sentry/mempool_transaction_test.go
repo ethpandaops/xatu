@@ -64,8 +64,12 @@ func TestMempoolTransactionKeepsSignedIdentity(t *testing.T) {
 			txData, err := json.Marshal(fields)
 			require.NoError(t, err)
 
-			parsed, err := parseRawTransactionFromTxPool(txData, signer, signed.Hash())
+			parsed, err := parseRawTransactionFromTxPool(txData, signed.Hash())
 			require.NoError(t, err)
+
+			// A transaction that decodes to a different hash than the client reported is rejected, not recorded.
+			_, err = parseRawTransactionFromTxPool(txData, common.HexToHash("0x01"))
+			require.Error(t, err)
 
 			logger := logrus.New()
 			logger.SetOutput(io.Discard)

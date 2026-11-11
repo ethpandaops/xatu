@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/big"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -34,8 +33,11 @@ func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context, client *exe
 		metrics,
 	)
 
-	if s.Config.Execution.RemovedTxsEnabled {
+	switch {
+	case s.Config.Execution.RemovedTxsEnabled && s.Config.Execution.TxPoolContentEnabled:
 		watcher.OnRemovedTransactions(s.processRemovedMempoolTransactions)
+	case s.Config.Execution.RemovedTxsEnabled:
+		s.log.WithContext(ctx).Warn("removedTxsEnabled needs txPoolContentEnabled, not reporting removed transactions")
 	}
 
 	if err := watcher.Start(ctx); err != nil {
@@ -80,7 +82,7 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, signer types.Sig
 	}
 
 	// Parse the transaction.
-	tx, err := parseRawTransactionFromTxPool(txData, signer, txHash)
+	tx, err := parseRawTransactionFromTxPool(txData, txHash)
 	if err != nil {
 		s.log.WithError(err).WithField("tx_hash", record.Hash).WithContext(ctx).Error("Failed to parse transaction data")
 
@@ -168,7 +170,7 @@ func newMempoolTransactionRemovedEvent(tx *execution.RemovedTx, meta *xatu.Clien
 	}
 
 	if tx.To != nil {
-		data.To = tx.To.Hex()
+		data.To = strings.ToLower(tx.To.Hex())
 	}
 
 	if tx.BlobGasFeeCap != nil {
@@ -196,492 +198,18 @@ func newMempoolTransactionRemovedEvent(tx *execution.RemovedTx, meta *xatu.Clien
 	}
 }
 
-// parseRawTransactionFromTxPool parses a transaction from txpool_content or eth_getTransactionByHash JSON. It decodes
-// the signed transaction, so its hash, type, size and blob fields are the real ones, and falls back to rebuilding an
-// unsigned transaction from the basic fields when the client's JSON does not decode.
-func parseRawTransactionFromTxPool(txData json.RawMessage, signer types.Signer, expectedHash common.Hash) (*types.Transaction, error) {
+// parseRawTransactionFromTxPool decodes the signed transaction from txpool_content or eth_getTransactionByHash JSON.
+// It rejects a transaction whose decoded hash differs from the one the client reported, rather than record wrong
+// fields under the real hash.
+func parseRawTransactionFromTxPool(txData json.RawMessage, expectedHash common.Hash) (*types.Transaction, error) {
 	tx := new(types.Transaction)
-	if err := tx.UnmarshalJSON(txData); err == nil {
-		return tx, nil
+	if err := tx.UnmarshalJSON(txData); err != nil {
+		return nil, fmt.Errorf("decoding transaction: %w", err)
 	}
 
-	var txMap map[string]any
-	if err := json.Unmarshal(txData, &txMap); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal transaction data: %w", err)
+	if tx.Hash() != expectedHash {
+		return nil, fmt.Errorf("decoded transaction hash %s differs from the reported %s", tx.Hash(), expectedHash)
 	}
-
-	// First, try to create an exact transaction with matching hash.
-	if txType, ok := txMap["type"].(string); ok {
-		txTypeVal, err := hexutil.DecodeUint64(txType)
-		if err == nil {
-			switch txTypeVal {
-			case 0:
-				return parseTypeLegacyTx(txMap, expectedHash)
-			case 1:
-				return parseTypeAccessListTx(txMap, expectedHash)
-			case 2:
-				return parseTypeDynamicFeeTx(txMap, expectedHash)
-			case 3:
-				return parseTypeBlobTx(txMap, expectedHash)
-			}
-		}
-	}
-
-	// Fallback to creating a simple transaction with basic fields.
-	return createBasicTransaction(txMap, signer, expectedHash)
-}
-
-// createBasicTransaction creates a basic transaction with essential fields.
-func createBasicTransaction(txMap map[string]any, signer types.Signer, expectedHash common.Hash) (*types.Transaction, error) {
-	var (
-		nonce    uint64
-		gasPrice *big.Int
-		gasLimit uint64
-		value    *big.Int
-		data     []byte
-		to       *common.Address
-	)
-
-	// Parse basic fields.
-	if nonceHex, ok := txMap["nonce"].(string); ok {
-		nonceVal, err := hexutil.DecodeUint64(nonceHex)
-		if err == nil {
-			nonce = nonceVal
-		}
-	}
-
-	if gasHex, ok := txMap["gas"].(string); ok {
-		gasVal, err := hexutil.DecodeUint64(gasHex)
-		if err == nil {
-			gasLimit = gasVal
-		}
-	}
-
-	if gasPriceHex, ok := txMap["gasPrice"].(string); ok {
-		gpVal, err := hexutil.DecodeBig(gasPriceHex)
-		if err == nil {
-			gasPrice = gpVal
-		} else {
-			gasPrice = big.NewInt(0)
-		}
-	} else {
-		gasPrice = big.NewInt(0)
-	}
-
-	if valueHex, ok := txMap["value"].(string); ok {
-		valBig, err := hexutil.DecodeBig(valueHex)
-		if err == nil {
-			value = valBig
-		} else {
-			value = big.NewInt(0)
-		}
-	} else {
-		value = big.NewInt(0)
-	}
-
-	if inputHex, ok := txMap["input"].(string); ok {
-		inputData, err := hexutil.Decode(inputHex)
-		if err == nil {
-			data = inputData
-		}
-	}
-
-	if toStr, ok := txMap["to"].(string); ok && toStr != "" {
-		addr := common.HexToAddress(toStr)
-		to = &addr
-	}
-
-	// Create a legacy transaction
-	tx := types.NewTx(&types.LegacyTx{
-		Nonce:    nonce,
-		GasPrice: gasPrice,
-		Gas:      gasLimit,
-		To:       to,
-		Value:    value,
-		Data:     data,
-	})
 
 	return tx, nil
-}
-
-// parseTypeLegacyTx attempts to parse a legacy transaction (type 0).
-func parseTypeLegacyTx(txMap map[string]any, expectedHash common.Hash) (*types.Transaction, error) {
-	var (
-		nonce    uint64
-		gasPrice *big.Int
-		gasLimit uint64
-		value    *big.Int
-		data     []byte
-		to       *common.Address
-	)
-
-	// Parse transaction fields.
-	if nonceHex, ok := txMap["nonce"].(string); ok {
-		nonceVal, err := hexutil.DecodeUint64(nonceHex)
-		if err == nil {
-			nonce = nonceVal
-		}
-	}
-
-	if gasHex, ok := txMap["gas"].(string); ok {
-		gasVal, err := hexutil.DecodeUint64(gasHex)
-		if err == nil {
-			gasLimit = gasVal
-		}
-	}
-
-	if gasPriceHex, ok := txMap["gasPrice"].(string); ok {
-		gpVal, err := hexutil.DecodeBig(gasPriceHex)
-		if err == nil {
-			gasPrice = gpVal
-		} else {
-			gasPrice = big.NewInt(0)
-		}
-	} else {
-		gasPrice = big.NewInt(0)
-	}
-
-	if valueHex, ok := txMap["value"].(string); ok {
-		valBig, err := hexutil.DecodeBig(valueHex)
-		if err == nil {
-			value = valBig
-		} else {
-			value = big.NewInt(0)
-		}
-	} else {
-		value = big.NewInt(0)
-	}
-
-	if inputHex, ok := txMap["input"].(string); ok {
-		inputData, err := hexutil.Decode(inputHex)
-		if err == nil {
-			data = inputData
-		}
-	}
-
-	if toStr, ok := txMap["to"].(string); ok && toStr != "" {
-		addr := common.HexToAddress(toStr)
-		to = &addr
-	}
-
-	// Create a legacy transaction with the parsed data.
-	legacyTx := &types.LegacyTx{
-		Nonce:    nonce,
-		GasPrice: gasPrice,
-		Gas:      gasLimit,
-		To:       to,
-		Value:    value,
-		Data:     data,
-	}
-
-	return types.NewTx(legacyTx), nil
-}
-
-// parseTypeAccessListTx attempts to parse an access list transaction (type 1).
-func parseTypeAccessListTx(txMap map[string]any, expectedHash common.Hash) (*types.Transaction, error) {
-	var (
-		nonce    uint64
-		gasPrice *big.Int
-		gasLimit uint64
-		value    *big.Int
-		data     []byte
-		to       *common.Address
-		chainID  *big.Int
-	)
-
-	// Parse fields (similar to legacy but with chainID and accessList).
-	if nonceHex, ok := txMap["nonce"].(string); ok {
-		nonceVal, err := hexutil.DecodeUint64(nonceHex)
-		if err == nil {
-			nonce = nonceVal
-		}
-	}
-
-	if gasHex, ok := txMap["gas"].(string); ok {
-		gasVal, err := hexutil.DecodeUint64(gasHex)
-		if err == nil {
-			gasLimit = gasVal
-		}
-	}
-
-	if gasPriceHex, ok := txMap["gasPrice"].(string); ok {
-		gpVal, err := hexutil.DecodeBig(gasPriceHex)
-		if err == nil {
-			gasPrice = gpVal
-		} else {
-			gasPrice = big.NewInt(0)
-		}
-	} else {
-		gasPrice = big.NewInt(0)
-	}
-
-	if valueHex, ok := txMap["value"].(string); ok {
-		valBig, err := hexutil.DecodeBig(valueHex)
-		if err == nil {
-			value = valBig
-		} else {
-			value = big.NewInt(0)
-		}
-	} else {
-		value = big.NewInt(0)
-	}
-
-	if inputHex, ok := txMap["input"].(string); ok {
-		inputData, err := hexutil.Decode(inputHex)
-		if err == nil {
-			data = inputData
-		}
-	}
-
-	if toStr, ok := txMap["to"].(string); ok && toStr != "" {
-		addr := common.HexToAddress(toStr)
-		to = &addr
-	}
-
-	if chainIDHex, ok := txMap["chainId"].(string); ok {
-		id, err := hexutil.DecodeBig(chainIDHex)
-		if err == nil {
-			chainID = id
-		} else {
-			chainID = big.NewInt(1)
-		}
-	} else {
-		chainID = big.NewInt(1)
-	}
-
-	// Create the access list transaction.
-	accessListTx := &types.AccessListTx{
-		ChainID:    chainID,
-		Nonce:      nonce,
-		GasPrice:   gasPrice,
-		Gas:        gasLimit,
-		To:         to,
-		Value:      value,
-		Data:       data,
-		AccessList: types.AccessList{},
-	}
-
-	return types.NewTx(accessListTx), nil
-}
-
-// parseTypeDynamicFeeTx attempts to parse a dynamic fee transaction (type 2, EIP-1559).
-func parseTypeDynamicFeeTx(txMap map[string]any, expectedHash common.Hash) (*types.Transaction, error) {
-	var (
-		nonce          uint64
-		gasLimit       uint64
-		maxFeePerGas   *big.Int
-		maxPriorityFee *big.Int
-		value          *big.Int
-		data           []byte
-		to             *common.Address
-		chainID        *big.Int
-	)
-
-	// Parse fields specific to dynamic fee transactions.
-	if nonceHex, ok := txMap["nonce"].(string); ok {
-		nonceVal, err := hexutil.DecodeUint64(nonceHex)
-		if err == nil {
-			nonce = nonceVal
-		}
-	}
-
-	if gasHex, ok := txMap["gas"].(string); ok {
-		gasVal, err := hexutil.DecodeUint64(gasHex)
-		if err == nil {
-			gasLimit = gasVal
-		}
-	}
-
-	if maxFeeHex, ok := txMap["maxFeePerGas"].(string); ok {
-		mfVal, err := hexutil.DecodeBig(maxFeeHex)
-		if err == nil {
-			maxFeePerGas = mfVal
-		} else {
-			maxFeePerGas = big.NewInt(0)
-		}
-	} else {
-		// Fallback to gasPrice if maxFeePerGas is not available.
-		if gasPriceHex, ok := txMap["gasPrice"].(string); ok {
-			gpVal, err := hexutil.DecodeBig(gasPriceHex)
-			if err == nil {
-				maxFeePerGas = gpVal
-			} else {
-				maxFeePerGas = big.NewInt(0)
-			}
-		} else {
-			maxFeePerGas = big.NewInt(0)
-		}
-	}
-
-	if maxPrioHex, ok := txMap["maxPriorityFeePerGas"].(string); ok {
-		mpVal, err := hexutil.DecodeBig(maxPrioHex)
-		if err == nil {
-			maxPriorityFee = mpVal
-		} else {
-			maxPriorityFee = big.NewInt(0)
-		}
-	} else {
-		// Default to maxFeePerGas or a lower value.
-		maxPriorityFee = maxFeePerGas
-	}
-
-	if valueHex, ok := txMap["value"].(string); ok {
-		valBig, err := hexutil.DecodeBig(valueHex)
-		if err == nil {
-			value = valBig
-		} else {
-			value = big.NewInt(0)
-		}
-	} else {
-		value = big.NewInt(0)
-	}
-
-	if inputHex, ok := txMap["input"].(string); ok {
-		inputData, err := hexutil.Decode(inputHex)
-		if err == nil {
-			data = inputData
-		}
-	}
-
-	if toStr, ok := txMap["to"].(string); ok && toStr != "" {
-		addr := common.HexToAddress(toStr)
-		to = &addr
-	}
-
-	if chainIDHex, ok := txMap["chainId"].(string); ok {
-		id, err := hexutil.DecodeBig(chainIDHex)
-		if err == nil {
-			chainID = id
-		} else {
-			chainID = big.NewInt(1)
-		}
-	} else {
-		chainID = big.NewInt(1)
-	}
-
-	// Create the dynamic fee transaction.
-	dynamicFeeTx := &types.DynamicFeeTx{
-		ChainID:    chainID,
-		Nonce:      nonce,
-		GasTipCap:  maxPriorityFee,
-		GasFeeCap:  maxFeePerGas,
-		Gas:        gasLimit,
-		To:         to,
-		Value:      value,
-		Data:       data,
-		AccessList: types.AccessList{},
-	}
-
-	return types.NewTx(dynamicFeeTx), nil
-}
-
-// parseTypeBlobTx attempts to parse a blob transaction (type 3, EIP-4844).
-func parseTypeBlobTx(txMap map[string]any, expectedHash common.Hash) (*types.Transaction, error) {
-	var (
-		nonce          uint64
-		gasLimit       uint64
-		maxFeePerGas   *big.Int
-		maxPriorityFee *big.Int
-		value          *big.Int
-		data           []byte
-		to             *common.Address
-		chainID        *big.Int
-	)
-
-	// Parse fields.
-	if nonceHex, ok := txMap["nonce"].(string); ok {
-		nonceVal, err := hexutil.DecodeUint64(nonceHex)
-		if err == nil {
-			nonce = nonceVal
-		}
-	}
-
-	if gasHex, ok := txMap["gas"].(string); ok {
-		gasVal, err := hexutil.DecodeUint64(gasHex)
-		if err == nil {
-			gasLimit = gasVal
-		}
-	}
-
-	if maxFeeHex, ok := txMap["maxFeePerGas"].(string); ok {
-		mfVal, err := hexutil.DecodeBig(maxFeeHex)
-		if err == nil {
-			maxFeePerGas = mfVal
-		} else {
-			maxFeePerGas = big.NewInt(0)
-		}
-	} else {
-		// Fallback to gasPrice
-		if gasPriceHex, ok := txMap["gasPrice"].(string); ok {
-			gpVal, err := hexutil.DecodeBig(gasPriceHex)
-			if err == nil {
-				maxFeePerGas = gpVal
-			} else {
-				maxFeePerGas = big.NewInt(0)
-			}
-		} else {
-			maxFeePerGas = big.NewInt(0)
-		}
-	}
-
-	if maxPrioHex, ok := txMap["maxPriorityFeePerGas"].(string); ok {
-		mpVal, err := hexutil.DecodeBig(maxPrioHex)
-		if err == nil {
-			maxPriorityFee = mpVal
-		} else {
-			maxPriorityFee = big.NewInt(0)
-		}
-	} else {
-		// Default to maxFeePerGas.
-		maxPriorityFee = maxFeePerGas
-	}
-
-	if valueHex, ok := txMap["value"].(string); ok {
-		valBig, err := hexutil.DecodeBig(valueHex)
-		if err == nil {
-			value = valBig
-		} else {
-			value = big.NewInt(0)
-		}
-	} else {
-		value = big.NewInt(0)
-	}
-
-	if inputHex, ok := txMap["input"].(string); ok {
-		inputData, err := hexutil.Decode(inputHex)
-		if err == nil {
-			data = inputData
-		}
-	}
-
-	if toStr, ok := txMap["to"].(string); ok && toStr != "" {
-		addr := common.HexToAddress(toStr)
-		to = &addr
-	}
-
-	if chainIDHex, ok := txMap["chainId"].(string); ok {
-		id, err := hexutil.DecodeBig(chainIDHex)
-		if err == nil {
-			chainID = id
-		} else {
-			chainID = big.NewInt(1)
-		}
-	} else {
-		chainID = big.NewInt(1)
-	}
-
-	// TODO: Parse blob data.
-	dynamicFeeTx := &types.DynamicFeeTx{
-		ChainID:    chainID,
-		Nonce:      nonce,
-		GasTipCap:  maxPriorityFee,
-		GasFeeCap:  maxFeePerGas,
-		Gas:        gasLimit,
-		To:         to,
-		Value:      value,
-		Data:       data,
-		AccessList: types.AccessList{},
-	}
-
-	return types.NewTx(dynamicFeeTx), nil
 }

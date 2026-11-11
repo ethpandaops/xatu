@@ -89,7 +89,7 @@ Events with only message ID:
 Events without sharding keys:
 - `CONNECTED`, `DISCONNECTED`
 - `RECV_RPC`, `SEND_RPC`, `DROP_RPC` (parent events only)
-- `HANDLE_METADATA`, `HANDLE_STATUS`
+- `HANDLE_METADATA`, `HANDLE_STATUS`, `REQUEST_GOODBYE`
 
 **Sharding**: All-or-nothing based on configuration
 

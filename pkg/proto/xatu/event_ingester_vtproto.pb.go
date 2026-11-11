@@ -9905,6 +9905,61 @@ func (m *ClientMeta_AdditionalLibP2PTraceIdentifyData) MarshalToSizedBufferVT(dA
 	return len(dAtA) - i, nil
 }
 
+func (m *ClientMeta_AdditionalLibP2PTraceGoodbyeData) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceGoodbyeData) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceGoodbyeData) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Metadata != nil {
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Metadata)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -14842,6 +14897,27 @@ func (m *ClientMeta_EthV1BeaconPhase0BlockReward) MarshalToSizedBufferVT(dAtA []
 		dAtA[i] = 0x8
 		i--
 		dAtA[i] = 0xd2
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ClientMeta_Libp2PTraceGoodbye) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ClientMeta_Libp2PTraceGoodbye) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Libp2PTraceGoodbye != nil {
+		size, err := m.Libp2PTraceGoodbye.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x8
+		i--
+		dAtA[i] = 0xda
 	}
 	return len(dAtA) - i, nil
 }
@@ -23373,6 +23449,39 @@ func (m *DecoratedEvent_EthV1BeaconPhase0BlockReward) MarshalToSizedBufferVT(dAt
 	}
 	return len(dAtA) - i, nil
 }
+func (m *DecoratedEvent_Libp2PTraceGoodbye) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *DecoratedEvent_Libp2PTraceGoodbye) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Libp2PTraceGoodbye != nil {
+		if vtmsg, ok := interface{}(m.Libp2PTraceGoodbye).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Libp2PTraceGoodbye)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x11
+		i--
+		dAtA[i] = 0x82
+	}
+	return len(dAtA) - i, nil
+}
 
 var vtprotoPool_CreateEventsRequest = sync.Pool{
 	New: func() interface{} {
@@ -26802,6 +26911,28 @@ func ClientMeta_AdditionalLibP2PTraceIdentifyDataFromVTPool() *ClientMeta_Additi
 	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceIdentifyData.Get().(*ClientMeta_AdditionalLibP2PTraceIdentifyData)
 }
 
+var vtprotoPool_ClientMeta_AdditionalLibP2PTraceGoodbyeData = sync.Pool{
+	New: func() interface{} {
+		return &ClientMeta_AdditionalLibP2PTraceGoodbyeData{}
+	},
+}
+
+func (m *ClientMeta_AdditionalLibP2PTraceGoodbyeData) ResetVT() {
+	if m != nil {
+		m.Metadata.ReturnToVTPool()
+		m.Reset()
+	}
+}
+func (m *ClientMeta_AdditionalLibP2PTraceGoodbyeData) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_ClientMeta_AdditionalLibP2PTraceGoodbyeData.Put(m)
+	}
+}
+func ClientMeta_AdditionalLibP2PTraceGoodbyeDataFromVTPool() *ClientMeta_AdditionalLibP2PTraceGoodbyeData {
+	return vtprotoPool_ClientMeta_AdditionalLibP2PTraceGoodbyeData.Get().(*ClientMeta_AdditionalLibP2PTraceGoodbyeData)
+}
+
 var vtprotoPool_ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData = sync.Pool{
 	New: func() interface{} {
 		return &ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData{}
@@ -27757,6 +27888,9 @@ func (m *ClientMeta) ResetVT() {
 		}
 		if oneof, ok := m.AdditionalData.(*ClientMeta_EthV1BeaconPhase0BlockReward); ok {
 			oneof.EthV1BeaconPhase0BlockReward.ReturnToVTPool()
+		}
+		if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceGoodbye); ok {
+			oneof.Libp2PTraceGoodbye.ReturnToVTPool()
 		}
 		m.Reset()
 	}
@@ -29450,6 +29584,9 @@ func (m *DecoratedEvent) ResetVT() {
 		}
 		if oneof, ok := m.Data.(*DecoratedEvent_EthV1BeaconPhase0BlockReward); ok {
 			oneof.EthV1BeaconPhase0BlockReward.ReturnToVTPool()
+		}
+		if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGoodbye); ok {
+			oneof.Libp2PTraceGoodbye.ReturnToVTPool()
 		}
 		m.Reset()
 	}
@@ -33126,6 +33263,26 @@ func (m *ClientMeta_AdditionalLibP2PTraceIdentifyData) SizeVT() (n int) {
 	return n
 }
 
+func (m *ClientMeta_AdditionalLibP2PTraceGoodbyeData) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Metadata != nil {
+		if size, ok := interface{}(m.Metadata).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Metadata)
+		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
 func (m *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -35505,6 +35662,18 @@ func (m *ClientMeta_EthV1BeaconPhase0BlockReward) SizeVT() (n int) {
 	_ = l
 	if m.EthV1BeaconPhase0BlockReward != nil {
 		l = m.EthV1BeaconPhase0BlockReward.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *ClientMeta_Libp2PTraceGoodbye) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Libp2PTraceGoodbye != nil {
+		l = m.Libp2PTraceGoodbye.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -39613,6 +39782,24 @@ func (m *DecoratedEvent_EthV1BeaconPhase0BlockReward) SizeVT() (n int) {
 	_ = l
 	if m.EthV1BeaconPhase0BlockReward != nil {
 		l = m.EthV1BeaconPhase0BlockReward.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *DecoratedEvent_Libp2PTraceGoodbye) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Libp2PTraceGoodbye != nil {
+		if size, ok := interface{}(m.Libp2PTraceGoodbye).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Libp2PTraceGoodbye)
+		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -64185,6 +64372,101 @@ func (m *ClientMeta_AdditionalLibP2PTraceIdentifyData) UnmarshalVT(dAtA []byte) 
 	}
 	return nil
 }
+func (m *ClientMeta_AdditionalLibP2PTraceGoodbyeData) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalLibP2PTraceGoodbyeData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClientMeta_AdditionalLibP2PTraceGoodbyeData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Metadata == nil {
+				m.Metadata = libp2p.TraceEventMetadataFromVTPool()
+			}
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Metadata); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *ClientMeta_AdditionalLibP2PTraceRpcDataColumnCustodyProbeData) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -75583,6 +75865,47 @@ func (m *ClientMeta) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.AdditionalData = &ClientMeta_EthV1BeaconPhase0BlockReward{EthV1BeaconPhase0BlockReward: v}
+			}
+			iNdEx = postIndex
+		case 139:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Libp2PTraceGoodbye", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.AdditionalData.(*ClientMeta_Libp2PTraceGoodbye); ok {
+				if err := oneof.Libp2PTraceGoodbye.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := ClientMeta_AdditionalLibP2PTraceGoodbyeDataFromVTPool()
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.AdditionalData = &ClientMeta_Libp2PTraceGoodbye{Libp2PTraceGoodbye: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -95303,6 +95626,63 @@ func (m *DecoratedEvent) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Data = &DecoratedEvent_EthV1BeaconPhase0BlockReward{EthV1BeaconPhase0BlockReward: v}
+			}
+			iNdEx = postIndex
+		case 272:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Libp2PTraceGoodbye", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Data.(*DecoratedEvent_Libp2PTraceGoodbye); ok {
+				if unmarshal, ok := interface{}(oneof.Libp2PTraceGoodbye).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Libp2PTraceGoodbye); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := libp2p.GoodbyeFromVTPool()
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Data = &DecoratedEvent_Libp2PTraceGoodbye{Libp2PTraceGoodbye: v}
 			}
 			iNdEx = postIndex
 		default:

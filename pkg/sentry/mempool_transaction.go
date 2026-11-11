@@ -123,9 +123,15 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, signer types.Sig
 	return nil
 }
 
-// parseRawTransactionFromTxPool parses a transaction from txpool_content JSON format
-// and ensures it has the correct hash by creating a special wrapping transaction.
+// parseRawTransactionFromTxPool parses a transaction from txpool_content or eth_getTransactionByHash JSON. It decodes
+// the signed transaction, so its hash, type, size and blob fields are the real ones, and falls back to rebuilding an
+// unsigned transaction from the basic fields when the client's JSON does not decode.
 func parseRawTransactionFromTxPool(txData json.RawMessage, signer types.Signer, expectedHash common.Hash) (*types.Transaction, error) {
+	tx := new(types.Transaction)
+	if err := tx.UnmarshalJSON(txData); err == nil {
+		return tx, nil
+	}
+
 	var txMap map[string]any
 	if err := json.Unmarshal(txData, &txMap); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal transaction data: %w", err)

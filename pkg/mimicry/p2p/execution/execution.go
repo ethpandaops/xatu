@@ -297,6 +297,8 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		if p.handlers.DecoratedEvent != nil && hashes != nil {
 			now := time.Now()
 
+			p.handleBlobAnnouncements(ctx, now, hashes)
+
 			for i, hash := range hashes.Hashes {
 				var txType uint8
 				if hashes.Types != nil && len(hashes.Types) > i {

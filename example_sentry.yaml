@@ -25,6 +25,8 @@ execution:
   websocketEnabled: false
   # Poll txpool_content for pending transactions. Set to false on Besu.
   txPoolContentEnabled: true
+  # Report transactions that leave the pool unincluded (replaced, nonce consumed or dropped). Needs txPoolContentEnabled.
+  removedTxsEnabled: false
   # WebSocket address for streaming transactions
   wsAddress: ws://localhost:8545
   # RPC address for txpool_content calls

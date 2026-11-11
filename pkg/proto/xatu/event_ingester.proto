@@ -2899,6 +2899,11 @@ message Event {
     BEACON_API_ETH_V1_BEACON_PHASE0_BLOCK_REWARD = 150;
 
     LIBP2P_TRACE_GOODBYE = 151;
+
+    // Transaction pool lifecycle: transactions that left a sentry's pool
+    // unincluded, and per-peer blob transaction announcements seen by mimicry.
+    MEMPOOL_TRANSACTION_REMOVED = 152;
+    MEMPOOL_BLOB_TRANSACTION_ANNOUNCEMENT = 153;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -3047,6 +3052,60 @@ message ExecutionStateSizeDelta {
   google.protobuf.UInt64Value storage_delete_bytes = 22 [ json_name = "storage_delete_bytes" ];
   google.protobuf.UInt64Value storage_trienode_deletes = 23 [ json_name = "storage_trienode_deletes" ];
   google.protobuf.UInt64Value storage_trienode_delete_bytes = 24 [ json_name = "storage_trienode_delete_bytes" ];
+}
+
+// MempoolTransactionRemoved is a transaction that left a sentry's execution
+// client transaction pool without being included in a block. The sentry finds
+// it by diffing successive txpool_content snapshots.
+// Maps to the mempool_transaction_removed ClickHouse table.
+message MempoolTransactionRemoved {
+  string hash = 1 [ json_name = "hash" ];
+  string from = 2 [ json_name = "from" ];
+  // To is empty for contract creations.
+  string to = 3 [ json_name = "to" ];
+  google.protobuf.UInt64Value nonce = 4 [ json_name = "nonce" ];
+  google.protobuf.UInt32Value type = 5 [ json_name = "type" ];
+  google.protobuf.UInt64Value gas = 6 [ json_name = "gas" ];
+  // GasTipCap and GasFeeCap are in wei; both equal the gas price for legacy
+  // and access list transactions.
+  string gas_tip_cap = 7 [ json_name = "gas_tip_cap" ];
+  string gas_fee_cap = 8 [ json_name = "gas_fee_cap" ];
+  // BlobGasFeeCap is in wei, set for blob transactions only.
+  string blob_gas_fee_cap = 9 [ json_name = "blob_gas_fee_cap" ];
+  // Reason is why it left the pool: "replaced" (another transaction with the
+  // same sender and nonce is in the pool), "nonce_consumed" (the sender's
+  // nonce moved past it on chain with another transaction) or "dropped"
+  // (neither: evicted, expired or otherwise discarded).
+  string reason = 10 [ json_name = "reason" ];
+  // Replacement fields describe the transaction that took its place, set
+  // when the reason is "replaced".
+  string replacement_hash = 11 [ json_name = "replacement_hash" ];
+  string replacement_gas_tip_cap = 12 [ json_name = "replacement_gas_tip_cap" ];
+  string replacement_gas_fee_cap = 13 [ json_name = "replacement_gas_fee_cap" ];
+  // FirstSeen and LastSeen are the first and last txpool_content snapshots
+  // that held it.
+  google.protobuf.Timestamp first_seen = 14 [ json_name = "first_seen" ];
+  google.protobuf.Timestamp last_seen = 15 [ json_name = "last_seen" ];
+  // Pool is the section of the last snapshot that held it: "pending" or "queued".
+  string pool = 16 [ json_name = "pool" ];
+  // AccountNonce is the sender's nonce at the latest block when it was found
+  // gone, unset for replacements.
+  google.protobuf.UInt64Value account_nonce = 17 [ json_name = "account_nonce" ];
+}
+
+// MempoolBlobTransactionAnnouncement is one execution layer peer announcing a
+// blob transaction hash to mimicry over devp2p (NewPooledTransactionHashes).
+// The peer is described only by its client implementation and release version,
+// not by its node ID, address or full client name. A rare implementation and
+// version can still narrow it down.
+// Maps to the mempool_blob_transaction_announcement ClickHouse table.
+message MempoolBlobTransactionAnnouncement {
+  string hash = 1 [ json_name = "hash" ];
+  // Size is the transaction size in bytes the peer announced.
+  google.protobuf.UInt32Value size = 2 [ json_name = "size" ];
+  string peer_implementation = 3 [ json_name = "peer_implementation" ];
+  // PeerVersion is the release version only, such as "1.16.0".
+  string peer_version = 4 [ json_name = "peer_version" ];
 }
 
 // ExecutionMPTDepth contains Merkle Patricia Trie depth metrics captured from
@@ -3684,6 +3743,11 @@ message DecoratedEvent {
 
     xatu.libp2p.Goodbye libp2p_trace_goodbye = 272
         [ json_name = "LIBP2P_TRACE_GOODBYE" ];
+
+    MempoolTransactionRemoved mempool_transaction_removed = 273
+        [ json_name = "MEMPOOL_TRANSACTION_REMOVED" ];
+    MempoolBlobTransactionAnnouncement mempool_blob_transaction_announcement = 274
+        [ json_name = "MEMPOOL_BLOB_TRANSACTION_ANNOUNCEMENT" ];
   };
 }
 

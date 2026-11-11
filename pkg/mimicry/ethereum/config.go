@@ -22,6 +22,10 @@ type Config struct {
 	// via GetPooledTransactions.
 	TransactionBatchSize int `yaml:"transactionBatchSize" default:"10"`
 
+	// BlobAnnouncementsEnabled emits MEMPOOL_BLOB_TRANSACTION_ANNOUNCEMENT for every blob transaction hash each
+	// peer announces, recording how blob transactions propagate across peers.
+	BlobAnnouncementsEnabled bool `yaml:"blobAnnouncementsEnabled" default:"false"`
+
 	// BootstrapRPCURL is an optional execution JSON-RPC endpoint used to build
 	// our own status message and serve lightweight block/header/body/receipt requests.
 	BootstrapRPCURL string `yaml:"bootstrapRpcUrl" default:""`

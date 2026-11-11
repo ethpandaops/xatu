@@ -38,6 +38,9 @@ type ClientProvider interface {
 
 	// CallContext performs a JSON-RPC call with the given arguments.
 	CallContext(ctx context.Context, result any, method string, args ...any) error
+
+	// BatchCall performs a JSON-RPC batch call; each element carries its own error.
+	BatchCall(ctx context.Context, reqs []rpc.BatchElem) error
 }
 
 // ExecutionClient represents a unified execution client with both WebSocket and RPC capabilities.
@@ -254,6 +257,11 @@ func (c *Client) GetWebSocketClient() *rpc.Client {
 // CallContext calls an RPC method with the given context.
 func (c *Client) CallContext(ctx context.Context, result any, method string, args ...any) error {
 	return c.rpcClient.CallContext(ctx, result, method, args...)
+}
+
+// BatchCall performs a JSON-RPC batch call; each element carries its own error.
+func (c *Client) BatchCall(ctx context.Context, reqs []rpc.BatchElem) error {
+	return c.rpcClient.BatchCallContext(ctx, reqs)
 }
 
 // GetSigner returns the signer.

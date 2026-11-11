@@ -39,6 +39,9 @@ type Config struct {
 	EthPendingTxsEnabled bool `yaml:"ethPendingTxsEnabled" default:"false"`
 	// TxPoolContentEnabled is whether we suppliment fetching tx's using txpool_content periodically.
 	TxPoolContentEnabled bool `yaml:"txPoolContentEnabled" default:"true"`
+	// RemovedTxsEnabled emits MEMPOOL_TRANSACTION_REMOVED for transactions that leave the txpool unincluded,
+	// found by diffing txpool_content polls. It does nothing without txPoolContentEnabled.
+	RemovedTxsEnabled bool `yaml:"removedTxsEnabled" default:"false"`
 	// WebsocketEnabled is whether the websocket is enabled.
 	WebsocketEnabled bool `yaml:"websocketEnabled" default:"false"`
 	// WSAddress is the WebSocket address of the execution client for subscriptions.

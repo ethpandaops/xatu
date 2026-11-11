@@ -44,6 +44,8 @@ var (
 	TypeBeaconETHV1EventsContributionAndProofV2 Type = v1.EventsContributionAndProofV2Type
 	TypeMempoolTransaction                      Type = mempool.TransactionType
 	TypeMempoolTransactionV2                    Type = mempool.TransactionV2Type
+	TypeMempoolTransactionRemoved               Type = mempool.TransactionRemovedType
+	TypeMempoolBlobTransactionAnnouncement      Type = mempool.BlobTransactionAnnouncementType
 	TypeExecutionStateSize                      Type = execution.ExecutionStateSizeType
 	TypeExecutionEngineNewPayload               Type = execution.EngineNewPayloadType
 	TypeExecutionEngineGetBlobs                 Type = execution.EngineGetBlobsType
@@ -266,6 +268,12 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	})
 	router.RegisterHandler(TypeMempoolTransactionV2, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return mempool.NewTransactionV2(router.log, event), nil
+	})
+	router.RegisterHandler(TypeMempoolTransactionRemoved, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return mempool.NewTransactionRemoved(router.log, event), nil
+	})
+	router.RegisterHandler(TypeMempoolBlobTransactionAnnouncement, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return mempool.NewBlobTransactionAnnouncement(router.log, event), nil
 	})
 	router.RegisterHandler(TypeExecutionStateSize, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return execution.NewExecutionStateSize(router.log, event), nil

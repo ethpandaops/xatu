@@ -14,6 +14,8 @@ import (
 
 // TestHandleHermesEventGoodbye feeds the REQUEST_GOODBYE event in the shape tysm's patched
 // Prysm emits: the remote peer in TraceEvent.PeerID and Code as a uint64 in the payload.
+//
+//nolint:goconst // payload keys match the tysm emitter's literal map keys
 func TestHandleHermesEventGoodbye(t *testing.T) {
 	remotePeer, err := peer.Decode(examplePeerID)
 	require.NoError(t, err)

@@ -11,6 +11,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
+//nolint:goconst // map keys and literals are deliberately reused across sibling event tests
 func TestSnapshot_libp2p_goodbye(t *testing.T) {
 	const (
 		testPeerID  = "16Uiu2HAmPeer1"

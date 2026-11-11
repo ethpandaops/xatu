@@ -29,7 +29,7 @@ func (t *TraceGoodbye) Type() string {
 }
 
 func (t *TraceGoodbye) Validate(ctx context.Context) error {
-	if _, ok := t.event.Data.(*xatu.DecoratedEvent_Libp2PTraceGoodbye); !ok {
+	if _, ok := t.event.GetData().(*xatu.DecoratedEvent_Libp2PTraceGoodbye); !ok {
 		return errors.New("failed to cast event data to TraceGoodbye")
 	}
 

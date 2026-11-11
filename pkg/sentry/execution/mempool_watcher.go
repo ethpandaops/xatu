@@ -50,6 +50,9 @@ type MempoolWatcher struct {
 	txsByHashRpcBreaker     *gobreaker.CircuitBreaker[[]json.RawMessage]
 	txPoolContentRpcBreaker *gobreaker.CircuitBreaker[json.RawMessage]
 	pendingTxsBreaker       *gobreaker.CircuitBreaker[[]json.RawMessage]
+	// poolTracker and removedTxsCallback are set by OnRemovedTransactions.
+	poolTracker        *poolTracker
+	removedTxsCallback func(context.Context, []*RemovedTx)
 }
 
 // NewMempoolWatcher creates a new MempoolWatcher with configured circuit breakers
@@ -146,6 +149,13 @@ func NewMempoolWatcher(
 		txPoolContentRpcBreaker: txPoolContentRpcBreaker,
 		pendingTxsBreaker:       pendingTxsBreaker,
 	}
+}
+
+// OnRemovedTransactions makes every txpool_content poll report the transactions that left the pool since the
+// previous poll without being included. Call it before Start.
+func (w *MempoolWatcher) OnRemovedTransactions(callback func(context.Context, []*RemovedTx)) {
+	w.poolTracker = newPoolTracker(w.client, w.log.WithField("component", "execution/pool_tracker"))
+	w.removedTxsCallback = callback
 }
 
 // Start initializes the watcher's context and launches all background goroutines
@@ -389,6 +399,17 @@ func (w *MempoolWatcher) fetchAndProcessTxPool(ctx context.Context) error {
 	)
 
 	w.metrics.ObserveRPCRequestDuration(string(RPCMethodTxpoolContent), fetchTime.Seconds())
+
+	if w.poolTracker != nil {
+		removed, err := w.poolTracker.update(ctx, response, processStartTime)
+		if err != nil {
+			w.log.WithError(err).WithContext(ctx).Warn("Failed to find transactions removed from the txpool")
+		}
+
+		if len(removed) > 0 {
+			w.removedTxsCallback(ctx, removed)
+		}
+	}
 
 	// Parse the response and add transactions to the pendingTxs map.
 	totalTxCount := 0

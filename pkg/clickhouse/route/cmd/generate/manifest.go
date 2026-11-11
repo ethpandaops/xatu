@@ -20,6 +20,7 @@ var prefixRoutes = []struct {
 	{"execution_mpt_depth", "execution"},
 	{"execution_state_size", "execution"},
 	{"mempool_transaction", "execution"},
+	{"mempool_blob_transaction_announcement", "execution"},
 	{"libp2p_", "libp2p"},
 	{"mev_", "mev"},
 	{"node_record_", "node"},

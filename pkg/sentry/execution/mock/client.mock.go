@@ -14,6 +14,7 @@ import (
 	json "encoding/json"
 	reflect "reflect"
 
+	rpc "github.com/ethereum/go-ethereum/rpc"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -39,6 +40,20 @@ func NewMockClientProvider(ctrl *gomock.Controller) *MockClientProvider {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockClientProvider) EXPECT() *MockClientProviderMockRecorder {
 	return m.recorder
+}
+
+// BatchCall mocks base method.
+func (m *MockClientProvider) BatchCall(ctx context.Context, reqs []rpc.BatchElem) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchCall", ctx, reqs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BatchCall indicates an expected call of BatchCall.
+func (mr *MockClientProviderMockRecorder) BatchCall(ctx, reqs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchCall", reflect.TypeOf((*MockClientProvider)(nil).BatchCall), ctx, reqs)
 }
 
 // BatchGetTransactionsByHash mocks base method.

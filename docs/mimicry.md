@@ -49,6 +49,7 @@ Mimicry requires a single `yaml` config file. An example file can be found [here
 | ethereum.bootstrapRpcUrl | string |  | Optional mainnet, Sepolia, or Holesky execution JSON-RPC endpoint used to build local `eth` Status and answer block data requests  |
 | ethereum.privateKey | string |  | Optional hex devp2p node private key. If omitted, mimicry reuses one generated process-local identity for all execution peers       |
 | ethereum.blobTransactionBatchSize | int | `1` | Number of blob transactions to request at a time via `GetPooledTransactions`                                                       |
+| ethereum.blobAnnouncementsEnabled | bool | `false` | Emit `MEMPOOL_BLOB_TRANSACTION_ANNOUNCEMENT` (table `mempool_blob_transaction_announcement`) for every blob transaction hash each peer announces, naming the peer only by client and version |
 | ethereum.transactionBatchSize | int | `10` | Number of non-blob transactions to request at a time via `GetPooledTransactions`                                                   |
 | coordinator.type | string |  | Type of output (`xatu`, `static`)                                                                                                  |
 | coordinator.config | object |  | Coordinator type configuration [`xatu`](#coordinator-xatu-configuration)/[`static`](#coordinator-static-configuration)             |

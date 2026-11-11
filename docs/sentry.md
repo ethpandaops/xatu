@@ -60,6 +60,7 @@ Sentry requires a single `yaml` config file. An example file can be found [here]
 | execution.websocketEnabled | bool | `false` | Subscribe to new pending transactions over the WebSocket |
 | execution.wsAddress | string |  | Execution client WebSocket address, required when `execution.websocketEnabled` is set |
 | execution.txPoolContentEnabled | bool | `true` | Poll `txpool_content` for pending transactions. Set to `false` on Besu |
+| execution.removedTxsEnabled | bool | `false` | Emit `MEMPOOL_TRANSACTION_REMOVED` (table `mempool_transaction_removed`) for each transaction that leaves the pool between two `txpool_content` polls without being included, classed as `replaced`, `nonce_consumed` or `dropped`. Needs `execution.txPoolContentEnabled`; each poll also reads the new blocks' transaction hashes and the senders' nonces |
 | execution.fetchInterval | int | `45` | Seconds between `txpool_content` polls |
 | execution.processingInterval | int | `3000` | Milliseconds between transaction processing batches |
 | execution.rpcBatchSize | int | `15` | Transactions per batched RPC call |

@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Each row is one execution layer peer announcing a blob transaction hash to a mimicry client over devp2p. Peers are identified only by client implementation and version.
+
+message MempoolBlobTransactionAnnouncement {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // When mimicry received the announcement from the peer
+  int64 event_date_time = 12;
+  // The hash of the announced blob transaction
+  string hash = 13;
+  // The transaction size in bytes the peer announced, including blobs
+  uint32 size = 14;
+  // Execution client implementation of the announcing peer, from its devp2p hello
+  string peer_implementation = 15;
+  // Execution client version of the announcing peer, from its devp2p hello
+  string peer_version = 16;
+  // Name of the client that generated the event
+  string meta_client_name = 17;
+  // Version of the client that generated the event
+  string meta_client_version = 18;
+  // Implementation of the client that generated the event
+  string meta_client_implementation = 19;
+  // Operating system of the client that generated the event
+  string meta_client_os = 20;
+  // IP address of the client that generated the event
+  google.protobuf.StringValue meta_client_ip = 21;
+  // City of the client that generated the event
+  string meta_client_geo_city = 22;
+  // Country of the client that generated the event
+  string meta_client_geo_country = 23;
+  // Country code of the client that generated the event
+  string meta_client_geo_country_code = 24;
+  // Continent code of the client that generated the event
+  string meta_client_geo_continent_code = 25;
+  // Longitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_longitude = 26;
+  // Latitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_latitude = 27;
+  // Autonomous system number of the client that generated the event
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 28;
+  // Autonomous system organization of the client that generated the event
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 29;
+  // Ethereum network name
+  string meta_network_name = 30;
+  // The hash of the fork ID of the current Ethereum network
+  string meta_execution_fork_id_hash = 31;
+  // The fork ID of the next planned Ethereum network upgrade
+  string meta_execution_fork_id_next = 32;
+}
+
+// Request for listing mempool_blob_transaction_announcement records
+message ListMempoolBlobTransactionAnnouncementRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by event_date_time - When mimicry received the announcement from the peer (ORDER BY column 2 - optional)
+  Int64Filter event_date_time = 2;
+
+  // Filter by meta_client_name - Name of the client that generated the event (ORDER BY column 3 - optional)
+  StringFilter meta_client_name = 3;
+
+  // Filter by hash - The hash of the announced blob transaction (ORDER BY column 4 - optional)
+  StringFilter hash = 4;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by size - The transaction size in bytes the peer announced, including blobs (optional)
+  UInt32Filter size = 6;
+  // Filter by peer_implementation - Execution client implementation of the announcing peer, from its devp2p hello (optional)
+  StringFilter peer_implementation = 7;
+  // Filter by peer_version - Execution client version of the announcing peer, from its devp2p hello (optional)
+  StringFilter peer_version = 8;
+  // Filter by meta_client_version - Version of the client that generated the event (optional)
+  StringFilter meta_client_version = 9;
+  // Filter by meta_client_implementation - Implementation of the client that generated the event (optional)
+  StringFilter meta_client_implementation = 10;
+  // Filter by meta_client_os - Operating system of the client that generated the event (optional)
+  StringFilter meta_client_os = 11;
+  // Filter by meta_client_ip - IP address of the client that generated the event (optional)
+  NullableStringFilter meta_client_ip = 12;
+  // Filter by meta_client_geo_city - City of the client that generated the event (optional)
+  StringFilter meta_client_geo_city = 13;
+  // Filter by meta_client_geo_country - Country of the client that generated the event (optional)
+  StringFilter meta_client_geo_country = 14;
+  // Filter by meta_client_geo_country_code - Country code of the client that generated the event (optional)
+  StringFilter meta_client_geo_country_code = 15;
+  // Filter by meta_client_geo_continent_code - Continent code of the client that generated the event (optional)
+  StringFilter meta_client_geo_continent_code = 16;
+  // Filter by meta_client_geo_longitude - Longitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 17;
+  // Filter by meta_client_geo_latitude - Latitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 18;
+  // Filter by meta_client_geo_autonomous_system_number - Autonomous system number of the client that generated the event (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 19;
+  // Filter by meta_client_geo_autonomous_system_organization - Autonomous system organization of the client that generated the event (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 20;
+  // Filter by meta_execution_fork_id_hash - The hash of the fork ID of the current Ethereum network (optional)
+  StringFilter meta_execution_fork_id_hash = 21;
+  // Filter by meta_execution_fork_id_next - The fork ID of the next planned Ethereum network upgrade (optional)
+  StringFilter meta_execution_fork_id_next = 22;
+
+  // The maximum number of mempool_blob_transaction_announcement to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 23;
+  // A page token, received from a previous `ListMempoolBlobTransactionAnnouncement` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 24;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 25;
+}
+
+// Response for listing mempool_blob_transaction_announcement records
+message ListMempoolBlobTransactionAnnouncementResponse {
+  // The list of mempool_blob_transaction_announcement.
+  repeated MempoolBlobTransactionAnnouncement mempool_blob_transaction_announcement = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single mempool_blob_transaction_announcement record by primary key
+message GetMempoolBlobTransactionAnnouncementRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single mempool_blob_transaction_announcement record
+message GetMempoolBlobTransactionAnnouncementResponse {
+  MempoolBlobTransactionAnnouncement item = 1;
+}
+
+// Query mempool_blob_transaction_announcement data
+service MempoolBlobTransactionAnnouncementService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListMempoolBlobTransactionAnnouncementRequest) returns (ListMempoolBlobTransactionAnnouncementResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetMempoolBlobTransactionAnnouncementRequest) returns (GetMempoolBlobTransactionAnnouncementResponse);
+}

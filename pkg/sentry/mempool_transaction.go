@@ -5,11 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	execEvent "github.com/ethpandaops/xatu/pkg/sentry/event/execution"
@@ -29,6 +33,10 @@ func (s *Sentry) startMempoolTransactionWatcher(ctx context.Context, client *exe
 		processTxCallback,
 		metrics,
 	)
+
+	if s.Config.Execution.RemovedTxsEnabled {
+		watcher.OnRemovedTransactions(s.processRemovedMempoolTransactions)
+	}
 
 	if err := watcher.Start(ctx); err != nil {
 		return nil, fmt.Errorf("failed to start mempool watcher: %w", err)
@@ -121,6 +129,71 @@ func (s *Sentry) processMempoolTransaction(ctx context.Context, signer types.Sig
 	s.summary.AddEventStreamEvents("mempool_transaction", 1)
 
 	return nil
+}
+
+// processRemovedMempoolTransactions emits a MEMPOOL_TRANSACTION_REMOVED event for each transaction that left the
+// txpool without being included.
+func (s *Sentry) processRemovedMempoolTransactions(ctx context.Context, removed []*execution.RemovedTx) {
+	for _, tx := range removed {
+		meta, err := s.createNewClientMeta(ctx)
+		if err != nil {
+			s.log.WithError(err).WithContext(ctx).Error("Failed to create client meta")
+
+			return
+		}
+
+		if err := s.handleNewDecoratedEvent(ctx, newMempoolTransactionRemovedEvent(tx, meta, s.clockDrift)); err != nil {
+			s.log.WithError(err).WithField("tx_hash", tx.Hash).WithContext(ctx).Error("Failed to handle decorated event")
+
+			continue
+		}
+
+		s.summary.AddEventStreamEvents("mempool_transaction_removed", 1)
+	}
+}
+
+func newMempoolTransactionRemovedEvent(tx *execution.RemovedTx, meta *xatu.ClientMeta, clockDrift time.Duration) *xatu.DecoratedEvent {
+	data := &xatu.MempoolTransactionRemoved{
+		Hash:      tx.Hash,
+		From:      tx.From.Hex(),
+		Nonce:     wrapperspb.UInt64(tx.Nonce),
+		Type:      wrapperspb.UInt32(uint32(tx.Type)),
+		Gas:       wrapperspb.UInt64(tx.Gas),
+		GasTipCap: tx.GasTipCap.String(),
+		GasFeeCap: tx.GasFeeCap.String(),
+		Reason:    tx.Reason,
+		FirstSeen: timestamppb.New(tx.FirstSeen.Add(clockDrift)),
+		LastSeen:  timestamppb.New(tx.LastSeen.Add(clockDrift)),
+		Pool:      tx.Pool,
+	}
+
+	if tx.To != nil {
+		data.To = tx.To.Hex()
+	}
+
+	if tx.BlobGasFeeCap != nil {
+		data.BlobGasFeeCap = tx.BlobGasFeeCap.String()
+	}
+
+	if tx.Replacement != nil {
+		data.ReplacementHash = tx.Replacement.Hash
+		data.ReplacementGasTipCap = tx.Replacement.GasTipCap.String()
+		data.ReplacementGasFeeCap = tx.Replacement.GasFeeCap.String()
+	}
+
+	if tx.AccountNonce != nil {
+		data.AccountNonce = wrapperspb.UInt64(*tx.AccountNonce)
+	}
+
+	return &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_MEMPOOL_TRANSACTION_REMOVED,
+			DateTime: timestamppb.New(tx.DetectedAt.Add(clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{Client: meta},
+		Data: &xatu.DecoratedEvent_MempoolTransactionRemoved{MempoolTransactionRemoved: data},
+	}
 }
 
 // parseRawTransactionFromTxPool parses a transaction from txpool_content or eth_getTransactionByHash JSON. It decodes

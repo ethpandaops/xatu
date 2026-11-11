@@ -20,8 +20,8 @@ func TestEventCategorization(t *testing.T) {
 		t.Logf("Group %d has %d events", group, len(events))
 	}
 
-	// We should have categorized all 38 currently emitted events
-	assert.Equal(t, 38, totalEvents, "Should have exactly 38 events categorized")
+	// We should have categorized all 39 currently emitted events
+	assert.Equal(t, 39, totalEvents, "Should have exactly 39 events categorized")
 
 	// Test specific group queries
 	groupA := ec.GetGroupAEvents()
@@ -34,7 +34,7 @@ func TestEventCategorization(t *testing.T) {
 	assert.Len(t, groupC, 2, "Group C should have 2 events")
 
 	groupD := ec.GetGroupDEvents()
-	assert.Len(t, groupD, 11, "Group D should have 11 events")
+	assert.Len(t, groupD, 12, "Group D should have 12 events")
 }
 
 func TestMetaEventIdentification(t *testing.T) {
@@ -177,6 +177,7 @@ func TestEventCompleteness(t *testing.T) {
 		xatu.Event_LIBP2P_TRACE_DISCONNECTED,
 		xatu.Event_LIBP2P_TRACE_HANDLE_METADATA,
 		xatu.Event_LIBP2P_TRACE_HANDLE_STATUS,
+		xatu.Event_LIBP2P_TRACE_GOODBYE,
 		xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT,
 		xatu.Event_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED,
 		xatu.Event_BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT,

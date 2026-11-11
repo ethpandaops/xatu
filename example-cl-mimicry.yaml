@@ -126,6 +126,7 @@ outputs:
 #   joinEnabled: false
 #   handleMetadataEnabled: false
 #   handleStatusEnabled: false
+#   goodbyeEnabled: false
 #   gossipSubBeaconBlockEnabled: false
 #   gossipSubAttestationEnabled: false
 #   gossipSubBlobSidecarEnabled: false

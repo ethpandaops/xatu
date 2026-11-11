@@ -1849,6 +1849,10 @@ message ClientMeta {
     xatu.libp2p.TraceEventMetadata metadata = 1;
   }
 
+  message AdditionalLibP2PTraceGoodbyeData {
+    xatu.libp2p.TraceEventMetadata metadata = 1;
+  }
+
   // AdditionalLibP2PTraceRpcDataColumnCustodyProbeData: Holds additional data for a custody probe event in LibP2P Trace RPC.
   message AdditionalLibP2PTraceRpcDataColumnCustodyProbeData {
     xatu.libp2p.TraceEventMetadata metadata = 1;
@@ -2589,6 +2593,8 @@ message ClientMeta {
     // Phase0 rewards computed from beacon states. They reuse the Beacon API reward additional data.
     AdditionalEthV1BeaconAttestationRewardData eth_v1_beacon_phase0_attestation_reward = 137 [ json_name = "BEACON_API_ETH_V1_BEACON_PHASE0_ATTESTATION_REWARD" ];
     AdditionalEthV1BeaconBlockRewardData eth_v1_beacon_phase0_block_reward = 138 [ json_name = "BEACON_API_ETH_V1_BEACON_PHASE0_BLOCK_REWARD" ];
+
+    AdditionalLibP2PTraceGoodbyeData libp2p_trace_goodbye = 139 [ json_name = "LIBP2P_TRACE_GOODBYE" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2891,6 +2897,8 @@ message Event {
     // Phase0 rewards computed from beacon states, for the epochs before Altair.
     BEACON_API_ETH_V1_BEACON_PHASE0_ATTESTATION_REWARD = 149;
     BEACON_API_ETH_V1_BEACON_PHASE0_BLOCK_REWARD = 150;
+
+    LIBP2P_TRACE_GOODBYE = 151;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -3673,6 +3681,9 @@ message DecoratedEvent {
         [ json_name = "BEACON_API_ETH_V1_BEACON_PHASE0_ATTESTATION_REWARD" ];
     BlockRewardData eth_v1_beacon_phase0_block_reward = 271
         [ json_name = "BEACON_API_ETH_V1_BEACON_PHASE0_BLOCK_REWARD" ];
+
+    xatu.libp2p.Goodbye libp2p_trace_goodbye = 272
+        [ json_name = "LIBP2P_TRACE_GOODBYE" ];
   };
 }
 

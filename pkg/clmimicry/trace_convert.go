@@ -595,6 +595,35 @@ func TraceEventToHandleMetadata(event *TraceEvent) (*libp2p.HandleMetadata, erro
 	return metadata, nil
 }
 
+// TraceEventToGoodbye converts a REQUEST_GOODBYE trace event, whose PeerID is the remote peer
+// that said goodbye, to a libp2p Goodbye.
+func TraceEventToGoodbye(event *TraceEvent) (*libp2p.Goodbye, error) {
+	payload, ok := event.Payload.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid payload type for Goodbye")
+	}
+
+	code, ok := payload["Code"].(uint64)
+	if !ok {
+		return nil, fmt.Errorf("code is required for Goodbye")
+	}
+
+	goodbye := &libp2p.Goodbye{
+		RemotePeer: wrapperspb.String(event.PeerID.String()),
+		Code:       wrapperspb.UInt64(code),
+	}
+
+	if reason, ok := payload["Reason"].(string); ok {
+		goodbye.Reason = wrapperspb.String(reason)
+	}
+
+	if agent, ok := payload["Agent"].(string); ok {
+		goodbye.AgentVersion = wrapperspb.String(agent)
+	}
+
+	return goodbye, nil
+}
+
 func TraceEventToHandleStatus(event *TraceEvent) (*libp2p.HandleStatus, error) {
 	payload, ok := event.Payload.(map[string]any)
 	if !ok {

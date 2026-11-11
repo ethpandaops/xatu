@@ -93,6 +93,7 @@ var (
 	TypeLibP2PTraceDropRPC                      Type = Type(libp2p.TraceDropRPCType)
 	TypeLibP2PTraceHandleStatus                 Type = Type(libp2p.TraceHandleStatusType)
 	TypeLibP2PTraceHandleMetadata               Type = Type(libp2p.TraceHandleMetadataType)
+	TypeLibP2PTraceGoodbye                      Type = Type(libp2p.TraceGoodbyeType)
 	TypeLibP2PTraceGossipSubBeaconBlock         Type = Type(libp2p.TraceGossipSubBeaconBlockType)
 	TypeLibP2PTraceGossipSubBeaconAttestation   Type = Type(libp2p.TraceGossipSubBeaconAttestationType)
 	TypeLibP2PTraceGossipSubAggregateAndProof   Type = Type(libp2p.TraceGossipSubAggregateAndProofType)
@@ -551,6 +552,9 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	})
 	router.RegisterHandler(TypeLibP2PTraceHandleMetadata, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceHandleMetadata(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceGoodbye, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGoodbye(router.log, event), nil
 	})
 	router.RegisterHandler(TypeLibP2PTraceGossipSubBeaconBlock, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceGossipSubBeaconBlock(router.log, event), nil

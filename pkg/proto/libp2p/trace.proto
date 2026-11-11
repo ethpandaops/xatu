@@ -160,6 +160,14 @@ message HandleMetadata {
   google.protobuf.StringValue direction = 6 [json_name = "direction"];
 }
 
+// Goodbye is a Goodbye req/resp message received from a remote peer.
+message Goodbye {
+  google.protobuf.StringValue remote_peer = 1 [json_name = "remote_peer"];
+  google.protobuf.UInt64Value code = 2;
+  google.protobuf.StringValue reason = 3;
+  google.protobuf.StringValue agent_version = 4 [json_name = "agent_version"];
+}
+
 message SyntheticHeartbeat {
   google.protobuf.Timestamp timestamp = 1;
   google.protobuf.StringValue remote_peer = 2 [json_name = "remote_peer"];

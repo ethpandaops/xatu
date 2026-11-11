@@ -87,6 +87,7 @@ func (ec *EventCategorizer) initializeEvents() {
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_HANDLE_METADATA, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_HANDLE_STATUS, GroupD, false, false, false)
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOODBYE, GroupD, false, false, false)
 	// EIP-7732 ePBS: synthesized observability events from beacon-node internals.
 	// No Topic / no MsgID — same sharding profile as engine API / custody probe events.
 	ec.addEvent(xatu.Event_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED, GroupD, false, false, false)

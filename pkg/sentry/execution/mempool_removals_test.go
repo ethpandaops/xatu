@@ -154,6 +154,8 @@ func TestPoolTrackerClassifiesRemovedTransactions(t *testing.T) {
 		t1     = time.Unix(1000, 0)
 		t2     = time.Unix(1045, 0)
 		t3     = time.Unix(1090, 0)
+		t4     = time.Unix(1135, 0)
+		t5     = time.Unix(1180, 0)
 	)
 
 	logger.SetOutput(io.Discard)
@@ -188,10 +190,16 @@ func TestPoolTrackerClassifiesRemovedTransactions(t *testing.T) {
 	chain.blocks[101] = []string{hashOf(1)}
 	chain.nonces[common.HexToAddress(z)] = 4
 
-	removed, err = tracker.update(ctx, txpoolContent(t,
+	afterB := txpoolContent(t,
 		poolEntry{"pending", hashOf(7), x, 6, 3, 20}, // B2
 		poolEntry{"pending", hashOf(5), w, 9, 1, 10}, // E
-	), t2)
+	)
+
+	removed, err = tracker.update(ctx, afterB, t2)
+	require.NoError(t, err)
+	assert.Empty(t, removed, "a transaction is reported only once it is missing from two snapshots")
+
+	removed, err = tracker.update(ctx, afterB, t3)
 	require.NoError(t, err)
 
 	sort.Slice(removed, func(i, j int) bool { return removed[i].Hash < removed[j].Hash })
@@ -221,17 +229,24 @@ func TestPoolTrackerClassifiesRemovedTransactions(t *testing.T) {
 	assert.Equal(t, t2, d.DetectedAt)
 	assert.Equal(t, common.HexToAddress(z), d.From)
 
-	// E keeps the time it was first seen across snapshots.
+	// E keeps the time it was first seen across snapshots, and its detection time is the first snapshot without it.
 	chain.latest = 102
 	chain.blocks[102] = []string{}
 
-	removed, err = tracker.update(ctx, txpoolContent(t, poolEntry{"pending", hashOf(7), x, 6, 3, 20}), t3)
+	onlyB2 := txpoolContent(t, poolEntry{"pending", hashOf(7), x, 6, 3, 20})
+
+	removed, err = tracker.update(ctx, onlyB2, t4)
+	require.NoError(t, err)
+	assert.Empty(t, removed)
+
+	removed, err = tracker.update(ctx, onlyB2, t5)
 	require.NoError(t, err)
 	require.Len(t, removed, 1)
 	assert.Equal(t, hashOf(5), removed[0].Hash)
 	assert.Equal(t, RemovalReasonDropped, removed[0].Reason)
 	assert.Equal(t, t1, removed[0].FirstSeen)
-	assert.Equal(t, t2, removed[0].LastSeen)
+	assert.Equal(t, t3, removed[0].LastSeen)
+	assert.Equal(t, t4, removed[0].DetectedAt)
 }
 
 func TestPoolTrackerSkipsWipedPool(t *testing.T) {
@@ -260,6 +275,10 @@ func TestPoolTrackerSkipsWipedPool(t *testing.T) {
 	removed, err := tracker.update(ctx, txpoolContent(t, entries[0]), time.Unix(45, 0))
 	require.NoError(t, err)
 	assert.Empty(t, removed)
+
+	removed, err = tracker.update(ctx, txpoolContent(t, entries[0]), time.Unix(50, 0))
+	require.NoError(t, err)
+	assert.Empty(t, removed, "the restart's losses are not reported on the next poll either")
 
 	_, err = tracker.update(ctx, txpoolContent(t, entries...), time.Unix(90, 0))
 	require.NoError(t, err)
@@ -306,6 +325,10 @@ func TestPoolTrackerChecksConsumedNoncesAgainstTheChain(t *testing.T) {
 
 	removed, err := tracker.update(ctx, txpoolContent(t, stays), time.Unix(45, 0))
 	require.NoError(t, err)
+	assert.Empty(t, removed)
+
+	removed, err = tracker.update(ctx, txpoolContent(t, stays), time.Unix(50, 0))
+	require.NoError(t, err)
 	require.Len(t, removed, 1)
 	assert.Equal(t, hashOf(2), removed[0].Hash)
 	assert.Equal(t, RemovalReasonNonceConsumed, removed[0].Reason)
@@ -316,4 +339,71 @@ func TestPoolTrackerChecksConsumedNoncesAgainstTheChain(t *testing.T) {
 
 	_, err = tracker.update(ctx, txpoolContent(t, stays), time.Unix(90, 0))
 	require.Error(t, err)
+}
+
+func TestPoolTrackerReportsFlappingTransactionsOnce(t *testing.T) {
+	var (
+		ctx    = context.Background()
+		logger = logrus.New()
+		x      = "0x1111111111111111111111111111111111111111"
+		y      = "0x2222222222222222222222222222222222222222"
+		a      = poolEntry{"queued", hashOf(1), x, 9, 1, 10}
+		b      = poolEntry{"pending", hashOf(2), y, 0, 1, 10}
+		keep   = poolEntry{"pending", hashOf(3), y, 1, 1, 10}
+		clock  = time.Unix(0, 0)
+	)
+
+	logger.SetOutput(io.Discard)
+
+	chain := &chainStub{
+		latest: 10,
+		blocks: map[uint64][]string{8: {}, 9: {}, 10: {}},
+		nonces: map[common.Address]uint64{common.HexToAddress(x): 0, common.HexToAddress(y): 0},
+	}
+	tracker := newPoolTracker(chain, logger)
+
+	poll := func(entries ...poolEntry) []*RemovedTx {
+		t.Helper()
+
+		clock = clock.Add(45 * time.Second)
+
+		removed, err := tracker.update(ctx, txpoolContent(t, entries...), clock)
+		require.NoError(t, err)
+
+		return removed
+	}
+
+	poll(a, b, keep)
+
+	// A misses one snapshot and comes back: not reported.
+	assert.Empty(t, poll(b, keep))
+	assert.Empty(t, poll(a, b, keep))
+
+	// B misses one snapshot, then is included before the next: not reported.
+	assert.Empty(t, poll(a, keep))
+
+	chain.latest = 11
+	chain.blocks[11] = []string{hashOf(2)}
+
+	assert.Empty(t, poll(a, keep))
+
+	// A misses two snapshots in a row: reported once.
+	assert.Empty(t, poll(keep))
+
+	removed := poll(keep)
+	require.Len(t, removed, 1)
+	assert.Equal(t, hashOf(1), removed[0].Hash)
+	assert.Equal(t, RemovalReasonDropped, removed[0].Reason)
+
+	// A re-enters the pool and leaves again within reportedTTL: not reported again.
+	assert.Empty(t, poll(a, keep))
+	assert.Empty(t, poll(keep))
+	assert.Empty(t, poll(keep))
+
+	// Once reportedTTL has passed since it was reported, it can be reported again.
+	clock = clock.Add(reportedTTL)
+
+	assert.Empty(t, poll(a, keep))
+	assert.Empty(t, poll(keep))
+	require.Len(t, poll(keep), 1)
 }

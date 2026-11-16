@@ -64,7 +64,7 @@ ethereum:
   #   maxConcurrentFetches: 2
   #   rangeSlots: 256
   execution:
-    address: http://localhost:8545   # EL archive node; cryo --rpc (creds may be embedded: https://user:pass@host)
+    address: http://localhost:8545   # EL archive node; passed to cryo as ETH_RPC_URL (creds may be embedded: https://user:pass@host)
 
 # cryo runner — the binary + extraction settings shared by all execution
 # derivers. maxConcurrentChunks showed no benefit in benchmarking; leave at 0.

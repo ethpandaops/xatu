@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -110,10 +111,11 @@ func (r *Runner) Collect(ctx context.Context, dataset string, from, to uint64, c
 		return nil, fmt.Errorf("failed to create cryo temp dir: %w", err)
 	}
 
+	// The RPC URL is passed via ETH_RPC_URL (set on cmd.Env below) rather than
+	// --rpc so it does not appear in the process command line.
 	args := []string{
 		dataset,
 		"--blocks", fmt.Sprintf("%d:%d", from, to+1),
-		"--rpc", r.rpc,
 		"--output-dir", dir,
 		"--no-report",
 		"--overwrite",
@@ -149,6 +151,9 @@ func (r *Runner) Collect(ctx context.Context, dataset string, from, to uint64, c
 	cmd := exec.CommandContext(ctx, r.cfg.BinaryPath, args...)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+	// cryo resolves its RPC URL from MESC first, then --rpc, then ETH_RPC_URL.
+	// Disable MESC so the configured URL is always the one used.
+	cmd.Env = append(os.Environ(), "ETH_RPC_URL="+r.rpc, "MESC_MODE=DISABLED")
 
 	r.log.WithFields(logrus.Fields{
 		"dataset": dataset,
@@ -159,7 +164,7 @@ func (r *Runner) Collect(ctx context.Context, dataset string, from, to uint64, c
 	if runErr := cmd.Run(); runErr != nil {
 		_ = os.RemoveAll(dir)
 
-		return nil, fmt.Errorf("cryo %s [%d:%d] failed: %w: %s", dataset, from, to, runErr, cryoOutput(&stdout, &stderr))
+		return nil, fmt.Errorf("cryo %s [%d:%d] failed: %w: %s", dataset, from, to, runErr, redactRPC(cryoOutput(&stdout, &stderr), r.rpc))
 	}
 
 	files, err := filepath.Glob(filepath.Join(dir, "*.parquet"))
@@ -187,6 +192,25 @@ func cryoOutput(stdout, stderr *bytes.Buffer) string {
 	default:
 		return out
 	}
+}
+
+// redactRPC masks basic-auth credentials of the RPC URL rpc wherever they
+// appear in s. cryo echoes its RPC URL in its parameter summary, so the full
+// URL is replaced with its redacted form, and the bare password is replaced
+// too in case cryo reformats the URL.
+func redactRPC(s, rpc string) string {
+	u, err := url.Parse(rpc)
+	if err != nil || u.User == nil {
+		return s
+	}
+
+	s = strings.ReplaceAll(s, rpc, u.Redacted())
+
+	if password, ok := u.User.Password(); ok && password != "" {
+		s = strings.ReplaceAll(s, password, "xxxxx")
+	}
+
+	return s
 }
 
 // ReadParquet reads every supplied parquet file into a slice of T. T must be a

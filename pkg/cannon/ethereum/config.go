@@ -43,7 +43,7 @@ type BeaconConfig struct {
 }
 
 // ExecutionConfig configures the execution-layer JSON-RPC endpoint that the EL
-// derivers feed to cryo (cryo --rpc). Basic-auth credentials may be embedded in
+// derivers feed to cryo (via ETH_RPC_URL). Basic-auth credentials may be embedded in
 // the address (https://user:pass@host). cryo has no header-injection path, so
 // there is intentionally no Headers field here — embed creds in the URL.
 type ExecutionConfig struct {

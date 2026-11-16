@@ -105,7 +105,7 @@ func TestCollectFailureRedactsRPC(t *testing.T) {
 	// Fake cryo: echo the RPC URL it was given and its args like cryo's
 	// parameter summary, then fail.
 	script := "#!/bin/sh\necho \"rpc url: $ETH_RPC_URL\"\necho \"args: $*\"\nexit 1\n"
-	require.NoError(t, os.WriteFile(bin, []byte(script), 0o700)) //nolint:gosec // test helper must be executable.
+	require.NoError(t, os.WriteFile(bin, []byte(script), 0o700))
 
 	const password = "s3cret-pass"
 

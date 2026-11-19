@@ -1,4 +1,4 @@
-FROM golang:1.26.10 AS builder
+FROM golang:1.26.11 AS builder
 WORKDIR /src
 COPY go.sum go.mod ./
 # Module and build caches live in cache mounts, not layers, so a source change

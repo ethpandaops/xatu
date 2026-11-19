@@ -1,6 +1,6 @@
 module github.com/ethpandaops/xatu
 
-go 1.26.10
+go 1.26.11
 
 // release-xatu branch.
 
@@ -32,7 +32,7 @@ require (
 	github.com/holiman/uint256 v1.3.2
 	github.com/huandu/go-sqlbuilder v1.36.0
 	github.com/jellydator/ttlcache/v3 v3.4.1
-	github.com/klauspost/compress v1.19.1
+	github.com/klauspost/compress v1.20.2
 	github.com/lib/pq v1.10.9
 	github.com/libp2p/go-libp2p v0.50.0
 	github.com/libp2p/go-libp2p-pubsub v0.17.0
@@ -78,7 +78,7 @@ require (
 	filippo.io/bigmod v0.1.1-0.20260103110540-f8a47775ebe5 // indirect
 	filippo.io/keygen v1.0.0 // indirect
 	github.com/OffchainLabs/methodical-ssz v0.0.0-20260703104215-9be4f5c6a334 // indirect
-	github.com/andybalholm/brotli v1.2.0 // indirect
+	github.com/andybalholm/brotli v1.2.7 // indirect
 	github.com/fjl/jsonw v0.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect

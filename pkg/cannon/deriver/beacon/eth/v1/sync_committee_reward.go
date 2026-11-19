@@ -279,9 +279,40 @@ func (b *SyncCommitteeRewardDeriver) processSlot(
 		return nil, errors.Wrapf(err, "failed to fetch sync committee rewards for slot %d", slot)
 	}
 
-	events := make([]*xatu.DecoratedEvent, 0, len(rewards))
+	return b.createEvents(ctx, rewards, blockIdentifier)
+}
+
+// createEvents creates one event per validator. Some beacon nodes (e.g. Nimbus) return one
+// entry per sync committee seat, so a validator holding several seats appears several times.
+// Others return one entry per validator with the reward of all its seats. Summing the
+// entries per validator gives the same result for both.
+func (b *SyncCommitteeRewardDeriver) createEvents(
+	ctx context.Context,
+	rewards []*apiv1.SyncCommitteeReward,
+	blockIdentifier *xatu.BlockIdentifier,
+) ([]*xatu.DecoratedEvent, error) {
+	summed := make([]*apiv1.SyncCommitteeReward, 0, len(rewards))
+	byValidator := make(map[phase0.ValidatorIndex]*apiv1.SyncCommitteeReward, len(rewards))
 
 	for _, reward := range rewards {
+		if existing, ok := byValidator[reward.ValidatorIndex]; ok {
+			existing.Reward += reward.Reward
+
+			continue
+		}
+
+		validatorReward := &apiv1.SyncCommitteeReward{
+			ValidatorIndex: reward.ValidatorIndex,
+			Reward:         reward.Reward,
+		}
+
+		byValidator[reward.ValidatorIndex] = validatorReward
+		summed = append(summed, validatorReward)
+	}
+
+	events := make([]*xatu.DecoratedEvent, 0, len(summed))
+
+	for _, reward := range summed {
 		event, err := b.createEvent(ctx, reward, blockIdentifier)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create event for validator %d", reward.ValidatorIndex)

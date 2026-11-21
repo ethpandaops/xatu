@@ -96,11 +96,12 @@ jobs:
         tags: ethpandaops/xatu:local
         # Pull the cryo-builder layer from the registry buildcache (written by
         # releases and build-cache.yaml) so a PR reuses the prebuilt cryo
-        # instead of recompiling it (~10 min). Read-only. No gha layer cache:
+        # instead of recompiling it (~10 min). Read-only and anonymous, so fork
+        # PRs get it too (the GHCR package is public). No gha layer cache:
         # its exporter hung these jobs past their timeouts (ignoring its own
         # timeout=), and with cryo from the registry and Go from the cache
         # mounts above it saved almost nothing.
-        cache-from: type=registry,ref=ethpandaops/xatu:cryo-buildcache
+        cache-from: type=registry,ref=ghcr.io/ethpandaops/xatu-buildcache:cryo
     - name: Build sentry-logs image
       if: steps.canary.outputs.skip != 'true'
       uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0

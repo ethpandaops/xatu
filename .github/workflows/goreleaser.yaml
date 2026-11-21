@@ -103,13 +103,13 @@ jobs:
       # (ARG CRYO_GIT_REF); that layer is cache-stable, so it only recompiles
       # when the pinned ref changes.
       #
-      # Cache is a registry image (ethpandaops/xatu:cryo-buildcache), NOT GHA
+      # Cache is a registry image (ghcr.io/ethpandaops/xatu-buildcache:cryo), NOT GHA
       # cache: GHA cache is scoped per git ref, and releases are tag-triggered,
       # so a v1.18.2 run could not read the v1.18.1 run's cache (only its own
       # ref + the default branch). Registry cache is ref-agnostic, so every
       # release reuses the prior cryo-builder layer and skips the ~10 min Rust
-      # compile until CRYO_GIT_REF changes. build-cache.yaml re-warms it on
-      # master; releases only read it, since this job has no Docker Hub login.
+      # compile until CRYO_GIT_REF changes. build-cache.yaml also re-warms it
+      # on master.
       #
       # amd64-only: EL cannon runs on amd64 servers, and compiling cryo for
       # arm64 under QEMU emulation takes 30-60+ min (it hung a release for
@@ -124,7 +124,7 @@ jobs:
       # BuildKit's COPY cache key includes the source file's mode. This
       # self-hosted runner checks out with umask 002 (0664), GitHub-hosted
       # runners with 0644, so without this the cryo layers written to
-      # cryo-buildcache here never matched a PR build and every PR recompiled
+      # the buildcache here never matched a PR build and every PR recompiled
       # cryo. COPY --chmod does not help: the key uses the source mode.
       - name: Normalize cryo patch permissions for the cache key
         run: chmod 0644 deploy/cryo/*.patch
@@ -144,7 +144,8 @@ jobs:
           tags: |
             ghcr.io/ethpandaops/xatu:${{ env.CRYO_IMAGE_VERSION }}-cryo
             ghcr.io/ethpandaops/xatu:${{ env.RELEASE_SUFFIX && format('{0}-cryo', env.RELEASE_SUFFIX) || 'cryo-latest' }}
-          cache-from: type=registry,ref=ethpandaops/xatu:cryo-buildcache
+          cache-from: type=registry,ref=ghcr.io/ethpandaops/xatu-buildcache:cryo
+          cache-to: type=registry,ref=ghcr.io/ethpandaops/xatu-buildcache:cryo,mode=max,ignore-error=true
       - name: Attest images
         id: attest
         uses: ethpandaops/actions/mirror-image@738aeadbcdc54f1c9af659d35f8ef29dd5c0fae6

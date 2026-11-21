@@ -26,17 +26,21 @@ permissions:
 jobs:
   xatu-image:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write      # write the cryo-builder cache to ghcr.io/ethpandaops/xatu-buildcache
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
-      - name: Login to DockerHub
+      - name: Login to GHCR
         uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
       # Releases also write this cache, but only on tags; refreshing it here
       # means a cryo change stops recompiling (~10 min) in every PR as soon as
       # it merges. Same runner type as the PR smoke tests, so the cache keys
@@ -48,8 +52,8 @@ jobs:
           target: cryo-builder
           platforms: linux/amd64
           outputs: type=cacheonly
-          cache-from: type=registry,ref=ethpandaops/xatu:cryo-buildcache
-          cache-to: type=registry,ref=ethpandaops/xatu:cryo-buildcache,mode=max
+          cache-from: type=registry,ref=ghcr.io/ethpandaops/xatu-buildcache:cryo
+          cache-to: type=registry,ref=ghcr.io/ethpandaops/xatu-buildcache:cryo,mode=max
       # The Dockerfile's Go cache mounts, persisted with buildkit-cache-dance.
       # The smoke tests restore this read-only, so PRs never write a copy.
       # Keyed like setup-go (go.sum): rebuilt when dependencies change.

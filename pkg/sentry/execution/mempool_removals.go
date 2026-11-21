@@ -28,6 +28,10 @@ const (
 	maxBlocksPerPoll = includedBlockWindow
 	// removalRPCBatchSize caps the calls in one JSON-RPC batch.
 	removalRPCBatchSize = 100
+	// reportedTTL is how long a reported hash is remembered, so a transaction that keeps leaving and re-entering the
+	// pool is reported once. Production reth pools re-admit a dropped queued transaction a median 8 and a 99th
+	// percentile 46 minutes later.
+	reportedTTL = 2 * time.Hour
 )
 
 // PoolTx is a transaction as it appeared in a txpool_content snapshot.
@@ -75,6 +79,19 @@ type poolTracker struct {
 	included map[string]uint64
 	// lastBlock is the highest block whose transactions are in included.
 	lastBlock uint64
+	// gone holds the transactions missing from the latest snapshot but not the one before it. They are reported
+	// only if the next snapshot is missing them too.
+	gone map[string]*goneTx
+	// reported holds the hashes reported within reportedTTL and when.
+	reported map[string]time.Time
+}
+
+// goneTx is a transaction first missing from a snapshot taken at goneAt.
+type goneTx struct {
+	tx     *PoolTx
+	goneAt time.Time
+	// replacement is the pooled transaction with the same sender and nonce when it went missing.
+	replacement *PoolTx
 }
 
 func newPoolTracker(client ClientProvider, log logrus.FieldLogger) *poolTracker {
@@ -82,12 +99,14 @@ func newPoolTracker(client ClientProvider, log logrus.FieldLogger) *poolTracker 
 		client:   client,
 		log:      log,
 		included: make(map[string]uint64),
+		gone:     make(map[string]*goneTx),
+		reported: make(map[string]time.Time),
 	}
 }
 
-// update records a new snapshot and returns the transactions that left the pool since the previous one without
-// being included. Fetch the snapshot before calling update, so every block that removed a transaction from it is
-// already at or below the latest block update reads.
+// update records a new snapshot and returns the transactions that have been missing from two snapshots in a row
+// without being included, each at most once per reportedTTL. Fetch the snapshot before calling update, so every
+// block that removed a transaction from it is already at or below the latest block update reads.
 func (t *poolTracker) update(ctx context.Context, content map[string]any, now time.Time) ([]*RemovedTx, error) {
 	previous := t.txs
 	current := parsePoolSnapshot(content, previous, now)
@@ -111,6 +130,7 @@ func (t *poolTracker) update(ctx context.Context, content map[string]any, now ti
 		t.txs = current
 		t.lastBlock = latest
 		clear(t.included)
+		clear(t.gone)
 
 		return nil, nil
 	}
@@ -129,8 +149,15 @@ func (t *poolTracker) update(ctx context.Context, content map[string]any, now ti
 	if len(current) == 0 && len(previous) > 0 {
 		// An empty pool right after a populated one is a restart or a wiped pool, not mass eviction.
 		t.log.WithField("previous_txs", len(previous)).Warn("Execution client txpool emptied, skipping removed transactions")
+		clear(t.gone)
 
 		return nil, nil
+	}
+
+	for hash, at := range t.reported {
+		if now.Sub(at) > reportedTTL {
+			delete(t.reported, hash)
+		}
 	}
 
 	bySenderNonce := make(map[senderNonce]*PoolTx, len(current))
@@ -138,10 +165,24 @@ func (t *poolTracker) update(ctx context.Context, content map[string]any, now ti
 		bySenderNonce[senderNonce{tx.From, tx.Nonce}] = tx
 	}
 
-	var (
-		removed    []*RemovedTx
-		needsNonce []*RemovedTx
-	)
+	// Transactions missing from the previous snapshot too are confirmed gone, unless they came back or were included.
+	confirmed := make([]*goneTx, 0, len(t.gone))
+
+	for hash, g := range t.gone {
+		delete(t.gone, hash)
+
+		if _, ok := current[hash]; ok {
+			continue
+		}
+
+		if _, ok := t.included[hash]; ok {
+			continue
+		}
+
+		confirmed = append(confirmed, g)
+	}
+
+	newlyGone := 0
 
 	for hash, tx := range previous {
 		if _, ok := current[hash]; ok {
@@ -152,9 +193,42 @@ func (t *poolTracker) update(ctx context.Context, content map[string]any, now ti
 			continue
 		}
 
-		r := &RemovedTx{PoolTx: *tx, DetectedAt: now}
+		if _, ok := t.reported[hash]; ok {
+			continue
+		}
 
-		if replacement, ok := bySenderNonce[senderNonce{tx.From, tx.Nonce}]; ok {
+		t.gone[hash] = &goneTx{tx: tx, goneAt: now, replacement: bySenderNonce[senderNonce{tx.From, tx.Nonce}]}
+		newlyGone++
+	}
+
+	if newlyGone > len(previous)/2 && newlyGone > 100 {
+		t.log.WithFields(logrus.Fields{
+			"previous_txs": len(previous),
+			"gone_txs":     newlyGone,
+		}).Warn("Over half the txpool vanished unincluded, assuming a restart and skipping removed transactions")
+		clear(t.gone)
+	}
+
+	return t.classify(ctx, confirmed, bySenderNonce)
+}
+
+// classify gives each confirmed gone transaction its reason and marks it reported. A transaction whose sender's
+// nonce cannot be read is left out.
+func (t *poolTracker) classify(ctx context.Context, confirmed []*goneTx, bySenderNonce map[senderNonce]*PoolTx) ([]*RemovedTx, error) {
+	var (
+		removed    []*RemovedTx
+		needsNonce []*RemovedTx
+	)
+
+	for _, g := range confirmed {
+		r := &RemovedTx{PoolTx: *g.tx, DetectedAt: g.goneAt}
+
+		replacement := bySenderNonce[senderNonce{g.tx.From, g.tx.Nonce}]
+		if replacement == nil {
+			replacement = g.replacement
+		}
+
+		if replacement != nil {
 			r.Reason = RemovalReasonReplaced
 			r.Replacement = replacement
 			removed = append(removed, r)
@@ -165,14 +239,11 @@ func (t *poolTracker) update(ctx context.Context, content map[string]any, now ti
 		needsNonce = append(needsNonce, r)
 	}
 
-	if len(needsNonce) > len(previous)/2 && len(needsNonce) > 100 {
-		t.log.WithFields(logrus.Fields{
-			"previous_txs": len(previous),
-			"gone_txs":     len(needsNonce),
-		}).Warn("Over half the txpool vanished unincluded, assuming a restart and skipping removed transactions")
-
-		return removed, nil
-	}
+	defer func() {
+		for _, r := range removed {
+			t.reported[r.Hash] = r.DetectedAt
+		}
+	}()
 
 	nonces, err := t.accountNonces(ctx, needsNonce)
 	if err != nil {

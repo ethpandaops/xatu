@@ -30,8 +30,9 @@ type Location struct {
 }
 
 var (
-	ErrFailedToMarshal   = errors.New("failed to marshal location")
-	ErrFailedToUnmarshal = errors.New("failed to unmarshal location")
+	ErrFailedToMarshal      = errors.New("failed to marshal location")
+	ErrFailedToUnmarshal    = errors.New("failed to unmarshal location")
+	ErrLocationDataRequired = errors.New("location data is required")
 )
 
 // Marshal marshals a proto message into the Location fields.
@@ -45,27 +46,31 @@ func (l *Location) Marshal(msg *xatu.RelayMonitorLocation) error {
 		l.Type = "RELAY_MONITOR_BID_TRACE"
 
 		data := msg.GetBidTrace()
-		if data != nil {
-			b, err := protojson.Marshal(data)
-			if err != nil {
-				return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-			}
-
-			l.Value = string(b)
+		if data == nil || !data.ProtoReflect().IsValid() {
+			return fmt.Errorf("%w: type %s", ErrLocationDataRequired, l.Type)
 		}
+
+		b, err := protojson.Marshal(data)
+		if err != nil {
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
+		}
+
+		l.Value = string(b)
 
 	case xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED:
 		l.Type = "RELAY_MONITOR_PAYLOAD_DELIVERED"
 
 		data := msg.GetPayloadDelivered()
-		if data != nil {
-			b, err := protojson.Marshal(data)
-			if err != nil {
-				return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
-			}
-
-			l.Value = string(b)
+		if data == nil || !data.ProtoReflect().IsValid() {
+			return fmt.Errorf("%w: type %s", ErrLocationDataRequired, l.Type)
 		}
+
+		b, err := protojson.Marshal(data)
+		if err != nil {
+			return fmt.Errorf("%w: %s", ErrFailedToMarshal, err)
+		}
+
+		l.Value = string(b)
 
 	default:
 		return fmt.Errorf("unknown type: %s", msg.Type)

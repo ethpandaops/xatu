@@ -25,6 +25,8 @@ permissions:
 
 jobs:
   xatu-image:
+    # The release reads the cryo-builder cache, so only master writes it.
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
       contents: read

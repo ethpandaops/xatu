@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
@@ -440,60 +441,60 @@ func (r *RelayMonitor) processBatch(
 
 	log.WithContext(ctx).Debug("Processing batch")
 
-	// Apply rate limiting (single consumer - no contention)
-	if err := limiter.Wait(ctx); err != nil {
-		log.WithError(err).WithContext(ctx).Debug("Rate limiter cancelled")
-
-		return
-	}
-
-	// Fetch batch data
-	var (
-		highestSlot uint64
-		lowestSlot  uint64
-		count       int
-		err         error
-	)
-
-	switch eventType {
-	case xatu.RelayMonitorType_RELAY_MONITOR_BID_TRACE:
-		highestSlot, lowestSlot, count, err = r.fetchBidTracesBatch(ctx, relayClient, batch.Params)
-	case xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED:
-		highestSlot, lowestSlot, count, err = r.fetchProposerPayloadDeliveredBatch(ctx, relayClient, batch.Params)
-	}
-
-	if err != nil {
-		log.WithError(err).WithContext(ctx).Error("Failed to fetch batch data")
-
-		return // Don't update location - will retry on next tick
-	}
-
-	log.WithFields(logrus.Fields{
-		"payloads_fetched": count,
-		"highest_slot":     highestSlot,
-		"lowest_slot":      lowestSlot,
-	}).WithContext(ctx).Debug("Batch fetch completed")
-
-	// Determine the new location based on process type
 	var newLocation uint64
 
 	switch process {
 	case "forward_fill":
-		// For forward fill, we walk up from currentSlot in batchSize steps
-		// cursor = min(currentSlot + batchSize, targetSlot)
-		// If we got results, use highest slot; otherwise use cursor position
-		// (which is min(currentSlot + batchSize, targetSlot))
-		if count > 0 {
-			newLocation = highestSlot
-		} else {
-			// No results - advance to the cursor position we queried
-			// cursor = min(currentSlot + batchSize, targetSlot)
-			//nolint:gosec // BatchSize is validated to be positive and <= 200
-			cursor := min(batch.CurrentSlot+uint64(batch.BatchSize), batch.TargetSlot)
+		// A single limit-capped fetch can return only the highest slots in
+		// the requested range on a dense relay, leaving lower slots in the
+		// window unfetched. fetchForwardFillWindow pages down through the
+		// window until it is fully covered, or gives up and leaves the
+		// cursor unchanged so the same window is retried next tick, rather
+		// than advancing past slots that were never actually fetched.
+		var (
+			progressed bool
+			err        error
+		)
 
-			newLocation = cursor
+		newLocation, progressed, err = r.fetchForwardFillWindow(ctx, log, relayClient, limiter, eventType, batch)
+		if err != nil {
+			log.WithError(err).WithContext(ctx).Error("Failed to fetch forward-fill window")
+
+			return
+		}
+
+		if !progressed {
+			// No safe progress was made this tick; retry the same window
+			// next tick instead of persisting a no-op location update.
+			return
 		}
 	case "backfill":
+		// Apply rate limiting (single consumer - no contention)
+		if err := limiter.Wait(ctx); err != nil {
+			log.WithError(err).WithContext(ctx).Debug("Rate limiter cancelled")
+
+			return
+		}
+
+		var (
+			lowestSlot uint64
+			count      int
+			err        error
+		)
+
+		switch eventType {
+		case xatu.RelayMonitorType_RELAY_MONITOR_BID_TRACE:
+			_, lowestSlot, count, err = r.fetchBidTracesBatch(ctx, relayClient, batch.Params)
+		case xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED:
+			_, lowestSlot, count, err = r.fetchProposerPayloadDeliveredBatch(ctx, relayClient, batch.Params)
+		}
+
+		if err != nil {
+			log.WithError(err).WithContext(ctx).Error("Failed to fetch batch data")
+
+			return // Don't update location - will retry on next tick
+		}
+
 		// For backfill, we've covered down to the lowest slot in batch
 		// If we got fewer than limit results, we've reached the end of available data
 		switch {
@@ -513,6 +514,96 @@ func (r *RelayMonitor) processBatch(
 	if err := iter.UpdateLocation(ctx, phase0.Slot(newLocation)); err != nil {
 		log.WithError(err).WithContext(ctx).Error("Failed to update location")
 	}
+}
+
+// maxForwardFillPagesPerTick bounds how many additional fetches a single
+// forward-fill tick will issue when one page's response doesn't reach down
+// to the current cursor. This keeps a tick's work bounded while still
+// making real progress on dense relays instead of silently skipping the
+// unfetched range.
+const maxForwardFillPagesPerTick = 5
+
+// fetchForwardFillWindow fetches the window described by batch, paging down
+// through it as needed so that the returned location is never advanced past
+// a slot that wasn't actually fetched. progressed is false when the window
+// could not be fully covered within the page budget, in which case the
+// caller should leave the location unchanged and retry next tick.
+func (r *RelayMonitor) fetchForwardFillWindow(
+	ctx context.Context,
+	log observability.ContextualLogger,
+	relayClient *relay.Client,
+	limiter *rate.Limiter,
+	eventType xatu.RelayMonitorType,
+	batch *iterator.BatchRequest,
+) (newLocation uint64, progressed bool, err error) {
+	originalCursor, err := strconv.ParseUint(batch.Params.Get("cursor"), 10, 64)
+	if err != nil {
+		return 0, false, fmt.Errorf("failed to parse batch cursor: %w", err)
+	}
+
+	pageCursor := originalCursor
+	floor := batch.CurrentSlot + 1
+	covered := false
+	totalCount := 0
+
+	for page := 0; page < maxForwardFillPagesPerTick; page++ {
+		if err := limiter.Wait(ctx); err != nil {
+			return 0, false, err
+		}
+
+		params := url.Values{
+			"cursor": {strconv.FormatUint(pageCursor, 10)},
+			"limit":  {strconv.Itoa(batch.BatchSize)},
+			"order":  {"desc"},
+		}
+
+		var (
+			lowestSlot uint64
+			count      int
+			ferr       error
+		)
+
+		switch eventType {
+		case xatu.RelayMonitorType_RELAY_MONITOR_BID_TRACE:
+			_, lowestSlot, count, ferr = r.fetchBidTracesBatch(ctx, relayClient, params)
+		case xatu.RelayMonitorType_RELAY_MONITOR_PAYLOAD_DELIVERED:
+			_, lowestSlot, count, ferr = r.fetchProposerPayloadDeliveredBatch(ctx, relayClient, params)
+		}
+
+		if ferr != nil {
+			return 0, false, ferr
+		}
+
+		totalCount += count
+
+		if count == 0 || count < batch.BatchSize || lowestSlot <= floor {
+			// Either there's nothing left at or below pageCursor, or this
+			// page wasn't truncated, or it reached our floor directly: in
+			// every case the window down to floor is now fully covered.
+			covered = true
+
+			break
+		}
+
+		// Truncated and still above the floor: page further down.
+		pageCursor = lowestSlot - 1
+	}
+
+	log.WithFields(logrus.Fields{
+		"payloads_fetched": totalCount,
+		"covered":          covered,
+	}).WithContext(ctx).Debug("Forward-fill window fetch completed")
+
+	if !covered {
+		log.WithFields(logrus.Fields{
+			"cursor": originalCursor,
+			"floor":  floor,
+		}).WithContext(ctx).Warn("Forward-fill window too dense to cover within the page budget, retrying next tick")
+
+		return 0, false, nil
+	}
+
+	return originalCursor, true, nil
 }
 
 // fetchBidTracesBatch fetches bid traces using batch parameters.

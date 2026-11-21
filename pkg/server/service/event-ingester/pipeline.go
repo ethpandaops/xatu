@@ -41,11 +41,16 @@ func NewPipeline(
 		return nil, fmt.Errorf("failed to create authorization: %w", err)
 	}
 
+	mutator, err := xatu.NewEventMutator(&config.Mutations)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create event mutator: %w", err)
+	}
+
 	p := &Pipeline{
 		log:     log.WithField("component", "pipeline"),
 		config:  config,
 		auth:    a,
-		handler: NewHandler(log, clockDrift, geoipProvider, cache, config.ClientNameSalt),
+		handler: NewHandler(log, clockDrift, geoipProvider, cache, config.ClientNameSalt, mutator),
 	}
 
 	sinks, err := p.createSinks()

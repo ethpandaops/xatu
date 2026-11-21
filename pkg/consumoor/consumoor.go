@@ -28,6 +28,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/clickhouse/telemetry"
 	"github.com/ethpandaops/xatu/pkg/consumoor/source"
 	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
 // topicStream pairs a discovered Kafka topic with its dedicated Benthos stream.
@@ -47,6 +48,7 @@ type Consumoor struct {
 
 	metrics    *telemetry.Metrics
 	router     *router.Engine
+	mutator    xatu.EventMutator
 	writer     source.Writer
 	streams    []topicStream
 	lagMonitor *source.LagMonitor
@@ -96,6 +98,11 @@ func New(
 	}
 
 	rtr := router.New(log, registeredRoutes, disabledEvents, metrics)
+
+	mutator, err := xatu.NewEventMutator(&config.Mutations)
+	if err != nil {
+		return nil, fmt.Errorf("creating event mutator: %w", err)
+	}
 
 	// Register columnar batch factories from routes on the writer so
 	// each table gets zero-reflection inserts.
@@ -155,6 +162,7 @@ func New(
 				BaseDelay:   config.ClickHouse.ChGo.GroupRetryBaseDelay,
 				MaxDelay:    config.ClickHouse.ChGo.GroupRetryMaxDelay,
 			},
+			mutator,
 		)
 		if sErr != nil {
 			return nil, fmt.Errorf(
@@ -194,6 +202,7 @@ func New(
 		config:       config,
 		metrics:      metrics,
 		router:       rtr,
+		mutator:      mutator,
 		writer:       writer,
 		streams:      streams,
 		activeTopics: activeTopics,
@@ -521,6 +530,7 @@ func (c *Consumoor) startTopicStream(
 			BaseDelay:   c.config.ClickHouse.ChGo.GroupRetryBaseDelay,
 			MaxDelay:    c.config.ClickHouse.ChGo.GroupRetryMaxDelay,
 		},
+		c.mutator,
 	)
 	if err != nil {
 		c.log.WithError(err).

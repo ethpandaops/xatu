@@ -212,6 +212,33 @@ The coordinator service is responsible for;
 
 The event ingester service is responsible for receiving events from clients (sentries) via gRPC, validating and then forwarding them to sinks.
 
+#### Mutations
+
+The event ingester can mutate every ingested event before it is handed to the outputs. This is useful when the server runs as a relay: a small server instance whose only output is a `xatu` sink pointing at an upstream server, re-namespacing events as they pass through. A common case is multiple networks that share a genesis (forked or copied devnets) — every client derives the same network name, so the relay in front of each copy rewrites the name to keep the copies distinguishable downstream.
+
+```yaml
+services:
+  eventIngester:
+    enabled: true
+    mutations:
+      metaNetworkName:
+        # Replace the network name outright...
+        value: "my-network"
+        # ...or decorate the client-asserted name instead.
+        # `value` is mutually exclusive with `prefix`/`suffix`.
+        # prefix: "relay/"
+        # suffix: "--copy-1"
+    outputs:
+    - name: upstream
+      type: xatu
+      config:
+        address: upstream-server:8080
+```
+
+Events that carry no network metadata are left untouched. The same settings are available as CLI flags (`--server-event-ingester-meta-network-name-value`, `-prefix`, `-suffix`) and environment variables (`SERVER_EVENT_INGESTER_META_NETWORK_NAME_VALUE`, `_PREFIX`, `_SUFFIX`), which take precedence over the config file.
+
+The [consumoor](./consumoor-runbook.md) supports the same `mutations` config, applied before events are written to ClickHouse — useful for enforcing a canonical network name on everything a given pipeline persists.
+
 ## HTTP Ingester
 
 The HTTP ingester provides an HTTP endpoint for receiving events, as an alternative to the gRPC event ingester. This is useful for clients that cannot use gRPC, such as [Vector](https://vector.dev)-based log collectors like [Sentry Logs](./sentry-logs.md).

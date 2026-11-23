@@ -77,8 +77,8 @@ dockers:
     goarch: amd64
     dockerfile: goreleaser-scratch.Dockerfile
     image_templates:
-      - "ethpandaops/{{ .ProjectName }}:{{ .Version }}-amd64"
-      - "ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}-amd64"
+      - "ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}-amd64"
+      - "ghcr.io/ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}-amd64"
     build_flag_templates:
       - "--platform=linux/amd64"
       - "--provenance=false"
@@ -92,8 +92,8 @@ dockers:
     goarch: arm64
     dockerfile: goreleaser-scratch.Dockerfile
     image_templates:
-      - "ethpandaops/{{ .ProjectName }}:{{ .Version }}-arm64v8"
-      - "ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}-arm64v8"
+      - "ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}-arm64v8"
+      - "ghcr.io/ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}-arm64v8"
     build_flag_templates:
       - "--platform=linux/arm64/v8"
       - "--provenance=false"
@@ -108,8 +108,8 @@ dockers:
     goarch: amd64
     dockerfile: goreleaser-debian.Dockerfile
     image_templates:
-      - "ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-amd64"
-      - "ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}-amd64"
+      - "ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-amd64"
+      - "ghcr.io/ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}-amd64"
     build_flag_templates:
       - "--platform=linux/amd64"
       - "--provenance=false"
@@ -123,8 +123,8 @@ dockers:
     goarch: arm64
     dockerfile: goreleaser-debian.Dockerfile
     image_templates:
-      - "ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-arm64v8"
-      - "ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}-arm64v8"
+      - "ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-arm64v8"
+      - "ghcr.io/ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}-arm64v8"
     build_flag_templates:
       - "--platform=linux/arm64/v8"
       - "--provenance=false"
@@ -135,27 +135,27 @@ dockers:
       - "--label=org.opencontainers.image.version={{.Version}}"
 docker_manifests:
   ## Scratch
-  - name_template: ethpandaops/{{ .ProjectName }}:{{ .Version }}
+  - name_template: ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}
     image_templates:
-      - ethpandaops/{{ .ProjectName }}:{{ .Version }}-amd64
-      - ethpandaops/{{ .ProjectName }}:{{ .Version }}-arm64v8
-  - name_template: ethpandaops/{{ .ProjectName }}:{{ .Version }}-arm64
+      - ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}-amd64
+      - ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}-arm64v8
+  - name_template: ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}-arm64
     image_templates:
-      - ethpandaops/{{ .ProjectName }}:{{ .Version }}-arm64v8
-  - name_template: ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}
+      - ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}-arm64v8
+  - name_template: ghcr.io/ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}
     image_templates:
-      - ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}-amd64
-      - ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}-arm64v8
+      - ghcr.io/ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}-amd64
+      - ghcr.io/ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}{{ else }}latest{{ end }}-arm64v8
 
   ## Debian
-  - name_template: ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian
+  - name_template: ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian
     image_templates:
-      - ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-amd64
-      - ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-arm64v8
-  - name_template: ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-arm64
+      - ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-amd64
+      - ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-arm64v8
+  - name_template: ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-arm64
     image_templates:
-      - ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-arm64v8
-  - name_template: ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}
+      - ghcr.io/ethpandaops/{{ .ProjectName }}:{{ .Version }}-debian-arm64v8
+  - name_template: ghcr.io/ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}
     image_templates:
-      - ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}-amd64
-      - ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}-arm64v8
+      - ghcr.io/ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}-amd64
+      - ghcr.io/ethpandaops/{{ .ProjectName }}:{{ if .Env.RELEASE_SUFFIX }}{{ .Env.RELEASE_SUFFIX }}-debian{{ else }}debian-latest{{ end }}-arm64v8

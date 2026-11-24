@@ -1,0 +1,103 @@
+name: Devnet release branches
+
+# Gives every devnet a release/<network> branch, so alpha-releases.yaml tags
+# it and goreleaser publishes ethpandaops/xatu:<network> and
+# ethpandaops/xatu:<network>-debian for the platform deployment to run.
+#
+# A devnet's network is <class>-<dir>, or just <dir> when it already starts
+# with <class>-, for each kubernetes/<dir> in a non-archived
+# ethpandaops/<class>-devnets repo (template-devnets excluded).
+# Missing branches are created from master. Existing branches are never
+# touched: they are created through the refs API, which refuses a ref that
+# already exists, so this can't move, force-push, or delete one.
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: List the branches it would create without creating them
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create missing release branches
+        env:
+          # A bot PAT, not GITHUB_TOKEN: it must list the org's private devnet
+          # repos, and its pushes must trigger alpha-releases.yaml.
+          GH_TOKEN: ${{ secrets.EPOBOT_TOKEN }}
+          DRY_RUN: ${{ inputs.dry-run && 'true' || 'false' }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          org=ethpandaops
+          failed=0
+
+          repos=$(gh api --paginate "orgs/${org}/repos?per_page=100" --jq '.[]
+            | select(.name | endswith("-devnets")) | select(.archived | not)
+            | select(.name != "template-devnets") | .name' | sort)
+
+          networks=()
+          for repo in $repos; do
+            if ! dirs=$(gh api "repos/${org}/${repo}/contents/kubernetes" --jq '.[] | select(.type == "dir") | .name' 2>&1); then
+              if [[ $dirs == *"(HTTP 404)"* ]]; then
+                echo "${repo}: no kubernetes/ directory"
+              else
+                echo "::error::${repo}: ${dirs}"
+                failed=1
+              fi
+              continue
+            fi
+            class=${repo%-devnets}
+            for dir in $dirs; do
+              network=$dir
+              [[ $dir == "${class}-"* ]] || network="${class}-${dir}"
+              # Becomes a branch, a git tag suffix, and Docker tags.
+              if [[ ! $network =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]]; then
+                echo "::warning::${repo}: skipping kubernetes/${dir}, ${network} is not a valid network name"
+                continue
+              fi
+              echo "${repo}: ${network}"
+              networks+=("$network")
+            done
+          done
+
+          existing=$(gh api --paginate "repos/${REPO}/git/matching-refs/heads/release/" --jq '.[].ref')
+          master=$(gh api "repos/${REPO}/git/ref/heads/master" --jq '.object.sha')
+
+          if [[ $DRY_RUN == true ]]; then
+            # The receive-pack handshake needs push access but writes nothing.
+            curl -fsS -o /dev/null -u "x-access-token:${GH_TOKEN}" \
+              "https://github.com/${REPO}.git/info/refs?service=git-receive-pack" \
+              || { echo "::error::EPOBOT_TOKEN can't push to ${REPO}"; failed=1; }
+          fi
+
+          echo "| Network | Branch |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          for network in "${networks[@]}"; do
+            ref="refs/heads/release/${network}"
+            if grep -qxF "$ref" <<<"$existing"; then
+              result="exists"
+            elif [[ $DRY_RUN == true ]]; then
+              result="would create from master ${master:0:7}"
+            elif gh api -X POST "repos/${REPO}/git/refs" -f ref="$ref" -f sha="$master" --silent; then
+              result="created from master ${master:0:7}"
+            else
+              echo "::error::Failed to create release/${network}"
+              result="failed"
+              failed=1
+            fi
+            echo "release/${network}: ${result}"
+            echo "| ${network} | ${result} |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+          exit "$failed"

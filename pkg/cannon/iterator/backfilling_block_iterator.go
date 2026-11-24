@@ -15,6 +15,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/eth"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -175,7 +176,7 @@ func (b *BackfillingBlock) fetchExecutionCeiling(ctx context.Context) (uint64, e
 		return 0, errors.New("finalized beacon block is nil")
 	}
 
-	if block.Version >= spec.DataVersionGloas {
+	if eth.ForkAtLeast(block.Version, spec.DataVersionGloas) {
 		return b.payloadParentNumber(ctx, block)
 	}
 
@@ -234,7 +235,7 @@ func (b *BackfillingBlock) payloadParentNumber(ctx context.Context, block *spec.
 			return b.revealedBlockNumber(ctx, identifier, ancestor)
 		}
 
-		if ancestor.Version < spec.DataVersionGloas {
+		if !eth.ForkAtLeast(ancestor.Version, spec.DataVersionGloas) {
 			return 0, errors.Errorf("beacon block %s carries execution block %s, expected %s", identifier, hash, target)
 		}
 
@@ -250,7 +251,7 @@ func (b *BackfillingBlock) payloadParentNumber(ctx context.Context, block *spec.
 // revealedBlockNumber returns the number of the execution payload a beacon
 // block carries: in the block before Gloas, in its envelope from Gloas on.
 func (b *BackfillingBlock) revealedBlockNumber(ctx context.Context, identifier string, block *spec.VersionedSignedBeaconBlock) (uint64, error) {
-	if block.Version < spec.DataVersionGloas {
+	if !eth.ForkAtLeast(block.Version, spec.DataVersionGloas) {
 		blockNumber, err := block.ExecutionBlockNumber()
 		if err != nil {
 			return 0, errors.Wrapf(err, "failed to read execution block number of beacon block %s", identifier)

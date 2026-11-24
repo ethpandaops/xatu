@@ -86,7 +86,8 @@ func (b *BeaconBlock) Filter(ctx context.Context) bool {
 	case spec.DataVersionDeneb.String():
 		//nolint:staticcheck // Handled by v2
 		hash = data.EthV2BeaconBlock.Message.(*v2.EventBlock_DenebBlock).DenebBlock.StateRoot
-	case spec.DataVersionElectra.String():
+	case spec.DataVersionElectra.String(), spec.DataVersionDaisugi.String():
+		// Daisugi blocks are sent as Electra blocks without the recursive STARK proof.
 		//nolint:staticcheck // Handled by v2
 		hash = data.EthV2BeaconBlock.Message.(*v2.EventBlock_ElectraBlock).ElectraBlock.StateRoot
 	case spec.DataVersionFulu.String():

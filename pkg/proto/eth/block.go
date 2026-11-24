@@ -51,6 +51,8 @@ func NewEventBlockV2FromVersionedProposal(proposal *api.VersionedProposal) (*v2.
 		data = NewEventBlockFromFulu(proposal.Fulu.Block, nil)
 	case spec.DataVersionGloas:
 		data = NewEventBlockFromGloas(proposal.Gloas, nil)
+	case spec.DataVersionDaisugi:
+		data = NewEventBlockFromElectra(ElectraBlockFromDaisugi(proposal.Daisugi.Block), nil)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", proposal.Version)
 	}
@@ -78,6 +80,8 @@ func NewEventBlockV2FromVersionSignedBeaconBlock(block *spec.VersionedSignedBeac
 		data = NewEventBlockFromFulu(block.Fulu.Message, &block.Fulu.Signature)
 	case spec.DataVersionGloas:
 		data = NewEventBlockFromGloas(block.Gloas.Message, &block.Gloas.Signature)
+	case spec.DataVersionDaisugi:
+		data = NewEventBlockFromElectra(ElectraBlockFromDaisugi(block.Daisugi.Message), &block.Daisugi.Signature)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", block.Version)
 	}

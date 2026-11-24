@@ -8,6 +8,8 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+
+	"github.com/ethpandaops/xatu/pkg/proto/eth"
 )
 
 // envelopeTailSize is the size of a sidecar's trailing slot index.
@@ -83,7 +85,7 @@ func decodeEnvelopes(
 }
 
 func hasEnvelopes(v spec.DataVersion) bool {
-	return v >= spec.DataVersionGloas
+	return eth.ForkAtLeast(v, spec.DataVersionGloas)
 }
 
 // decodeEnvelope decodes a block's envelope and checks it commits to the block and its bid.

@@ -20,6 +20,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/eth"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -258,7 +259,7 @@ func (b *DepositDeriver) getDeposits(ctx context.Context, block *spec.VersionedS
 	deposits := []*xatuethv1.DepositV2{}
 
 	// EIP-8015 removes deposits from Heze block bodies.
-	if block.Version >= spec.DataVersionHeze {
+	if eth.ForkAtLeast(block.Version, spec.DataVersionHeze) {
 		return deposits, nil
 	}
 

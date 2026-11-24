@@ -8,6 +8,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/pkg/errors"
 
+	"github.com/ethpandaops/xatu/pkg/proto/eth"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 )
 
@@ -29,7 +30,7 @@ func getEnvelopeRequests(
 	envelopes executionPayloadEnvelopeProvider,
 	block *spec.VersionedSignedBeaconBlock,
 ) (envelopeRequests, error) {
-	if block.Version < spec.DataVersionGloas {
+	if !eth.ForkAtLeast(block.Version, spec.DataVersionGloas) {
 		return envelopeRequests{}, nil
 	}
 

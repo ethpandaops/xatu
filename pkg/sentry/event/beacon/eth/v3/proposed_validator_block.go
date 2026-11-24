@@ -211,6 +211,18 @@ func (e *ValidatorBlock) getAdditionalData() (*xatu.ClientMeta_AdditionalEthV3Va
 		}
 
 		addTxData(fuluTxs)
+	case spec.DataVersionDaisugi:
+		totalBytes, totalBytesCompressed, err = computeBlockSize(e.event.Daisugi.Block.Body)
+		if err != nil {
+			e.log.WithError(err).Warn("Failed to compute daisugi block size")
+		}
+
+		daisugiTxs := make([][]byte, len(e.event.Daisugi.Block.Body.ExecutionPayload.Transactions))
+		for i, tx := range e.event.Daisugi.Block.Body.ExecutionPayload.Transactions {
+			daisugiTxs[i] = tx
+		}
+
+		addTxData(daisugiTxs)
 	case spec.DataVersionGloas:
 		// EIP-7732: the block body has no execution payload, so block size is the
 		// body alone. Transactions come from the envelope when the beacon node

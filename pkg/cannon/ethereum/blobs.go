@@ -9,6 +9,8 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/pkg/errors"
+
+	"github.com/ethpandaops/xatu/pkg/proto/eth"
 )
 
 // GetBlobSidecars returns the blob sidecars of a block. From Gloas the block
@@ -16,7 +18,7 @@ import (
 // sidecars for it. Those sidecars are rebuilt from the blobs endpoint and the
 // commitments in the block's bid, and carry no KZG or inclusion proof.
 func (b *BeaconNode) GetBlobSidecars(ctx context.Context, block *spec.VersionedSignedBeaconBlock, blockID string) ([]*deneb.BlobSidecar, error) {
-	if block.Version < spec.DataVersionGloas {
+	if !eth.ForkAtLeast(block.Version, spec.DataVersionGloas) {
 		return b.beacon.FetchBeaconBlockBlobs(ctx, blockID)
 	}
 

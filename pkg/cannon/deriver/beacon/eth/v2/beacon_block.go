@@ -357,7 +357,7 @@ func setBlockSizes(extra *xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data, bloc
 	extra.TotalBytesCompressed = wrapperspb.UInt64(uint64(len(snappy.Encode(nil, sszData))))
 
 	// Pre-Bellatrix blocks have no payload and Gloas bodies carry none inline (EIP-7732).
-	if block.Version < spec.DataVersionBellatrix || block.Version >= spec.DataVersionGloas {
+	if block.Version < spec.DataVersionBellatrix || eth.ForkAtLeast(block.Version, spec.DataVersionGloas) {
 		return nil
 	}
 
@@ -386,7 +386,7 @@ func setPayloadPresent(
 	envelopes executionPayloadEnvelopeProvider,
 	block *spec.VersionedSignedBeaconBlock,
 ) error {
-	if block.Version < spec.DataVersionGloas {
+	if !eth.ForkAtLeast(block.Version, spec.DataVersionGloas) {
 		return nil
 	}
 
@@ -424,6 +424,8 @@ func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, err
 		return block.Fulu.Message, nil
 	case spec.DataVersionGloas:
 		return block.Gloas.Message, nil
+	case spec.DataVersionDaisugi:
+		return block.Daisugi.Message, nil
 	default:
 		return nil, fmt.Errorf("unsupported block version: %s", block.Version)
 	}

@@ -201,6 +201,10 @@ func extractKZGCommitments(block *spec.VersionedSignedBeaconBlock) ([]deneb.KZGC
 		if block.Fulu != nil && block.Fulu.Message != nil && block.Fulu.Message.Body != nil {
 			return block.Fulu.Message.Body.BlobKZGCommitments, nil
 		}
+	case spec.DataVersionDaisugi:
+		if block.Daisugi != nil && block.Daisugi.Message != nil && block.Daisugi.Message.Body != nil {
+			return block.Daisugi.Message.Body.BlobKZGCommitments, nil
+		}
 	case spec.DataVersionGloas:
 		// EIP-7732: BlobKZGCommitments live inside the SignedExecutionPayloadBid
 		// (the bid the proposer chose); the block body no longer carries them

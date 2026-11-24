@@ -7,6 +7,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/pkg/errors"
 
+	"github.com/ethpandaops/xatu/pkg/proto/eth"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 )
 
@@ -28,7 +29,7 @@ func getExecutionRequests(
 		return requests, nil
 	}
 
-	if block.Version < spec.DataVersionGloas {
+	if !eth.ForkAtLeast(block.Version, spec.DataVersionGloas) {
 		bodyRequests, err := block.ExecutionRequests()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to obtain execution requests")

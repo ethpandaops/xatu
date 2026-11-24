@@ -27,6 +27,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/eth"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -250,7 +251,7 @@ func (b *ExecutionTransactionDeriver) processSlot(ctx context.Context, slot phas
 	// downstream helpers (getExecutionTransactions, GetGasPrice) can read from
 	// it. envelope==nil means the builder withheld the payload — emit nothing.
 	var envelope *gloas.SignedExecutionPayloadEnvelope
-	if block.Version >= spec.DataVersionGloas {
+	if eth.ForkAtLeast(block.Version, spec.DataVersionGloas) {
 		envelope, err = b.beacon.GetExecutionPayloadEnvelope(ctx, xatuethv1.SlotAsString(slot))
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get execution payload envelope for slot %d", slot)
@@ -303,7 +304,7 @@ func resolveBlobSidecars(
 	retained func() (bool, error),
 ) (map[string]*deneb.BlobSidecar, error) {
 	// From Gloas (EIP-7732) blobs are only obtainable by reconstruction from data columns, which not all clients serve.
-	if fetchErr != nil && block.Version >= spec.DataVersionGloas {
+	if fetchErr != nil && eth.ForkAtLeast(block.Version, spec.DataVersionGloas) {
 		return nil, nil //nolint:nilnil // nil map marks blob sidecars as unavailable
 	}
 
@@ -317,7 +318,7 @@ func resolveBlobSidecars(
 	}
 
 	// Gloas sidecars are already checked against the bid, and a withheld payload legitimately has none.
-	if block.Version < spec.DataVersionGloas {
+	if !eth.ForkAtLeast(block.Version, spec.DataVersionGloas) {
 		commitments, err := block.BlobKZGCommitments()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read blob kzg commitments")
@@ -359,7 +360,7 @@ func (b *ExecutionTransactionDeriver) blobsRetained(version spec.DataVersion, sl
 	}
 
 	key := "MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS"
-	if version >= spec.DataVersionFulu {
+	if eth.ForkAtLeast(version, spec.DataVersionFulu) {
 		key = "MIN_EPOCHS_FOR_DATA_COLUMN_SIDECARS_REQUESTS"
 	}
 
@@ -534,7 +535,7 @@ func (b *ExecutionTransactionDeriver) getExecutionTransactions(
 	var rawTxs [][]byte
 
 	switch {
-	case block.Version >= spec.DataVersionGloas:
+	case eth.ForkAtLeast(block.Version, spec.DataVersionGloas):
 		// EIP-7732: transactions live in the envelope's payload, not the body.
 		// Caller is responsible for fetching the envelope and short-circuiting
 		// when it is absent; by the time we get here it must be populated.
@@ -649,6 +650,9 @@ func GetGasPrice(
 			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
 		case spec.DataVersionFulu:
 			executionPayload := block.Fulu.Message.Body.ExecutionPayload
+			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
+		case spec.DataVersionDaisugi:
+			executionPayload := block.Daisugi.Message.Body.ExecutionPayload
 			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
 		case spec.DataVersionGloas, spec.DataVersionHeze:
 			if envelope == nil || envelope.Message == nil || envelope.Message.Payload == nil {

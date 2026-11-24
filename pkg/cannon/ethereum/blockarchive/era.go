@@ -11,6 +11,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/altair"
 	"github.com/ethpandaops/go-eth2-client/spec/bellatrix"
 	"github.com/ethpandaops/go-eth2-client/spec/capella"
+	"github.com/ethpandaops/go-eth2-client/spec/daisugi"
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
@@ -265,6 +266,10 @@ func blockParts(block *spec.VersionedSignedBeaconBlock) (message any, signature 
 		if block.Heze != nil && block.Heze.Message != nil {
 			return block.Heze.Message, block.Heze.Signature, nil
 		}
+	case spec.DataVersionDaisugi:
+		if block.Daisugi != nil && block.Daisugi.Message != nil {
+			return block.Daisugi.Message, block.Daisugi.Signature, nil
+		}
 	default:
 	}
 
@@ -305,6 +310,9 @@ func unmarshalBlock(ds *dynssz.DynSsz, v spec.DataVersion, ssz []byte) (*spec.Ve
 	case spec.DataVersionHeze:
 		block.Heze = &heze.SignedBeaconBlock{}
 		target = block.Heze
+	case spec.DataVersionDaisugi:
+		block.Daisugi = &daisugi.SignedBeaconBlock{}
+		target = block.Daisugi
 	default:
 		return nil, fmt.Errorf("unhandled block fork %s", v)
 	}

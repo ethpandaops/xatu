@@ -184,7 +184,7 @@ func (e *BeaconBlock) getAdditionalData(_ context.Context) (*xatu.ClientMeta_Add
 
 	// Gloas (EIP-7732) block bodies carry no transactions — they live in the
 	// execution payload envelope. The body-level stats are legitimately zero.
-	if e.event.Version < spec.DataVersionGloas {
+	if !eth.ForkAtLeast(e.event.Version, spec.DataVersionGloas) {
 		transactions, err := e.event.ExecutionTransactions()
 		if err != nil {
 			e.log.WithError(err).Warn("Failed to get execution transactions")
@@ -226,6 +226,8 @@ func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, err
 		return block.Fulu.Message, nil
 	case spec.DataVersionGloas:
 		return block.Gloas.Message, nil
+	case spec.DataVersionDaisugi:
+		return block.Daisugi.Message, nil
 	default:
 		return nil, fmt.Errorf("unsupported block version: %s", block.Version)
 	}

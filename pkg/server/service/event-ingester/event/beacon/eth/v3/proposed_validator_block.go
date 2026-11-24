@@ -75,7 +75,8 @@ func (b *ValidatorBlock) Filter(_ context.Context) bool {
 		hash = data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_CapellaBlock).CapellaBlock.GetStateRoot()
 	case "deneb":
 		hash = data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_DenebBlock).DenebBlock.GetStateRoot()
-	case "electra":
+	case "electra", spec.DataVersionDaisugi.String():
+		// Daisugi blocks are sent as Electra blocks without the recursive STARK proof.
 		hash = data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_ElectraBlock).ElectraBlock.GetStateRoot()
 	case "fulu":
 		fuluBlock, ok := data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_FuluBlock)

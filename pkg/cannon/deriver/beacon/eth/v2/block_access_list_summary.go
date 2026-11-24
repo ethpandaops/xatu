@@ -20,6 +20,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/eth"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -236,7 +237,7 @@ func (b *BlockAccessListSummaryDeriver) deriveEvents(
 	block *spec.VersionedSignedBeaconBlock,
 	identifier *xatu.BlockIdentifier,
 ) ([]*xatu.DecoratedEvent, error) {
-	if block.Version < spec.DataVersionGloas {
+	if !eth.ForkAtLeast(block.Version, spec.DataVersionGloas) {
 		return []*xatu.DecoratedEvent{}, nil
 	}
 

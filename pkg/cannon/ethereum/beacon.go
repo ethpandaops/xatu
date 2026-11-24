@@ -27,6 +27,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/services"
 	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/observability"
+	"github.com/ethpandaops/xatu/pkg/proto/eth"
 )
 
 // blockArchive serves finalized blocks and envelopes in bulk; found is false for slots it does not cover.
@@ -846,7 +847,7 @@ func (b *BeaconNode) payloadWithheld(ctx context.Context, blockID string) (bool,
 
 // gloasBid extracts the execution payload bid and slot from a Gloas block.
 func gloasBid(block *spec.VersionedSignedBeaconBlock) (*gloas.ExecutionPayloadBid, phase0.Slot, error) {
-	if block.Version < spec.DataVersionGloas {
+	if !eth.ForkAtLeast(block.Version, spec.DataVersionGloas) {
 		return nil, 0, errors.Errorf("block version %s predates gloas", block.Version)
 	}
 

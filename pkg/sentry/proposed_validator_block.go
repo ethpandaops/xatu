@@ -13,6 +13,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/go-co-op/gocron/v2"
 
+	"github.com/ethpandaops/xatu/pkg/proto/eth"
 	v3 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v3"
 )
 
@@ -152,7 +153,7 @@ func (s *Sentry) gloasActiveAt(slot phase0.Slot) (bool, error) {
 		return false, fmt.Errorf("failed to get fork at slot %d: %w", slot, err)
 	}
 
-	return fork.Name >= spec.DataVersionGloas, nil
+	return eth.ForkAtLeast(fork.Name, spec.DataVersionGloas), nil
 }
 
 func (s *Sentry) fetchDecoratedValidatorBlock(ctx context.Context, slot phase0.Slot) error {

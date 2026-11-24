@@ -36,6 +36,11 @@ func TestValidatorBlockFilter(t *testing.T) {
 			block:   &v2.EventBlockV2{Message: &v2.EventBlockV2_FuluBlock{FuluBlock: &v2.BeaconBlockFulu{StateRoot: "0x01"}}},
 		},
 		{
+			name:    "daisugi in the electra shape",
+			version: spec.DataVersionDaisugi.String(),
+			block:   &v2.EventBlockV2{Message: &v2.EventBlockV2_ElectraBlock{ElectraBlock: &v2.BeaconBlockElectra{StateRoot: "0x01"}}},
+		},
+		{
 			name:    "gloas",
 			version: spec.DataVersionGloas.String(),
 			block:   &v2.EventBlockV2{Message: &v2.EventBlockV2_GloasBlock{GloasBlock: &v2.BeaconBlockGloas{StateRoot: "0x01"}}},

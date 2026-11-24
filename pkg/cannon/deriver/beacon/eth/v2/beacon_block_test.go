@@ -14,6 +14,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/altair"
 	"github.com/ethpandaops/go-eth2-client/spec/bellatrix"
 	"github.com/ethpandaops/go-eth2-client/spec/capella"
+	"github.com/ethpandaops/go-eth2-client/spec/daisugi"
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
@@ -59,6 +60,9 @@ func loadEraBlock(t *testing.T, name string, version spec.DataVersion) *spec.Ver
 	case spec.DataVersionGloas:
 		block.Gloas = &gloas.SignedBeaconBlock{}
 		target = block.Gloas
+	case spec.DataVersionDaisugi:
+		block.Daisugi = &daisugi.SignedBeaconBlock{}
+		target = block.Daisugi
 	default:
 		t.Fatalf("no fixture decoder for %s", version)
 	}
@@ -108,6 +112,14 @@ func TestSetBlockSizes(t *testing.T) {
 			fixture: "sepolia-11374000", version: spec.DataVersionGloas,
 			root:  "0x1a4161ae68d3aa561f4463754b17b53523972882f5ac745d50ecb57e1e01e7b6",
 			total: 1802, totalCompressed: 1482,
+		},
+		{
+			// The first Daisugi block; its payload carries an empty recursive STARK proof.
+			// Root and sizes are from the beacon node's SSZ response.
+			fixture: "daisugi-devnet-0-320", version: spec.DataVersionDaisugi,
+			root:  "0x390bec32bb94042de263be2c8b972058f8a4d6d89bd0760dc675c7f584917da4",
+			total: 2002, totalCompressed: 1078,
+			txCount: uint64Ptr(0), txBytes: uint64Ptr(0), txCompBytes: uint64Ptr(1),
 		},
 	}
 

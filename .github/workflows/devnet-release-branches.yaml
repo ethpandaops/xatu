@@ -4,8 +4,9 @@ name: Devnet release branches
 # it and goreleaser publishes ethpandaops/xatu:<network> and
 # ethpandaops/xatu:<network>-debian for the platform deployment to run.
 #
-# A devnet's network is <class>-<dir>, for each kubernetes/<dir> in a
-# non-archived ethpandaops/<class>-devnets repo (template-devnets excluded).
+# A devnet's network is <class>-<dir>, or just <dir> when it already starts
+# with <class>-, for each kubernetes/<dir> in a non-archived
+# ethpandaops/<class>-devnets repo (template-devnets excluded).
 # Missing branches are created from master. Existing branches are never
 # touched: they are created through the refs API, which refuses a ref that
 # already exists, so this can't move, force-push, or delete one.
@@ -56,8 +57,10 @@ jobs:
               fi
               continue
             fi
+            class=${repo%-devnets}
             for dir in $dirs; do
-              network="${repo%-devnets}-${dir}"
+              network=$dir
+              [[ $dir == "${class}-"* ]] || network="${class}-${dir}"
               # Becomes a branch, a git tag suffix, and Docker tags.
               if [[ ! $network =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]]; then
                 echo "::warning::${repo}: skipping kubernetes/${dir}, ${network} is not a valid network name"

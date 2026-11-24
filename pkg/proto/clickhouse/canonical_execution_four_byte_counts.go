@@ -297,7 +297,7 @@ func BuildListCanonicalExecutionFourByteCountsQuery(req *ListCanonicalExecutionF
 		orderByClause = BuildOrderByClause(orderFields)
 	} else {
 		// Default sorting by primary key
-		orderByClause = " ORDER BY meta_network_name" + ", block_number" + ", transaction_hash" + ", signature"
+		orderByClause = " ORDER BY meta_network_name" + ", block_number" + ", transaction_hash" + ", signature" + ", size"
 	}
 
 	// Build column list
@@ -318,7 +318,7 @@ func BuildGetCanonicalExecutionFourByteCountsQuery(req *GetCanonicalExecutionFou
 	qb.AddCondition("meta_network_name", "=", req.MetaNetworkName)
 
 	// Build ORDER BY clause
-	orderByClause := " ORDER BY meta_network_name, block_number, transaction_hash, signature"
+	orderByClause := " ORDER BY meta_network_name, block_number, transaction_hash, signature, size"
 
 	// Build column list
 	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "block_number", "transaction_index", "NULLIF(`transaction_hash`, repeat('\x00', 66)) AS `transaction_hash`", "signature", "size", "count", "meta_network_name"}

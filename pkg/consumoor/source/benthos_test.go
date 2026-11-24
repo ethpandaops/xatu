@@ -332,6 +332,7 @@ func TestWriteBatchBatchModeTransientWriteFailureFailsImpactedMessages(t *testin
 	writer := &testWriter{
 		flushErrs: []error{
 			&testWriteError{table: "table_b", permanent: false},
+			&testWriteError{table: "table_b", permanent: false},
 		},
 	}
 
@@ -348,10 +349,13 @@ func TestWriteBatchBatchModeTransientWriteFailureFailsImpactedMessages(t *testin
 				table:     "table_b",
 			},
 		}),
-		writer:     writer,
-		metrics:    newTestMetrics(),
-		logSampler: telemetry.NewLogSampler(time.Minute),
-		rejectSink: &testRejectSink{},
+		writer:                writer,
+		metrics:               newTestMetrics(),
+		logSampler:            telemetry.NewLogSampler(time.Minute),
+		rejectSink:            &testRejectSink{},
+		groupRetryMaxAttempts: 1,
+		groupRetryBaseDelay:   time.Millisecond,
+		groupRetryMaxDelay:    time.Millisecond,
 	}
 
 	msgs := service.MessageBatch{
@@ -653,13 +657,12 @@ func traceparentHeader(sc oteltrace.SpanContext) string {
 func TestWriteBatchMultiTableTransientFailureFailsAllImpactedMessages(t *testing.T) {
 	// Same event type routes to two tables. When FlushTables returns a
 	// joined error, all messages in the group must be marked as failed.
+	transientErr := errors.Join(
+		&testWriteError{table: "table_a", permanent: false},
+		&testWriteError{table: "table_b", permanent: false},
+	)
 	writer := &testWriter{
-		flushErrs: []error{
-			errors.Join(
-				&testWriteError{table: "table_a", permanent: false},
-				&testWriteError{table: "table_b", permanent: false},
-			),
-		},
+		flushErrs: []error{transientErr, transientErr},
 	}
 
 	output := &xatuClickHouseOutput{
@@ -675,10 +678,13 @@ func TestWriteBatchMultiTableTransientFailureFailsAllImpactedMessages(t *testing
 				table:     "table_b",
 			},
 		}),
-		writer:     writer,
-		metrics:    newTestMetrics(),
-		logSampler: telemetry.NewLogSampler(time.Minute),
-		rejectSink: &testRejectSink{},
+		writer:                writer,
+		metrics:               newTestMetrics(),
+		logSampler:            telemetry.NewLogSampler(time.Minute),
+		rejectSink:            &testRejectSink{},
+		groupRetryMaxAttempts: 1,
+		groupRetryBaseDelay:   time.Millisecond,
+		groupRetryMaxDelay:    time.Millisecond,
 	}
 
 	msgs := service.MessageBatch{
@@ -785,7 +791,7 @@ func TestWriteBatchUnknownFlushFailureFailsGroupMessages(t *testing.T) {
 	// When flush returns an unknown failure, group processing produces a
 	// BatchError marking all messages in the group as failed.
 	writer := &testWriter{
-		flushErrs: []error{errors.New("unknown failure")},
+		flushErrs: []error{errors.New("unknown failure"), errors.New("unknown failure")},
 	}
 
 	output := &xatuClickHouseOutput{
@@ -797,10 +803,13 @@ func TestWriteBatchUnknownFlushFailureFailsGroupMessages(t *testing.T) {
 				table:     "beacon_head",
 			},
 		}),
-		writer:     writer,
-		metrics:    newTestMetrics(),
-		logSampler: telemetry.NewLogSampler(time.Minute),
-		rejectSink: &testRejectSink{},
+		writer:                writer,
+		metrics:               newTestMetrics(),
+		logSampler:            telemetry.NewLogSampler(time.Minute),
+		rejectSink:            &testRejectSink{},
+		groupRetryMaxAttempts: 1,
+		groupRetryBaseDelay:   time.Millisecond,
+		groupRetryMaxDelay:    time.Millisecond,
 	}
 
 	msgs := service.MessageBatch{
@@ -1096,9 +1105,10 @@ func succeededIndexes(msgs service.MessageBatch, err error) []int {
 //   has been durably handled: successfully written to ClickHouse, sent to the
 //   DLQ, or intentionally dropped by the routing layer.
 //
-//   Any other outcome (transient failures, DLQ write errors, context
-//   cancellation) must cause WriteBatch to return an error, preventing
-//   Benthos from committing the offset so Kafka redelivers the message.
+//   Any other outcome (transient failures that exhaust a bounded
+//   groupRetryMaxAttempts, DLQ write errors, context cancellation) must cause
+//   WriteBatch to return an error, preventing Benthos from committing the
+//   offset so Kafka redelivers the message.
 //
 // Tests are organized into three categories:
 //
@@ -1326,11 +1336,15 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				writer: &testWriter{
 					flushErrs: []error{
 						&testWriteError{table: "beacon_head", permanent: false},
+						&testWriteError{table: "beacon_head", permanent: false},
 					},
 				},
-				metrics:    newTestMetrics(),
-				logSampler: telemetry.NewLogSampler(time.Minute),
-				rejectSink: &testRejectSink{},
+				metrics:               newTestMetrics(),
+				logSampler:            telemetry.NewLogSampler(time.Minute),
+				rejectSink:            &testRejectSink{},
+				groupRetryMaxAttempts: 1,
+				groupRetryBaseDelay:   time.Millisecond,
+				groupRetryMaxDelay:    time.Millisecond,
 			}
 
 			msgs := service.MessageBatch{
@@ -1350,11 +1364,17 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				encoding: "json",
 				router:   newRouter(t, []route.Route{headRoute}),
 				writer: &testWriter{
-					flushErrs: []error{errors.New("unexpected infrastructure error")},
+					flushErrs: []error{
+						errors.New("unexpected infrastructure error"),
+						errors.New("unexpected infrastructure error"),
+					},
 				},
-				metrics:    newTestMetrics(),
-				logSampler: telemetry.NewLogSampler(time.Minute),
-				rejectSink: &testRejectSink{},
+				metrics:               newTestMetrics(),
+				logSampler:            telemetry.NewLogSampler(time.Minute),
+				rejectSink:            &testRejectSink{},
+				groupRetryMaxAttempts: 1,
+				groupRetryBaseDelay:   time.Millisecond,
+				groupRetryMaxDelay:    time.Millisecond,
 			}
 
 			msgs := service.MessageBatch{
@@ -1426,9 +1446,9 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				writer: &testWriter{
 					flushErrs: []error{
 						&ch.Exception{
-							Code:    proto.ErrUnknownTable,
+							Code:    proto.ErrCannotParseNumber,
 							Name:    "DB::Exception",
-							Message: "table gone",
+							Message: "bad number",
 						},
 					},
 				},
@@ -1478,9 +1498,9 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				writer: &testWriter{
 					flushErrs: []error{
 						&ch.Exception{
-							Code:    proto.ErrUnknownTable,
+							Code:    proto.ErrCannotParseNumber,
 							Name:    "DB::Exception",
-							Message: "table gone",
+							Message: "bad number",
 						},
 					},
 				},
@@ -1543,16 +1563,20 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 			writer := &testWriter{
 				flushErrs: []error{
 					&testWriteError{table: "beacon_block", permanent: false},
+					&testWriteError{table: "beacon_block", permanent: false},
 				},
 			}
 			output := &xatuClickHouseOutput{
-				log:        logrus.New(),
-				encoding:   "json",
-				router:     newRouter(t, []route.Route{headRoute, blockRoute}),
-				writer:     writer,
-				metrics:    newTestMetrics(),
-				logSampler: telemetry.NewLogSampler(time.Minute),
-				rejectSink: &testRejectSink{},
+				log:                   logrus.New(),
+				encoding:              "json",
+				router:                newRouter(t, []route.Route{headRoute, blockRoute}),
+				writer:                writer,
+				metrics:               newTestMetrics(),
+				logSampler:            telemetry.NewLogSampler(time.Minute),
+				rejectSink:            &testRejectSink{},
+				groupRetryMaxAttempts: 1,
+				groupRetryBaseDelay:   time.Millisecond,
+				groupRetryMaxDelay:    time.Millisecond,
 			}
 
 			msgs := service.MessageBatch{
@@ -1623,6 +1647,7 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				writer: &testWriter{
 					flushErrs: []error{
 						&testWriteError{table: "beacon_head", permanent: false},
+						&testWriteError{table: "beacon_head", permanent: false},
 					},
 				},
 				metrics:    newTestMetrics(),
@@ -1630,6 +1655,9 @@ func TestWriteBatchAtLeastOnceDelivery(t *testing.T) {
 				rejectSink: &testRejectSink{
 					err: errors.New("dlq unavailable"),
 				},
+				groupRetryMaxAttempts: 1,
+				groupRetryBaseDelay:   time.Millisecond,
+				groupRetryMaxDelay:    time.Millisecond,
 			}
 
 			msgs := service.MessageBatch{

@@ -11,33 +11,37 @@ import (
 const canonicalBeaconBlockExecutionTransactionTableName route.TableName = "canonical_beacon_block_execution_transaction"
 
 type canonicalBeaconBlockExecutionTransactionBatch struct {
-	UpdatedDateTime       proto.ColDateTime
-	Slot                  proto.ColUInt32
-	SlotStartDateTime     proto.ColDateTime
-	Epoch                 proto.ColUInt32
-	EpochStartDateTime    proto.ColDateTime
-	BlockRoot             route.SafeColFixedStr
-	BlockVersion          proto.ColStr
-	Position              proto.ColUInt32
-	Hash                  route.SafeColFixedStr
-	From                  route.SafeColFixedStr
-	To                    *proto.ColNullable[[]byte]
-	Nonce                 proto.ColUInt64
-	GasPrice              proto.ColUInt128
-	Gas                   proto.ColUInt64
-	GasTipCap             *proto.ColNullable[proto.UInt128]
-	GasFeeCap             *proto.ColNullable[proto.UInt128]
-	Value                 proto.ColUInt128
-	Type                  proto.ColUInt8
-	Size                  proto.ColUInt32
-	CallDataSize          proto.ColUInt32
-	BlobGas               *proto.ColNullable[uint64]
-	BlobGasFeeCap         *proto.ColNullable[proto.UInt128]
-	BlobHashes            *proto.ColArr[string]
-	BlobSidecarsSize      *proto.ColNullable[uint32]
-	BlobSidecarsEmptySize *proto.ColNullable[uint32]
-	MetaNetworkName       proto.ColStr
-	rows                  int
+	UpdatedDateTime          proto.ColDateTime
+	Slot                     proto.ColUInt32
+	SlotStartDateTime        proto.ColDateTime
+	Epoch                    proto.ColUInt32
+	EpochStartDateTime       proto.ColDateTime
+	BlockRoot                route.SafeColFixedStr
+	BlockVersion             proto.ColStr
+	Position                 proto.ColUInt32
+	Hash                     route.SafeColFixedStr
+	From                     route.SafeColFixedStr
+	To                       *proto.ColNullable[[]byte]
+	Nonce                    proto.ColUInt64
+	GasPrice                 proto.ColUInt128
+	Gas                      proto.ColUInt64
+	GasTipCap                *proto.ColNullable[proto.UInt128]
+	GasFeeCap                *proto.ColNullable[proto.UInt128]
+	Value                    proto.ColUInt128
+	Type                     proto.ColUInt8
+	Size                     proto.ColUInt32
+	CallDataSize             proto.ColUInt32
+	BlobGas                  *proto.ColNullable[uint64]
+	BlobGasFeeCap            *proto.ColNullable[proto.UInt128]
+	BlobHashes               *proto.ColArr[string]
+	BlobSidecarsSize         *proto.ColNullable[uint32]
+	BlobSidecarsEmptySize    *proto.ColNullable[uint32]
+	MetaNetworkName          proto.ColStr
+	AuthorizationChainIds    *proto.ColArr[proto.UInt256]
+	AuthorizationAddresses   *proto.ColArr[[]byte]
+	AuthorizationNonces      *proto.ColArr[uint64]
+	AuthorizationAuthorities *proto.ColArr[string]
+	rows                     int
 }
 
 func newcanonicalBeaconBlockExecutionTransactionBatch() *canonicalBeaconBlockExecutionTransactionBatch {
@@ -53,6 +57,14 @@ func newcanonicalBeaconBlockExecutionTransactionBatch() *canonicalBeaconBlockExe
 		BlobHashes:            proto.NewArray[string](new(proto.ColStr)),
 		BlobSidecarsSize:      new(proto.ColUInt32).Nullable(),
 		BlobSidecarsEmptySize: new(proto.ColUInt32).Nullable(),
+		AuthorizationChainIds: proto.NewArray[proto.UInt256](new(proto.ColUInt256)),
+		AuthorizationAddresses: func() *proto.ColArr[[]byte] {
+			var fs route.SafeColFixedStr
+			fs.SetSize(42)
+			return proto.NewArray[[]byte](&fs)
+		}(),
+		AuthorizationNonces:      proto.NewArray[uint64](new(proto.ColUInt64)),
+		AuthorizationAuthorities: proto.NewArray[string](new(proto.ColStr)),
 	}
 }
 
@@ -97,6 +109,10 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) Input() proto.Input {
 		{Name: "blob_sidecars_size", Data: b.BlobSidecarsSize},
 		{Name: "blob_sidecars_empty_size", Data: b.BlobSidecarsEmptySize},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
+		{Name: "authorization_chain_ids", Data: b.AuthorizationChainIds},
+		{Name: "authorization_addresses", Data: b.AuthorizationAddresses},
+		{Name: "authorization_nonces", Data: b.AuthorizationNonces},
+		{Name: "authorization_authorities", Data: b.AuthorizationAuthorities},
 	}
 }
 
@@ -127,6 +143,10 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) Reset() {
 	b.BlobSidecarsSize.Reset()
 	b.BlobSidecarsEmptySize.Reset()
 	b.MetaNetworkName.Reset()
+	b.AuthorizationChainIds.Reset()
+	b.AuthorizationAddresses.Reset()
+	b.AuthorizationNonces.Reset()
+	b.AuthorizationAuthorities.Reset()
 	b.rows = 0
 }
 
@@ -135,7 +155,7 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) Snapshot() []map[string]
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 26)
+		row := make(map[string]any, 30)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["slot"] = b.Slot.Row(i)
 		row["slot_start_date_time"] = b.SlotStartDateTime.Row(i).Unix()
@@ -190,6 +210,10 @@ func (b *canonicalBeaconBlockExecutionTransactionBatch) Snapshot() []map[string]
 			row["blob_sidecars_empty_size"] = nil
 		}
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
+		row["authorization_chain_ids"] = b.AuthorizationChainIds.Row(i)
+		row["authorization_addresses"] = route.ByteSlicesToStrings(b.AuthorizationAddresses.Row(i))
+		row["authorization_nonces"] = b.AuthorizationNonces.Row(i)
+		row["authorization_authorities"] = b.AuthorizationAuthorities.Row(i)
 		out[i] = row
 	}
 

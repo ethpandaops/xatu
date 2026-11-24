@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/creasty/defaults"
 	"github.com/ethpandaops/beacon/pkg/human"
+	"gopkg.in/yaml.v3"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
@@ -129,6 +131,17 @@ type ConsistencyConfig struct {
 	ForwardFill *ForwardFillConfig `yaml:"forwardFill"`
 }
 
+// UnmarshalYAML applies the defaults before decoding, since a block the YAML creates is nil when the parent's defaults run.
+func (c *ConsistencyConfig) UnmarshalYAML(value *yaml.Node) error {
+	type plain ConsistencyConfig
+
+	if err := defaults.Set((*plain)(c)); err != nil {
+		return err
+	}
+
+	return value.Decode((*plain)(c))
+}
+
 func (c *ConsistencyConfig) Validate() error {
 	// Ensure we have a valid check interval
 	if c.CheckEveryDuration.Duration <= 0 {
@@ -178,6 +191,17 @@ type ForwardFillConfig struct {
 	// TrailDistance is how many slots behind the head slot we will trail
 	// This prevents attempting to fetch data for slots that may not yet be available
 	TrailDistance uint64 `yaml:"trailDistance" default:"4"`
+}
+
+// UnmarshalYAML applies the defaults before decoding, since a block the YAML creates is nil when the parent's defaults run.
+func (c *ForwardFillConfig) UnmarshalYAML(value *yaml.Node) error {
+	type plain ForwardFillConfig
+
+	if err := defaults.Set((*plain)(c)); err != nil {
+		return err
+	}
+
+	return value.Decode((*plain)(c))
 }
 
 func (c *Config) CreateSinks(log observability.ContextualLogger) ([]output.Sink, error) {

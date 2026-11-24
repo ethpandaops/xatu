@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -217,11 +216,13 @@ type BatchItemProcessor[T any] struct {
 	batchCh chan []*TraceableItem[T]
 	name    string
 
-	timer         *time.Timer
-	stopWait      sync.WaitGroup
-	stopOnce      sync.Once
-	stopCh        chan struct{}
-	stopWorkersCh chan struct{}
+	timer    *time.Timer
+	stopWait sync.WaitGroup
+	stopOnce sync.Once
+	stopCh   chan struct{}
+
+	// queueMu is held for reading while an item is sent to the queue, so Shutdown can close it safely.
+	queueMu sync.RWMutex
 
 	// Metrics
 	metrics *Metrics
@@ -285,16 +286,15 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log obs
 	}
 
 	bvp := BatchItemProcessor[T]{
-		e:             exporter,
-		o:             o,
-		log:           log,
-		name:          name,
-		metrics:       metrics,
-		timer:         time.NewTimer(o.BatchTimeout),
-		queue:         make(chan *TraceableItem[T], o.MaxQueueSize),
-		batchCh:       make(chan []*TraceableItem[T], o.Workers),
-		stopCh:        make(chan struct{}),
-		stopWorkersCh: make(chan struct{}),
+		e:       exporter,
+		o:       o,
+		log:     log,
+		name:    name,
+		metrics: metrics,
+		timer:   time.NewTimer(o.BatchTimeout),
+		queue:   make(chan *TraceableItem[T], o.MaxQueueSize),
+		batchCh: make(chan []*TraceableItem[T], o.Workers),
+		stopCh:  make(chan struct{}),
 	}
 
 	bvp.log.WithFields(
@@ -311,21 +311,27 @@ func NewBatchItemProcessor[T any](exporter ItemExporter[T], name string, log obs
 	return &bvp, nil
 }
 
+// Start launches the batch builder and workers; exports ignore ctx's cancellation so Shutdown can still flush.
 func (bvp *BatchItemProcessor[T]) Start(ctx context.Context) {
-	bvp.stopWait.Add(bvp.o.Workers)
+	bvp.stopWait.Add(bvp.o.Workers + 1)
 
 	bvp.metrics.SetWorkerCount(bvp.name, float64(bvp.o.Workers))
 
 	bvp.log.WithContext(ctx).Infof("Starting %d workers for %s", bvp.o.Workers, bvp.name)
 
+	exportCtx := context.WithoutCancel(ctx)
+
 	for i := 0; i < bvp.o.Workers; i++ {
 		go func(num int) {
 			defer bvp.stopWait.Done()
-			bvp.worker(ctx, num)
+
+			bvp.worker(exportCtx, num)
 		}(i)
 	}
 
 	go func() {
+		defer bvp.stopWait.Done()
+
 		bvp.batchBuilder(ctx)
 		bvp.log.WithContext(ctx).Info("Batch builder exited")
 	}()
@@ -453,7 +459,7 @@ func (bvp *BatchItemProcessor[T]) exportWithTimeout(ctx context.Context, itemsBa
 	return nil
 }
 
-// Shutdown shuts down the batch item processor.
+// Shutdown rejects new writes, exports every queued item and shuts the exporter down, or returns ctx's error first.
 func (bvp *BatchItemProcessor[T]) Shutdown(ctx context.Context) error {
 	var err error
 
@@ -464,13 +470,14 @@ func (bvp *BatchItemProcessor[T]) Shutdown(ctx context.Context) error {
 
 			close(bvp.stopCh)
 
-			bvp.timer.Stop()
-
-			bvp.drainQueue()
-
-			close(bvp.stopWorkersCh)
+			// Closing the queue makes the builder send its last batch and close batchCh; workers exit once it drains.
+			bvp.queueMu.Lock()
+			close(bvp.queue)
+			bvp.queueMu.Unlock()
 
 			bvp.stopWait.Wait()
+
+			bvp.timer.Stop()
 
 			if bvp.e != nil {
 				if err = bvp.e.Shutdown(ctx); err != nil {
@@ -552,15 +559,14 @@ func (bvp *BatchItemProcessor[T]) batchBuilder(ctx context.Context) {
 
 	var batch []*TraceableItem[T]
 
+	defer close(bvp.batchCh)
+
 	for {
 		select {
-		case <-bvp.stopWorkersCh:
-			log.WithContext(ctx).Info("Stopping batch builder")
-			return
 		case item, ok := <-bvp.queue:
 			if !ok {
-				// Channel is closed, send any remaining items in the batch for processing
-				// before shutting down.
+				log.WithContext(ctx).Info("Stopping batch builder")
+
 				if len(batch) > 0 {
 					bvp.sendBatch(batch, "shutdown")
 				}
@@ -602,64 +608,24 @@ func (bvp *BatchItemProcessor[T]) sendBatch(batch []*TraceableItem[T], reason st
 	log.Tracef("Batch sent to batch channel")
 }
 
+// worker exports batches until the batch builder closes batchCh.
 func (bvp *BatchItemProcessor[T]) worker(ctx context.Context, number int) {
-	for {
-		select {
-		case <-bvp.stopWorkersCh:
-			bvp.log.WithContext(ctx).Infof("Stopping worker %d", number)
+	for batch := range bvp.batchCh {
+		bvp.timer.Reset(bvp.o.BatchTimeout)
 
-			return
-		case batch := <-bvp.batchCh:
-			bvp.timer.Reset(bvp.o.BatchTimeout)
-
-			if err := bvp.exportWithTimeout(ctx, batch); err != nil {
-				bvp.log.WithError(err).WithContext(ctx).Error("failed to export items")
-			}
-
-			bvp.metrics.SetItemsQueued(bvp.name, float64(len(bvp.queue)))
+		if err := bvp.exportWithTimeout(ctx, batch); err != nil {
+			bvp.log.WithError(err).WithContext(ctx).Error("failed to export items")
 		}
-	}
-}
 
-func (bvp *BatchItemProcessor[T]) drainQueue() {
-	bvp.log.Info("Draining queue: waiting for the batch builder to process remaining items")
-
-	// First wait for queue to be processed
-	for len(bvp.queue) > 0 {
-		time.Sleep(10 * time.Millisecond)
+		bvp.metrics.SetItemsQueued(bvp.name, float64(len(bvp.queue)))
 	}
 
-	bvp.log.Info("Draining queue: waiting for workers to finish processing batches")
-
-	// Then wait for any in-flight batches
-	for len(bvp.batchCh) > 0 {
-		time.Sleep(10 * time.Millisecond)
-	}
-
-	bvp.log.Info("Draining queue: all items processed")
-
-	close(bvp.queue)
-}
-
-func recoverSendOnClosedChan() {
-	x := recover()
-
-	switch err := x.(type) {
-	case nil:
-		return
-	case runtime.Error:
-		if err.Error() == "send on closed channel" {
-			return
-		}
-	}
-
-	panic(x)
+	bvp.log.WithContext(ctx).Infof("Stopping worker %d", number)
 }
 
 func (bvp *BatchItemProcessor[T]) enqueueOrDrop(ctx context.Context, item *TraceableItem[T]) error {
-	// This ensures the bvp.queue<- below does not panic as the
-	// processor shuts down.
-	defer recoverSendOnClosedChan()
+	bvp.queueMu.RLock()
+	defer bvp.queueMu.RUnlock()
 
 	select {
 	case <-bvp.stopCh:

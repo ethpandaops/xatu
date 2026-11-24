@@ -151,6 +151,10 @@ attestationData:
 beaconCommittees:
   enabled: false
 
+# on by default; one duties request and 32 events per epoch
+proposerDuty:
+  enabled: true
+
 outputs:
   - name: xatu
     type: xatu

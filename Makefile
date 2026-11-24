@@ -35,8 +35,8 @@ proto: .proto-clickhouse
 	docker compose up xatu-clickhouse-migrator
 	rm -f pkg/proto/clickhouse/*.go pkg/proto/clickhouse/*.proto
 	rm -rf pkg/proto/clickhouse/clickhouse
-	docker run --rm --network xatu_xatu-net -v "$$(pwd):/workspace" \
-		ethpandaops/clickhouse-proto-gen:latest \
+	docker run --rm --network xatu_xatu-net --user "$$(id -u):$$(id -g)" -v "$$(pwd):/workspace" \
+		ethpandaops/clickhouse-proto-gen:0.0.29 \
 		--config /workspace/deploy/clickhouse-proto-gen.yaml \
 		--dsn "clickhouse://xatu-clickhouse-01:9000/default" \
 		--out /workspace/pkg/proto/clickhouse

@@ -9,9 +9,14 @@ jobs:
   goreleaser:
     permissions:
       contents: write
-    runs-on:
-      - self-hosted-ghr
-      - size-l-x64
+      packages: write
+      id-token: write
+      attestations: write
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.attest.outputs.image }}
+      digests: ${{ steps.attest.outputs.digests }}
+      cryo-digests: ${{ steps.attest-cryo.outputs.digests }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -62,11 +67,12 @@ jobs:
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
         with:
           endpoint: builders
-      - name: Login to DockerHub
+      - name: Login to GHCR
         uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
       - name: Update GoReleaser config
         run: |
           cp .goreleaser.yaml .goreleaser.yaml.new
@@ -78,17 +84,20 @@ jobs:
             echo "  prerelease: true" >> .goreleaser.yaml.new
             echo "  make_latest: false" >> .goreleaser.yaml.new
           fi
+      # GORELEASER_CURRENT_TAG: release branches are cut from master, so their
+      # tags often share a commit with another release's tag, and goreleaser
+      # otherwise releases the highest tag on the commit, not the pushed one.
       - name: Run GoReleaser in Docker
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            -e DOCKER_USERNAME=${{ secrets.DOCKERHUB_USERNAME }} \
-            -e DOCKER_PASSWORD=${{ secrets.DOCKERHUB_TOKEN }} \
+            -e GORELEASER_CURRENT_TAG=${{ github.ref_name }} \
+            -v "${HOME}/.docker/config.json:/root/.docker/config.json:ro" \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e RELEASE_SUFFIX=${{ env.RELEASE_SUFFIX }} \
-            goreleaser/goreleaser-cross:v1.26 release --clean --config .goreleaser.yaml.new
+            goreleaser/goreleaser-cross:v1.27.3 release --clean --config .goreleaser.yaml.new
 
       # The xatu+cryo image is the EL-cannon variant: it bundles the cryo binary
       # alongside xatu. cryo is built from Rust source (./Dockerfile), so it does
@@ -98,13 +107,13 @@ jobs:
       # (ARG CRYO_GIT_REF); that layer is cache-stable, so it only recompiles
       # when the pinned ref changes.
       #
-      # Cache is a registry image (ethpandaops/xatu:cryo-buildcache), NOT GHA
+      # Cache is a registry image (ghcr.io/ethpandaops/xatu-buildcache:cryo), NOT GHA
       # cache: GHA cache is scoped per git ref, and releases are tag-triggered,
       # so a v1.18.2 run could not read the v1.18.1 run's cache (only its own
       # ref + the default branch). Registry cache is ref-agnostic, so every
       # release reuses the prior cryo-builder layer and skips the ~10 min Rust
-      # compile until CRYO_GIT_REF changes (which invalidates that layer and
-      # recompiles once, then re-warms the cache).
+      # compile until CRYO_GIT_REF changes. build-cache.yaml also re-warms it
+      # on master.
       #
       # amd64-only: EL cannon runs on amd64 servers, and compiling cryo for
       # arm64 under QEMU emulation takes 30-60+ min (it hung a release for
@@ -116,7 +125,16 @@ jobs:
           # Match goreleaser's {{ .Version }} (tag with a single leading 'v' stripped).
           TAG_NAME=${GITHUB_REF#refs/tags/}
           echo "CRYO_IMAGE_VERSION=${TAG_NAME#v}" >> "$GITHUB_ENV"
+      # BuildKit's COPY cache key includes the source file's mode, so the
+      # patches must have the same mode here as in build-cache.yaml and the PR
+      # smoke tests, or their cryo layers never match the buildcache. All of
+      # them check out with 0644 on GitHub-hosted runners; this pins it in case
+      # a checkout's umask ever differs. COPY --chmod does not help: the key
+      # uses the source mode.
+      - name: Normalize cryo patch permissions for the cache key
+        run: chmod 0644 deploy/cryo/*.patch
       - name: Build and push xatu+cryo image
+        id: build-cryo
         uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
         with:
           context: .
@@ -129,7 +147,40 @@ jobs:
             VERSION=${{ env.CRYO_IMAGE_VERSION }}
             GIT_COMMIT=${{ env.CRYO_GIT_COMMIT }}
           tags: |
-            ethpandaops/xatu:${{ env.CRYO_IMAGE_VERSION }}-cryo
-            ethpandaops/xatu:${{ env.RELEASE_SUFFIX && format('{0}-cryo', env.RELEASE_SUFFIX) || 'cryo-latest' }}
-          cache-from: type=registry,ref=ethpandaops/xatu:cryo-buildcache
-          cache-to: type=registry,ref=ethpandaops/xatu:cryo-buildcache,mode=max,ignore-error=true
+            ghcr.io/ethpandaops/xatu:${{ env.CRYO_IMAGE_VERSION }}-cryo
+            ghcr.io/ethpandaops/xatu:${{ env.RELEASE_SUFFIX && format('{0}-cryo', env.RELEASE_SUFFIX) || 'cryo-latest' }}
+          cache-from: type=registry,ref=ghcr.io/ethpandaops/xatu-buildcache:cryo
+          cache-to: type=registry,ref=ghcr.io/ethpandaops/xatu-buildcache:cryo,mode=max,ignore-error=true
+      - name: Attest images
+        id: attest
+        uses: ethpandaops/actions/mirror-image@738aeadbcdc54f1c9af659d35f8ef29dd5c0fae6
+        with:
+          goreleaser-artifacts: dist/artifacts.json
+          mirror: "false"
+      - name: Attest xatu+cryo image
+        id: attest-cryo
+        uses: ethpandaops/actions/mirror-image@738aeadbcdc54f1c9af659d35f8ef29dd5c0fae6
+        with:
+          tags: |
+            ${{ env.CRYO_IMAGE_VERSION }}-cryo
+            ${{ env.RELEASE_SUFFIX && format('{0}-cryo', env.RELEASE_SUFFIX) || 'cryo-latest' }}
+          digest: ${{ steps.build-cryo.outputs.digest }}
+          mirror: "false"
+
+  # Separate job, so "Re-run failed jobs" retries only the mirror and never
+  # rebuilds the images.
+  mirror:
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    steps:
+      - name: Mirror to Docker Hub
+        uses: ethpandaops/actions/mirror-image@738aeadbcdc54f1c9af659d35f8ef29dd5c0fae6
+        with:
+          image: ${{ needs.goreleaser.outputs.image }}
+          tags: ${{ needs.goreleaser.outputs.digests }} ${{ needs.goreleaser.outputs.cryo-digests }}
+          attest: "false"
+          mirror-url: ${{ secrets.IMAGE_MIRROR_URL }}

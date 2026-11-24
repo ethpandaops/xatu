@@ -1,0 +1,205 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// PTC votes after full gossip validation completed (EIP-7732 ePBS) synthesized from TYSM-instrumented beacon node internals. Enrichment counterpart to beacon_api_eth_v1_events_payload_attestation. Multi-witness (per-node).
+
+message BeaconSyntheticPayloadAttestationProcessed {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // When the beacon node processed this PTC vote (TYSM ProcessedAt)
+  int64 event_date_time = 12;
+  // Slot the PTC vote applies to
+  uint32 slot = 13;
+  // The wall clock time when the slot started
+  uint32 slot_start_date_time = 14;
+  // Difference between processed_at and slot_start_date_time in ms
+  uint32 propagation_slot_start_diff = 15;
+  // Epoch number
+  uint32 epoch = 16;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 17;
+  // Beacon block root the PTC validator attested to
+  string beacon_block_root = 18;
+  // Index of the PTC validator
+  uint32 validator_index = 19;
+  // Whether the validator attests payload was present
+  bool payload_present = 20;
+  // Whether the validator attests blob data was available
+  bool blob_data_available = 21;
+  // Peer ID we received this PTC vote from on the gossip wire
+  string peer_id = 22;
+  // Time from gossip receipt to processing completion in milliseconds
+  uint64 processing_duration_ms = 23;
+  // Wall-clock time the PTC vote was first received from gossip
+  int64 received_at = 24;
+  // Name of the client that generated the event
+  string meta_client_name = 25;
+  // Unique Session ID of the client
+  string meta_client_id = 26;
+  // Version of the client
+  string meta_client_version = 27;
+  // Implementation of the client
+  string meta_client_implementation = 28;
+  // Operating system of the client
+  string meta_client_os = 29;
+  // IP address of the client
+  google.protobuf.StringValue meta_client_ip = 30;
+  // City of the client
+  string meta_client_geo_city = 31;
+  // Country of the client
+  string meta_client_geo_country = 32;
+  // Country code of the client
+  string meta_client_geo_country_code = 33;
+  // Continent code of the client
+  string meta_client_geo_continent_code = 34;
+  // Longitude of the client
+  google.protobuf.DoubleValue meta_client_geo_longitude = 35;
+  // Latitude of the client
+  google.protobuf.DoubleValue meta_client_geo_latitude = 36;
+  // ASN of the client
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 37;
+  // AS organization of the client
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 38;
+  // Ethereum network ID
+  int32 meta_network_id = 39;
+  // Ethereum network name
+  string meta_network_name = 40;
+  // Consensus client version
+  string meta_consensus_version = 41;
+  // Consensus client major version
+  string meta_consensus_version_major = 42;
+  // Consensus client minor version
+  string meta_consensus_version_minor = 43;
+  // Consensus client patch version
+  string meta_consensus_version_patch = 44;
+  // Consensus client implementation
+  string meta_consensus_implementation = 45;
+  // Labels associated with the event
+  map<string, string> meta_labels = 46;
+}
+
+// Request for listing beacon_synthetic_payload_attestation_processed records
+message ListBeaconSyntheticPayloadAttestationProcessedRequest {
+  // Filter by slot_start_date_time - The wall clock time when the slot started (PRIMARY KEY - required)
+  UInt32Filter slot_start_date_time = 1;
+
+  // Filter by meta_network_name - Ethereum network name (ORDER BY column 2 - optional)
+  StringFilter meta_network_name = 2;
+
+  // Filter by meta_client_name - Name of the client that generated the event (ORDER BY column 3 - optional)
+  StringFilter meta_client_name = 3;
+
+  // Filter by beacon_block_root - Beacon block root the PTC validator attested to (ORDER BY column 4 - optional)
+  StringFilter beacon_block_root = 4;
+
+  // Filter by validator_index - Index of the PTC validator (ORDER BY column 5 - optional)
+  UInt32Filter validator_index = 5;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 6;
+  // Filter by event_date_time - When the beacon node processed this PTC vote (TYSM ProcessedAt) (optional)
+  Int64Filter event_date_time = 7;
+  // Filter by slot - Slot the PTC vote applies to (optional)
+  UInt32Filter slot = 8;
+  // Filter by propagation_slot_start_diff - Difference between processed_at and slot_start_date_time in ms (optional)
+  UInt32Filter propagation_slot_start_diff = 9;
+  // Filter by epoch - Epoch number (optional)
+  UInt32Filter epoch = 10;
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (optional)
+  UInt32Filter epoch_start_date_time = 11;
+  // Filter by payload_present - Whether the validator attests payload was present (optional)
+  BoolFilter payload_present = 12;
+  // Filter by blob_data_available - Whether the validator attests blob data was available (optional)
+  BoolFilter blob_data_available = 13;
+  // Filter by peer_id - Peer ID we received this PTC vote from on the gossip wire (optional)
+  StringFilter peer_id = 14;
+  // Filter by processing_duration_ms - Time from gossip receipt to processing completion in milliseconds (optional)
+  UInt64Filter processing_duration_ms = 15;
+  // Filter by received_at - Wall-clock time the PTC vote was first received from gossip (optional)
+  Int64Filter received_at = 16;
+  // Filter by meta_client_id - Unique Session ID of the client (optional)
+  StringFilter meta_client_id = 17;
+  // Filter by meta_client_version - Version of the client (optional)
+  StringFilter meta_client_version = 18;
+  // Filter by meta_client_implementation - Implementation of the client (optional)
+  StringFilter meta_client_implementation = 19;
+  // Filter by meta_client_os - Operating system of the client (optional)
+  StringFilter meta_client_os = 20;
+  // Filter by meta_client_ip - IP address of the client (optional)
+  NullableStringFilter meta_client_ip = 21;
+  // Filter by meta_client_geo_city - City of the client (optional)
+  StringFilter meta_client_geo_city = 22;
+  // Filter by meta_client_geo_country - Country of the client (optional)
+  StringFilter meta_client_geo_country = 23;
+  // Filter by meta_client_geo_country_code - Country code of the client (optional)
+  StringFilter meta_client_geo_country_code = 24;
+  // Filter by meta_client_geo_continent_code - Continent code of the client (optional)
+  StringFilter meta_client_geo_continent_code = 25;
+  // Filter by meta_client_geo_longitude - Longitude of the client (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 26;
+  // Filter by meta_client_geo_latitude - Latitude of the client (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 27;
+  // Filter by meta_client_geo_autonomous_system_number - ASN of the client (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 28;
+  // Filter by meta_client_geo_autonomous_system_organization - AS organization of the client (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 29;
+  // Filter by meta_network_id - Ethereum network ID (optional)
+  Int32Filter meta_network_id = 30;
+  // Filter by meta_consensus_version - Consensus client version (optional)
+  StringFilter meta_consensus_version = 31;
+  // Filter by meta_consensus_version_major - Consensus client major version (optional)
+  StringFilter meta_consensus_version_major = 32;
+  // Filter by meta_consensus_version_minor - Consensus client minor version (optional)
+  StringFilter meta_consensus_version_minor = 33;
+  // Filter by meta_consensus_version_patch - Consensus client patch version (optional)
+  StringFilter meta_consensus_version_patch = 34;
+  // Filter by meta_consensus_implementation - Consensus client implementation (optional)
+  StringFilter meta_consensus_implementation = 35;
+  // Filter by meta_labels - Labels associated with the event (optional)
+  MapStringStringFilter meta_labels = 36;
+
+  // The maximum number of beacon_synthetic_payload_attestation_processed to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 37;
+  // A page token, received from a previous `ListBeaconSyntheticPayloadAttestationProcessed` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 38;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 39;
+}
+
+// Response for listing beacon_synthetic_payload_attestation_processed records
+message ListBeaconSyntheticPayloadAttestationProcessedResponse {
+  // The list of beacon_synthetic_payload_attestation_processed.
+  repeated BeaconSyntheticPayloadAttestationProcessed beacon_synthetic_payload_attestation_processed = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single beacon_synthetic_payload_attestation_processed record by primary key
+message GetBeaconSyntheticPayloadAttestationProcessedRequest {
+  // The wall clock time when the slot started
+  uint32 slot_start_date_time = 1; // Primary key (required)
+}
+
+// Response for getting a single beacon_synthetic_payload_attestation_processed record
+message GetBeaconSyntheticPayloadAttestationProcessedResponse {
+  BeaconSyntheticPayloadAttestationProcessed item = 1;
+}
+
+// Query beacon_synthetic_payload_attestation_processed data
+service BeaconSyntheticPayloadAttestationProcessedService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListBeaconSyntheticPayloadAttestationProcessedRequest) returns (ListBeaconSyntheticPayloadAttestationProcessedResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetBeaconSyntheticPayloadAttestationProcessedRequest) returns (GetBeaconSyntheticPayloadAttestationProcessedResponse);
+}

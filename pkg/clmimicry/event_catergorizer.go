@@ -69,6 +69,10 @@ func (ec *EventCategorizer) initializeEvents() {
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT, GroupB, true, false, true)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_PRUNE, GroupB, true, false, true)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_SUBSCRIPTION, GroupB, true, false, true)
+	// Partial messages are keyed by (topic, group ID) and carry no message ID.
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN, GroupB, true, false, false)
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME, GroupB, true, false, false)
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_DATA_COLUMN_COMPLETED, GroupB, true, false, false)
 
 	// Group C: Events with only MsgID
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT, GroupC, false, true, true)
@@ -83,6 +87,7 @@ func (ec *EventCategorizer) initializeEvents() {
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_HANDLE_METADATA, GroupD, false, false, false)
 	ec.addEvent(xatu.Event_LIBP2P_TRACE_HANDLE_STATUS, GroupD, false, false, false)
+	ec.addEvent(xatu.Event_LIBP2P_TRACE_GOODBYE, GroupD, false, false, false)
 	// EIP-7732 ePBS: synthesized observability events from beacon-node internals.
 	// No Topic / no MsgID — same sharding profile as engine API / custody probe events.
 	ec.addEvent(xatu.Event_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED, GroupD, false, false, false)

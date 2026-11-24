@@ -704,6 +704,22 @@ func BuildListCanonicalBeaconElaboratedAttestationQuery(req *ListCanonicalBeacon
 		}
 	}
 
+	// Add filter for column: payload_present
+	if req.PayloadPresent != nil {
+		switch filter := req.PayloadPresent.Filter.(type) {
+		case *NullableBoolFilter_Eq:
+			qb.AddCondition("payload_present", "=", filter.Eq)
+		case *NullableBoolFilter_Ne:
+			qb.AddCondition("payload_present", "!=", filter.Ne)
+		case *NullableBoolFilter_IsNull:
+			qb.AddIsNullCondition("payload_present")
+		case *NullableBoolFilter_IsNotNull:
+			qb.AddIsNotNullCondition("payload_present")
+		default:
+			// Unsupported filter type
+		}
+	}
+
 	// Handle pagination per AIP-132
 	// Validate page size
 	if req.PageSize < 0 {
@@ -729,7 +745,7 @@ func BuildListCanonicalBeaconElaboratedAttestationQuery(req *ListCanonicalBeacon
 	// Handle custom ordering if provided
 	var orderByClause string
 	if req.OrderBy != "" {
-		validFields := []string{"updated_date_time", "block_slot", "block_slot_start_date_time", "block_epoch", "block_epoch_start_date_time", "position_in_block", "block_root", "validators", "committee_index", "beacon_block_root", "slot", "slot_start_date_time", "epoch", "epoch_start_date_time", "source_epoch", "source_epoch_start_date_time", "source_root", "target_epoch", "target_epoch_start_date_time", "target_root", "meta_network_name"}
+		validFields := []string{"updated_date_time", "block_slot", "block_slot_start_date_time", "block_epoch", "block_epoch_start_date_time", "position_in_block", "block_root", "validators", "committee_index", "beacon_block_root", "slot", "slot_start_date_time", "epoch", "epoch_start_date_time", "source_epoch", "source_epoch_start_date_time", "source_root", "target_epoch", "target_epoch_start_date_time", "target_root", "meta_network_name", "payload_present"}
 		orderFields, err := ParseOrderBy(req.OrderBy, validFields)
 		if err != nil {
 			return SQLQuery{}, fmt.Errorf("invalid order_by: %w", err)
@@ -741,7 +757,7 @@ func BuildListCanonicalBeaconElaboratedAttestationQuery(req *ListCanonicalBeacon
 	}
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "block_slot", "toUnixTimestamp(`block_slot_start_date_time`) AS `block_slot_start_date_time`", "block_epoch", "toUnixTimestamp(`block_epoch_start_date_time`) AS `block_epoch_start_date_time`", "position_in_block", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "validators", "committee_index", "NULLIF(`beacon_block_root`, repeat('\x00', 66)) AS `beacon_block_root`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "source_epoch", "toUnixTimestamp(`source_epoch_start_date_time`) AS `source_epoch_start_date_time`", "NULLIF(`source_root`, repeat('\x00', 66)) AS `source_root`", "target_epoch", "toUnixTimestamp(`target_epoch_start_date_time`) AS `target_epoch_start_date_time`", "NULLIF(`target_root`, repeat('\x00', 66)) AS `target_root`", "meta_network_name"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "block_slot", "toUnixTimestamp(`block_slot_start_date_time`) AS `block_slot_start_date_time`", "block_epoch", "toUnixTimestamp(`block_epoch_start_date_time`) AS `block_epoch_start_date_time`", "position_in_block", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "validators", "committee_index", "NULLIF(`beacon_block_root`, repeat('\x00', 66)) AS `beacon_block_root`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "source_epoch", "toUnixTimestamp(`source_epoch_start_date_time`) AS `source_epoch_start_date_time`", "NULLIF(`source_root`, repeat('\x00', 66)) AS `source_root`", "target_epoch", "toUnixTimestamp(`target_epoch_start_date_time`) AS `target_epoch_start_date_time`", "NULLIF(`target_root`, repeat('\x00', 66)) AS `target_root`", "meta_network_name", "payload_present"}
 
 	return BuildParameterizedQuery("canonical_beacon_elaborated_attestation", columns, qb, orderByClause, limit, offset, options...)
 }
@@ -761,7 +777,7 @@ func BuildGetCanonicalBeaconElaboratedAttestationQuery(req *GetCanonicalBeaconEl
 	orderByClause := " ORDER BY meta_network_name, slot_start_date_time, block_root, block_slot, position_in_block, beacon_block_root, slot, committee_index, source_root, target_root"
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "block_slot", "toUnixTimestamp(`block_slot_start_date_time`) AS `block_slot_start_date_time`", "block_epoch", "toUnixTimestamp(`block_epoch_start_date_time`) AS `block_epoch_start_date_time`", "position_in_block", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "validators", "committee_index", "NULLIF(`beacon_block_root`, repeat('\x00', 66)) AS `beacon_block_root`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "source_epoch", "toUnixTimestamp(`source_epoch_start_date_time`) AS `source_epoch_start_date_time`", "NULLIF(`source_root`, repeat('\x00', 66)) AS `source_root`", "target_epoch", "toUnixTimestamp(`target_epoch_start_date_time`) AS `target_epoch_start_date_time`", "NULLIF(`target_root`, repeat('\x00', 66)) AS `target_root`", "meta_network_name"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "block_slot", "toUnixTimestamp(`block_slot_start_date_time`) AS `block_slot_start_date_time`", "block_epoch", "toUnixTimestamp(`block_epoch_start_date_time`) AS `block_epoch_start_date_time`", "position_in_block", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "validators", "committee_index", "NULLIF(`beacon_block_root`, repeat('\x00', 66)) AS `beacon_block_root`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "source_epoch", "toUnixTimestamp(`source_epoch_start_date_time`) AS `source_epoch_start_date_time`", "NULLIF(`source_root`, repeat('\x00', 66)) AS `source_root`", "target_epoch", "toUnixTimestamp(`target_epoch_start_date_time`) AS `target_epoch_start_date_time`", "NULLIF(`target_root`, repeat('\x00', 66)) AS `target_root`", "meta_network_name", "payload_present"}
 
 	// Return single record
 	return BuildParameterizedQuery("canonical_beacon_elaborated_attestation", columns, qb, orderByClause, 1, 0, options...)

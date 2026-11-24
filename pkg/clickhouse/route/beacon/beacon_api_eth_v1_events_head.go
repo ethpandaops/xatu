@@ -83,7 +83,7 @@ func (b *beaconApiEthV1EventsHeadBatch) appendPayload(event *xatu.DecoratedEvent
 
 	b.Block.Append([]byte(headV2.GetBlock()))
 	b.EpochTransition.Append(headV2.GetEpochTransition())
-	b.ExecutionOptimistic.Append(false)
+	b.ExecutionOptimistic.Append(headV2.GetExecutionOptimistic())
 	b.PreviousDutyDependentRoot.Append([]byte(headV2.GetPreviousDutyDependentRoot()))
 	b.CurrentDutyDependentRoot.Append([]byte(headV2.GetCurrentDutyDependentRoot()))
 }

@@ -3,6 +3,7 @@ package ethereum
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -22,14 +23,24 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/singleflight"
 
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/blockarchive"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/services"
 	"github.com/ethpandaops/xatu/pkg/networks"
 	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
+// blockArchive serves finalized blocks and envelopes in bulk; found is false for slots it does not cover.
+type blockArchive interface {
+	Slots(ctx context.Context, slot phase0.Slot) (slots blockarchive.Slots, found bool, err error)
+	HasEnvelopes(ctx context.Context, slot phase0.Slot) (bool, error)
+}
+
 type BeaconNode struct {
 	config *Config
 	log    observability.ContextualLogger
+
+	// archive is nil unless ethereum.blockArchive is enabled.
+	archive blockArchive
 
 	beacon  beacon.Node
 	metrics *Metrics
@@ -106,7 +117,16 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 	sem := make(chan struct{}, config.Beacon.BlockPreloadWorkers)
 	validatorsSem := make(chan struct{}, 1)
 
-	return &BeaconNode{
+	blockCacheSize := config.Beacon.BlockCacheSize
+	envelopeCacheSize := uint64(256)
+
+	if config.BlockArchive.Enabled {
+		// A fetched era range is cached whole, blocks and envelopes alike, so it must fit.
+		blockCacheSize = max(blockCacheSize, config.BlockArchive.MaxFetchSlots())
+		envelopeCacheSize = max(envelopeCacheSize, blockCacheSize)
+	}
+
+	b := &BeaconNode{
 		config:            config,
 		log:               log.WithField("module", "cannon/ethereum/beacon"),
 		beacon:            node,
@@ -115,7 +135,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 		validatorsSfGroup: &singleflight.Group{},
 		blockCache: ttlcache.New(
 			ttlcache.WithTTL[string, *spec.VersionedSignedBeaconBlock](config.Beacon.BlockCacheTTL.Duration),
-			ttlcache.WithCapacity[string, *spec.VersionedSignedBeaconBlock](config.Beacon.BlockCacheSize),
+			ttlcache.WithCapacity[string, *spec.VersionedSignedBeaconBlock](blockCacheSize),
 		),
 		blockPreloadChan: make(chan string, config.Beacon.BlockPreloadQueueSize),
 		blockPreloadSem:  sem,
@@ -128,7 +148,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 		envelopeSfGroup:       &singleflight.Group{},
 		envelopeCache: ttlcache.New(
 			ttlcache.WithTTL[string, *gloas.SignedExecutionPayloadEnvelope](config.Beacon.BlockCacheTTL.Duration),
-			ttlcache.WithCapacity[string, *gloas.SignedExecutionPayloadEnvelope](256),
+			ttlcache.WithCapacity[string, *gloas.SignedExecutionPayloadEnvelope](envelopeCacheSize),
 		),
 		stateSfGroup: &singleflight.Group{},
 		stateCache: ttlcache.New(
@@ -137,7 +157,72 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 		),
 		stateSem: make(chan struct{}, 1),
 		metrics:  NewMetrics(namespace, name),
+	}
+
+	if config.BlockArchive.Enabled {
+		b.archive = blockarchive.New(&config.BlockArchive, log, b.archiveNetwork, b.archiveChain, b.archiveCanonicalBlock,
+			blockarchive.NewMetrics(namespace+"_ethereum"))
+	}
+
+	return b, nil
+}
+
+// archiveNetwork is the network name the block archive is queried with.
+func (b *BeaconNode) archiveNetwork() string {
+	if b.config.BlockArchive.Network != "" {
+		return b.config.BlockArchive.Network
+	}
+
+	return string(b.Metadata().Network.Name)
+}
+
+// archiveChain is the network configuration era files are decoded with.
+func (b *BeaconNode) archiveChain(ctx context.Context) (*blockarchive.Chain, error) {
+	codec, err := b.sszCodec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	sp, err := b.beacon.Spec()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain spec")
+	}
+
+	slotsPerEra, ok := sp.FullSpec["SLOTS_PER_HISTORICAL_ROOT"].(uint64)
+	if !ok {
+		return nil, errors.New("spec has no SLOTS_PER_HISTORICAL_ROOT")
+	}
+
+	return &blockarchive.Chain{
+		Codec:         codec,
+		SlotsPerEpoch: uint64(sp.SlotsPerEpoch),
+		SlotsPerEra:   slotsPerEra,
+		Forks:         sp.ForkEpochs,
 	}, nil
+}
+
+// archiveCanonicalBlock is the beacon node's block root and signature at slot, which each era window is tied to.
+func (b *BeaconNode) archiveCanonicalBlock(ctx context.Context, slot phase0.Slot) (blockarchive.BlockID, bool, error) {
+	provider, ok := b.beacon.Service().(client.BeaconBlockHeadersProvider)
+	if !ok {
+		return blockarchive.BlockID{}, false, errors.New("beacon block headers provider not available")
+	}
+
+	resp, err := provider.BeaconBlockHeader(ctx, &api.BeaconBlockHeaderOpts{Block: strconv.FormatUint(uint64(slot), 10)})
+	if err != nil {
+		var apiErr *api.Error
+		if errors.As(err, &apiErr) && apiErr.StatusCode == 404 {
+			return blockarchive.BlockID{}, false, nil
+		}
+
+		return blockarchive.BlockID{}, false, errors.Wrapf(err, "failed to fetch block header at slot %d", slot)
+	}
+
+	if resp == nil || resp.Data == nil || resp.Data.Header == nil {
+		return blockarchive.BlockID{}, false, errors.Errorf("empty block header response at slot %d", slot)
+	}
+
+	return blockarchive.BlockID{Root: resp.Data.Root, Signature: resp.Data.Header.Signature}, true, nil
 }
 
 func (b *BeaconNode) Start(ctx context.Context) error {
@@ -325,6 +410,12 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 
 	// Use singleflight to ensure we only make one request for a block at a time.
 	x, err, shared := b.sfGroup.Do(identifier, func() (any, error) {
+		if block, ok := b.blockFromArchive(ctx, identifier); ok {
+			span.AddEvent("Block served from block archive.")
+
+			return block, nil
+		}
+
 		span.AddEvent("Acquiring semaphore...")
 
 		// Acquire a semaphore before proceeding.
@@ -337,6 +428,13 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 		block, err := b.beacon.FetchBlock(ctx, identifier)
 		if err != nil {
 			return nil, err
+		}
+
+		// Only slot numbers are checked: a root or named identifier has no slot to confirm.
+		if slot, parseErr := strconv.ParseUint(identifier, 10, 64); block == nil && parseErr == nil {
+			if err := b.confirmMissedSlot(ctx, slot); err != nil {
+				return nil, err
+			}
 		}
 
 		span.AddEvent("Block fetched from beacon node.")
@@ -359,6 +457,156 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 	span.AddEvent("Block fetching complete.", trace.WithAttributes(attribute.Bool("shared", shared)))
 
 	return x.(*spec.VersionedSignedBeaconBlock), nil
+}
+
+// confirmMissedSlot checks that a slot the beacon node has no block for is empty on the canonical chain: the next
+// block's parent must be older than the slot. A node whose block history does not reach the slot (checkpoint synced,
+// still backfilling, or pruned) answers 404 for it and has no such parent, so its 404 is an error the caller retries
+// instead of a missed slot.
+func (b *BeaconNode) confirmMissedSlot(ctx context.Context, slot uint64) error {
+	sp, err := b.beacon.Spec()
+	if err != nil {
+		return errors.Wrap(err, "failed to obtain spec")
+	}
+
+	lookahead := 2 * uint64(sp.SlotsPerEpoch)
+
+	for next := slot + 1; next <= slot+lookahead; next++ {
+		block, err := b.beacon.FetchBlock(ctx, strconv.FormatUint(next, 10))
+		if err != nil {
+			return errors.Wrapf(err, "failed to get block at slot %d to confirm slot %d is empty", next, slot)
+		}
+
+		if block == nil {
+			continue
+		}
+
+		b.blockCache.Set(strconv.FormatUint(next, 10), block, time.Hour)
+
+		parentRoot, err := block.ParentRoot()
+		if err != nil {
+			return errors.Wrapf(err, "failed to get the parent root of the block at slot %d", next)
+		}
+
+		parentSlot, ok, err := b.blockHeaderSlot(ctx, parentRoot.String())
+		if err != nil {
+			return err
+		}
+
+		if !ok {
+			return errors.Errorf("beacon node has no block at slot %d nor the parent of the block at slot %d: its block history does not reach slot %d", slot, next, slot)
+		}
+
+		if uint64(parentSlot) >= slot {
+			return errors.Errorf("beacon node has no block at slot %d, but the block at slot %d builds on a block at slot %d", slot, next, parentSlot)
+		}
+
+		return nil
+	}
+
+	return errors.Errorf("beacon node has no block at slot %d nor in the %d slots after it to confirm the slot is empty", slot, lookahead)
+}
+
+// blockHeaderSlot is the slot of the block with the given root; ok is false when the node does not have it.
+func (b *BeaconNode) blockHeaderSlot(ctx context.Context, root string) (phase0.Slot, bool, error) {
+	provider, ok := b.beacon.Service().(client.BeaconBlockHeadersProvider)
+	if !ok {
+		return 0, false, errors.New("beacon block headers provider not available")
+	}
+
+	resp, err := provider.BeaconBlockHeader(ctx, &api.BeaconBlockHeaderOpts{Block: root})
+	if err != nil {
+		var apiErr *api.Error
+		if errors.As(err, &apiErr) && apiErr.StatusCode == 404 {
+			return 0, false, nil
+		}
+
+		return 0, false, errors.Wrapf(err, "failed to fetch block header %s", root)
+	}
+
+	if resp == nil || resp.Data == nil || resp.Data.Header == nil || resp.Data.Header.Message == nil {
+		return 0, false, errors.Errorf("empty block header response for %s", root)
+	}
+
+	return resp.Data.Header.Message.Slot, true, nil
+}
+
+// blockFromArchive serves a slot identifier from the block archive; ok is false when the beacon node must answer.
+func (b *BeaconNode) blockFromArchive(ctx context.Context, identifier string) (block *spec.VersionedSignedBeaconBlock, ok bool) {
+	content, ok := b.archiveSlot(ctx, identifier)
+	if !ok {
+		return nil, false
+	}
+
+	return content.Block, true
+}
+
+// envelopeFromArchive is blockFromArchive for envelopes; a nil envelope with ok means the payload was withheld.
+func (b *BeaconNode) envelopeFromArchive(ctx context.Context, identifier string) (envelope *gloas.SignedExecutionPayloadEnvelope, ok bool) {
+	if b.archive == nil {
+		return nil, false
+	}
+
+	slot, err := strconv.ParseUint(identifier, 10, 64)
+	if err != nil {
+		return nil, false
+	}
+
+	// Only eras with an envelope sidecar answer for envelopes; skip the era fetch otherwise.
+	has, err := b.archive.HasEnvelopes(ctx, phase0.Slot(slot))
+	if err != nil {
+		b.log.WithError(err).WithField("slot", slot).WithContext(ctx).Warn("Block archive lookup failed, falling back to beacon node")
+
+		return nil, false
+	}
+
+	if !has {
+		return nil, false
+	}
+
+	content, ok := b.archiveSlot(ctx, identifier)
+	if !ok || !content.EnvelopeKnown {
+		return nil, false
+	}
+
+	return content.Envelope, true
+}
+
+// archiveSlot fetches the era range holding a slot identifier and caches its blocks and known Gloas+ envelopes.
+func (b *BeaconNode) archiveSlot(ctx context.Context, identifier string) (content blockarchive.Slot, ok bool) {
+	if b.archive == nil {
+		return content, false
+	}
+
+	slot, err := strconv.ParseUint(identifier, 10, 64)
+	if err != nil {
+		return content, false
+	}
+
+	slots, found, err := b.archive.Slots(ctx, phase0.Slot(slot))
+	if err != nil {
+		b.log.WithError(err).WithField("slot", slot).WithContext(ctx).Warn("Block archive fetch failed, falling back to beacon node")
+
+		return content, false
+	}
+
+	if !found {
+		return content, false
+	}
+
+	// Cache the whole range even when it cannot answer for this slot, so its other slots skip the archive.
+	for s, c := range slots {
+		key := strconv.FormatUint(uint64(s), 10)
+		b.blockCache.Set(key, c.Block, time.Hour)
+
+		if c.EnvelopeKnown {
+			b.envelopeCache.Set(key, c.Envelope, time.Hour)
+		}
+	}
+
+	content, ok = slots[phase0.Slot(slot)]
+
+	return content, ok
 }
 
 func (b *BeaconNode) LazyLoadBeaconBlock(identifier string) {
@@ -473,6 +721,12 @@ func (b *BeaconNode) GetExecutionPayloadEnvelope(
 	span.SetAttributes(attribute.Bool("cached", false))
 
 	x, err, shared := b.envelopeSfGroup.Do(blockID, func() (any, error) {
+		if envelope, ok := b.envelopeFromArchive(ctx, blockID); ok {
+			span.AddEvent("Envelope served from block archive.")
+
+			return envelope, nil
+		}
+
 		provider, err := b.getExecutionPayloadProvider()
 		if err != nil {
 			return nil, err

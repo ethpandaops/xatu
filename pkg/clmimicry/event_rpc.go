@@ -19,6 +19,7 @@ import (
 var rpcToXatuEventMap = map[string]string{
 	TraceEvent_HANDLE_METADATA:                                     xatu.Event_LIBP2P_TRACE_HANDLE_METADATA.String(),
 	TraceEvent_HANDLE_STATUS:                                       xatu.Event_LIBP2P_TRACE_HANDLE_STATUS.String(),
+	TraceEvent_REQUEST_GOODBYE:                                     xatu.Event_LIBP2P_TRACE_GOODBYE.String(),
 	TraceEvent_CUSTODY_PROBE:                                       xatu.Event_LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE.String(),
 	TraceEvent_CONSENSUS_ENGINE_API_NEWPAYLOAD:                     xatu.Event_CONSENSUS_ENGINE_API_NEW_PAYLOAD.String(),
 	TraceEvent_CONSENSUS_ENGINE_API_GETBLOBS:                       xatu.Event_CONSENSUS_ENGINE_API_GET_BLOBS.String(),
@@ -75,6 +76,20 @@ func (p *Processor) handleHermesRPCEvent(
 		}
 
 		return p.handleHandleStatusEvent(ctx, clientMeta, traceMeta, event)
+
+	case xatu.Event_LIBP2P_TRACE_GOODBYE.String():
+		if !p.events.GoodbyeEnabled {
+			return nil
+		}
+
+		networkStr := getNetworkID(clientMeta)
+		p.metrics.AddEvent(xatuEvent, networkStr)
+
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		return p.handleGoodbyeEvent(ctx, clientMeta, traceMeta, event)
 
 	case xatu.Event_LIBP2P_TRACE_RPC_DATA_COLUMN_CUSTODY_PROBE.String():
 		if !p.events.CustodyProbeEnabled {
@@ -240,6 +255,44 @@ func (p *Processor) handleHandleStatusEvent(ctx context.Context,
 		},
 		Data: &xatu.DecoratedEvent_Libp2PTraceHandleStatus{
 			Libp2PTraceHandleStatus: data,
+		},
+	}
+
+	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
+}
+
+func (p *Processor) handleGoodbyeEvent(ctx context.Context,
+	clientMeta *xatu.ClientMeta,
+	traceMeta *libp2p.TraceEventMetadata,
+	event *TraceEvent,
+) error {
+	data, err := TraceEventToGoodbye(event)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert event to goodbye event")
+	}
+
+	metadata, ok := proto.Clone(clientMeta).(*xatu.ClientMeta)
+	if !ok {
+		return fmt.Errorf("failed to clone client metadata")
+	}
+
+	metadata.AdditionalData = &xatu.ClientMeta_Libp2PTraceGoodbye{
+		Libp2PTraceGoodbye: &xatu.ClientMeta_AdditionalLibP2PTraceGoodbyeData{
+			Metadata: traceMeta,
+		},
+	}
+
+	decoratedEvent := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_LIBP2P_TRACE_GOODBYE,
+			DateTime: timestamppb.New(event.Timestamp.Add(p.clockDrift)),
+			Id:       uuid.New().String(),
+		},
+		Meta: &xatu.Meta{
+			Client: metadata,
+		},
+		Data: &xatu.DecoratedEvent_Libp2PTraceGoodbye{
+			Libp2PTraceGoodbye: data,
 		},
 	}
 

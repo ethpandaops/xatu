@@ -109,6 +109,42 @@ func TestChGoConfig_Validate_ReadTimeout(t *testing.T) {
 	}
 }
 
+func TestChGoConfig_Validate_GroupRetryMaxAttempts(t *testing.T) {
+	tests := []struct {
+		name        string
+		maxAttempts int
+		wantErr     string
+	}{
+		{
+			name: "unlimited",
+		},
+		{
+			name:        "bounded",
+			maxAttempts: 5,
+		},
+		{
+			name:        "negative",
+			maxAttempts: -1,
+			wantErr:     "groupRetryMaxAttempts must be >= 0",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := validChGoConfig()
+			cfg.GroupRetryMaxAttempts = tt.maxAttempts
+
+			err := cfg.Validate()
+			if tt.wantErr != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestAdaptiveLimiterConfig_Validate(t *testing.T) {
 	tests := []struct {
 		name    string

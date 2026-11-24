@@ -26,6 +26,7 @@ captureDelay: 3m
 #   privateKey: "" # Optional hex devp2p node key. If omitted, one process-local identity is reused.
 #   blobTransactionBatchSize: 1  # Number of blob txns to request at a time (default: 1)
 #   transactionBatchSize: 10     # Number of other txns to request at a time (default: 10)
+#   blobAnnouncementsEnabled: false # Record every blob tx hash each peer announces (default: false)
 
 coordinator:
   type: static

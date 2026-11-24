@@ -137,7 +137,7 @@ func (b *BeaconBlobDeriver) run(rctx context.Context) {
 				}
 
 				// Process the epoch
-				events, err := b.processEpoch(ctx, position.Next)
+				events, err := iterator.DeriveEpochs(ctx, position.Epochs(), b.processEpoch)
 				if err != nil {
 					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
@@ -156,7 +156,7 @@ func (b *BeaconBlobDeriver) run(rctx context.Context) {
 				}
 
 				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, position.LastEpoch(), position.Direction); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return "", err
@@ -216,7 +216,16 @@ func (b *BeaconBlobDeriver) processSlot(ctx context.Context, slot phase0.Slot) (
 	)
 	defer span.End()
 
-	blobs, err := b.beacon.Node().FetchBeaconBlockBlobs(ctx, xatuethv1.SlotAsString(slot))
+	block, err := b.beacon.GetBeaconBlock(ctx, xatuethv1.SlotAsString(slot))
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get beacon block for slot %d", slot)
+	}
+
+	if block == nil {
+		return []*xatu.DecoratedEvent{}, nil
+	}
+
+	blobs, err := b.beacon.GetBlobSidecars(ctx, block, xatuethv1.SlotAsString(slot))
 	if err != nil {
 		var apiErr *api.Error
 		if errors.As(err, &apiErr) {

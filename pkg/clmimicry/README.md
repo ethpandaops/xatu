@@ -75,6 +75,7 @@ Events with both topic and message ID, enabling full sharding flexibility:
 Events with only topic information:
 - `JOIN`, `LEAVE`, `GRAFT`, `PRUNE`
 - `RPC_META_CONTROL_GRAFT`, `RPC_META_CONTROL_PRUNE`, `RPC_META_SUBSCRIPTION`
+- `GOSSIPSUB_PARTIAL_DATA_COLUMN`, `GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME`, `DATA_COLUMN_COMPLETED` (gossipsub partial messages are keyed by topic and group ID, with no message ID)
 
 **Sharding**: Uses topic hash for sharding decisions
 
@@ -88,7 +89,7 @@ Events with only message ID:
 Events without sharding keys:
 - `CONNECTED`, `DISCONNECTED`
 - `RECV_RPC`, `SEND_RPC`, `DROP_RPC` (parent events only)
-- `HANDLE_METADATA`, `HANDLE_STATUS`
+- `HANDLE_METADATA`, `HANDLE_STATUS`, `REQUEST_GOODBYE`
 
 **Sharding**: All-or-nothing based on configuration
 

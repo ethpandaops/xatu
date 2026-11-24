@@ -382,6 +382,142 @@ func BuildListCanonicalExecutionBlockQuery(req *ListCanonicalExecutionBlockReque
 		}
 	}
 
+	// Add filter for column: parent_hash
+	if req.ParentHash != nil {
+		switch filter := req.ParentHash.Filter.(type) {
+		case *NullableStringFilter_Eq:
+			qb.AddCondition("parent_hash", "=", filter.Eq)
+		case *NullableStringFilter_Ne:
+			qb.AddCondition("parent_hash", "!=", filter.Ne)
+		case *NullableStringFilter_Contains:
+			qb.AddLikeCondition("parent_hash", "%" + filter.Contains + "%")
+		case *NullableStringFilter_StartsWith:
+			qb.AddLikeCondition("parent_hash", filter.StartsWith + "%")
+		case *NullableStringFilter_EndsWith:
+			qb.AddLikeCondition("parent_hash", "%" + filter.EndsWith)
+		case *NullableStringFilter_Like:
+			qb.AddLikeCondition("parent_hash", filter.Like)
+		case *NullableStringFilter_NotLike:
+			qb.AddNotLikeCondition("parent_hash", filter.NotLike)
+		case *NullableStringFilter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("parent_hash", StringSliceToInterface(filter.In.Values))
+			}
+		case *NullableStringFilter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("parent_hash", StringSliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableStringFilter_IsNull:
+			qb.AddIsNullCondition("parent_hash")
+		case *NullableStringFilter_IsNotNull:
+			qb.AddIsNotNullCondition("parent_hash")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: state_root
+	if req.StateRoot != nil {
+		switch filter := req.StateRoot.Filter.(type) {
+		case *NullableStringFilter_Eq:
+			qb.AddCondition("state_root", "=", filter.Eq)
+		case *NullableStringFilter_Ne:
+			qb.AddCondition("state_root", "!=", filter.Ne)
+		case *NullableStringFilter_Contains:
+			qb.AddLikeCondition("state_root", "%" + filter.Contains + "%")
+		case *NullableStringFilter_StartsWith:
+			qb.AddLikeCondition("state_root", filter.StartsWith + "%")
+		case *NullableStringFilter_EndsWith:
+			qb.AddLikeCondition("state_root", "%" + filter.EndsWith)
+		case *NullableStringFilter_Like:
+			qb.AddLikeCondition("state_root", filter.Like)
+		case *NullableStringFilter_NotLike:
+			qb.AddNotLikeCondition("state_root", filter.NotLike)
+		case *NullableStringFilter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("state_root", StringSliceToInterface(filter.In.Values))
+			}
+		case *NullableStringFilter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("state_root", StringSliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableStringFilter_IsNull:
+			qb.AddIsNullCondition("state_root")
+		case *NullableStringFilter_IsNotNull:
+			qb.AddIsNotNullCondition("state_root")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: blob_gas_used
+	if req.BlobGasUsed != nil {
+		switch filter := req.BlobGasUsed.Filter.(type) {
+		case *NullableUInt64Filter_Eq:
+			qb.AddCondition("blob_gas_used", "=", filter.Eq)
+		case *NullableUInt64Filter_Ne:
+			qb.AddCondition("blob_gas_used", "!=", filter.Ne)
+		case *NullableUInt64Filter_Lt:
+			qb.AddCondition("blob_gas_used", "<", filter.Lt)
+		case *NullableUInt64Filter_Lte:
+			qb.AddCondition("blob_gas_used", "<=", filter.Lte)
+		case *NullableUInt64Filter_Gt:
+			qb.AddCondition("blob_gas_used", ">", filter.Gt)
+		case *NullableUInt64Filter_Gte:
+			qb.AddCondition("blob_gas_used", ">=", filter.Gte)
+		case *NullableUInt64Filter_Between:
+			qb.AddBetweenCondition("blob_gas_used", filter.Between.Min, filter.Between.Max.GetValue())
+		case *NullableUInt64Filter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("blob_gas_used", UInt64SliceToInterface(filter.In.Values))
+			}
+		case *NullableUInt64Filter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("blob_gas_used", UInt64SliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableUInt64Filter_IsNull:
+			qb.AddIsNullCondition("blob_gas_used")
+		case *NullableUInt64Filter_IsNotNull:
+			qb.AddIsNotNullCondition("blob_gas_used")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: excess_blob_gas
+	if req.ExcessBlobGas != nil {
+		switch filter := req.ExcessBlobGas.Filter.(type) {
+		case *NullableUInt64Filter_Eq:
+			qb.AddCondition("excess_blob_gas", "=", filter.Eq)
+		case *NullableUInt64Filter_Ne:
+			qb.AddCondition("excess_blob_gas", "!=", filter.Ne)
+		case *NullableUInt64Filter_Lt:
+			qb.AddCondition("excess_blob_gas", "<", filter.Lt)
+		case *NullableUInt64Filter_Lte:
+			qb.AddCondition("excess_blob_gas", "<=", filter.Lte)
+		case *NullableUInt64Filter_Gt:
+			qb.AddCondition("excess_blob_gas", ">", filter.Gt)
+		case *NullableUInt64Filter_Gte:
+			qb.AddCondition("excess_blob_gas", ">=", filter.Gte)
+		case *NullableUInt64Filter_Between:
+			qb.AddBetweenCondition("excess_blob_gas", filter.Between.Min, filter.Between.Max.GetValue())
+		case *NullableUInt64Filter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("excess_blob_gas", UInt64SliceToInterface(filter.In.Values))
+			}
+		case *NullableUInt64Filter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("excess_blob_gas", UInt64SliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableUInt64Filter_IsNull:
+			qb.AddIsNullCondition("excess_blob_gas")
+		case *NullableUInt64Filter_IsNotNull:
+			qb.AddIsNotNullCondition("excess_blob_gas")
+		default:
+			// Unsupported filter type
+		}
+	}
+
 	// Handle pagination per AIP-132
 	// Validate page size
 	if req.PageSize < 0 {
@@ -407,7 +543,7 @@ func BuildListCanonicalExecutionBlockQuery(req *ListCanonicalExecutionBlockReque
 	// Handle custom ordering if provided
 	var orderByClause string
 	if req.OrderBy != "" {
-		validFields := []string{"updated_date_time", "block_date_time", "block_number", "block_hash", "author", "gas_used", "gas_limit", "extra_data", "extra_data_string", "base_fee_per_gas", "meta_network_name"}
+		validFields := []string{"updated_date_time", "block_date_time", "block_number", "block_hash", "author", "gas_used", "gas_limit", "extra_data", "extra_data_string", "base_fee_per_gas", "meta_network_name", "parent_hash", "state_root", "blob_gas_used", "excess_blob_gas"}
 		orderFields, err := ParseOrderBy(req.OrderBy, validFields)
 		if err != nil {
 			return SQLQuery{}, fmt.Errorf("invalid order_by: %w", err)
@@ -419,7 +555,7 @@ func BuildListCanonicalExecutionBlockQuery(req *ListCanonicalExecutionBlockReque
 	}
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`block_date_time`) AS `block_date_time`", "block_number", "NULLIF(`block_hash`, repeat('\x00', 66)) AS `block_hash`", "author", "gas_used", "gas_limit", "extra_data", "extra_data_string", "base_fee_per_gas", "meta_network_name"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`block_date_time`) AS `block_date_time`", "block_number", "NULLIF(`block_hash`, repeat('\x00', 66)) AS `block_hash`", "author", "gas_used", "gas_limit", "extra_data", "extra_data_string", "base_fee_per_gas", "meta_network_name", "NULLIF(`parent_hash`, repeat('\x00', 66)) AS `parent_hash`", "NULLIF(`state_root`, repeat('\x00', 66)) AS `state_root`", "blob_gas_used", "excess_blob_gas"}
 
 	return BuildParameterizedQuery("canonical_execution_block", columns, qb, orderByClause, limit, offset, options...)
 }
@@ -439,7 +575,7 @@ func BuildGetCanonicalExecutionBlockQuery(req *GetCanonicalExecutionBlockRequest
 	orderByClause := " ORDER BY meta_network_name, block_number"
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`block_date_time`) AS `block_date_time`", "block_number", "NULLIF(`block_hash`, repeat('\x00', 66)) AS `block_hash`", "author", "gas_used", "gas_limit", "extra_data", "extra_data_string", "base_fee_per_gas", "meta_network_name"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`block_date_time`) AS `block_date_time`", "block_number", "NULLIF(`block_hash`, repeat('\x00', 66)) AS `block_hash`", "author", "gas_used", "gas_limit", "extra_data", "extra_data_string", "base_fee_per_gas", "meta_network_name", "NULLIF(`parent_hash`, repeat('\x00', 66)) AS `parent_hash`", "NULLIF(`state_root`, repeat('\x00', 66)) AS `state_root`", "blob_gas_used", "excess_blob_gas"}
 
 	// Return single record
 	return BuildParameterizedQuery("canonical_execution_block", columns, qb, orderByClause, 1, 0, options...)

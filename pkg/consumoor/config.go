@@ -47,6 +47,15 @@ func (c *Config) Validate() error {
 		return err
 	}
 
+	// Consumoor always retries transient group failures, so a zero delay would spin.
+	if c.ClickHouse.ChGo.GroupRetryBaseDelay <= 0 {
+		return errors.New("clickhouse.chgo: groupRetryBaseDelay must be > 0")
+	}
+
+	if c.ClickHouse.ChGo.GroupRetryMaxDelay <= 0 {
+		return errors.New("clickhouse.chgo: groupRetryMaxDelay must be > 0")
+	}
+
 	if _, err := c.DisabledEventEnums(); err != nil {
 		return err
 	}

@@ -52,7 +52,7 @@ type Libp2PGossipsubDataColumnSidecar struct {
 	ProposerIndex uint32 `protobuf:"varint,22,opt,name=proposer_index,json=proposerIndex,proto3" json:"proposer_index,omitempty"`
 	// Column index associated with the record
 	ColumnIndex uint64 `protobuf:"varint,23,opt,name=column_index,json=columnIndex,proto3" json:"column_index,omitempty"`
-	// Number of KZG commitments associated with the record
+	// Number of KZG commitments associated with the record. 0 on Gloas, where the sidecar no longer carries the block header
 	KzgCommitmentsCount uint32 `protobuf:"varint,24,opt,name=kzg_commitments_count,json=kzgCommitmentsCount,proto3" json:"kzg_commitments_count,omitempty"`
 	BeaconBlockRoot     string `protobuf:"bytes,25,opt,name=beacon_block_root,json=beaconBlockRoot,proto3" json:"beacon_block_root,omitempty"`
 	// Parent root of the beacon block
@@ -441,7 +441,7 @@ type ListLibp2PGossipsubDataColumnSidecarRequest struct {
 	ProposerIndex *UInt32Filter `protobuf:"bytes,16,opt,name=proposer_index,json=proposerIndex,proto3" json:"proposer_index,omitempty"`
 	// Filter by column_index - Column index associated with the record (optional)
 	ColumnIndex *UInt64Filter `protobuf:"bytes,17,opt,name=column_index,json=columnIndex,proto3" json:"column_index,omitempty"`
-	// Filter by kzg_commitments_count - Number of KZG commitments associated with the record (optional)
+	// Filter by kzg_commitments_count - Number of KZG commitments associated with the record. 0 on Gloas, where the sidecar no longer carries the block header (optional)
 	KzgCommitmentsCount *UInt32Filter `protobuf:"bytes,18,opt,name=kzg_commitments_count,json=kzgCommitmentsCount,proto3" json:"kzg_commitments_count,omitempty"`
 	// Filter by beacon_block_root (optional)
 	BeaconBlockRoot *StringFilter `protobuf:"bytes,19,opt,name=beacon_block_root,json=beaconBlockRoot,proto3" json:"beacon_block_root,omitempty"`

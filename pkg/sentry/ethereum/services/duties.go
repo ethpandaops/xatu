@@ -99,11 +99,8 @@ func (m *DutiesService) Start(ctx context.Context) error {
 				return "", err
 			}
 
-			epoch := m.metadata.Wallclock().Epochs().Current()
-
-			if err := m.fetchProposerDuties(ctx, phase0.Epoch(epoch.Number())); err != nil {
-				return "", err
-			}
+			// Best effort: readiness gates every beacon subscription, and the per-epoch fetch retries.
+			m.fetchCurrentProposerDuties(ctx)
 
 			//nolint:errcheck // We don't care about the error here
 			m.fetchNiceToHaveEpochDuties(ctx)
@@ -404,6 +401,19 @@ func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.E
 	m.fireOnBeaconCommitteeSubscriptions(epoch, committees)
 
 	return nil
+}
+
+// fetchCurrentProposerDuties only logs a failure: syncing nodes 503 validator endpoints and some proxies block them.
+func (m *DutiesService) fetchCurrentProposerDuties(ctx context.Context) {
+	if !m.proposerDutiesEnabled || m.metadata.Wallclock() == nil {
+		return
+	}
+
+	epoch := m.metadata.Wallclock().Epochs().Current()
+
+	if err := m.fetchProposerDuties(ctx, phase0.Epoch(epoch.Number())); err != nil {
+		m.log.WithError(err).WithContext(ctx).Warn("Failed to fetch proposer duties at startup, continuing without them")
+	}
 }
 
 func (m *DutiesService) fetchProposerDuties(ctx context.Context, epoch phase0.Epoch) error {

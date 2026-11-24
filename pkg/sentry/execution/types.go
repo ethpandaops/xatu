@@ -3,6 +3,8 @@ package execution
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"time"
 )
 
@@ -22,6 +24,13 @@ const (
 	RPCMethodDebugStateSize = "debug_stateSize"
 )
 
+// State size trigger modes.
+const (
+	StateSizeTriggerHead     = "head"
+	StateSizeTriggerBlock    = "block"
+	StateSizeTriggerInterval = "interval"
+)
+
 // Config defines configuration for connecting to an execution client.
 type Config struct {
 	// Enabled is whether the execution client is enabled.
@@ -30,6 +39,9 @@ type Config struct {
 	EthPendingTxsEnabled bool `yaml:"ethPendingTxsEnabled" default:"false"`
 	// TxPoolContentEnabled is whether we suppliment fetching tx's using txpool_content periodically.
 	TxPoolContentEnabled bool `yaml:"txPoolContentEnabled" default:"true"`
+	// RemovedTxsEnabled emits MEMPOOL_TRANSACTION_REMOVED for transactions that leave the txpool unincluded,
+	// found by diffing txpool_content polls. It does nothing without txPoolContentEnabled.
+	RemovedTxsEnabled bool `yaml:"removedTxsEnabled" default:"false"`
 	// WebsocketEnabled is whether the websocket is enabled.
 	WebsocketEnabled bool `yaml:"websocketEnabled" default:"false"`
 	// WSAddress is the WebSocket address of the execution client for subscriptions.
@@ -39,25 +51,50 @@ type Config struct {
 	// Headers is a map of headers to send to the execution client.
 	Headers map[string]string `yaml:"headers"`
 	// FetchInterval is how often to fetch txpool_content (in seconds).
-	FetchInterval int `yaml:"fetchInterval" default:"15"`
+	FetchInterval int `yaml:"fetchInterval" default:"45"`
 	// PruneDuration is how long to keep pending transactions in memory before pruning (in seconds).
-	PruneDuration int `yaml:"pruneDuration" default:"300"`
+	PruneDuration int `yaml:"pruneDuration" default:"384"`
 	// ProcessorWorkerCount is the number of worker goroutines for processing transactions.
-	ProcessorWorkerCount int `yaml:"processorWorkerCount" default:"50"`
+	ProcessorWorkerCount int `yaml:"processorWorkerCount" default:"40"`
 	// RpcBatchSize is the number of transactions to include in a single RPC batch call.
-	RpcBatchSize int `yaml:"rpcBatchSize" default:"40"`
+	RpcBatchSize int `yaml:"rpcBatchSize" default:"15"`
 	// QueueSize is the size of the transaction processing queue.
-	QueueSize int `yaml:"queueSize" default:"5000"`
+	QueueSize int `yaml:"queueSize" default:"10000"`
 	// ProcessingInterval is the interval at which to process batches of transactions (in milliseconds).
-	ProcessingInterval int `yaml:"processingInterval" default:"500"`
+	ProcessingInterval int `yaml:"processingInterval" default:"3000"`
 	// MaxConcurrency is the maximum number of concurrent batch RPC requests.
-	MaxConcurrency int `yaml:"maxConcurrency" default:"5"`
+	MaxConcurrency int `yaml:"maxConcurrency" default:"3"`
 	// CircuitBreakerFailureThreshold is the number of consecutive failures before opening the circuit breaker.
 	CircuitBreakerFailureThreshold int `yaml:"circuitBreakerFailureThreshold" default:"5"`
 	// CircuitBreakerResetTimeout is the time to wait before transitioning from open to half-open (in seconds).
 	CircuitBreakerResetTimeout int `yaml:"circuitBreakerResetTimeout" default:"30"`
 	// StateSize is the configuration for state size monitoring.
-	StateSize *StateSizeConfig `yaml:"stateSize"`
+	StateSize *StateSizeConfig `yaml:"stateSize" default:"{}"`
+}
+
+// Validate checks the settings the execution watchers need before they start.
+func (c *Config) Validate() error {
+	if c.RPCAddress == "" {
+		return errors.New("rpcAddress is required")
+	}
+
+	if c.WebsocketEnabled && c.WSAddress == "" {
+		return errors.New("wsAddress is required when websocketEnabled is set")
+	}
+
+	if c.StateSize == nil || !c.StateSize.Enabled {
+		return nil
+	}
+
+	if err := c.StateSize.Validate(); err != nil {
+		return fmt.Errorf("stateSize: %w", err)
+	}
+
+	if c.StateSize.TriggerMode == StateSizeTriggerBlock && !c.WebsocketEnabled {
+		return errors.New("stateSize: triggerMode \"block\" needs websocketEnabled")
+	}
+
+	return nil
 }
 
 // PendingTxRecord represents a transaction hash and when it was first seen.
@@ -85,6 +122,21 @@ type StateSizeConfig struct {
 	TriggerMode string `yaml:"triggerMode" default:"head"`
 	// IntervalSeconds is the polling interval in seconds (used when TriggerMode is "interval").
 	IntervalSeconds int `yaml:"intervalSeconds" default:"12"`
+}
+
+// Validate checks the state size trigger settings.
+func (c *StateSizeConfig) Validate() error {
+	switch c.TriggerMode {
+	case StateSizeTriggerHead, StateSizeTriggerBlock, StateSizeTriggerInterval:
+	default:
+		return fmt.Errorf("triggerMode must be %q, %q or %q, got %q", StateSizeTriggerHead, StateSizeTriggerBlock, StateSizeTriggerInterval, c.TriggerMode)
+	}
+
+	if c.TriggerMode == StateSizeTriggerInterval && c.IntervalSeconds <= 0 {
+		return fmt.Errorf("intervalSeconds must be positive, got %d", c.IntervalSeconds)
+	}
+
+	return nil
 }
 
 // DebugStateSizeResponse represents the response from debug_stateSize RPC call.

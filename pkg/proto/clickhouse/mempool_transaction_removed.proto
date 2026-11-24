@@ -1,0 +1,192 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Each row is a transaction that left a sentry execution client transaction pool without being included in a block, found by diffing successive txpool_content snapshots. Included transactions are not recorded.
+
+message MempoolTransactionRemoved {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // When the sentry found the transaction gone from its execution client transaction pool
+  int64 event_date_time = 12;
+  // When the transaction was first in a txpool_content snapshot from this sentry
+  int64 first_seen_date_time = 13;
+  // When the transaction was last in a txpool_content snapshot from this sentry
+  int64 last_seen_date_time = 14;
+  // The hash of the transaction
+  string hash = 15;
+  // The address of the account that sent the transaction
+  string from = 16;
+  // The address of the transaction recipient, NULL for contract creations
+  google.protobuf.StringValue to = 17;
+  // The nonce of the transaction
+  uint64 nonce = 18;
+  // The type of the transaction
+  uint32 type = 19;
+  // The maximum gas provided for the transaction execution
+  uint64 gas = 20;
+  // The priority fee (tip) cap in wei, equal to the gas price for legacy and access list transactions
+  string gas_tip_cap = 21;
+  // The max fee cap in wei, equal to the gas price for legacy and access list transactions
+  string gas_fee_cap = 22;
+  // The max fee per blob gas in wei, NULL for non-blob transactions
+  google.protobuf.StringValue blob_gas_fee_cap = 23;
+  // Why it left the pool: replaced (another transaction with the same sender and nonce is in the pool), nonce_consumed (the sender nonce moved past it on chain with another transaction) or dropped (neither, for example evicted or expired)
+  string reason = 24;
+  // The txpool_content section that last held it: pending or queued
+  string pool = 25;
+  // The hash of the transaction with the same sender and nonce that replaced it, set when the reason is replaced
+  google.protobuf.StringValue replacement_hash = 26;
+  // The priority fee (tip) cap in wei of the replacing transaction, set when the reason is replaced
+  google.protobuf.StringValue replacement_gas_tip_cap = 27;
+  // The max fee cap in wei of the replacing transaction, set when the reason is replaced
+  google.protobuf.StringValue replacement_gas_fee_cap = 28;
+  // The sender nonce at the latest block when it was found gone, NULL when the reason is replaced
+  google.protobuf.UInt64Value account_nonce = 29;
+  // Name of the client that generated the event
+  string meta_client_name = 30;
+  // Version of the client that generated the event
+  string meta_client_version = 31;
+  // Implementation of the client that generated the event
+  string meta_client_implementation = 32;
+  // Operating system of the client that generated the event
+  string meta_client_os = 33;
+  // IP address of the client that generated the event
+  google.protobuf.StringValue meta_client_ip = 34;
+  // City of the client that generated the event
+  string meta_client_geo_city = 35;
+  // Country of the client that generated the event
+  string meta_client_geo_country = 36;
+  // Country code of the client that generated the event
+  string meta_client_geo_country_code = 37;
+  // Continent code of the client that generated the event
+  string meta_client_geo_continent_code = 38;
+  // Longitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_longitude = 39;
+  // Latitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_latitude = 40;
+  // Autonomous system number of the client that generated the event
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 41;
+  // Autonomous system organization of the client that generated the event
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 42;
+  // Ethereum network name
+  string meta_network_name = 43;
+}
+
+// Request for listing mempool_transaction_removed records
+message ListMempoolTransactionRemovedRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by event_date_time - When the sentry found the transaction gone from its execution client transaction pool (ORDER BY column 2 - optional)
+  Int64Filter event_date_time = 2;
+
+  // Filter by meta_client_name - Name of the client that generated the event (ORDER BY column 3 - optional)
+  StringFilter meta_client_name = 3;
+
+  // Filter by hash - The hash of the transaction (ORDER BY column 4 - optional)
+  StringFilter hash = 4;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by first_seen_date_time - When the transaction was first in a txpool_content snapshot from this sentry (optional)
+  Int64Filter first_seen_date_time = 6;
+  // Filter by last_seen_date_time - When the transaction was last in a txpool_content snapshot from this sentry (optional)
+  Int64Filter last_seen_date_time = 7;
+  // Filter by from - The address of the account that sent the transaction (optional)
+  StringFilter from = 8;
+  // Filter by to - The address of the transaction recipient, NULL for contract creations (optional)
+  NullableStringFilter to = 9;
+  // Filter by nonce - The nonce of the transaction (optional)
+  UInt64Filter nonce = 10;
+  // Filter by type - The type of the transaction (optional)
+  UInt32Filter type = 11;
+  // Filter by gas - The maximum gas provided for the transaction execution (optional)
+  UInt64Filter gas = 12;
+  // Filter by gas_tip_cap - The priority fee (tip) cap in wei, equal to the gas price for legacy and access list transactions (optional)
+  StringFilter gas_tip_cap = 13;
+  // Filter by gas_fee_cap - The max fee cap in wei, equal to the gas price for legacy and access list transactions (optional)
+  StringFilter gas_fee_cap = 14;
+  // Filter by blob_gas_fee_cap - The max fee per blob gas in wei, NULL for non-blob transactions (optional)
+  NullableStringFilter blob_gas_fee_cap = 15;
+  // Filter by reason - Why it left the pool: replaced (another transaction with the same sender and nonce is in the pool), nonce_consumed (the sender nonce moved past it on chain with another transaction) or dropped (neither, for example evicted or expired) (optional)
+  StringFilter reason = 16;
+  // Filter by pool - The txpool_content section that last held it: pending or queued (optional)
+  StringFilter pool = 17;
+  // Filter by replacement_hash - The hash of the transaction with the same sender and nonce that replaced it, set when the reason is replaced (optional)
+  NullableStringFilter replacement_hash = 18;
+  // Filter by replacement_gas_tip_cap - The priority fee (tip) cap in wei of the replacing transaction, set when the reason is replaced (optional)
+  NullableStringFilter replacement_gas_tip_cap = 19;
+  // Filter by replacement_gas_fee_cap - The max fee cap in wei of the replacing transaction, set when the reason is replaced (optional)
+  NullableStringFilter replacement_gas_fee_cap = 20;
+  // Filter by account_nonce - The sender nonce at the latest block when it was found gone, NULL when the reason is replaced (optional)
+  NullableUInt64Filter account_nonce = 21;
+  // Filter by meta_client_version - Version of the client that generated the event (optional)
+  StringFilter meta_client_version = 22;
+  // Filter by meta_client_implementation - Implementation of the client that generated the event (optional)
+  StringFilter meta_client_implementation = 23;
+  // Filter by meta_client_os - Operating system of the client that generated the event (optional)
+  StringFilter meta_client_os = 24;
+  // Filter by meta_client_ip - IP address of the client that generated the event (optional)
+  NullableStringFilter meta_client_ip = 25;
+  // Filter by meta_client_geo_city - City of the client that generated the event (optional)
+  StringFilter meta_client_geo_city = 26;
+  // Filter by meta_client_geo_country - Country of the client that generated the event (optional)
+  StringFilter meta_client_geo_country = 27;
+  // Filter by meta_client_geo_country_code - Country code of the client that generated the event (optional)
+  StringFilter meta_client_geo_country_code = 28;
+  // Filter by meta_client_geo_continent_code - Continent code of the client that generated the event (optional)
+  StringFilter meta_client_geo_continent_code = 29;
+  // Filter by meta_client_geo_longitude - Longitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 30;
+  // Filter by meta_client_geo_latitude - Latitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 31;
+  // Filter by meta_client_geo_autonomous_system_number - Autonomous system number of the client that generated the event (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 32;
+  // Filter by meta_client_geo_autonomous_system_organization - Autonomous system organization of the client that generated the event (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 33;
+
+  // The maximum number of mempool_transaction_removed to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 34;
+  // A page token, received from a previous `ListMempoolTransactionRemoved` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 35;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 36;
+}
+
+// Response for listing mempool_transaction_removed records
+message ListMempoolTransactionRemovedResponse {
+  // The list of mempool_transaction_removed.
+  repeated MempoolTransactionRemoved mempool_transaction_removed = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single mempool_transaction_removed record by primary key
+message GetMempoolTransactionRemovedRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single mempool_transaction_removed record
+message GetMempoolTransactionRemovedResponse {
+  MempoolTransactionRemoved item = 1;
+}
+
+// Query mempool_transaction_removed data
+service MempoolTransactionRemovedService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListMempoolTransactionRemovedRequest) returns (ListMempoolTransactionRemovedResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetMempoolTransactionRemovedRequest) returns (GetMempoolTransactionRemovedResponse);
+}

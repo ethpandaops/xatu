@@ -1,7 +1,11 @@
-FROM golang:1.26.8 AS builder
+FROM golang:1.26.11 AS builder
 WORKDIR /src
 COPY go.sum go.mod ./
-RUN go mod download
+# Module and build caches live in cache mounts, not layers, so a source change
+# recompiles only the packages it touched. CI persists them across runs with
+# buildkit-cache-dance (see .github/workflows/build-cache.yaml).
+RUN --mount=type=cache,target=/go/pkg/mod \
+  go mod download
 COPY . .
 # Version metadata is injected at release time (see .github/workflows/goreleaser.yaml);
 # local/CI builds fall back to dev defaults. GOOS/GOARCH come from BuildKit's
@@ -11,7 +15,9 @@ ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION=dev
 ARG GIT_COMMIT=unknown
-RUN go build \
+RUN --mount=type=cache,target=/go/pkg/mod \
+  --mount=type=cache,target=/root/.cache/go-build \
+  go build \
   -ldflags="-s -w \
   -X github.com/ethpandaops/xatu/pkg/proto/xatu.Release=${VERSION} \
   -X github.com/ethpandaops/xatu/pkg/proto/xatu.GitCommit=${GIT_COMMIT} \
@@ -34,9 +40,26 @@ RUN go build \
 # 1.97.0. The floating rust:1 tag only bit when a new stable invalidated the
 # cryo-buildcache layer. Unpin (or bump) together with CRYO_GIT_REF once
 # cryo's lockfile moves to an ethnum that builds on current stable.
+# The lockfile's alloy-eip7702 0.4.1 decodes an authorization chain_id as u64 and
+# fails the whole block on a larger one; the patch saturates it (cryo never outputs it).
+# cryo's `blocks` dataset has no blob gas columns; the second patch adds
+# blob_gas_used and excess_blob_gas.
 FROM rust:1.96-bookworm AS cryo-builder
 ARG CRYO_GIT_REF=559b65455d7ef6b03e8e9e96a0e50fd4fe8a9c86
-RUN cargo install --git https://github.com/paradigmxyz/cryo --rev "${CRYO_GIT_REF}" --locked cryo_cli
+COPY deploy/cryo/alloy-eip7702-uint256-auth-chain-id.patch /tmp/alloy-eip7702.patch
+COPY deploy/cryo/cryo-blocks-blob-gas.patch /tmp/cryo-blocks-blob-gas.patch
+RUN git clone --quiet https://github.com/paradigmxyz/cryo /src/cryo \
+  && git -C /src/cryo checkout --quiet "${CRYO_GIT_REF}" \
+  && cd /src/cryo \
+  && git apply /tmp/cryo-blocks-blob-gas.patch \
+  && cargo fetch --locked \
+  && cp -R "${CARGO_HOME}"/registry/src/*/alloy-eip7702-0.4.1 alloy-eip7702 \
+  && git apply --directory=alloy-eip7702 /tmp/alloy-eip7702.patch \
+  && printf '\n[patch.crates-io]\nalloy-eip7702 = { path = "alloy-eip7702" }\n' >> Cargo.toml \
+  && sed -i '/^name = "alloy-eip7702"$/,/^$/{/^source = /d;/^checksum = /d}' Cargo.lock \
+  && cargo build --release --locked -p cryo_cli \
+  && install -m 0755 target/release/cryo /usr/local/cargo/bin/cryo \
+  && rm -rf /src/cryo
 
 FROM ubuntu:latest
 RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-recommends \

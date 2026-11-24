@@ -32,12 +32,16 @@ func TestSnapshot_beacon_api_eth_v2_beacon_block(t *testing.T) {
 				Message: &ethv2.EventBlockV2_Phase0Block{
 					Phase0Block: &ethv1.BeaconBlockV2{
 						Slot: wrapperspb.UInt64(100),
+						Body: &ethv1.BeaconBlockBody{
+							Graffiti: "0x4745613537394c48366462360000000000000000000000000000000000000000",
+						},
 					},
 				},
 			},
 		},
 	}, 1, map[string]any{
 		"slot":              uint32(100),
+		"graffiti_text":     "GEa579LH6db6",
 		"meta_client_name":  "test-client",
 		"meta_network_name": "mainnet",
 	})

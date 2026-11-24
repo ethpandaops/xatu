@@ -32,6 +32,7 @@ type canonicalBeaconElaboratedAttestationBatch struct {
 	TargetEpochStartDateTime proto.ColDateTime
 	TargetRoot               route.SafeColFixedStr
 	MetaNetworkName          proto.ColStr
+	PayloadPresent           *proto.ColNullable[bool]
 	rows                     int
 }
 
@@ -42,6 +43,7 @@ func newcanonicalBeaconElaboratedAttestationBatch() *canonicalBeaconElaboratedAt
 		BeaconBlockRoot: func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		SourceRoot:      func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
 		TargetRoot:      func() route.SafeColFixedStr { var c route.SafeColFixedStr; c.SetSize(66); return c }(),
+		PayloadPresent:  new(proto.ColBool).Nullable(),
 	}
 }
 
@@ -81,6 +83,7 @@ func (b *canonicalBeaconElaboratedAttestationBatch) Input() proto.Input {
 		{Name: "target_epoch_start_date_time", Data: &b.TargetEpochStartDateTime},
 		{Name: "target_root", Data: &b.TargetRoot},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
+		{Name: "payload_present", Data: b.PayloadPresent},
 	}
 }
 
@@ -106,6 +109,7 @@ func (b *canonicalBeaconElaboratedAttestationBatch) Reset() {
 	b.TargetEpochStartDateTime.Reset()
 	b.TargetRoot.Reset()
 	b.MetaNetworkName.Reset()
+	b.PayloadPresent.Reset()
 	b.rows = 0
 }
 
@@ -114,7 +118,7 @@ func (b *canonicalBeaconElaboratedAttestationBatch) Snapshot() []map[string]any 
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 21)
+		row := make(map[string]any, 22)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["block_slot"] = b.BlockSlot.Row(i)
 		row["block_slot_start_date_time"] = b.BlockSlotStartDateTime.Row(i).Unix()
@@ -136,6 +140,11 @@ func (b *canonicalBeaconElaboratedAttestationBatch) Snapshot() []map[string]any 
 		row["target_epoch_start_date_time"] = b.TargetEpochStartDateTime.Row(i).Unix()
 		row["target_root"] = string(b.TargetRoot.Row(i))
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
+		if v := b.PayloadPresent.Row(i); v.Set {
+			row["payload_present"] = v.Value
+		} else {
+			row["payload_present"] = nil
+		}
 		out[i] = row
 	}
 

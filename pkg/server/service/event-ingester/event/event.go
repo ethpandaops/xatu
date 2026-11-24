@@ -44,6 +44,8 @@ var (
 	TypeBeaconETHV1EventsContributionAndProofV2 Type = v1.EventsContributionAndProofV2Type
 	TypeMempoolTransaction                      Type = mempool.TransactionType
 	TypeMempoolTransactionV2                    Type = mempool.TransactionV2Type
+	TypeMempoolTransactionRemoved               Type = mempool.TransactionRemovedType
+	TypeMempoolBlobTransactionAnnouncement      Type = mempool.BlobTransactionAnnouncementType
 	TypeExecutionStateSize                      Type = execution.ExecutionStateSizeType
 	TypeExecutionEngineNewPayload               Type = execution.EngineNewPayloadType
 	TypeExecutionEngineGetBlobs                 Type = execution.EngineGetBlobsType
@@ -93,6 +95,7 @@ var (
 	TypeLibP2PTraceDropRPC                      Type = Type(libp2p.TraceDropRPCType)
 	TypeLibP2PTraceHandleStatus                 Type = Type(libp2p.TraceHandleStatusType)
 	TypeLibP2PTraceHandleMetadata               Type = Type(libp2p.TraceHandleMetadataType)
+	TypeLibP2PTraceGoodbye                      Type = Type(libp2p.TraceGoodbyeType)
 	TypeLibP2PTraceGossipSubBeaconBlock         Type = Type(libp2p.TraceGossipSubBeaconBlockType)
 	TypeLibP2PTraceGossipSubBeaconAttestation   Type = Type(libp2p.TraceGossipSubBeaconAttestationType)
 	TypeLibP2PTraceGossipSubAggregateAndProof   Type = Type(libp2p.TraceGossipSubAggregateAndProofType)
@@ -122,6 +125,8 @@ var (
 	TypeBeaconEthV2BeaconBlockExecutionRequestConsolidation Type = v2.BeaconBlockExecutionRequestConsolidationType
 	TypeBeaconEthV1BeaconBlockReward                        Type = v1.BlockRewardType
 	TypeBeaconEthV1BeaconAttestationReward                  Type = v1.BeaconAttestationRewardType
+	TypeBeaconEthV1BeaconPhase0AttestationReward            Type = v1.BeaconPhase0AttestationRewardType
+	TypeBeaconEthV1BeaconPhase0BlockReward                  Type = v1.BeaconPhase0BlockRewardType
 	TypeBeaconEthV1BeaconSyncCommitteeReward                Type = v1.BeaconSyncCommitteeRewardType
 	TypeBeaconETHV1BeaconStateRandao                        Type = Type(v1.RandaoType)
 	TypeBeaconETHV1BeaconStateFinalityCheckpoint            Type = Type(v1.FinalityCheckpointType)
@@ -140,6 +145,8 @@ var (
 	TypeBeaconEthV2BeaconBlockExecutionRequestBuilderDeposit Type = v2.BeaconBlockExecutionRequestBuilderDepositType
 	TypeBeaconEthV2BeaconBlockExecutionRequestBuilderExit    Type = v2.BeaconBlockExecutionRequestBuilderExitType
 	TypeBeaconEthV2BeaconBlockAccessListSummary              Type = v2.BeaconBlockAccessListSummaryType
+
+	TypeBeaconEthV2BeaconBlockGraffiti Type = v2.BeaconBlockGraffitiType
 
 	// EIP-7732 ePBS: Sentry SSE events
 	TypeBeaconETHV1EventsExecutionPayload          Type = v1.EventsExecutionPayloadType
@@ -164,6 +171,11 @@ var (
 	TypeBeaconSyntheticPayloadStatusResolved           Type = synthetic.PayloadStatusResolvedType
 	TypeBeaconSyntheticBuilderPendingPaymentSettlement Type = synthetic.BuilderPendingPaymentSettlementType
 	TypeBeaconSyntheticPayloadAttestationProcessed     Type = synthetic.PayloadAttestationProcessedType
+
+	// Gossipsub partial messages extension: cell-level data column dissemination.
+	TypeLibP2PTraceGossipSubPartialDataColumn        Type = Type(libp2p.TraceGossipSubPartialDataColumnType)
+	TypeLibP2PTraceDataColumnCompleted               Type = Type(libp2p.TraceDataColumnCompletedType)
+	TypeLibP2PTraceGossipSubPartialDataColumnOutcome Type = Type(libp2p.TraceGossipSubPartialDataColumnOutcomeType)
 )
 
 type Event interface {
@@ -257,6 +269,12 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	router.RegisterHandler(TypeMempoolTransactionV2, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return mempool.NewTransactionV2(router.log, event), nil
 	})
+	router.RegisterHandler(TypeMempoolTransactionRemoved, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return mempool.NewTransactionRemoved(router.log, event), nil
+	})
+	router.RegisterHandler(TypeMempoolBlobTransactionAnnouncement, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return mempool.NewBlobTransactionAnnouncement(router.log, event), nil
+	})
 	router.RegisterHandler(TypeExecutionStateSize, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return execution.NewExecutionStateSize(router.log, event), nil
 	})
@@ -323,6 +341,12 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	router.RegisterHandler(TypeBeaconEthV1BeaconAttestationReward, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewBeaconAttestationReward(router.log, event), nil
 	})
+	router.RegisterHandler(TypeBeaconEthV1BeaconPhase0AttestationReward, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconPhase0AttestationReward(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV1BeaconPhase0BlockReward, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v1.NewBeaconPhase0BlockReward(router.log, event), nil
+	})
 	router.RegisterHandler(TypeBeaconEthV1BeaconSyncCommitteeReward, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v1.NewBeaconSyncCommitteeReward(router.log, event), nil
 	})
@@ -361,6 +385,9 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	})
 	router.RegisterHandler(TypeBeaconEthV2BeaconBlockAccessListSummary, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v2.NewBeaconBlockAccessListSummary(router.log, event), nil
+	})
+	router.RegisterHandler(TypeBeaconEthV2BeaconBlockGraffiti, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return v2.NewBeaconBlockGraffiti(router.log, event), nil
 	})
 	router.RegisterHandler(TypeBeaconEthV2BeaconBlockExecutionRequestBuilderDeposit, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return v2.NewBeaconBlockExecutionRequestBuilderDeposit(router.log, event), nil
@@ -534,6 +561,9 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	router.RegisterHandler(TypeLibP2PTraceHandleMetadata, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceHandleMetadata(router.log, event), nil
 	})
+	router.RegisterHandler(TypeLibP2PTraceGoodbye, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGoodbye(router.log, event), nil
+	})
 	router.RegisterHandler(TypeLibP2PTraceGossipSubBeaconBlock, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceGossipSubBeaconBlock(router.log, event), nil
 	})
@@ -545,6 +575,15 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	})
 	router.RegisterHandler(TypeLibP2PTraceGossipSubMessagePayload, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceGossipSubMessagePayload(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceGossipSubPartialDataColumn, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGossipSubPartialDataColumn(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceDataColumnCompleted, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceDataColumnCompleted(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceGossipSubPartialDataColumnOutcome, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGossipSubPartialDataColumnOutcome(router.log, event), nil
 	})
 	router.RegisterHandler(TypeLibP2PTraceSyntheticHeartbeat, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceSyntheticHeartbeat(router.log, event, router.geoipProvider), nil

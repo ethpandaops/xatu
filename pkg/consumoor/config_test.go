@@ -27,6 +27,8 @@ func validChGoConfig() clickhouse.ChGoConfig {
 		ConnMaxIdleTime:     10 * time.Minute,
 		HealthCheckPeriod:   30 * time.Second,
 		PoolMetricsInterval: 15 * time.Second,
+		GroupRetryBaseDelay: time.Second,
+		GroupRetryMaxDelay:  30 * time.Second,
 	}
 }
 
@@ -127,6 +129,38 @@ func TestClickHouseConfigValidateChGo(t *testing.T) {
 		err := cfg.Validate()
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "unsupported value type")
+	})
+}
+
+func TestConfigValidateGroupRetryDelays(t *testing.T) {
+	validConfig := func() *Config {
+		return &Config{
+			MetricsAddr: ":9090",
+			Kafka:       *validKafkaConfig(),
+			ClickHouse:  *validClickHouseConfig(),
+		}
+	}
+
+	t.Run("accepts positive delays", func(t *testing.T) {
+		require.NoError(t, validConfig().Validate())
+	})
+
+	t.Run("rejects zero base delay", func(t *testing.T) {
+		cfg := validConfig()
+		cfg.ClickHouse.ChGo.GroupRetryBaseDelay = 0
+
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "groupRetryBaseDelay must be > 0")
+	})
+
+	t.Run("rejects zero max delay", func(t *testing.T) {
+		cfg := validConfig()
+		cfg.ClickHouse.ChGo.GroupRetryMaxDelay = 0
+
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "groupRetryMaxDelay must be > 0")
 	})
 }
 

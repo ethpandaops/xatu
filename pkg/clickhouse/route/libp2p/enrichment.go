@@ -4,6 +4,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ClickHouse/ch-go/proto"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/ethpandaops/xatu/pkg/clickhouse/route"
 	libp2pProto "github.com/ethpandaops/xatu/pkg/proto/libp2p"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -95,7 +98,10 @@ func parseAgentVersion(raw string) agentVersion {
 		parsed.Version = parts[1]
 	}
 
-	if len(parts) > 2 && parsed.Implementation != "prysm" {
+	// The third segment is the platform for most clients, but a commit for
+	// some (Prysm's full sha, Lodestar's short one); it is kept either way so
+	// versions can be resolved to release commits.
+	if len(parts) > 2 {
 		parsed.Platform = parts[2]
 	}
 
@@ -181,6 +187,15 @@ func peerIDFromMetadata(
 	}
 
 	return traceMeta.GetPeerId().GetValue()
+}
+
+// nullableBool maps an unset wrapped bool to NULL rather than false.
+func nullableBool(value *wrapperspb.BoolValue) proto.Nullable[bool] {
+	if value == nil {
+		return proto.Nullable[bool]{}
+	}
+
+	return proto.NewNullable(value.GetValue())
 }
 
 // wrappedStringValue extracts the string value from a wrapped string proto.

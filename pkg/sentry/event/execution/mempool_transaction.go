@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -122,6 +121,7 @@ func (e *MempoolTransaction) getAdditionalData(ctx context.Context) (*xatu.Clien
 	var (
 		to   string
 		from string
+		hash = e.tx.Hash().String()
 	)
 
 	if e.tx.To() != nil {
@@ -136,9 +136,15 @@ func (e *MempoolTransaction) getAdditionalData(ctx context.Context) (*xatu.Clien
 	// - The execution client has already verified the sender address when accepting the tx
 	// - The pre-populated "from" address comes directly from the client's txpool_content
 	if e.clientMeta != nil && e.clientMeta.AdditionalData != nil {
-		if metaTx, ok := e.clientMeta.AdditionalData.(*xatu.ClientMeta_MempoolTransactionV2); ok {
-			if metaTx.MempoolTransactionV2 != nil && metaTx.MempoolTransactionV2.From != "" {
-				from = metaTx.MempoolTransactionV2.From
+		if metaTx, ok := e.clientMeta.GetAdditionalData().(*xatu.ClientMeta_MempoolTransactionV2); ok {
+			if f := metaTx.MempoolTransactionV2.GetFrom(); f != "" {
+				from = f
+			}
+
+			// The hash the execution client reported is authoritative: a transaction rebuilt from partial JSON
+			// hashes differently.
+			if h := metaTx.MempoolTransactionV2.GetHash(); h != "" {
+				hash = h
 			}
 		}
 	}
@@ -162,7 +168,7 @@ func (e *MempoolTransaction) getAdditionalData(ctx context.Context) (*xatu.Clien
 		GasTipCap:    e.tx.GasTipCap().String(),
 		GasFeeCap:    e.tx.GasFeeCap().String(),
 		Value:        e.tx.Value().String(),
-		Hash:         e.tx.Hash().String(),
+		Hash:         hash,
 		Size:         fmt.Sprintf("%d", e.tx.Size()),
 		CallDataSize: fmt.Sprintf("%d", len(e.tx.Data())),
 		Type:         wrapperspb.UInt32(uint32(e.tx.Type())),
@@ -185,6 +191,8 @@ func (e *MempoolTransaction) getAdditionalData(ctx context.Context) (*xatu.Clien
 		extra.BlobGasFeeCap = e.tx.BlobGasFeeCap().String()
 		extra.BlobHashes = blobHashes
 
+		// Execution clients serve pooled blob transactions over JSON-RPC without their sidecars, so the sidecar
+		// sizes are only set when one is attached.
 		if sidecars != nil {
 			// When iterating, use the index to access the sidecar.
 			// These aren't pointers, so we'll be copying a shit ton of data otherwise.
@@ -193,12 +201,10 @@ func (e *MempoolTransaction) getAdditionalData(ctx context.Context) (*xatu.Clien
 				sidecarsSize += len(sidecar)
 				sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(sidecar, 4)
 			}
-		} else {
-			return nil, errors.Errorf("no sidecars found for a type 3 transaction %s", e.tx.Hash().String())
-		}
 
-		extra.BlobSidecarsSize = fmt.Sprint(sidecarsSize)
-		extra.BlobSidecarsEmptySize = fmt.Sprint(sidecarsEmptySize)
+			extra.BlobSidecarsSize = fmt.Sprint(sidecarsSize)
+			extra.BlobSidecarsEmptySize = fmt.Sprint(sidecarsEmptySize)
+		}
 	}
 
 	return extra, nil

@@ -123,7 +123,7 @@ func (b *DepositDeriver) run(rctx context.Context) {
 				}
 
 				// Process the epoch
-				events, err := b.processEpoch(ctx, position.Next)
+				events, err := iterator.DeriveEpochs(ctx, position.Epochs(), b.processEpoch)
 				if err != nil {
 					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
@@ -141,7 +141,7 @@ func (b *DepositDeriver) run(rctx context.Context) {
 				}
 
 				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, position.LastEpoch(), position.Direction); err != nil {
 					return "", err
 				}
 
@@ -256,6 +256,11 @@ func (b *DepositDeriver) processSlot(ctx context.Context, slot phase0.Slot) ([]*
 
 func (b *DepositDeriver) getDeposits(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.DepositV2, error) {
 	deposits := []*xatuethv1.DepositV2{}
+
+	// EIP-8015 removes deposits from Heze block bodies.
+	if block.Version >= spec.DataVersionHeze {
+		return deposits, nil
+	}
 
 	dps, err := block.Deposits()
 	if err != nil {

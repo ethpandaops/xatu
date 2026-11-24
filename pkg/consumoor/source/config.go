@@ -6,6 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/creasty/defaults"
+	"gopkg.in/yaml.v3"
+
 	xtls "github.com/ethpandaops/xatu/pkg/clickhouse/tls"
 )
 
@@ -149,6 +152,17 @@ type SASLConfig struct {
 	Password string `yaml:"password"`
 	// PasswordFile is the path to a file containing the SASL password.
 	PasswordFile string `yaml:"passwordFile"`
+}
+
+// UnmarshalYAML applies the defaults before decoding, since a block the YAML creates is nil when the parent's defaults run.
+func (c *SASLConfig) UnmarshalYAML(value *yaml.Node) error {
+	type plain SASLConfig
+
+	if err := defaults.Set((*plain)(c)); err != nil {
+		return err
+	}
+
+	return value.Decode((*plain)(c))
 }
 
 // Validate checks the Kafka configuration for errors.

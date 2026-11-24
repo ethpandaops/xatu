@@ -44,6 +44,21 @@ func NewEventsBlock(log observability.ContextualLogger, event *eth2v1.BlockEvent
 }
 
 func (e *EventsBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error) {
+	blockV2 := &xatuethv1.EventBlockV2{
+		Slot:                &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
+		Block:               xatuethv1.RootAsString(e.event.Block),
+		ExecutionOptimistic: e.event.ExecutionOptimistic,
+	}
+
+	// builder_index and block_hash are only sent from Gloas onwards.
+	if e.event.BuilderIndex != nil {
+		blockV2.BuilderIndex = &wrapperspb.UInt64Value{Value: *e.event.BuilderIndex}
+	}
+
+	if e.event.BlockHash != nil {
+		blockV2.BlockHash = e.event.BlockHash.String()
+	}
+
 	decoratedEvent := &xatu.DecoratedEvent{
 		Event: &xatu.Event{
 			Name:     xatu.Event_BEACON_API_ETH_V1_EVENTS_BLOCK_V2,
@@ -54,11 +69,7 @@ func (e *EventsBlock) Decorate(ctx context.Context) (*xatu.DecoratedEvent, error
 			Client: e.clientMeta,
 		},
 		Data: &xatu.DecoratedEvent_EthV1EventsBlockV2{
-			EthV1EventsBlockV2: &xatuethv1.EventBlockV2{
-				Slot:                &wrapperspb.UInt64Value{Value: uint64(e.event.Slot)},
-				Block:               xatuethv1.RootAsString(e.event.Block),
-				ExecutionOptimistic: e.event.ExecutionOptimistic,
-			},
+			EthV1EventsBlockV2: blockV2,
 		},
 	}
 

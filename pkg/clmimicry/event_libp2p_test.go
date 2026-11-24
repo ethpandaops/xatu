@@ -527,6 +527,62 @@ func Test_handleRecvRPCEvent(t *testing.T) {
 			},
 		},
 		{
+			name: "Meta subscriptions with partial messages flags",
+			config: &Config{
+				Events: EventConfig{
+					RecvRPCEnabled:             true,
+					RpcMetaSubscriptionEnabled: true,
+				},
+			},
+			event: &TraceEvent{
+				Type:      "RecvRPC",
+				PeerID:    peerID,
+				Timestamp: time.Now(),
+				Payload: &RpcMeta{
+					PeerID: peerID,
+					Subscriptions: []RpcMetaSub{
+						{
+							Subscribe:              true,
+							TopicID:                "/eth2/fc90fcde/data_column_sidecar_3/ssz_snappy",
+							RequestsPartial:        boolPtr(true),
+							SupportsSendingPartial: boolPtr(false),
+						},
+						{
+							Subscribe: true,
+							TopicID:   "/eth2/fc90fcde/beacon_block/ssz_snappy",
+						},
+					},
+				},
+			},
+			expectError: false,
+			setupMockCalls: func(mockSink *mock.MockSink) {
+				expectEventsWithValidation(t, mockSink, func(t *testing.T, events []*xatu.DecoratedEvent) {
+					t.Helper()
+
+					subs := make(map[string]*libp2p.SubMetaItem)
+
+					for _, e := range events {
+						if e.GetEvent().GetName() == xatu.Event_LIBP2P_TRACE_RPC_META_SUBSCRIPTION {
+							sub := e.GetLibp2PTraceRpcMetaSubscription()
+							subs[sub.GetTopicId().GetValue()] = sub
+						}
+					}
+
+					require.Len(t, subs, 2)
+
+					partial := subs["/eth2/fc90fcde/data_column_sidecar_3/ssz_snappy"]
+					require.NotNil(t, partial.GetRequestsPartial())
+					assert.True(t, partial.GetRequestsPartial().GetValue())
+					require.NotNil(t, partial.GetSupportsSendingPartial())
+					assert.False(t, partial.GetSupportsSendingPartial().GetValue())
+
+					unknown := subs["/eth2/fc90fcde/beacon_block/ssz_snappy"]
+					assert.Nil(t, unknown.GetRequestsPartial())
+					assert.Nil(t, unknown.GetSupportsSendingPartial())
+				})
+			},
+		},
+		{
 			name: "Meta messages",
 			config: &Config{
 				Events: EventConfig{

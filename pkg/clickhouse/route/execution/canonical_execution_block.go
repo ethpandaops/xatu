@@ -64,6 +64,10 @@ func (b *canonicalExecutionBlockBatch) FlattenTo(event *xatu.DecoratedEvent) err
 		b.ExtraData.Append(ceNullStr(blk.GetExtraData()))
 		b.ExtraDataString.Append(ceNullStr(blk.GetExtraDataString()))
 		b.BaseFeePerGas.Append(ceNullU64(blk.GetBaseFeePerGas()))
+		b.ParentHash.Append(ceNullFixedStr(blk.GetParentHash()))
+		b.StateRoot.Append(ceNullFixedStr(blk.GetStateRoot()))
+		b.BlobGasUsed.Append(ceNullU64(blk.GetBlobGasUsed()))
+		b.ExcessBlobGas.Append(ceNullU64(blk.GetExcessBlobGas()))
 		b.MetaNetworkName.Append(network)
 
 		b.rows++
@@ -81,6 +85,15 @@ func ceNullStr(v *wrapperspb.StringValue) proto.Nullable[string] {
 	}
 
 	return proto.NewNullable(v.GetValue())
+}
+
+// ceNullFixedStr converts a protobuf StringValue into a nullable ch-go FixedString value.
+func ceNullFixedStr(v *wrapperspb.StringValue) proto.Nullable[[]byte] {
+	if v == nil || v.GetValue() == "" {
+		return proto.Nullable[[]byte]{}
+	}
+
+	return proto.NewNullable([]byte(v.GetValue()))
 }
 
 // ceNullU64 converts a protobuf UInt64Value into a nullable ch-go uint64 value.

@@ -41,6 +41,8 @@ type Libp2PRpcMetaSubscriptionRow struct {
 	MetaClientGeoAutonomousSystemNumber *uint32 `ch:"meta_client_geo_autonomous_system_number" json:"meta_client_geo_autonomous_system_number"`
 	MetaClientGeoAutonomousSystemOrganization *string `ch:"meta_client_geo_autonomous_system_organization" json:"meta_client_geo_autonomous_system_organization"`
 	MetaNetworkName string `ch:"meta_network_name" json:"meta_network_name"`
+	RequestsPartial *bool `ch:"requests_partial" json:"requests_partial"`
+	SupportsSendingPartial *bool `ch:"supports_sending_partial" json:"supports_sending_partial"`
 }
 
 // TableName returns the ClickHouse table this row maps to.
@@ -87,5 +89,11 @@ func (r *Libp2PRpcMetaSubscriptionRow) ToProto() *Libp2PRpcMetaSubscription {
 		p.MetaClientGeoAutonomousSystemOrganization = wrapperspb.String(*r.MetaClientGeoAutonomousSystemOrganization)
 	}
 	p.MetaNetworkName = r.MetaNetworkName
+	if r.RequestsPartial != nil {
+		p.RequestsPartial = wrapperspb.Bool(*r.RequestsPartial)
+	}
+	if r.SupportsSendingPartial != nil {
+		p.SupportsSendingPartial = wrapperspb.Bool(*r.SupportsSendingPartial)
+	}
 	return p
 }

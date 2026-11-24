@@ -47,6 +47,7 @@ type BeaconApiEthV1EventsFastConfirmationRow struct {
 	MetaConsensusVersionMinor string `ch:"meta_consensus_version_minor" json:"meta_consensus_version_minor"`
 	MetaConsensusVersionPatch string `ch:"meta_consensus_version_patch" json:"meta_consensus_version_patch"`
 	MetaConsensusImplementation string `ch:"meta_consensus_implementation" json:"meta_consensus_implementation"`
+	CurrentSlot *uint32 `ch:"current_slot" json:"current_slot"`
 }
 
 // TableName returns the ClickHouse table this row maps to.
@@ -115,5 +116,8 @@ func (r *BeaconApiEthV1EventsFastConfirmationRow) ToProto() *BeaconApiEthV1Event
 	p.MetaConsensusVersionMinor = r.MetaConsensusVersionMinor
 	p.MetaConsensusVersionPatch = r.MetaConsensusVersionPatch
 	p.MetaConsensusImplementation = r.MetaConsensusImplementation
+	if r.CurrentSlot != nil {
+		p.CurrentSlot = wrapperspb.UInt32(*r.CurrentSlot)
+	}
 	return p
 }

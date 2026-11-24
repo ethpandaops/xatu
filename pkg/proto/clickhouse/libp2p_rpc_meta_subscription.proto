@@ -59,6 +59,10 @@ message Libp2pRpcMetaSubscription {
   google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 34;
   // Ethereum network name
   string meta_network_name = 35;
+  // Whether the peer asked to receive gossipsub partial messages on the topic. Null when the tracer cannot see the partial messages subscription options
+  google.protobuf.BoolValue requests_partial = 36;
+  // Whether the peer can send gossipsub partial messages on the topic. Null when the tracer cannot see the partial messages subscription options
+  google.protobuf.BoolValue supports_sending_partial = 37;
 }
 
 // Request for listing libp2p_rpc_meta_subscription records
@@ -118,18 +122,22 @@ message ListLibp2pRpcMetaSubscriptionRequest {
   NullableUInt32Filter meta_client_geo_autonomous_system_number = 24;
   // Filter by meta_client_geo_autonomous_system_organization - Autonomous system organization of the client that generated the event (optional)
   NullableStringFilter meta_client_geo_autonomous_system_organization = 25;
+  // Filter by requests_partial - Whether the peer asked to receive gossipsub partial messages on the topic. Null when the tracer cannot see the partial messages subscription options (optional)
+  NullableBoolFilter requests_partial = 26;
+  // Filter by supports_sending_partial - Whether the peer can send gossipsub partial messages on the topic. Null when the tracer cannot see the partial messages subscription options (optional)
+  NullableBoolFilter supports_sending_partial = 27;
 
   // The maximum number of libp2p_rpc_meta_subscription to return.
   // If unspecified, at most 100 items will be returned.
   // The maximum value is 10000; values above 10000 will be coerced to 10000.
-  int32 page_size = 26;
+  int32 page_size = 28;
   // A page token, received from a previous `ListLibp2pRpcMetaSubscription` call.
   // Provide this to retrieve the subsequent page.
-  string page_token = 27;
+  string page_token = 29;
   // The order of results. Format: comma-separated list of fields.
   // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
   // If unspecified, results will be returned in the default order.
-  string order_by = 28;
+  string order_by = 30;
 }
 
 // Response for listing libp2p_rpc_meta_subscription records

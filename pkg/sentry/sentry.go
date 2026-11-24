@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -54,7 +55,12 @@ type Sentry struct {
 
 	beacon *ethereum.BeaconNode
 
-	execution *execution.Client
+	// execution is the client the execution watchers share; executionMu guards it, executionStops and executionStopped.
+	execution        *execution.Client
+	executionMu      sync.Mutex
+	executionStops   []func() error
+	executionStopped bool
+	stateSizeWatcher atomic.Pointer[execution.StateSizeWatcher]
 
 	clockDrift time.Duration
 
@@ -71,9 +77,17 @@ type Sentry struct {
 	latestForkChoice   *v1.ForkChoice
 	latestForkChoiceMu sync.RWMutex
 
+	// forkChoiceV2RetryAt is when to next try the v2 fork choice endpoint, in
+	// unix nanoseconds, after the beacon node showed it cannot serve v2 (no
+	// endpoint, or a response that does not follow the spec).
+	forkChoiceV2RetryAt atomic.Int64
+
 	preset *Preset
 
+	// shutdownMu guards shutdownFuncs and shuttingDown, since hooks are added from the beacon-ready callback.
+	shutdownMu    sync.Mutex
 	shutdownFuncs []func(context.Context) error
+	shuttingDown  bool
 
 	summary *Summary
 }
@@ -124,6 +138,10 @@ func New(ctx context.Context, log observability.ContextualLogger, config *Config
 		log.WithField("address", overrides.MetricsAddr.Value).WithContext(ctx).Info("Overriding metrics address")
 
 		config.MetricsAddr = overrides.MetricsAddr.Value
+	}
+
+	if err := config.defaultNilSubConfigs(); err != nil {
+		return nil, fmt.Errorf("failed to default config: %w", err)
 	}
 
 	if err := config.Validate(); err != nil {
@@ -833,10 +851,7 @@ func (s *Sentry) Start(ctx context.Context) error {
 
 			event := v1.NewEventsFastConfirmation(
 				s.log,
-				&v1.FastConfirmationData{
-					Slot:  uint64(ev.Slot),
-					Block: xatuethv1.RootAsString(ev.Block),
-				},
+				newFastConfirmationData(ev),
 				now,
 				s.beacon,
 				s.duplicateCache.BeaconETHV1EventsFastConfirmation,
@@ -887,19 +902,8 @@ func (s *Sentry) Start(ctx context.Context) error {
 			return err
 		}
 
-		if err := s.startMempoolTransactionWatcher(ctx); err != nil {
-			// If we can't reach the execution node, we can't start the mempool transaction watcher.
-			// Instead of preventing the sentry from starting, we'll log an error and continue.
-			s.log.WithError(err).WithContext(ctx).Error("failed to start mempool transaction watcher")
-
-			return nil
-		}
-
-		if err := s.startExecutionStateSizeWatcher(ctx); err != nil {
-			s.log.WithError(err).WithContext(ctx).Error("failed to start execution debug state size watcher")
-
-			return err
-		}
+		// An unreachable execution node never stops the sentry; each watcher retries until it starts.
+		s.startExecutionWatchers(ctx)
 
 		return nil
 	})
@@ -922,31 +926,92 @@ func (s *Sentry) Start(ctx context.Context) error {
 		s.log.WithField("network", s.Config.Ethereum.OverrideNetworkName).WithContext(ctx).Info("Overriding network name")
 	}
 
-	if err := s.beacon.Start(ctx); err != nil {
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
+
+	// The beacon node runs until it fails, so watch the signal alongside it; cancelling it stops the event handlers.
+	beaconCtx, stopBeacon := context.WithCancel(ctx)
+	defer stopBeacon()
+
+	beaconErr := make(chan error, 1)
+
+	go func() {
+		beaconErr <- s.beacon.Start(beaconCtx)
+	}()
+
+	select {
+	case err := <-beaconErr:
 		return err
+	case sig := <-signals:
+		s.log.WithContext(ctx).Printf("Caught signal: %v", sig)
 	}
 
-	cancel := make(chan os.Signal, 1)
-	signal.Notify(cancel, syscall.SIGTERM, syscall.SIGINT)
+	stopBeacon()
 
-	sig := <-cancel
-	s.log.WithContext(ctx).Printf("Caught signal: %v", sig)
+	return s.shutdown(ctx)
+}
+
+// shutdownTimeout bounds shutdown below the 300s terminationGracePeriodSeconds sentry pods run with.
+const shutdownTimeout = 4 * time.Minute
+
+// shutdown stops the producers, runs the hooks and flushes the sinks, logging failures so one cannot skip the rest.
+func (s *Sentry) shutdown(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), shutdownTimeout)
+	defer cancel()
+
+	var errs []error
+
+	if err := s.beacon.Node().Stop(ctx); err != nil {
+		errs = append(errs, fmt.Errorf("beacon node: %w", err))
+	}
+
+	if err := s.scheduler.Shutdown(); err != nil {
+		errs = append(errs, fmt.Errorf("scheduler: %w", err))
+	}
+
+	for _, f := range s.takeShutdownFuncs() {
+		if err := f(ctx); err != nil {
+			errs = append(errs, err)
+		}
+	}
 
 	s.log.WithContext(ctx).Printf("Flushing sinks")
 
 	for _, sink := range s.sinks {
 		if err := sink.Stop(ctx); err != nil {
-			return err
+			errs = append(errs, fmt.Errorf("sink %s: %w", sink.Name(), err))
 		}
 	}
 
-	for _, f := range s.shutdownFuncs {
-		if err := f(ctx); err != nil {
-			return err
-		}
+	for _, err := range errs {
+		s.log.WithError(err).WithContext(ctx).Error("Shutdown step failed")
 	}
 
-	return nil
+	return errors.Join(errs...)
+}
+
+// addShutdownFunc registers f to run on shutdown, and reports false once shutdown has begun.
+func (s *Sentry) addShutdownFunc(f func(context.Context) error) bool {
+	s.shutdownMu.Lock()
+	defer s.shutdownMu.Unlock()
+
+	if s.shuttingDown {
+		return false
+	}
+
+	s.shutdownFuncs = append(s.shutdownFuncs, f)
+
+	return true
+}
+
+// takeShutdownFuncs marks shutdown as begun and returns the registered hooks.
+func (s *Sentry) takeShutdownFuncs() []func(context.Context) error {
+	s.shutdownMu.Lock()
+	defer s.shutdownMu.Unlock()
+
+	s.shuttingDown = true
+
+	return s.shutdownFuncs
 }
 
 func (s *Sentry) ServeMetrics(ctx context.Context) error {
@@ -1123,4 +1188,20 @@ func (s *Sentry) handleNewDecoratedEvent(ctx context.Context, event *xatu.Decora
 	}
 
 	return nil
+}
+
+// newFastConfirmationData converts a fast_confirmation SSE event. current_slot
+// is only sent by beacon nodes that implement beacon-APIs #616.
+func newFastConfirmationData(ev *eth2v1.FastConfirmationEvent) *v1.FastConfirmationData {
+	data := &v1.FastConfirmationData{
+		Slot:  uint64(ev.Slot),
+		Block: xatuethv1.RootAsString(ev.Block),
+	}
+
+	if ev.CurrentSlot != nil {
+		currentSlot := uint64(*ev.CurrentSlot)
+		data.CurrentSlot = &currentSlot
+	}
+
+	return data
 }

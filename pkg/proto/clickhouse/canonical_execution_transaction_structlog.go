@@ -658,6 +658,18 @@ func BuildListCanonicalExecutionTransactionStructlogQuery(req *ListCanonicalExec
 		}
 	}
 
+	// Add filter for column: synthetic
+	if req.Synthetic != nil {
+		switch filter := req.Synthetic.Filter.(type) {
+		case *BoolFilter_Eq:
+			qb.AddCondition("synthetic", "=", filter.Eq)
+		case *BoolFilter_Ne:
+			qb.AddCondition("synthetic", "!=", filter.Ne)
+		default:
+			// Unsupported filter type
+		}
+	}
+
 	// Handle pagination per AIP-132
 	// Validate page size
 	if req.PageSize < 0 {
@@ -683,7 +695,7 @@ func BuildListCanonicalExecutionTransactionStructlogQuery(req *ListCanonicalExec
 	// Handle custom ordering if provided
 	var orderByClause string
 	if req.OrderBy != "" {
-		validFields := []string{"updated_date_time", "block_number", "transaction_hash", "transaction_index", "transaction_gas", "transaction_failed", "transaction_return_value", "index", "operation", "gas", "gas_cost", "gas_used", "gas_self", "depth", "return_data", "refund", "error", "call_to_address", "call_frame_id", "call_frame_path", "meta_network_name"}
+		validFields := []string{"updated_date_time", "block_number", "transaction_hash", "transaction_index", "transaction_gas", "transaction_failed", "transaction_return_value", "index", "operation", "gas", "gas_cost", "gas_used", "gas_self", "depth", "return_data", "refund", "error", "call_to_address", "call_frame_id", "call_frame_path", "meta_network_name", "synthetic"}
 		orderFields, err := ParseOrderBy(req.OrderBy, validFields)
 		if err != nil {
 			return SQLQuery{}, fmt.Errorf("invalid order_by: %w", err)
@@ -691,11 +703,11 @@ func BuildListCanonicalExecutionTransactionStructlogQuery(req *ListCanonicalExec
 		orderByClause = BuildOrderByClause(orderFields)
 	} else {
 		// Default sorting by primary key
-		orderByClause = " ORDER BY meta_network_name" + ", block_number" + ", transaction_hash" + ", index"
+		orderByClause = " ORDER BY meta_network_name" + ", block_number" + ", transaction_hash" + ", index" + ", synthetic"
 	}
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "block_number", "NULLIF(`transaction_hash`, repeat('\x00', 66)) AS `transaction_hash`", "transaction_index", "transaction_gas", "transaction_failed", "transaction_return_value", "index", "operation", "gas", "gas_cost", "gas_used", "gas_self", "depth", "return_data", "refund", "error", "call_to_address", "call_frame_id", "call_frame_path", "meta_network_name"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "block_number", "NULLIF(`transaction_hash`, repeat('\x00', 66)) AS `transaction_hash`", "transaction_index", "transaction_gas", "transaction_failed", "transaction_return_value", "index", "operation", "gas", "gas_cost", "gas_used", "gas_self", "depth", "return_data", "refund", "error", "call_to_address", "call_frame_id", "call_frame_path", "meta_network_name", "synthetic"}
 
 	return BuildParameterizedQuery("canonical_execution_transaction_structlog", columns, qb, orderByClause, limit, offset, options...)
 }
@@ -712,10 +724,10 @@ func BuildGetCanonicalExecutionTransactionStructlogQuery(req *GetCanonicalExecut
 	qb.AddCondition("meta_network_name", "=", req.MetaNetworkName)
 
 	// Build ORDER BY clause
-	orderByClause := " ORDER BY meta_network_name, block_number, transaction_hash, index"
+	orderByClause := " ORDER BY meta_network_name, block_number, transaction_hash, index, synthetic"
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "block_number", "NULLIF(`transaction_hash`, repeat('\x00', 66)) AS `transaction_hash`", "transaction_index", "transaction_gas", "transaction_failed", "transaction_return_value", "index", "operation", "gas", "gas_cost", "gas_used", "gas_self", "depth", "return_data", "refund", "error", "call_to_address", "call_frame_id", "call_frame_path", "meta_network_name"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "block_number", "NULLIF(`transaction_hash`, repeat('\x00', 66)) AS `transaction_hash`", "transaction_index", "transaction_gas", "transaction_failed", "transaction_return_value", "index", "operation", "gas", "gas_cost", "gas_used", "gas_self", "depth", "return_data", "refund", "error", "call_to_address", "call_frame_id", "call_frame_path", "meta_network_name", "synthetic"}
 
 	// Return single record
 	return BuildParameterizedQuery("canonical_execution_transaction_structlog", columns, qb, orderByClause, 1, 0, options...)

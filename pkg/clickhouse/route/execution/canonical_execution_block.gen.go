@@ -22,6 +22,10 @@ type canonicalExecutionBlockBatch struct {
 	ExtraDataString *proto.ColNullable[string]
 	BaseFeePerGas   *proto.ColNullable[uint64]
 	MetaNetworkName proto.ColStr
+	ParentHash      *proto.ColNullable[[]byte]
+	StateRoot       *proto.ColNullable[[]byte]
+	BlobGasUsed     *proto.ColNullable[uint64]
+	ExcessBlobGas   *proto.ColNullable[uint64]
 	rows            int
 }
 
@@ -34,6 +38,10 @@ func newCanonicalExecutionBlockBatch() *canonicalExecutionBlockBatch {
 		ExtraData:       new(proto.ColStr).Nullable(),
 		ExtraDataString: new(proto.ColStr).Nullable(),
 		BaseFeePerGas:   new(proto.ColUInt64).Nullable(),
+		ParentHash:      route.NewNullableFixedStr(66),
+		StateRoot:       route.NewNullableFixedStr(66),
+		BlobGasUsed:     new(proto.ColUInt64).Nullable(),
+		ExcessBlobGas:   new(proto.ColUInt64).Nullable(),
 	}
 }
 
@@ -54,6 +62,10 @@ func (b *canonicalExecutionBlockBatch) Input() proto.Input {
 		{Name: "extra_data_string", Data: b.ExtraDataString},
 		{Name: "base_fee_per_gas", Data: b.BaseFeePerGas},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
+		{Name: "parent_hash", Data: b.ParentHash},
+		{Name: "state_root", Data: b.StateRoot},
+		{Name: "blob_gas_used", Data: b.BlobGasUsed},
+		{Name: "excess_blob_gas", Data: b.ExcessBlobGas},
 	}
 }
 
@@ -69,6 +81,10 @@ func (b *canonicalExecutionBlockBatch) Reset() {
 	b.ExtraDataString.Reset()
 	b.BaseFeePerGas.Reset()
 	b.MetaNetworkName.Reset()
+	b.ParentHash.Reset()
+	b.StateRoot.Reset()
+	b.BlobGasUsed.Reset()
+	b.ExcessBlobGas.Reset()
 	b.rows = 0
 }
 
@@ -115,6 +131,31 @@ func (b *canonicalExecutionBlockBatch) Snapshot() []map[string]any {
 		}
 
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
+
+		if v := b.ParentHash.Row(i); v.Set {
+			row["parent_hash"] = string(v.Value)
+		} else {
+			row["parent_hash"] = nil
+		}
+
+		if v := b.StateRoot.Row(i); v.Set {
+			row["state_root"] = string(v.Value)
+		} else {
+			row["state_root"] = nil
+		}
+
+		if v := b.BlobGasUsed.Row(i); v.Set {
+			row["blob_gas_used"] = v.Value
+		} else {
+			row["blob_gas_used"] = nil
+		}
+
+		if v := b.ExcessBlobGas.Row(i); v.Set {
+			row["excess_blob_gas"] = v.Value
+		} else {
+			row["excess_blob_gas"] = nil
+		}
+
 		out[i] = row
 	}
 

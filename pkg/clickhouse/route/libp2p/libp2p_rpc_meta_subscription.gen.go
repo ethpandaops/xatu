@@ -38,6 +38,8 @@ type libp2pRpcMetaSubscriptionBatch struct {
 	MetaClientGeoAutonomousSystemNumber       *proto.ColNullable[uint32]
 	MetaClientGeoAutonomousSystemOrganization *proto.ColNullable[string]
 	MetaNetworkName                           proto.ColStr
+	RequestsPartial                           *proto.ColNullable[bool]
+	SupportsSendingPartial                    *proto.ColNullable[bool]
 	rows                                      int
 }
 
@@ -49,6 +51,8 @@ func newlibp2pRpcMetaSubscriptionBatch() *libp2pRpcMetaSubscriptionBatch {
 		MetaClientGeoLatitude:                     new(proto.ColFloat64).Nullable(),
 		MetaClientGeoAutonomousSystemNumber:       new(proto.ColUInt32).Nullable(),
 		MetaClientGeoAutonomousSystemOrganization: new(proto.ColStr).Nullable(),
+		RequestsPartial:                           new(proto.ColBool).Nullable(),
+		SupportsSendingPartial:                    new(proto.ColBool).Nullable(),
 	}
 }
 
@@ -118,6 +122,8 @@ func (b *libp2pRpcMetaSubscriptionBatch) Input() proto.Input {
 		{Name: "meta_client_geo_autonomous_system_number", Data: b.MetaClientGeoAutonomousSystemNumber},
 		{Name: "meta_client_geo_autonomous_system_organization", Data: b.MetaClientGeoAutonomousSystemOrganization},
 		{Name: "meta_network_name", Data: &b.MetaNetworkName},
+		{Name: "requests_partial", Data: b.RequestsPartial},
+		{Name: "supports_sending_partial", Data: b.SupportsSendingPartial},
 	}
 }
 
@@ -147,6 +153,8 @@ func (b *libp2pRpcMetaSubscriptionBatch) Reset() {
 	b.MetaClientGeoAutonomousSystemNumber.Reset()
 	b.MetaClientGeoAutonomousSystemOrganization.Reset()
 	b.MetaNetworkName.Reset()
+	b.RequestsPartial.Reset()
+	b.SupportsSendingPartial.Reset()
 	b.rows = 0
 }
 
@@ -155,7 +163,7 @@ func (b *libp2pRpcMetaSubscriptionBatch) Snapshot() []map[string]any {
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 25)
+		row := make(map[string]any, 27)
 		row["unique_key"] = b.UniqueKey.Row(i)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
@@ -201,6 +209,16 @@ func (b *libp2pRpcMetaSubscriptionBatch) Snapshot() []map[string]any {
 			row["meta_client_geo_autonomous_system_organization"] = nil
 		}
 		row["meta_network_name"] = b.MetaNetworkName.Row(i)
+		if v := b.RequestsPartial.Row(i); v.Set {
+			row["requests_partial"] = v.Value
+		} else {
+			row["requests_partial"] = nil
+		}
+		if v := b.SupportsSendingPartial.Row(i); v.Set {
+			row["supports_sending_partial"] = v.Value
+		} else {
+			row["supports_sending_partial"] = nil
+		}
 		out[i] = row
 	}
 

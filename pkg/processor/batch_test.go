@@ -1129,3 +1129,104 @@ func TestBatchItemProcessorSyncShippingAcrossDistinctTraces(t *testing.T) {
 	require.Equal(t, itemsToExport, te.len())
 	require.Equal(t, 1, te.getBatchCount(), "sync shipping must not fan out by trace")
 }
+
+func TestBatchItemProcessorShutdownExportsPartialBatch(t *testing.T) {
+	for range 20 {
+		te := testBatchExporter[TestItem]{}
+		bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithBatchTimeout(time.Hour), WithMaxExportBatchSize(512))
+		require.NoError(t, err)
+
+		bsp.Start(context.Background())
+
+		for i := range 3 {
+			require.NoError(t, bsp.Write(context.Background(), []*TestItem{{name: strconv.Itoa(i)}}))
+		}
+
+		require.NoError(t, bsp.Shutdown(context.Background()))
+		require.Equal(t, 3, te.len(), "queued items should be exported by Shutdown")
+		require.Equal(t, 1, te.shutdownCount)
+	}
+}
+
+func TestBatchItemProcessorShutdownExportsAfterStartContextEnds(t *testing.T) {
+	te := testBatchExporter[TestItem]{}
+	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithBatchTimeout(time.Hour), WithMaxExportBatchSize(10))
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	bsp.Start(ctx)
+
+	items := make([]*TestItem, 25)
+	for i := range items {
+		items[i] = &TestItem{name: strconv.Itoa(i)}
+	}
+
+	require.NoError(t, bsp.Write(context.Background(), items))
+
+	cancel()
+
+	require.NoError(t, bsp.Shutdown(context.Background()))
+	require.Equal(t, len(items), te.len(), "a cancelled start context should not stop the shutdown flush")
+}
+
+func TestBatchItemProcessorShutdownDuringConcurrentWrites(t *testing.T) {
+	te := testBatchExporter[TestItem]{}
+	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithBatchTimeout(time.Hour), WithMaxExportBatchSize(7), WithWorkers(3))
+	require.NoError(t, err)
+
+	bsp.Start(context.Background())
+
+	var (
+		accepted sync.WaitGroup
+		mu       sync.Mutex
+		written  int
+	)
+
+	for w := range 8 {
+		accepted.Add(1)
+
+		go func() {
+			defer accepted.Done()
+
+			for i := 0; ; i++ {
+				err := bsp.Write(context.Background(), []*TestItem{{name: fmt.Sprintf("%d-%d", w, i)}})
+				if errors.Is(err, ErrShuttingDown) {
+					return
+				}
+
+				if err == nil {
+					mu.Lock()
+					written++
+					mu.Unlock()
+				}
+			}
+		}()
+	}
+
+	time.Sleep(20 * time.Millisecond)
+
+	require.NoError(t, bsp.Shutdown(context.Background()))
+
+	accepted.Wait()
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	require.Positive(t, written)
+	require.Equal(t, written, te.len(), "every accepted write should be exported")
+}
+
+func TestBatchItemProcessorShutdownCompletesQueuedSyncItem(t *testing.T) {
+	te := testBatchExporter[TestItem]{}
+	bsp, err := NewBatchItemProcessor[TestItem](&te, "processor", nullLogger(), WithBatchTimeout(time.Hour), WithMaxExportBatchSize(10), WithShippingMethod(ShippingMethodSync))
+	require.NoError(t, err)
+
+	bsp.Start(context.Background())
+
+	item := &TraceableItem[TestItem]{item: &TestItem{name: "pending"}, resultCh: make(chan error, 1)}
+	require.NoError(t, bsp.enqueueOrDrop(context.Background(), item))
+
+	require.NoError(t, bsp.Shutdown(context.Background()))
+	require.NoError(t, bsp.waitForBatchCompletion(context.Background(), []*TraceableItem[TestItem]{item}))
+	require.Equal(t, 1, te.len())
+}

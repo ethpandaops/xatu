@@ -289,4 +289,15 @@ message Transaction {
   google.protobuf.UInt64Value blob_gas = 13 [ json_name = "blob_gas" ];
   string blob_gas_fee_cap = 14 [ json_name = "blob_gas_fee_cap" ];
   repeated string blob_hashes = 15 [ json_name = "blob_hashes" ];
+  repeated SetCodeAuthorization authorization_list = 16
+      [ json_name = "authorization_list" ];
+}
+
+// SetCodeAuthorization is one EIP-7702 authorization list entry.
+message SetCodeAuthorization {
+  string chain_id = 1 [ json_name = "chain_id" ];
+  string address = 2;
+  google.protobuf.UInt64Value nonce = 3;
+  // Authority is the recovered signer, empty if unrecoverable.
+  string authority = 4;
 }

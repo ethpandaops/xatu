@@ -1,0 +1,161 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains Goodbye req/resp messages received from remote peers, with the reason code they gave for disconnecting
+
+message Libp2pGoodbye {
+  // Timestamp when the record was last updated
+  uint32 updated_date_time = 11;
+  // Timestamp of the event with millisecond precision
+  int64 event_date_time = 12;
+  // Unique key of the remote peer that sent the goodbye
+  int64 remote_peer_id_unique_key = 13;
+  // Goodbye reason code sent by the remote peer, such as 1 (client shutdown), 2 (irrelevant network), 3 (fault/error) or 129 (too many peers)
+  uint64 code = 14;
+  // Reason text the capturing client maps the code to. Unknown codes read as unknown goodbye value
+  string reason = 15;
+  // Implementation of the remote peer
+  string remote_agent_implementation = 16;
+  // Version of the remote peer
+  string remote_agent_version = 17;
+  // Major version of the remote peer
+  string remote_agent_version_major = 18;
+  // Minor version of the remote peer
+  string remote_agent_version_minor = 19;
+  // Patch version of the remote peer
+  string remote_agent_version_patch = 20;
+  // Platform of the remote peer
+  string remote_agent_platform = 21;
+  // Name of the client that generated the event
+  string meta_client_name = 22;
+  // Version of the client that generated the event
+  string meta_client_version = 23;
+  // Implementation of the client that generated the event
+  string meta_client_implementation = 24;
+  // Operating system of the client that generated the event
+  string meta_client_os = 25;
+  // IP address of the client that generated the event
+  google.protobuf.StringValue meta_client_ip = 26;
+  // City of the client that generated the event
+  string meta_client_geo_city = 27;
+  // Country of the client that generated the event
+  string meta_client_geo_country = 28;
+  // Country code of the client that generated the event
+  string meta_client_geo_country_code = 29;
+  // Continent code of the client that generated the event
+  string meta_client_geo_continent_code = 30;
+  // Longitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_longitude = 31;
+  // Latitude of the client that generated the event
+  google.protobuf.DoubleValue meta_client_geo_latitude = 32;
+  // Autonomous system number of the client that generated the event
+  google.protobuf.UInt32Value meta_client_geo_autonomous_system_number = 33;
+  // Autonomous system organization of the client that generated the event
+  google.protobuf.StringValue meta_client_geo_autonomous_system_organization = 34;
+  // Ethereum network name
+  string meta_network_name = 35;
+}
+
+// Request for listing libp2p_goodbye records
+message ListLibp2pGoodbyeRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by event_date_time - Timestamp of the event with millisecond precision (ORDER BY column 2 - optional)
+  Int64Filter event_date_time = 2;
+
+  // Filter by meta_client_name - Name of the client that generated the event (ORDER BY column 3 - optional)
+  StringFilter meta_client_name = 3;
+
+  // Filter by remote_peer_id_unique_key - Unique key of the remote peer that sent the goodbye (ORDER BY column 4 - optional)
+  Int64Filter remote_peer_id_unique_key = 4;
+
+  // Filter by code - Goodbye reason code sent by the remote peer, such as 1 (client shutdown), 2 (irrelevant network), 3 (fault/error) or 129 (too many peers) (ORDER BY column 5 - optional)
+  UInt64Filter code = 5;
+
+  // Filter by updated_date_time - Timestamp when the record was last updated (optional)
+  UInt32Filter updated_date_time = 6;
+  // Filter by reason - Reason text the capturing client maps the code to. Unknown codes read as unknown goodbye value (optional)
+  StringFilter reason = 7;
+  // Filter by remote_agent_implementation - Implementation of the remote peer (optional)
+  StringFilter remote_agent_implementation = 8;
+  // Filter by remote_agent_version - Version of the remote peer (optional)
+  StringFilter remote_agent_version = 9;
+  // Filter by remote_agent_version_major - Major version of the remote peer (optional)
+  StringFilter remote_agent_version_major = 10;
+  // Filter by remote_agent_version_minor - Minor version of the remote peer (optional)
+  StringFilter remote_agent_version_minor = 11;
+  // Filter by remote_agent_version_patch - Patch version of the remote peer (optional)
+  StringFilter remote_agent_version_patch = 12;
+  // Filter by remote_agent_platform - Platform of the remote peer (optional)
+  StringFilter remote_agent_platform = 13;
+  // Filter by meta_client_version - Version of the client that generated the event (optional)
+  StringFilter meta_client_version = 14;
+  // Filter by meta_client_implementation - Implementation of the client that generated the event (optional)
+  StringFilter meta_client_implementation = 15;
+  // Filter by meta_client_os - Operating system of the client that generated the event (optional)
+  StringFilter meta_client_os = 16;
+  // Filter by meta_client_ip - IP address of the client that generated the event (optional)
+  NullableStringFilter meta_client_ip = 17;
+  // Filter by meta_client_geo_city - City of the client that generated the event (optional)
+  StringFilter meta_client_geo_city = 18;
+  // Filter by meta_client_geo_country - Country of the client that generated the event (optional)
+  StringFilter meta_client_geo_country = 19;
+  // Filter by meta_client_geo_country_code - Country code of the client that generated the event (optional)
+  StringFilter meta_client_geo_country_code = 20;
+  // Filter by meta_client_geo_continent_code - Continent code of the client that generated the event (optional)
+  StringFilter meta_client_geo_continent_code = 21;
+  // Filter by meta_client_geo_longitude - Longitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_longitude = 22;
+  // Filter by meta_client_geo_latitude - Latitude of the client that generated the event (optional)
+  google.protobuf.DoubleValue meta_client_geo_latitude = 23;
+  // Filter by meta_client_geo_autonomous_system_number - Autonomous system number of the client that generated the event (optional)
+  NullableUInt32Filter meta_client_geo_autonomous_system_number = 24;
+  // Filter by meta_client_geo_autonomous_system_organization - Autonomous system organization of the client that generated the event (optional)
+  NullableStringFilter meta_client_geo_autonomous_system_organization = 25;
+
+  // The maximum number of libp2p_goodbye to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 26;
+  // A page token, received from a previous `ListLibp2pGoodbye` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 27;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 28;
+}
+
+// Response for listing libp2p_goodbye records
+message ListLibp2pGoodbyeResponse {
+  // The list of libp2p_goodbye.
+  repeated Libp2pGoodbye libp2p_goodbye = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single libp2p_goodbye record by primary key
+message GetLibp2pGoodbyeRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single libp2p_goodbye record
+message GetLibp2pGoodbyeResponse {
+  Libp2pGoodbye item = 1;
+}
+
+// Query libp2p_goodbye data
+service Libp2pGoodbyeService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListLibp2pGoodbyeRequest) returns (ListLibp2pGoodbyeResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetLibp2pGoodbyeRequest) returns (GetLibp2pGoodbyeResponse);
+}

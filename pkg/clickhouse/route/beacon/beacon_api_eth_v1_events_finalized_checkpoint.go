@@ -86,7 +86,7 @@ func (b *beaconApiEthV1EventsFinalizedCheckpointBatch) appendPayload(event *xatu
 		b.Epoch.Append(0)
 	}
 
-	b.ExecutionOptimistic.Append(false)
+	b.ExecutionOptimistic.Append(checkpointV2.GetExecutionOptimistic())
 }
 
 func (b *beaconApiEthV1EventsFinalizedCheckpointBatch) appendAdditionalData(

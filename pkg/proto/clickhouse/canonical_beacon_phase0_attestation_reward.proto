@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package clickhouse.v1;
+
+import "common.proto";
+
+option go_package = "github.com/ethpandaops/xatu/pkg/proto/clickhouse";
+// Contains per-validator phase0 attestation reward components for a canonical epoch, computed from beacon states with the consensus spec get_attestation_deltas.
+
+message CanonicalBeaconPhase0AttestationReward {
+  // When this row was last updated
+  uint32 updated_date_time = 11;
+  // The epoch whose attestation duties the reward is for
+  uint32 epoch = 12;
+  // The wall clock time when the epoch started
+  uint32 epoch_start_date_time = 13;
+  // The validator index the reward applies to
+  uint32 validator_index = 14;
+  // The net reward for attesting to the head in gwei (negative when a penalty)
+  int64 head = 15;
+  // The net reward for attesting to the target in gwei (negative when a penalty)
+  int64 target = 16;
+  // The net reward for attesting to the source in gwei (negative when a penalty)
+  int64 source = 17;
+  // The attester inclusion delay reward in gwei, excluding the share paid to the including block proposer
+  uint64 inclusion_delay = 18;
+  // The inactivity leak penalty in gwei (zero or negative)
+  int64 inactivity = 19;
+  // Ethereum network name
+  string meta_network_name = 20;
+}
+
+// Request for listing canonical_beacon_phase0_attestation_reward records
+message ListCanonicalBeaconPhase0AttestationRewardRequest {
+  // Filter by meta_network_name - Ethereum network name (PRIMARY KEY - required)
+  StringFilter meta_network_name = 1;
+
+  // Filter by epoch_start_date_time - The wall clock time when the epoch started (ORDER BY column 2 - optional)
+  UInt32Filter epoch_start_date_time = 2;
+
+  // Filter by epoch - The epoch whose attestation duties the reward is for (ORDER BY column 3 - optional)
+  UInt32Filter epoch = 3;
+
+  // Filter by validator_index - The validator index the reward applies to (ORDER BY column 4 - optional)
+  UInt32Filter validator_index = 4;
+
+  // Filter by updated_date_time - When this row was last updated (optional)
+  UInt32Filter updated_date_time = 5;
+  // Filter by head - The net reward for attesting to the head in gwei (negative when a penalty) (optional)
+  Int64Filter head = 6;
+  // Filter by target - The net reward for attesting to the target in gwei (negative when a penalty) (optional)
+  Int64Filter target = 7;
+  // Filter by source - The net reward for attesting to the source in gwei (negative when a penalty) (optional)
+  Int64Filter source = 8;
+  // Filter by inclusion_delay - The attester inclusion delay reward in gwei, excluding the share paid to the including block proposer (optional)
+  UInt64Filter inclusion_delay = 9;
+  // Filter by inactivity - The inactivity leak penalty in gwei (zero or negative) (optional)
+  Int64Filter inactivity = 10;
+
+  // The maximum number of canonical_beacon_phase0_attestation_reward to return.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 11;
+  // A page token, received from a previous `ListCanonicalBeaconPhase0AttestationReward` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 12;
+  // The order of results. Format: comma-separated list of fields.
+  // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
+  // If unspecified, results will be returned in the default order.
+  string order_by = 13;
+}
+
+// Response for listing canonical_beacon_phase0_attestation_reward records
+message ListCanonicalBeaconPhase0AttestationRewardResponse {
+  // The list of canonical_beacon_phase0_attestation_reward.
+  repeated CanonicalBeaconPhase0AttestationReward canonical_beacon_phase0_attestation_reward = 1;
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request for getting a single canonical_beacon_phase0_attestation_reward record by primary key
+message GetCanonicalBeaconPhase0AttestationRewardRequest {
+  // Ethereum network name
+  string meta_network_name = 1; // Primary key (required)
+}
+
+// Response for getting a single canonical_beacon_phase0_attestation_reward record
+message GetCanonicalBeaconPhase0AttestationRewardResponse {
+  CanonicalBeaconPhase0AttestationReward item = 1;
+}
+
+// Query canonical_beacon_phase0_attestation_reward data
+service CanonicalBeaconPhase0AttestationRewardService {
+  // List records | Retrieve paginated results with optional filtering
+  rpc List(ListCanonicalBeaconPhase0AttestationRewardRequest) returns (ListCanonicalBeaconPhase0AttestationRewardResponse);
+  // Get record | Retrieve a single record by primary key
+  rpc Get(GetCanonicalBeaconPhase0AttestationRewardRequest) returns (GetCanonicalBeaconPhase0AttestationRewardResponse);
+}

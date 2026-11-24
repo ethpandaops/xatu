@@ -2141,21 +2141,22 @@ type Transaction struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ChainId       string                  `protobuf:"bytes,1,opt,name=chain_id,proto3" json:"chain_id,omitempty"`
-	Input         string                  `protobuf:"bytes,2,opt,name=input,proto3" json:"input,omitempty"`
-	Gas           *wrapperspb.UInt64Value `protobuf:"bytes,3,opt,name=gas,proto3" json:"gas,omitempty"`
-	GasPrice      string                  `protobuf:"bytes,4,opt,name=gas_price,proto3" json:"gas_price,omitempty"`
-	Hash          string                  `protobuf:"bytes,5,opt,name=hash,proto3" json:"hash,omitempty"`
-	From          string                  `protobuf:"bytes,6,opt,name=from,proto3" json:"from,omitempty"`
-	To            string                  `protobuf:"bytes,7,opt,name=to,proto3" json:"to,omitempty"`
-	Nonce         *wrapperspb.UInt64Value `protobuf:"bytes,8,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	Value         string                  `protobuf:"bytes,9,opt,name=value,proto3" json:"value,omitempty"`
-	Type          *wrapperspb.UInt32Value `protobuf:"bytes,10,opt,name=type,proto3" json:"type,omitempty"`
-	GasTipCap     string                  `protobuf:"bytes,11,opt,name=gas_tip_cap,proto3" json:"gas_tip_cap,omitempty"`
-	GasFeeCap     string                  `protobuf:"bytes,12,opt,name=gas_fee_cap,proto3" json:"gas_fee_cap,omitempty"`
-	BlobGas       *wrapperspb.UInt64Value `protobuf:"bytes,13,opt,name=blob_gas,proto3" json:"blob_gas,omitempty"`
-	BlobGasFeeCap string                  `protobuf:"bytes,14,opt,name=blob_gas_fee_cap,proto3" json:"blob_gas_fee_cap,omitempty"`
-	BlobHashes    []string                `protobuf:"bytes,15,rep,name=blob_hashes,proto3" json:"blob_hashes,omitempty"`
+	ChainId           string                  `protobuf:"bytes,1,opt,name=chain_id,proto3" json:"chain_id,omitempty"`
+	Input             string                  `protobuf:"bytes,2,opt,name=input,proto3" json:"input,omitempty"`
+	Gas               *wrapperspb.UInt64Value `protobuf:"bytes,3,opt,name=gas,proto3" json:"gas,omitempty"`
+	GasPrice          string                  `protobuf:"bytes,4,opt,name=gas_price,proto3" json:"gas_price,omitempty"`
+	Hash              string                  `protobuf:"bytes,5,opt,name=hash,proto3" json:"hash,omitempty"`
+	From              string                  `protobuf:"bytes,6,opt,name=from,proto3" json:"from,omitempty"`
+	To                string                  `protobuf:"bytes,7,opt,name=to,proto3" json:"to,omitempty"`
+	Nonce             *wrapperspb.UInt64Value `protobuf:"bytes,8,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	Value             string                  `protobuf:"bytes,9,opt,name=value,proto3" json:"value,omitempty"`
+	Type              *wrapperspb.UInt32Value `protobuf:"bytes,10,opt,name=type,proto3" json:"type,omitempty"`
+	GasTipCap         string                  `protobuf:"bytes,11,opt,name=gas_tip_cap,proto3" json:"gas_tip_cap,omitempty"`
+	GasFeeCap         string                  `protobuf:"bytes,12,opt,name=gas_fee_cap,proto3" json:"gas_fee_cap,omitempty"`
+	BlobGas           *wrapperspb.UInt64Value `protobuf:"bytes,13,opt,name=blob_gas,proto3" json:"blob_gas,omitempty"`
+	BlobGasFeeCap     string                  `protobuf:"bytes,14,opt,name=blob_gas_fee_cap,proto3" json:"blob_gas_fee_cap,omitempty"`
+	BlobHashes        []string                `protobuf:"bytes,15,rep,name=blob_hashes,proto3" json:"blob_hashes,omitempty"`
+	AuthorizationList []*SetCodeAuthorization `protobuf:"bytes,16,rep,name=authorization_list,proto3" json:"authorization_list,omitempty"`
 }
 
 func (x *Transaction) Reset() {
@@ -2293,6 +2294,86 @@ func (x *Transaction) GetBlobHashes() []string {
 		return x.BlobHashes
 	}
 	return nil
+}
+
+func (x *Transaction) GetAuthorizationList() []*SetCodeAuthorization {
+	if x != nil {
+		return x.AuthorizationList
+	}
+	return nil
+}
+
+// SetCodeAuthorization is one EIP-7702 authorization list entry.
+type SetCodeAuthorization struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ChainId string                  `protobuf:"bytes,1,opt,name=chain_id,proto3" json:"chain_id,omitempty"`
+	Address string                  `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	Nonce   *wrapperspb.UInt64Value `protobuf:"bytes,3,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	// Authority is the recovered signer, empty if unrecoverable.
+	Authority string `protobuf:"bytes,4,opt,name=authority,proto3" json:"authority,omitempty"`
+}
+
+func (x *SetCodeAuthorization) Reset() {
+	*x = SetCodeAuthorization{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v1_execution_engine_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SetCodeAuthorization) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetCodeAuthorization) ProtoMessage() {}
+
+func (x *SetCodeAuthorization) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v1_execution_engine_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetCodeAuthorization.ProtoReflect.Descriptor instead.
+func (*SetCodeAuthorization) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v1_execution_engine_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *SetCodeAuthorization) GetChainId() string {
+	if x != nil {
+		return x.ChainId
+	}
+	return ""
+}
+
+func (x *SetCodeAuthorization) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *SetCodeAuthorization) GetNonce() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.Nonce
+	}
+	return nil
+}
+
+func (x *SetCodeAuthorization) GetAuthority() string {
+	if x != nil {
+		return x.Authority
+	}
+	return ""
 }
 
 var File_pkg_proto_eth_v1_execution_engine_proto protoreflect.FileDescriptor
@@ -2844,7 +2925,7 @@ var file_pkg_proto_eth_v1_execution_engine_proto_rawDesc = []byte{
 	0x11, 0x74, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x5f, 0x72, 0x6f,
 	0x6f, 0x74, 0x12, 0x2a, 0x0a, 0x10, 0x77, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61, 0x6c,
 	0x73, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x18, 0x0f, 0x20, 0x01, 0x28, 0x09, 0x52, 0x10, 0x77, 0x69,
-	0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61, 0x6c, 0x73, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x22, 0x8d,
+	0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61, 0x6c, 0x73, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x22, 0xe0,
 	0x04, 0x0a, 0x0b, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1a,
 	0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x69, 0x6e,
@@ -2877,11 +2958,26 @@ var file_pkg_proto_eth_v1_execution_engine_proto_rawDesc = []byte{
 	0x5f, 0x63, 0x61, 0x70, 0x18, 0x0e, 0x20, 0x01, 0x28, 0x09, 0x52, 0x10, 0x62, 0x6c, 0x6f, 0x62,
 	0x5f, 0x67, 0x61, 0x73, 0x5f, 0x66, 0x65, 0x65, 0x5f, 0x63, 0x61, 0x70, 0x12, 0x20, 0x0a, 0x0b,
 	0x62, 0x6c, 0x6f, 0x62, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x18, 0x0f, 0x20, 0x03, 0x28,
-	0x09, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x62, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x42, 0x2e,
-	0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68,
-	0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f, 0x70, 0x6b,
-	0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x65, 0x74, 0x68, 0x2f, 0x76, 0x31, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x09, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x62, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x12, 0x51,
+	0x0a, 0x12, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f,
+	0x6c, 0x69, 0x73, 0x74, 0x18, 0x10, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x78, 0x61, 0x74,
+	0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x64, 0x65,
+	0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x12, 0x61,
+	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6c, 0x69, 0x73,
+	0x74, 0x22, 0x9e, 0x01, 0x0a, 0x14, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x64, 0x65, 0x41, 0x75, 0x74,
+	0x68, 0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1a, 0x0a, 0x08, 0x63, 0x68,
+	0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x63, 0x68,
+	0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x12, 0x32, 0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x6e,
+	0x6f, 0x6e, 0x63, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74,
+	0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69,
+	0x74, 0x79, 0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
+	0x2f, 0x65, 0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74,
+	0x75, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x65, 0x74, 0x68, 0x2f,
+	0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2896,7 +2992,7 @@ func file_pkg_proto_eth_v1_execution_engine_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_eth_v1_execution_engine_proto_rawDescData
 }
 
-var file_pkg_proto_eth_v1_execution_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_pkg_proto_eth_v1_execution_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_pkg_proto_eth_v1_execution_engine_proto_goTypes = []any{
 	(*ExecutionPayload)(nil),                // 0: xatu.eth.v1.ExecutionPayload
 	(*ExecutionPayloadV2)(nil),              // 1: xatu.eth.v1.ExecutionPayloadV2
@@ -2913,71 +3009,74 @@ var file_pkg_proto_eth_v1_execution_engine_proto_goTypes = []any{
 	(*ExecutionPayloadHeaderCapella)(nil),   // 12: xatu.eth.v1.ExecutionPayloadHeaderCapella
 	(*ExecutionPayloadHeaderCapellaV2)(nil), // 13: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2
 	(*Transaction)(nil),                     // 14: xatu.eth.v1.Transaction
-	(*wrapperspb.UInt64Value)(nil),          // 15: google.protobuf.UInt64Value
-	(*BlockAccessList)(nil),                 // 16: xatu.eth.v1.BlockAccessList
-	(*wrapperspb.UInt32Value)(nil),          // 17: google.protobuf.UInt32Value
+	(*SetCodeAuthorization)(nil),            // 15: xatu.eth.v1.SetCodeAuthorization
+	(*wrapperspb.UInt64Value)(nil),          // 16: google.protobuf.UInt64Value
+	(*BlockAccessList)(nil),                 // 17: xatu.eth.v1.BlockAccessList
+	(*wrapperspb.UInt32Value)(nil),          // 18: google.protobuf.UInt32Value
 }
 var file_pkg_proto_eth_v1_execution_engine_proto_depIdxs = []int32{
-	15, // 0: xatu.eth.v1.ExecutionPayloadV2.block_number:type_name -> google.protobuf.UInt64Value
-	15, // 1: xatu.eth.v1.ExecutionPayloadV2.gas_limit:type_name -> google.protobuf.UInt64Value
-	15, // 2: xatu.eth.v1.ExecutionPayloadV2.gas_used:type_name -> google.protobuf.UInt64Value
-	15, // 3: xatu.eth.v1.ExecutionPayloadV2.timestamp:type_name -> google.protobuf.UInt64Value
-	15, // 4: xatu.eth.v1.ExecutionPayloadHeaderV2.block_number:type_name -> google.protobuf.UInt64Value
-	15, // 5: xatu.eth.v1.ExecutionPayloadHeaderV2.gas_limit:type_name -> google.protobuf.UInt64Value
-	15, // 6: xatu.eth.v1.ExecutionPayloadHeaderV2.gas_used:type_name -> google.protobuf.UInt64Value
-	15, // 7: xatu.eth.v1.ExecutionPayloadHeaderV2.timestamp:type_name -> google.protobuf.UInt64Value
+	16, // 0: xatu.eth.v1.ExecutionPayloadV2.block_number:type_name -> google.protobuf.UInt64Value
+	16, // 1: xatu.eth.v1.ExecutionPayloadV2.gas_limit:type_name -> google.protobuf.UInt64Value
+	16, // 2: xatu.eth.v1.ExecutionPayloadV2.gas_used:type_name -> google.protobuf.UInt64Value
+	16, // 3: xatu.eth.v1.ExecutionPayloadV2.timestamp:type_name -> google.protobuf.UInt64Value
+	16, // 4: xatu.eth.v1.ExecutionPayloadHeaderV2.block_number:type_name -> google.protobuf.UInt64Value
+	16, // 5: xatu.eth.v1.ExecutionPayloadHeaderV2.gas_limit:type_name -> google.protobuf.UInt64Value
+	16, // 6: xatu.eth.v1.ExecutionPayloadHeaderV2.gas_used:type_name -> google.protobuf.UInt64Value
+	16, // 7: xatu.eth.v1.ExecutionPayloadHeaderV2.timestamp:type_name -> google.protobuf.UInt64Value
 	10, // 8: xatu.eth.v1.ExecutionPayloadCapella.withdrawals:type_name -> xatu.eth.v1.Withdrawal
-	15, // 9: xatu.eth.v1.ExecutionPayloadCapellaV2.block_number:type_name -> google.protobuf.UInt64Value
-	15, // 10: xatu.eth.v1.ExecutionPayloadCapellaV2.gas_limit:type_name -> google.protobuf.UInt64Value
-	15, // 11: xatu.eth.v1.ExecutionPayloadCapellaV2.gas_used:type_name -> google.protobuf.UInt64Value
-	15, // 12: xatu.eth.v1.ExecutionPayloadCapellaV2.timestamp:type_name -> google.protobuf.UInt64Value
+	16, // 9: xatu.eth.v1.ExecutionPayloadCapellaV2.block_number:type_name -> google.protobuf.UInt64Value
+	16, // 10: xatu.eth.v1.ExecutionPayloadCapellaV2.gas_limit:type_name -> google.protobuf.UInt64Value
+	16, // 11: xatu.eth.v1.ExecutionPayloadCapellaV2.gas_used:type_name -> google.protobuf.UInt64Value
+	16, // 12: xatu.eth.v1.ExecutionPayloadCapellaV2.timestamp:type_name -> google.protobuf.UInt64Value
 	11, // 13: xatu.eth.v1.ExecutionPayloadCapellaV2.withdrawals:type_name -> xatu.eth.v1.WithdrawalV2
-	15, // 14: xatu.eth.v1.ExecutionPayloadDeneb.block_number:type_name -> google.protobuf.UInt64Value
-	15, // 15: xatu.eth.v1.ExecutionPayloadDeneb.gas_limit:type_name -> google.protobuf.UInt64Value
-	15, // 16: xatu.eth.v1.ExecutionPayloadDeneb.gas_used:type_name -> google.protobuf.UInt64Value
-	15, // 17: xatu.eth.v1.ExecutionPayloadDeneb.timestamp:type_name -> google.protobuf.UInt64Value
+	16, // 14: xatu.eth.v1.ExecutionPayloadDeneb.block_number:type_name -> google.protobuf.UInt64Value
+	16, // 15: xatu.eth.v1.ExecutionPayloadDeneb.gas_limit:type_name -> google.protobuf.UInt64Value
+	16, // 16: xatu.eth.v1.ExecutionPayloadDeneb.gas_used:type_name -> google.protobuf.UInt64Value
+	16, // 17: xatu.eth.v1.ExecutionPayloadDeneb.timestamp:type_name -> google.protobuf.UInt64Value
 	11, // 18: xatu.eth.v1.ExecutionPayloadDeneb.withdrawals:type_name -> xatu.eth.v1.WithdrawalV2
-	15, // 19: xatu.eth.v1.ExecutionPayloadDeneb.blob_gas_used:type_name -> google.protobuf.UInt64Value
-	15, // 20: xatu.eth.v1.ExecutionPayloadDeneb.excess_blob_gas:type_name -> google.protobuf.UInt64Value
-	15, // 21: xatu.eth.v1.ExecutionPayloadElectra.block_number:type_name -> google.protobuf.UInt64Value
-	15, // 22: xatu.eth.v1.ExecutionPayloadElectra.gas_limit:type_name -> google.protobuf.UInt64Value
-	15, // 23: xatu.eth.v1.ExecutionPayloadElectra.gas_used:type_name -> google.protobuf.UInt64Value
-	15, // 24: xatu.eth.v1.ExecutionPayloadElectra.timestamp:type_name -> google.protobuf.UInt64Value
+	16, // 19: xatu.eth.v1.ExecutionPayloadDeneb.blob_gas_used:type_name -> google.protobuf.UInt64Value
+	16, // 20: xatu.eth.v1.ExecutionPayloadDeneb.excess_blob_gas:type_name -> google.protobuf.UInt64Value
+	16, // 21: xatu.eth.v1.ExecutionPayloadElectra.block_number:type_name -> google.protobuf.UInt64Value
+	16, // 22: xatu.eth.v1.ExecutionPayloadElectra.gas_limit:type_name -> google.protobuf.UInt64Value
+	16, // 23: xatu.eth.v1.ExecutionPayloadElectra.gas_used:type_name -> google.protobuf.UInt64Value
+	16, // 24: xatu.eth.v1.ExecutionPayloadElectra.timestamp:type_name -> google.protobuf.UInt64Value
 	11, // 25: xatu.eth.v1.ExecutionPayloadElectra.withdrawals:type_name -> xatu.eth.v1.WithdrawalV2
-	15, // 26: xatu.eth.v1.ExecutionPayloadElectra.blob_gas_used:type_name -> google.protobuf.UInt64Value
-	15, // 27: xatu.eth.v1.ExecutionPayloadElectra.excess_blob_gas:type_name -> google.protobuf.UInt64Value
-	15, // 28: xatu.eth.v1.ExecutionPayloadFulu.block_number:type_name -> google.protobuf.UInt64Value
-	15, // 29: xatu.eth.v1.ExecutionPayloadFulu.gas_limit:type_name -> google.protobuf.UInt64Value
-	15, // 30: xatu.eth.v1.ExecutionPayloadFulu.gas_used:type_name -> google.protobuf.UInt64Value
-	15, // 31: xatu.eth.v1.ExecutionPayloadFulu.timestamp:type_name -> google.protobuf.UInt64Value
+	16, // 26: xatu.eth.v1.ExecutionPayloadElectra.blob_gas_used:type_name -> google.protobuf.UInt64Value
+	16, // 27: xatu.eth.v1.ExecutionPayloadElectra.excess_blob_gas:type_name -> google.protobuf.UInt64Value
+	16, // 28: xatu.eth.v1.ExecutionPayloadFulu.block_number:type_name -> google.protobuf.UInt64Value
+	16, // 29: xatu.eth.v1.ExecutionPayloadFulu.gas_limit:type_name -> google.protobuf.UInt64Value
+	16, // 30: xatu.eth.v1.ExecutionPayloadFulu.gas_used:type_name -> google.protobuf.UInt64Value
+	16, // 31: xatu.eth.v1.ExecutionPayloadFulu.timestamp:type_name -> google.protobuf.UInt64Value
 	11, // 32: xatu.eth.v1.ExecutionPayloadFulu.withdrawals:type_name -> xatu.eth.v1.WithdrawalV2
-	15, // 33: xatu.eth.v1.ExecutionPayloadFulu.blob_gas_used:type_name -> google.protobuf.UInt64Value
-	15, // 34: xatu.eth.v1.ExecutionPayloadFulu.excess_blob_gas:type_name -> google.protobuf.UInt64Value
-	15, // 35: xatu.eth.v1.ExecutionPayloadGloas.block_number:type_name -> google.protobuf.UInt64Value
-	15, // 36: xatu.eth.v1.ExecutionPayloadGloas.gas_limit:type_name -> google.protobuf.UInt64Value
-	15, // 37: xatu.eth.v1.ExecutionPayloadGloas.gas_used:type_name -> google.protobuf.UInt64Value
-	15, // 38: xatu.eth.v1.ExecutionPayloadGloas.timestamp:type_name -> google.protobuf.UInt64Value
+	16, // 33: xatu.eth.v1.ExecutionPayloadFulu.blob_gas_used:type_name -> google.protobuf.UInt64Value
+	16, // 34: xatu.eth.v1.ExecutionPayloadFulu.excess_blob_gas:type_name -> google.protobuf.UInt64Value
+	16, // 35: xatu.eth.v1.ExecutionPayloadGloas.block_number:type_name -> google.protobuf.UInt64Value
+	16, // 36: xatu.eth.v1.ExecutionPayloadGloas.gas_limit:type_name -> google.protobuf.UInt64Value
+	16, // 37: xatu.eth.v1.ExecutionPayloadGloas.gas_used:type_name -> google.protobuf.UInt64Value
+	16, // 38: xatu.eth.v1.ExecutionPayloadGloas.timestamp:type_name -> google.protobuf.UInt64Value
 	11, // 39: xatu.eth.v1.ExecutionPayloadGloas.withdrawals:type_name -> xatu.eth.v1.WithdrawalV2
-	15, // 40: xatu.eth.v1.ExecutionPayloadGloas.blob_gas_used:type_name -> google.protobuf.UInt64Value
-	15, // 41: xatu.eth.v1.ExecutionPayloadGloas.excess_blob_gas:type_name -> google.protobuf.UInt64Value
-	16, // 42: xatu.eth.v1.ExecutionPayloadGloas.block_access_list:type_name -> xatu.eth.v1.BlockAccessList
-	15, // 43: xatu.eth.v1.ExecutionPayloadGloas.slot_number:type_name -> google.protobuf.UInt64Value
-	15, // 44: xatu.eth.v1.WithdrawalV2.index:type_name -> google.protobuf.UInt64Value
-	15, // 45: xatu.eth.v1.WithdrawalV2.validator_index:type_name -> google.protobuf.UInt64Value
-	15, // 46: xatu.eth.v1.WithdrawalV2.amount:type_name -> google.protobuf.UInt64Value
-	15, // 47: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.block_number:type_name -> google.protobuf.UInt64Value
-	15, // 48: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.gas_limit:type_name -> google.protobuf.UInt64Value
-	15, // 49: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.gas_used:type_name -> google.protobuf.UInt64Value
-	15, // 50: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.timestamp:type_name -> google.protobuf.UInt64Value
-	15, // 51: xatu.eth.v1.Transaction.gas:type_name -> google.protobuf.UInt64Value
-	15, // 52: xatu.eth.v1.Transaction.nonce:type_name -> google.protobuf.UInt64Value
-	17, // 53: xatu.eth.v1.Transaction.type:type_name -> google.protobuf.UInt32Value
-	15, // 54: xatu.eth.v1.Transaction.blob_gas:type_name -> google.protobuf.UInt64Value
-	55, // [55:55] is the sub-list for method output_type
-	55, // [55:55] is the sub-list for method input_type
-	55, // [55:55] is the sub-list for extension type_name
-	55, // [55:55] is the sub-list for extension extendee
-	0,  // [0:55] is the sub-list for field type_name
+	16, // 40: xatu.eth.v1.ExecutionPayloadGloas.blob_gas_used:type_name -> google.protobuf.UInt64Value
+	16, // 41: xatu.eth.v1.ExecutionPayloadGloas.excess_blob_gas:type_name -> google.protobuf.UInt64Value
+	17, // 42: xatu.eth.v1.ExecutionPayloadGloas.block_access_list:type_name -> xatu.eth.v1.BlockAccessList
+	16, // 43: xatu.eth.v1.ExecutionPayloadGloas.slot_number:type_name -> google.protobuf.UInt64Value
+	16, // 44: xatu.eth.v1.WithdrawalV2.index:type_name -> google.protobuf.UInt64Value
+	16, // 45: xatu.eth.v1.WithdrawalV2.validator_index:type_name -> google.protobuf.UInt64Value
+	16, // 46: xatu.eth.v1.WithdrawalV2.amount:type_name -> google.protobuf.UInt64Value
+	16, // 47: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.block_number:type_name -> google.protobuf.UInt64Value
+	16, // 48: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.gas_limit:type_name -> google.protobuf.UInt64Value
+	16, // 49: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.gas_used:type_name -> google.protobuf.UInt64Value
+	16, // 50: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2.timestamp:type_name -> google.protobuf.UInt64Value
+	16, // 51: xatu.eth.v1.Transaction.gas:type_name -> google.protobuf.UInt64Value
+	16, // 52: xatu.eth.v1.Transaction.nonce:type_name -> google.protobuf.UInt64Value
+	18, // 53: xatu.eth.v1.Transaction.type:type_name -> google.protobuf.UInt32Value
+	16, // 54: xatu.eth.v1.Transaction.blob_gas:type_name -> google.protobuf.UInt64Value
+	15, // 55: xatu.eth.v1.Transaction.authorization_list:type_name -> xatu.eth.v1.SetCodeAuthorization
+	16, // 56: xatu.eth.v1.SetCodeAuthorization.nonce:type_name -> google.protobuf.UInt64Value
+	57, // [57:57] is the sub-list for method output_type
+	57, // [57:57] is the sub-list for method input_type
+	57, // [57:57] is the sub-list for extension type_name
+	57, // [57:57] is the sub-list for extension extendee
+	0,  // [0:57] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_eth_v1_execution_engine_proto_init() }
@@ -3167,6 +3266,18 @@ func file_pkg_proto_eth_v1_execution_engine_proto_init() {
 				return nil
 			}
 		}
+		file_pkg_proto_eth_v1_execution_engine_proto_msgTypes[15].Exporter = func(v any, i int) any {
+			switch v := v.(*SetCodeAuthorization); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -3174,7 +3285,7 @@ func file_pkg_proto_eth_v1_execution_engine_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_proto_eth_v1_execution_engine_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -170,11 +170,8 @@ type ChGoConfig struct {
 	// Set to 0 to disable pool metrics collection.
 	PoolMetricsInterval time.Duration `yaml:"poolMetricsInterval" default:"15s"`
 
-	// GroupRetryMaxAttempts is the number of retry attempts at the
-	// processGroup level for partial table failures (e.g. fanout where
-	// some tables succeed and others fail transiently). Only failed tables
-	// are retried, preventing duplicate writes to already-succeeded tables.
-	GroupRetryMaxAttempts int `yaml:"groupRetryMaxAttempts" default:"3"`
+	// GroupRetryMaxAttempts caps consumoor's in-place retries of transiently failed tables before nacking them to Kafka; 0 means no cap.
+	GroupRetryMaxAttempts int `yaml:"groupRetryMaxAttempts" default:"0"`
 	// GroupRetryBaseDelay is the initial delay before the first group retry.
 	GroupRetryBaseDelay time.Duration `yaml:"groupRetryBaseDelay" default:"1s"`
 	// GroupRetryMaxDelay caps exponential backoff for group retries.
@@ -280,19 +277,7 @@ func (c *ChGoConfig) Validate() error {
 	}
 
 	if c.GroupRetryMaxAttempts < 0 {
-		return errors.New("clickhouse.chgo: groupRetryMaxAttempts must be >= 0")
-	}
-
-	// Delays are only meaningful when group retries are enabled. Validate
-	// strictly in that case to prevent a tight spin-loop from a 0 delay.
-	if c.GroupRetryMaxAttempts > 0 {
-		if c.GroupRetryBaseDelay <= 0 {
-			return errors.New("clickhouse.chgo: groupRetryBaseDelay must be > 0 when groupRetryMaxAttempts > 0")
-		}
-
-		if c.GroupRetryMaxDelay <= 0 {
-			return errors.New("clickhouse.chgo: groupRetryMaxDelay must be > 0 when groupRetryMaxAttempts > 0")
-		}
+		return errors.New("clickhouse.chgo: groupRetryMaxAttempts must be >= 0 (0 means no limit)")
 	}
 
 	if err := c.AdaptiveLimiter.Validate(); err != nil {

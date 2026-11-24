@@ -31,6 +31,14 @@ message CanonicalExecutionBlock {
   google.protobuf.UInt64Value base_fee_per_gas = 20;
   // Ethereum network name
   string meta_network_name = 21;
+  // The parent block hash
+  google.protobuf.StringValue parent_hash = 22;
+  // The state root after executing the block
+  google.protobuf.StringValue state_root = 23;
+  // The blob gas used by the block (EIP-4844). Null before Cancun
+  google.protobuf.UInt64Value blob_gas_used = 24;
+  // The excess blob gas of the block (EIP-4844). Null before Cancun
+  google.protobuf.UInt64Value excess_blob_gas = 25;
 }
 
 // Request for listing canonical_execution_block records
@@ -59,18 +67,26 @@ message ListCanonicalExecutionBlockRequest {
   NullableStringFilter extra_data_string = 10;
   // Filter by base_fee_per_gas - The block base fee per gas (optional)
   NullableUInt64Filter base_fee_per_gas = 11;
+  // Filter by parent_hash - The parent block hash (optional)
+  NullableStringFilter parent_hash = 12;
+  // Filter by state_root - The state root after executing the block (optional)
+  NullableStringFilter state_root = 13;
+  // Filter by blob_gas_used - The blob gas used by the block (EIP-4844). Null before Cancun (optional)
+  NullableUInt64Filter blob_gas_used = 14;
+  // Filter by excess_blob_gas - The excess blob gas of the block (EIP-4844). Null before Cancun (optional)
+  NullableUInt64Filter excess_blob_gas = 15;
 
   // The maximum number of canonical_execution_block to return.
   // If unspecified, at most 100 items will be returned.
   // The maximum value is 10000; values above 10000 will be coerced to 10000.
-  int32 page_size = 12;
+  int32 page_size = 16;
   // A page token, received from a previous `ListCanonicalExecutionBlock` call.
   // Provide this to retrieve the subsequent page.
-  string page_token = 13;
+  string page_token = 17;
   // The order of results. Format: comma-separated list of fields.
   // Example: "foo,bar" or "foo desc,bar" for descending order on foo.
   // If unspecified, results will be returned in the default order.
-  string order_by = 14;
+  string order_by = 18;
 }
 
 // Response for listing canonical_execution_block records

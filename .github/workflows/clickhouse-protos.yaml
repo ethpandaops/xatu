@@ -1,0 +1,47 @@
+name: ClickHouse protos
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/migrations/clickhouse/**'
+      - 'deploy/clickhouse-proto-gen.yaml'
+      - 'deploy/local/docker-compose/**'
+      - 'docker-compose.yml'
+      - 'pkg/proto/clickhouse/**'
+      - 'Makefile'
+      - '.github/workflows/clickhouse-protos.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  up-to-date:
+    name: pkg/proto/clickhouse matches the migrations
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Set up Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Set up buf
+        uses: bufbuild/buf-setup-action@a47c93e0b1648d5651a065437926377d060baa99 # v1.50.0
+
+      - name: Regenerate from the migrations
+        run: make .proto-clickhouse
+
+      - name: Fail on drift
+        run: |
+          if [ -n "$(git status --porcelain -- pkg/proto/clickhouse)" ]; then
+            git status --porcelain -- pkg/proto/clickhouse
+            echo "::error::pkg/proto/clickhouse does not match deploy/migrations/clickhouse. Run 'make .proto-clickhouse' and commit the result."
+            exit 1
+          fi

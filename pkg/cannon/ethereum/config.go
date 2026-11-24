@@ -2,8 +2,11 @@ package ethereum
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ethpandaops/beacon/pkg/human"
+
+	"github.com/ethpandaops/xatu/pkg/cannon/ethereum/blockarchive"
 )
 
 // Config is the cannon's Ethereum connection config, grouped by layer.
@@ -18,6 +21,8 @@ type Config struct {
 	// Execution configures the execution-layer node the EL derivers collect from
 	// via cryo. Required only when any execution deriver is enabled.
 	Execution ExecutionConfig `yaml:"execution"`
+	// BlockArchive optionally serves finalized blocks from CL era files and Gloas envelopes from their sidecars.
+	BlockArchive blockarchive.Config `yaml:"blockArchive"`
 }
 
 // BeaconConfig configures the beacon node connection plus the beacon-block
@@ -38,7 +43,7 @@ type BeaconConfig struct {
 }
 
 // ExecutionConfig configures the execution-layer JSON-RPC endpoint that the EL
-// derivers feed to cryo (cryo --rpc). Basic-auth credentials may be embedded in
+// derivers feed to cryo (via ETH_RPC_URL). Basic-auth credentials may be embedded in
 // the address (https://user:pass@host). cryo has no header-injection path, so
 // there is intentionally no Headers field here — embed creds in the URL.
 type ExecutionConfig struct {
@@ -49,6 +54,10 @@ type ExecutionConfig struct {
 func (c *Config) Validate() error {
 	if c.Beacon.Address == "" {
 		return errors.New("ethereum.beacon.address is required")
+	}
+
+	if err := c.BlockArchive.Validate(); err != nil {
+		return fmt.Errorf("ethereum: %w", err)
 	}
 
 	return nil

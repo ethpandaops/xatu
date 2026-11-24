@@ -18,8 +18,11 @@ const (
 	unknown = "unknown"
 
 	// libp2p pubsub events.
-	TraceEvent_HANDLE_MESSAGE            = "HANDLE_MESSAGE"
-	TraceEvent_GOSSIPSUB_MESSAGE_PAYLOAD = "GOSSIPSUB_MESSAGE_PAYLOAD"
+	TraceEvent_HANDLE_MESSAGE                        = "HANDLE_MESSAGE"
+	TraceEvent_GOSSIPSUB_MESSAGE_PAYLOAD             = "GOSSIPSUB_MESSAGE_PAYLOAD"
+	TraceEvent_GOSSIPSUB_PARTIAL_DATA_COLUMN         = "GOSSIPSUB_PARTIAL_DATA_COLUMN"
+	TraceEvent_GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME = "GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME"
+	TraceEvent_DATA_COLUMN_COMPLETED                 = "DATA_COLUMN_COMPLETED"
 
 	// libp2p core networking events.
 	TraceEvent_CONNECTED    = "CONNECTED"
@@ -28,6 +31,9 @@ const (
 	// RPC events.
 	TraceEvent_HANDLE_METADATA = "HANDLE_METADATA"
 	TraceEvent_HANDLE_STATUS   = "HANDLE_STATUS"
+	// REQUEST_GOODBYE is a Goodbye received from a remote peer, emitted by tysm with the remote
+	// peer in TraceEvent.PeerID and Code, Reason and Agent in the payload.
+	TraceEvent_REQUEST_GOODBYE = "REQUEST_GOODBYE"
 
 	// Events that are not part of a normal Ethereum node.
 	TraceEvent_SYNTHETIC_HEARTBEAT                                 = "SYNTHETIC_HEARTBEAT"
@@ -61,6 +67,7 @@ const (
 // 3. Request/Response (RPC) protocol events:
 //   - "HANDLE_METADATA": Processing of metadata requests
 //   - "HANDLE_STATUS": Processing of status requests
+//   - "REQUEST_GOODBYE": Goodbye messages received from remote peers
 
 // HandleHermesEvent processes a Hermes trace event and routes it to the appropriate handler
 func (p *Processor) HandleHermesEvent(ctx context.Context, event *TraceEvent) error {
@@ -88,6 +95,12 @@ func (p *Processor) HandleHermesEvent(ctx context.Context, event *TraceEvent) er
 	// Raw gossipsub message payload events.
 	case event.Type == TraceEvent_GOSSIPSUB_MESSAGE_PAYLOAD:
 		return p.handleGossipsubMessagePayloadEvent(ctx, event, clientMeta)
+
+	// Gossipsub partial messages extension events.
+	case event.Type == TraceEvent_GOSSIPSUB_PARTIAL_DATA_COLUMN,
+		event.Type == TraceEvent_GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME,
+		event.Type == TraceEvent_DATA_COLUMN_COMPLETED:
+		return p.handlePartialDataColumnEvent(ctx, event, clientMeta)
 
 	// libp2p pubsub protocol level events.
 	case isLibp2pEvent(event):

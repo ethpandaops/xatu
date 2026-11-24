@@ -26,6 +26,7 @@ type EventConfig struct {
 	DeliverMessageEnabled             bool `yaml:"deliverMessageEnabled" default:"false"`
 	HandleMetadataEnabled             bool `yaml:"handleMetadataEnabled" default:"true"`
 	HandleStatusEnabled               bool `yaml:"handleStatusEnabled" default:"true"`
+	GoodbyeEnabled                    bool `yaml:"goodbyeEnabled" default:"true"`
 	CustodyProbeEnabled               bool `yaml:"custodyProbeEnabled" default:"true"`
 	GossipSubBeaconBlockEnabled       bool `yaml:"gossipSubBeaconBlockEnabled" default:"true"`
 	GossipSubAttestationEnabled       bool `yaml:"gossipSubAttestationEnabled" default:"true"`
@@ -46,6 +47,11 @@ type EventConfig struct {
 	BeaconSyntheticPayloadStatusResolvedEnabled           bool `yaml:"beaconSyntheticPayloadStatusResolvedEnabled" default:"true"`
 	BeaconSyntheticBuilderPendingPaymentSettlementEnabled bool `yaml:"beaconSyntheticBuilderPendingPaymentSettlementEnabled" default:"true"`
 	BeaconSyntheticPayloadAttestationProcessedEnabled     bool `yaml:"beaconSyntheticPayloadAttestationProcessedEnabled" default:"true"`
+
+	// Gossipsub partial messages extension (cell-level data column dissemination).
+	GossipSubPartialDataColumnEnabled        bool `yaml:"gossipSubPartialDataColumnEnabled" default:"false"`
+	GossipSubPartialDataColumnOutcomeEnabled bool `yaml:"gossipSubPartialDataColumnOutcomeEnabled" default:"false"`
+	DataColumnCompletedEnabled               bool `yaml:"dataColumnCompletedEnabled" default:"false"`
 }
 
 // Validate validates the event config.

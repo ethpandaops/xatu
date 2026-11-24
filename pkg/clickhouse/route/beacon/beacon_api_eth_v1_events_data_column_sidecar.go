@@ -66,9 +66,7 @@ func (b *beaconApiEthV1EventsDataColumnSidecarBatch) validate(
 		return fmt.Errorf("nil Index: %w", route.ErrInvalidEvent)
 	}
 
-	if payload.GetKzgCommitmentsCount() == nil {
-		return fmt.Errorf("nil KzgCommitmentsCount: %w", route.ErrInvalidEvent)
-	}
+	// KzgCommitmentsCount is optional (beacon-APIs #583); absent is stored as 0.
 
 	return nil
 }

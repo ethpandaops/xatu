@@ -65,6 +65,14 @@ func NewFuluBlockPayload(block *ethtypes.SignedBeaconBlockFulu, meta *TraceEvent
 	}
 }
 
+// NewGloasBlockPayload creates a Gloas block payload.
+func NewGloasBlockPayload(block *ethtypes.SignedBeaconBlockGloas, meta *TraceEventPayloadMetaData) *TraceEventGloasBlock {
+	return &TraceEventGloasBlock{
+		TraceEventPayloadMetaData: *meta,
+		Block:                     block,
+	}
+}
+
 // Attestation payload builders
 
 // NewAttestationPayload creates a pre-Electra attestation payload.
@@ -106,6 +114,14 @@ func NewSignedAggregateAttestationAndProofElectraPayload(agg *ethtypes.SignedAgg
 	return &TraceEventSignedAggregateAttestationAndProofElectra{
 		TraceEventPayloadMetaData:                 *meta,
 		SignedAggregateAttestationAndProofElectra: agg,
+	}
+}
+
+// NewSignedAggregateAttestationAndProofGloasPayload creates a Gloas signed aggregate attestation and proof payload.
+func NewSignedAggregateAttestationAndProofGloasPayload(agg *ethtypes.SignedAggregateAttestationAndProofGloas, meta *TraceEventPayloadMetaData) *TraceEventSignedAggregateAttestationAndProofGloas {
+	return &TraceEventSignedAggregateAttestationAndProofGloas{
+		TraceEventPayloadMetaData:               *meta,
+		SignedAggregateAttestationAndProofGloas: agg,
 	}
 }
 

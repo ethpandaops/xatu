@@ -3,6 +3,7 @@ package execution
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -17,13 +18,19 @@ import (
 // - "block": Triggered by execution layer block events (requires WebSocket)
 // - "interval": Periodic polling at a configured interval
 type StateSizeWatcher struct {
-	client   *Client
-	log      observability.ContextualLogger
-	config   *StateSizeConfig
-	wg       sync.WaitGroup
-	ctx      context.Context //nolint:containedctx // This is a derived context from the parent context.
-	cancel   context.CancelFunc
-	callback func(context.Context, *DebugStateSizeResponse) error
+	client     *Client
+	log        observability.ContextualLogger
+	config     *StateSizeConfig
+	wg         sync.WaitGroup
+	ctx        context.Context //nolint:containedctx // This is a derived context from the parent context.
+	cancel     context.CancelFunc
+	callback   func(context.Context, *DebugStateSizeResponse) error
+	subscribed atomic.Bool
+}
+
+// Healthy reports whether the watcher is receiving what it needs: its block subscription, in block mode.
+func (w *StateSizeWatcher) Healthy() bool {
+	return w.config.TriggerMode != StateSizeTriggerBlock || w.subscribed.Load()
 }
 
 // NewStateSizeWatcher creates a new StateSizeWatcher instance.
@@ -47,10 +54,10 @@ func (w *StateSizeWatcher) Start(parentCtx context.Context) error {
 	w.ctx, w.cancel = context.WithCancel(parentCtx)
 
 	switch w.config.TriggerMode {
-	case "interval":
+	case StateSizeTriggerInterval:
 		w.log.WithField("interval_seconds", w.config.IntervalSeconds).WithContext(parentCtx).Info("Starting state size watcher in interval mode")
 		w.startPeriodicPoller()
-	case "block":
+	case StateSizeTriggerBlock:
 		w.log.WithContext(parentCtx).Info("Starting state size watcher in block mode (subscribing to execution layer blocks)")
 
 		if err := w.startBlockSubscription(); err != nil {
@@ -80,7 +87,7 @@ func (w *StateSizeWatcher) Stop() error {
 // OnHeadEvent should be called when a new head event is received from the consensus layer.
 // This is only used when TriggerMode is "head".
 func (w *StateSizeWatcher) OnHeadEvent(ctx context.Context) error {
-	if w.config.TriggerMode != "head" {
+	if w.config.TriggerMode != StateSizeTriggerHead {
 		return nil
 	}
 
@@ -110,6 +117,8 @@ func (w *StateSizeWatcher) startPeriodicPoller() {
 // Implements automatic reconnection with exponential backoff on WebSocket disconnections.
 func (w *StateSizeWatcher) startBlockSubscription() error {
 	w.wg.Go(func() {
+		defer w.subscribed.Store(false)
+
 		// Reconnection parameters
 		const (
 			initialBackoff = 500 * time.Millisecond
@@ -147,6 +156,8 @@ func (w *StateSizeWatcher) startBlockSubscription() error {
 			// Successfully subscribed, reset backoff
 			backoff = initialBackoff
 
+			w.subscribed.Store(true)
+
 			w.log.Info("Successfully subscribed to execution layer blocks")
 
 			// Process blocks until an error occurs or context is cancelled
@@ -157,6 +168,8 @@ func (w *StateSizeWatcher) startBlockSubscription() error {
 				case <-w.ctx.Done():
 					return
 				case err := <-errChan:
+					w.subscribed.Store(false)
+
 					if err != nil {
 						w.log.WithError(err).WithField("retry_in", backoff).Warn("Block subscription error, reconnecting")
 					} else {

@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
 	"github.com/ethpandaops/xatu/pkg/sentry/execution/mock"
@@ -664,50 +666,51 @@ func TestMempoolWatcher(t *testing.T) {
 	assert.True(t, foundAbc, "Should process transaction with hash 0xabc123")
 }
 
-// TestMempoolWatcherSubscriptionError tests subscription error handling.
+// TestMempoolWatcherSubscriptionError checks the watcher resubscribes after the subscription fails, and that its
+// health follows the subscription.
 func TestMempoolWatcherSubscriptionError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	// Create mock client.
 	mockClient := mock.NewMockClientProvider(ctrl)
 
-	// Create channels for the subscription.
-	txChan := make(chan string)
 	errChan := make(chan error)
-
-	// Set up expectations for initial subscription.
-	mockClient.EXPECT().SubscribeToNewPendingTxs(gomock.Any()).Return(txChan, errChan, nil)
-
-	// Setup follow-up subscription after error.
 	txChan2 := make(chan string)
-	errChan2 := make(chan error)
-	mockClient.EXPECT().SubscribeToNewPendingTxs(gomock.Any()).Return(txChan2, errChan2, nil).AnyTimes()
 
-	// Allow other calls.
+	var subscriptions atomic.Int32
+
+	first := mockClient.EXPECT().SubscribeToNewPendingTxs(gomock.Any()).DoAndReturn(
+		func(context.Context) (<-chan string, <-chan error, error) {
+			subscriptions.Add(1)
+
+			return make(chan string), errChan, nil
+		})
+	mockClient.EXPECT().SubscribeToNewPendingTxs(gomock.Any()).DoAndReturn(
+		func(context.Context) (<-chan string, <-chan error, error) {
+			subscriptions.Add(1)
+
+			return txChan2, make(chan error), nil
+		}).After(first).AnyTimes()
+
 	mockClient.EXPECT().GetTxpoolContent(gomock.Any()).Return(json.RawMessage(`{"pending":{},"queued":{}}`), nil).AnyTimes()
 	mockClient.EXPECT().GetPendingTransactions(gomock.Any()).Return([]json.RawMessage{}, nil).AnyTimes()
 	mockClient.EXPECT().BatchGetTransactionsByHash(gomock.Any(), gomock.Any()).Return([]json.RawMessage{}, nil).AnyTimes()
 	mockClient.EXPECT().Close().Return(nil).AnyTimes()
 
-	// Create logger that discards output.
 	logger := logrus.New()
 	logger.SetOutput(io.Discard)
 	log := logger.WithField("component", "test")
 
-	// Create metrics.
 	metrics := NewMetrics("test7", "testnet")
 
-	// Create a no-op callback.
 	callback := func(ctx context.Context, record *PendingTxRecord, txData json.RawMessage) error {
 		return nil
 	}
 
-	// Create config.
 	config := &Config{
-		FetchInterval:                  1,   // 1 second.
-		ProcessingInterval:             100, // 100ms.
-		PruneDuration:                  10,  // 10 seconds.
+		FetchInterval:                  1,
+		ProcessingInterval:             100,
+		PruneDuration:                  10,
 		WebsocketEnabled:               true,
 		RpcBatchSize:                   10,
 		MaxConcurrency:                 2,
@@ -717,61 +720,28 @@ func TestMempoolWatcherSubscriptionError(t *testing.T) {
 		CircuitBreakerResetTimeout:     10,
 	}
 
-	// Create and start the watcher.
 	watcher := NewMempoolWatcher(mockClient, log, config, callback, metrics)
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
 
-	err := watcher.Start(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, watcher.Start(context.Background()))
+	defer watcher.Stop()
 
-	// Create a channel to signal when subscription reconnect is done
-	reconnectDone := make(chan struct{})
-	var reconnectMu sync.Mutex
-	reconnectMu.Lock()
-	reconnected := false
-	reconnectMu.Unlock()
+	require.Eventually(t, watcher.Healthy, 2*time.Second, 10*time.Millisecond)
 
-	// Monitor txChan2 to detect reconnection
-	go func() {
-		select {
-		case <-txChan2:
-			reconnectMu.Lock()
-			reconnected = true
-			reconnectMu.Unlock()
-			close(reconnectDone)
-		case <-ctx.Done():
-			close(reconnectDone)
-		}
-	}()
+	errChan <- fmt.Errorf("test subscription error")
 
-	// Send an error to trigger reconnection.
-	go func() {
-		time.Sleep(500 * time.Millisecond)
-		errChan <- fmt.Errorf("test subscription error")
-	}()
+	require.Eventually(t, func() bool { return subscriptions.Load() == 2 }, 5*time.Second, 10*time.Millisecond, "should resubscribe after the subscription fails")
+	require.Eventually(t, watcher.Healthy, 2*time.Second, 10*time.Millisecond)
 
-	// Send a transaction on the new channel to verify reconnection worked.
-	go func() {
-		time.Sleep(1500 * time.Millisecond)
-		txChan2 <- "0xreconnected"
-	}()
+	txChan2 <- "0xreconnected"
 
-	// Wait for processing with timeout
-	select {
-	case <-reconnectDone:
-		// Reconnection occurred or context done
-	case <-time.After(2500 * time.Millisecond):
-		t.Log("Timeout waiting for reconnection")
-	}
+	require.Eventually(t, func() bool {
+		watcher.pendingTxsMutex.RLock()
+		defer watcher.pendingTxsMutex.RUnlock()
 
-	// Stop the watcher
-	watcher.Stop()
+		_, ok := watcher.pendingTxs["0xreconnected"]
 
-	// Verify reconnection happened
-	reconnectMu.Lock()
-	assert.True(t, reconnected, "Should have reconnected after error")
-	reconnectMu.Unlock()
+		return ok
+	}, 2*time.Second, 10*time.Millisecond, "the new subscription's transactions should be processed")
 }
 
 // TestFetchAndProcessTxPool tests the watcher can process mempool content from RPC.

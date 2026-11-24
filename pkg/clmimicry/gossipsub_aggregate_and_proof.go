@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/OffchainLabs/go-bitfield"
+	"github.com/OffchainLabs/prysm/v7/consensus-types/primitives"
+	ethtypes "github.com/OffchainLabs/prysm/v7/proto/prysm/v1alpha1"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
@@ -40,7 +43,21 @@ func (p *Processor) handleGossipAggregateAndProof(
 	case *TraceEventSignedAggregateAttestationAndProof:
 		return p.handleAggregateAndProofFromAttestation(ctx, clientMeta, event, evt)
 	case *TraceEventSignedAggregateAttestationAndProofElectra:
-		return p.handleAggregateAndProofFromAttestationElectra(ctx, clientMeta, event, evt)
+		if evt.SignedAggregateAttestationAndProofElectra == nil || evt.SignedAggregateAttestationAndProofElectra.GetMessage() == nil {
+			return fmt.Errorf("handleGossipAggregateAndProof() called with nil electra aggregate attestation and proof")
+		}
+
+		message := evt.SignedAggregateAttestationAndProofElectra.GetMessage()
+
+		return p.handleAggregateAndProofFromCommitteeAttestation(ctx, clientMeta, event, &evt.TraceEventPayloadMetaData, message.GetAggregatorIndex(), message.GetAggregate())
+	case *TraceEventSignedAggregateAttestationAndProofGloas:
+		if evt.SignedAggregateAttestationAndProofGloas == nil || evt.SignedAggregateAttestationAndProofGloas.GetMessage() == nil {
+			return fmt.Errorf("handleGossipAggregateAndProof() called with nil gloas aggregate attestation and proof")
+		}
+
+		message := evt.SignedAggregateAttestationAndProofGloas.GetMessage()
+
+		return p.handleAggregateAndProofFromCommitteeAttestation(ctx, clientMeta, event, &evt.TraceEventPayloadMetaData, message.GetAggregatorIndex(), message.GetAggregate())
 	default:
 		return fmt.Errorf("unsupported payload type for aggregate and proof: %T", payload)
 	}
@@ -121,22 +138,25 @@ func (p *Processor) handleAggregateAndProofFromAttestation(
 	return p.output.HandleDecoratedEvent(ctx, decoratedEvent)
 }
 
-func (p *Processor) handleAggregateAndProofFromAttestationElectra(
+// committeeAttestation is an aggregate attestation that names its committee
+// in committee bits, as from Electra on.
+type committeeAttestation interface {
+	GetAggregationBits() bitfield.Bitlist
+	GetData() *ethtypes.AttestationData
+	GetSignature() []byte
+	GetCommitteeBits() bitfield.Bitvector64
+}
+
+func (p *Processor) handleAggregateAndProofFromCommitteeAttestation(
 	ctx context.Context,
 	clientMeta *xatu.ClientMeta,
 	event *TraceEvent,
-	payload *TraceEventSignedAggregateAttestationAndProofElectra,
+	payload *TraceEventPayloadMetaData,
+	aggregatorIndex primitives.ValidatorIndex,
+	attestation committeeAttestation,
 ) error {
-	if payload.SignedAggregateAttestationAndProofElectra == nil || payload.SignedAggregateAttestationAndProofElectra.GetMessage() == nil {
-		return fmt.Errorf("handleAggregateAndProofFromAttestationElectra() called with nil aggregate attestation and proof")
-	}
-
-	aggregate := payload.SignedAggregateAttestationAndProofElectra
-	message := aggregate.GetMessage()
-	attestation := message.GetAggregate()
-
-	if attestation == nil || attestation.GetData() == nil {
-		return fmt.Errorf("handleAggregateAndProofFromAttestationElectra() called with nil attestation data")
+	if attestation.GetData() == nil {
+		return fmt.Errorf("handleAggregateAndProofFromCommitteeAttestation() called with nil attestation data")
 	}
 
 	attestationData := attestation.GetData()
@@ -144,7 +164,7 @@ func (p *Processor) handleAggregateAndProofFromAttestationElectra(
 	// Create the aggregate and proof message using the actual payload data with V2 types
 	aggregateAndProof := &v1.SignedAggregateAttestationAndProofV2{
 		Message: &v1.AggregateAttestationAndProofV2{
-			AggregatorIndex: wrapperspb.UInt64(uint64(message.GetAggregatorIndex())),
+			AggregatorIndex: wrapperspb.UInt64(uint64(aggregatorIndex)),
 			Aggregate: &v1.AttestationV2{
 				AggregationBits: fmt.Sprintf("0x%x", attestation.GetAggregationBits().Bytes()),
 				Data: &v1.AttestationDataV2{
@@ -171,7 +191,7 @@ func (p *Processor) handleAggregateAndProofFromAttestationElectra(
 		return fmt.Errorf("failed to clone client metadata")
 	}
 
-	additionalData, err := p.createAdditionalGossipSubAggregateAndProofData(ctx, event, aggregateAndProof, phase0.Slot(attestationData.GetSlot()), uint64(message.GetAggregatorIndex()), payload.PeerID, payload.Topic, payload.MsgID, payload.MsgSize)
+	additionalData, err := p.createAdditionalGossipSubAggregateAndProofData(ctx, event, aggregateAndProof, phase0.Slot(attestationData.GetSlot()), uint64(aggregatorIndex), payload.PeerID, payload.Topic, payload.MsgID, payload.MsgSize)
 	if err != nil {
 		return fmt.Errorf("failed to create additional data: %w", err)
 	}

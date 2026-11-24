@@ -199,12 +199,7 @@ func (b *BeaconSyncCommitteeDeriver) run(rctx context.Context) {
 	}
 }
 
-// calculatePeriodBoundary calculates the appropriate sync committee period boundary epoch
-// based on the current epoch and direction. Returns the boundary epoch, whether it should
-// be processed, and any error.
-//
-// For head direction: only process if we're exactly at a period boundary, otherwise skip.
-// For backfill direction: always process the current period's boundary and jump to it.
+// calculatePeriodBoundary returns epoch's sync committee boundary and whether to derive it; head skips non-boundaries.
 func (b *BeaconSyncCommitteeDeriver) calculatePeriodBoundary(
 	_ context.Context,
 	epoch phase0.Epoch,
@@ -217,14 +212,17 @@ func (b *BeaconSyncCommitteeDeriver) calculatePeriodBoundary(
 
 	epochsPerPeriod := uint64(sp.EpochsPerSyncCommitteePeriod)
 
+	boundaryEpoch, err := b.beacon.SyncCommitteeStateEpoch(epoch)
+	if err != nil {
+		return 0, false, errors.Wrap(err, "failed to get sync committee period boundary")
+	}
+
 	// If already at a period boundary, always process it
-	if uint64(epoch)%epochsPerPeriod == 0 {
+	if epoch == boundaryEpoch {
 		return epoch, true, nil
 	}
 
-	// Calculate the current period's start boundary
 	currentPeriod := uint64(epoch) / epochsPerPeriod
-	boundaryEpoch := phase0.Epoch(currentPeriod * epochsPerPeriod)
 
 	if direction == iterator.BackfillingCheckpointDirectionHead {
 		// For head: we're not at a boundary, so skip processing.

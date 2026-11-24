@@ -400,6 +400,36 @@ func BuildListCanonicalBeaconBlockWithdrawalQuery(req *ListCanonicalBeaconBlockW
 		}
 	}
 
+	// Add filter for column: withdrawal_type
+	if req.WithdrawalType != nil {
+		switch filter := req.WithdrawalType.Filter.(type) {
+		case *StringFilter_Eq:
+			qb.AddCondition("withdrawal_type", "=", filter.Eq)
+		case *StringFilter_Ne:
+			qb.AddCondition("withdrawal_type", "!=", filter.Ne)
+		case *StringFilter_Contains:
+			qb.AddLikeCondition("withdrawal_type", "%" + filter.Contains + "%")
+		case *StringFilter_StartsWith:
+			qb.AddLikeCondition("withdrawal_type", filter.StartsWith + "%")
+		case *StringFilter_EndsWith:
+			qb.AddLikeCondition("withdrawal_type", "%" + filter.EndsWith)
+		case *StringFilter_Like:
+			qb.AddLikeCondition("withdrawal_type", filter.Like)
+		case *StringFilter_NotLike:
+			qb.AddNotLikeCondition("withdrawal_type", filter.NotLike)
+		case *StringFilter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("withdrawal_type", StringSliceToInterface(filter.In.Values))
+			}
+		case *StringFilter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("withdrawal_type", StringSliceToInterface(filter.NotIn.Values))
+			}
+		default:
+			// Unsupported filter type
+		}
+	}
+
 	// Handle pagination per AIP-132
 	// Validate page size
 	if req.PageSize < 0 {
@@ -425,7 +455,7 @@ func BuildListCanonicalBeaconBlockWithdrawalQuery(req *ListCanonicalBeaconBlockW
 	// Handle custom ordering if provided
 	var orderByClause string
 	if req.OrderBy != "" {
-		validFields := []string{"updated_date_time", "slot", "slot_start_date_time", "epoch", "epoch_start_date_time", "block_root", "block_version", "withdrawal_index", "withdrawal_validator_index", "withdrawal_address", "withdrawal_amount", "meta_network_name"}
+		validFields := []string{"updated_date_time", "slot", "slot_start_date_time", "epoch", "epoch_start_date_time", "block_root", "block_version", "withdrawal_index", "withdrawal_validator_index", "withdrawal_address", "withdrawal_amount", "meta_network_name", "withdrawal_type"}
 		orderFields, err := ParseOrderBy(req.OrderBy, validFields)
 		if err != nil {
 			return SQLQuery{}, fmt.Errorf("invalid order_by: %w", err)
@@ -437,7 +467,7 @@ func BuildListCanonicalBeaconBlockWithdrawalQuery(req *ListCanonicalBeaconBlockW
 	}
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "withdrawal_index", "withdrawal_validator_index", "NULLIF(`withdrawal_address`, repeat('\x00', 42)) AS `withdrawal_address`", "toString(`withdrawal_amount`) AS `withdrawal_amount`", "meta_network_name"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "withdrawal_index", "withdrawal_validator_index", "NULLIF(`withdrawal_address`, repeat('\x00', 42)) AS `withdrawal_address`", "toString(`withdrawal_amount`) AS `withdrawal_amount`", "meta_network_name", "withdrawal_type"}
 
 	return BuildParameterizedQuery("canonical_beacon_block_withdrawal", columns, qb, orderByClause, limit, offset, options...)
 }
@@ -457,7 +487,7 @@ func BuildGetCanonicalBeaconBlockWithdrawalQuery(req *GetCanonicalBeaconBlockWit
 	orderByClause := " ORDER BY meta_network_name, slot_start_date_time, block_root, withdrawal_index, withdrawal_validator_index"
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "withdrawal_index", "withdrawal_validator_index", "NULLIF(`withdrawal_address`, repeat('\x00', 42)) AS `withdrawal_address`", "toString(`withdrawal_amount`) AS `withdrawal_amount`", "meta_network_name"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "NULLIF(`block_root`, repeat('\x00', 66)) AS `block_root`", "block_version", "withdrawal_index", "withdrawal_validator_index", "NULLIF(`withdrawal_address`, repeat('\x00', 42)) AS `withdrawal_address`", "toString(`withdrawal_amount`) AS `withdrawal_amount`", "meta_network_name", "withdrawal_type"}
 
 	// Return single record
 	return BuildParameterizedQuery("canonical_beacon_block_withdrawal", columns, qb, orderByClause, 1, 0, options...)

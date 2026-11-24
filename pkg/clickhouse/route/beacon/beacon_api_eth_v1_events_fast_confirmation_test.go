@@ -30,13 +30,15 @@ func TestSnapshot_beacon_api_eth_v1_events_fast_confirmation(t *testing.T) {
 		}),
 		Data: &xatu.DecoratedEvent_EthV1EventsFastConfirmation{
 			EthV1EventsFastConfirmation: &ethv1.EventFastConfirmation{
-				Slot:  wrapperspb.UInt64(100),
-				Block: "0xfastconfirmblock",
+				Slot:        wrapperspb.UInt64(100),
+				Block:       "0xfastconfirmblock",
+				CurrentSlot: wrapperspb.UInt64(101),
 			},
 		},
 	}, 1, map[string]any{
 		"slot":                        uint32(100),
 		"block":                       "0xfastconfirmblock",
+		"current_slot":                uint32(101),
 		"meta_client_name":            "test-client",
 		"meta_network_name":           "mainnet",
 		"propagation_slot_start_diff": uint32(500),

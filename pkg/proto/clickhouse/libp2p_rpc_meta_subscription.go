@@ -720,6 +720,38 @@ func BuildListLibp2PRpcMetaSubscriptionQuery(req *ListLibp2PRpcMetaSubscriptionR
 		}
 	}
 
+	// Add filter for column: requests_partial
+	if req.RequestsPartial != nil {
+		switch filter := req.RequestsPartial.Filter.(type) {
+		case *NullableBoolFilter_Eq:
+			qb.AddCondition("requests_partial", "=", filter.Eq)
+		case *NullableBoolFilter_Ne:
+			qb.AddCondition("requests_partial", "!=", filter.Ne)
+		case *NullableBoolFilter_IsNull:
+			qb.AddIsNullCondition("requests_partial")
+		case *NullableBoolFilter_IsNotNull:
+			qb.AddIsNotNullCondition("requests_partial")
+		default:
+			// Unsupported filter type
+		}
+	}
+
+	// Add filter for column: supports_sending_partial
+	if req.SupportsSendingPartial != nil {
+		switch filter := req.SupportsSendingPartial.Filter.(type) {
+		case *NullableBoolFilter_Eq:
+			qb.AddCondition("supports_sending_partial", "=", filter.Eq)
+		case *NullableBoolFilter_Ne:
+			qb.AddCondition("supports_sending_partial", "!=", filter.Ne)
+		case *NullableBoolFilter_IsNull:
+			qb.AddIsNullCondition("supports_sending_partial")
+		case *NullableBoolFilter_IsNotNull:
+			qb.AddIsNotNullCondition("supports_sending_partial")
+		default:
+			// Unsupported filter type
+		}
+	}
+
 	// Handle pagination per AIP-132
 	// Validate page size
 	if req.PageSize < 0 {
@@ -745,7 +777,7 @@ func BuildListLibp2PRpcMetaSubscriptionQuery(req *ListLibp2PRpcMetaSubscriptionR
 	// Handle custom ordering if provided
 	var orderByClause string
 	if req.OrderBy != "" {
-		validFields := []string{"unique_key", "updated_date_time", "event_date_time", "control_index", "rpc_meta_unique_key", "subscribe", "topic_layer", "topic_fork_digest_value", "topic_name", "topic_encoding", "peer_id_unique_key", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name"}
+		validFields := []string{"unique_key", "updated_date_time", "event_date_time", "control_index", "rpc_meta_unique_key", "subscribe", "topic_layer", "topic_fork_digest_value", "topic_name", "topic_encoding", "peer_id_unique_key", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "requests_partial", "supports_sending_partial"}
 		orderFields, err := ParseOrderBy(req.OrderBy, validFields)
 		if err != nil {
 			return SQLQuery{}, fmt.Errorf("invalid order_by: %w", err)
@@ -757,7 +789,7 @@ func BuildListLibp2PRpcMetaSubscriptionQuery(req *ListLibp2PRpcMetaSubscriptionR
 	}
 
 	// Build column list
-	columns := []string{"unique_key", "toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "control_index", "rpc_meta_unique_key", "subscribe", "topic_layer", "topic_fork_digest_value", "topic_name", "topic_encoding", "peer_id_unique_key", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name"}
+	columns := []string{"unique_key", "toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "control_index", "rpc_meta_unique_key", "subscribe", "topic_layer", "topic_fork_digest_value", "topic_name", "topic_encoding", "peer_id_unique_key", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "requests_partial", "supports_sending_partial"}
 
 	return BuildParameterizedQuery("libp2p_rpc_meta_subscription", columns, qb, orderByClause, limit, offset, options...)
 }
@@ -777,7 +809,7 @@ func BuildGetLibp2PRpcMetaSubscriptionQuery(req *GetLibp2PRpcMetaSubscriptionReq
 	orderByClause := " ORDER BY meta_network_name, event_date_time, unique_key, control_index, meta_client_name"
 
 	// Build column list
-	columns := []string{"unique_key", "toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "control_index", "rpc_meta_unique_key", "subscribe", "topic_layer", "topic_fork_digest_value", "topic_name", "topic_encoding", "peer_id_unique_key", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name"}
+	columns := []string{"unique_key", "toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "control_index", "rpc_meta_unique_key", "subscribe", "topic_layer", "topic_fork_digest_value", "topic_name", "topic_encoding", "peer_id_unique_key", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "requests_partial", "supports_sending_partial"}
 
 	// Return single record
 	return BuildParameterizedQuery("libp2p_rpc_meta_subscription", columns, qb, orderByClause, 1, 0, options...)

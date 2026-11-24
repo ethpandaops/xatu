@@ -7,6 +7,7 @@ import (
 	"github.com/ethpandaops/ethwallclock"
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -54,6 +55,9 @@ type CeilingBeaconNode interface {
 	// (slot or block root). Results are cached by identifier, so moving
 	// aliases such as "finalized" or "head" must never be passed here.
 	GetBeaconBlock(ctx context.Context, identifier string, ignoreMetrics ...bool) (*spec.VersionedSignedBeaconBlock, error)
+	// GetExecutionPayloadEnvelope returns a Gloas block's execution payload
+	// envelope, or nil when the builder withheld the payload.
+	GetExecutionPayloadEnvelope(ctx context.Context, blockID string) (*gloas.SignedExecutionPayloadEnvelope, error)
 }
 
 var _ CeilingBeaconNode = (*ethereum.BeaconNode)(nil)
@@ -119,17 +123,20 @@ func (b *BackfillingBlock) maxRange() uint64 {
 }
 
 // minBackfillBlock is the lowest block a dataset can be collected from. The
-// state-read datasets (balance/storage/nonce reads) cannot be traced at the
-// genesis block — block 0 has no parent state, so cryo's state-access tracer
-// fails on it. Clamping their floor to 1 avoids requesting (and then retrying
-// forever) an untraceable range. Block 0 carries no state reads anyway, so this
-// loses no data. All other datasets keep a floor of 0 (genesis is valid for
-// e.g. the block row and the genesis premine balance_diffs).
+// datasets cryo builds from debug_traceBlockByNumber (balance/storage/nonce
+// reads via the prestate tracer, four_byte_counts via the 4byte tracer) cannot
+// be traced at the genesis block: block 0 has no parent state, so the node
+// answers "genesis is not traceable". Clamping their floor to 1 avoids
+// requesting (and then retrying forever) an untraceable range. Block 0 has no
+// transactions, so this loses no data. All other datasets keep a floor of 0
+// (genesis is valid for e.g. the block row and the genesis premine
+// balance_diffs).
 func minBackfillBlock(cannonType xatu.CannonType) uint64 {
 	switch cannonType {
 	case xatu.CannonType_EXECUTION_CANONICAL_BALANCE_READS,
 		xatu.CannonType_EXECUTION_CANONICAL_STORAGE_READS,
-		xatu.CannonType_EXECUTION_CANONICAL_NONCE_READS:
+		xatu.CannonType_EXECUTION_CANONICAL_NONCE_READS,
+		xatu.CannonType_EXECUTION_CANONICAL_FOUR_BYTE_COUNTS:
 		return 1
 	default:
 		return 0
@@ -168,12 +175,100 @@ func (b *BackfillingBlock) fetchExecutionCeiling(ctx context.Context) (uint64, e
 		return 0, errors.New("finalized beacon block is nil")
 	}
 
+	if block.Version >= spec.DataVersionGloas {
+		return b.payloadParentNumber(ctx, block)
+	}
+
 	blockNumber, err := block.ExecutionBlockNumber()
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to read execution block number from finalized beacon block")
 	}
 
 	return blockNumber, nil
+}
+
+// maxPayloadParentHops bounds the walk from a Gloas block back to the block
+// that revealed the payload it builds on. Each hop past the first crosses a
+// withheld payload.
+const maxPayloadParentHops = 64
+
+// payloadParentNumber returns the execution block number of the payload a Gloas
+// block builds on. A Gloas block's own payload is not final until a finalized
+// descendant builds on it, so its parent payload is the highest final execution
+// block. The bid names that payload only by hash; the number comes from the
+// ancestor that revealed it.
+func (b *BackfillingBlock) payloadParentNumber(ctx context.Context, block *spec.VersionedSignedBeaconBlock) (uint64, error) {
+	bid, err := block.SignedExecutionPayloadBid()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to read execution payload bid from finalized beacon block")
+	}
+
+	target, err := bid.ParentBlockHash()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to read parent block hash from finalized beacon block bid")
+	}
+
+	parentRoot, err := block.ParentRoot()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to read parent root from finalized beacon block")
+	}
+
+	for range maxPayloadParentHops {
+		identifier := xatuethv1.RootAsString(parentRoot)
+
+		ancestor, err := b.beaconNode.GetBeaconBlock(ctx, identifier)
+		if err != nil {
+			return 0, errors.Wrapf(err, "failed to fetch beacon block %s", identifier)
+		}
+
+		if ancestor == nil {
+			return 0, errors.Errorf("beacon block %s is nil", identifier)
+		}
+
+		hash, err := ancestor.ExecutionBlockHash()
+		if err != nil {
+			return 0, errors.Wrapf(err, "failed to read execution block hash of beacon block %s", identifier)
+		}
+
+		if hash == target {
+			return b.revealedBlockNumber(ctx, identifier, ancestor)
+		}
+
+		if ancestor.Version < spec.DataVersionGloas {
+			return 0, errors.Errorf("beacon block %s carries execution block %s, expected %s", identifier, hash, target)
+		}
+
+		parentRoot, err = ancestor.ParentRoot()
+		if err != nil {
+			return 0, errors.Wrapf(err, "failed to read parent root of beacon block %s", identifier)
+		}
+	}
+
+	return 0, errors.Errorf("execution block %s not found within %d ancestors", target, maxPayloadParentHops)
+}
+
+// revealedBlockNumber returns the number of the execution payload a beacon
+// block carries: in the block before Gloas, in its envelope from Gloas on.
+func (b *BackfillingBlock) revealedBlockNumber(ctx context.Context, identifier string, block *spec.VersionedSignedBeaconBlock) (uint64, error) {
+	if block.Version < spec.DataVersionGloas {
+		blockNumber, err := block.ExecutionBlockNumber()
+		if err != nil {
+			return 0, errors.Wrapf(err, "failed to read execution block number of beacon block %s", identifier)
+		}
+
+		return blockNumber, nil
+	}
+
+	envelope, err := b.beaconNode.GetExecutionPayloadEnvelope(ctx, identifier)
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to fetch execution payload envelope for beacon block %s", identifier)
+	}
+
+	if envelope == nil || envelope.Message == nil || envelope.Message.Payload == nil {
+		return 0, errors.Errorf("beacon block %s has no execution payload envelope", identifier)
+	}
+
+	return envelope.Message.Payload.BlockNumber, nil
 }
 
 // Next returns the next inclusive block range to process. It blocks (sleeping

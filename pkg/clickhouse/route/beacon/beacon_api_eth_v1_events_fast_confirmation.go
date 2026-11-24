@@ -104,6 +104,12 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) appendPayload(event *xatu.De
 	}
 
 	b.Block.Append([]byte(payload.GetBlock()))
+
+	if currentSlot := payload.GetCurrentSlot(); currentSlot != nil {
+		b.CurrentSlot.Append(proto.NewNullable(uint32(currentSlot.GetValue()))) //nolint:gosec // slot fits uint32
+	} else {
+		b.CurrentSlot.Append(proto.Nullable[uint32]{})
+	}
 }
 
 func (b *beaconApiEthV1EventsFastConfirmationBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

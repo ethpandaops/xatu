@@ -4,12 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/creasty/defaults"
-
 	"github.com/ethpandaops/xatu/pkg/cannon/coordinator"
 	"github.com/ethpandaops/xatu/pkg/cannon/deriver"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cryo"
+	"github.com/ethpandaops/xatu/pkg/internal/configdecode"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	chSink "github.com/ethpandaops/xatu/pkg/output/clickhouse"
@@ -77,6 +76,14 @@ func (c *Config) Validate() error {
 
 	if err := c.Derivers.Validate(); err != nil {
 		return fmt.Errorf("invalid derivers config: %w", err)
+	}
+
+	// Batching backfills share the block cache; a look-ahead larger than it evicts blocks before they are derived.
+	if slots := c.Derivers.BatchLookAheadSlots(); slots > c.Ethereum.Beacon.BlockCacheSize {
+		return fmt.Errorf(
+			"invalid derivers config: batched backfills preload %d blocks (2 x epochsPerBatch x 32 per deriver), more than ethereum.beacon.blockCacheSize %d",
+			slots, c.Ethereum.Beacon.BlockCacheSize,
+		)
 	}
 
 	// Execution (EL) derivers collect via cryo from an execution node. When any
@@ -159,21 +166,12 @@ func (c *Config) createSink(out *output.Config, log observability.ContextualLogg
 	)
 }
 
-// newCannonClickhouseSink mirrors the unmarshal+defaults flow that
-// output.NewSink does internally for the clickhouse sink, but inserts
-// cannon-specific defaults between the YAML decode and the sink
-// constructor. User-supplied values always win.
+// newCannonClickhouseSink decodes the clickhouse sink config like output.NewSink, then fills the cannon values YAML left empty.
 func newCannonClickhouseSink(out *output.Config, log observability.ContextualLogger) (output.Sink, error) {
 	conf := &chSink.Config{}
 
-	if out.Config != nil {
-		if err := out.Config.Unmarshal(conf); err != nil {
-			return nil, fmt.Errorf("decoding clickhouse sink config: %w", err)
-		}
-	}
-
-	if err := defaults.Set(conf); err != nil {
-		return nil, fmt.Errorf("applying clickhouse sink defaults: %w", err)
+	if err := configdecode.Decode(out.Config, conf); err != nil {
+		return nil, fmt.Errorf("decoding clickhouse sink config: %w", err)
 	}
 
 	if conf.MetricsSubsystem == "" {

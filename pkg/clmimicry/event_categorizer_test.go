@@ -20,21 +20,21 @@ func TestEventCategorization(t *testing.T) {
 		t.Logf("Group %d has %d events", group, len(events))
 	}
 
-	// We should have categorized all 35 currently emitted events
-	assert.Equal(t, 35, totalEvents, "Should have exactly 35 events categorized")
+	// We should have categorized all 39 currently emitted events
+	assert.Equal(t, 39, totalEvents, "Should have exactly 39 events categorized")
 
 	// Test specific group queries
 	groupA := ec.GetGroupAEvents()
 	assert.Len(t, groupA, 15, "Group A should have 15 events")
 
 	groupB := ec.GetGroupBEvents()
-	assert.Len(t, groupB, 7, "Group B should have 7 events")
+	assert.Len(t, groupB, 10, "Group B should have 10 events")
 
 	groupC := ec.GetGroupCEvents()
 	assert.Len(t, groupC, 2, "Group C should have 2 events")
 
 	groupD := ec.GetGroupDEvents()
-	assert.Len(t, groupD, 11, "Group D should have 11 events")
+	assert.Len(t, groupD, 12, "Group D should have 12 events")
 }
 
 func TestMetaEventIdentification(t *testing.T) {
@@ -163,6 +163,9 @@ func TestEventCompleteness(t *testing.T) {
 		xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_GRAFT,
 		xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_PRUNE,
 		xatu.Event_LIBP2P_TRACE_RPC_META_SUBSCRIPTION,
+		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN,
+		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PARTIAL_DATA_COLUMN_OUTCOME,
+		xatu.Event_LIBP2P_TRACE_DATA_COLUMN_COMPLETED,
 		// Group C
 		xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IWANT,
 		xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IDONTWANT,
@@ -174,6 +177,7 @@ func TestEventCompleteness(t *testing.T) {
 		xatu.Event_LIBP2P_TRACE_DISCONNECTED,
 		xatu.Event_LIBP2P_TRACE_HANDLE_METADATA,
 		xatu.Event_LIBP2P_TRACE_HANDLE_STATUS,
+		xatu.Event_LIBP2P_TRACE_GOODBYE,
 		xatu.Event_LIBP2P_TRACE_SYNTHETIC_HEARTBEAT,
 		xatu.Event_BEACON_SYNTHETIC_PAYLOAD_STATUS_RESOLVED,
 		xatu.Event_BEACON_SYNTHETIC_BUILDER_PENDING_PAYMENT_SETTLEMENT,

@@ -9,7 +9,11 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-const testBlockHash = "0xfc429da12e414c0e8348fd9bb760b1a118b4dcf73419f021d4ccc2c3b793e05c"
+const (
+	testBlockHash  = "0xfc429da12e414c0e8348fd9bb760b1a118b4dcf73419f021d4ccc2c3b793e05c"
+	testParentHash = "0x1b1a5b2b63d5db1d26d30a2a2cff0e8e2b2e4c9d0f5b4f3c2a1b0c9d8e7f6a5b"
+	testStateRoot  = "0x2c2b6c3c74e6ec2e37e41b3b3d00f9f93c3f5daea06c5a4d3b2c1dae9f807b6c"
+)
 
 func TestRowToProto(t *testing.T) {
 	row := &blockRow{
@@ -21,6 +25,10 @@ func TestRowToProto(t *testing.T) {
 		ExtraData:     "0x546974616e", // "Titan"
 		Timestamp:     1741410875,
 		BaseFeePerGas: 611253386,
+		ParentHash:    testParentHash,
+		StateRoot:     testStateRoot,
+		BlobGasUsed:   uint64Ptr(786432),
+		ExcessBlobGas: uint64Ptr(0),
 	}
 
 	out := blockRowToProto(row)
@@ -35,6 +43,29 @@ func TestRowToProto(t *testing.T) {
 	assert.Equal(t, "0x546974616e", out.GetExtraData().GetValue())
 	assert.Equal(t, "Titan", out.GetExtraDataString().GetValue(), "valid UTF-8 extra_data should decode")
 	assert.Equal(t, int64(1741410875), out.GetBlockDateTime().GetSeconds())
+	assert.Equal(t, testParentHash, out.GetParentHash().GetValue())
+	assert.Equal(t, testStateRoot, out.GetStateRoot().GetValue())
+	assert.Equal(t, uint64(786432), out.GetBlobGasUsed().GetValue())
+	require.NotNil(t, out.GetExcessBlobGas(), "a zero excess_blob_gas is a value, not NULL")
+	assert.Equal(t, uint64(0), out.GetExcessBlobGas().GetValue())
+}
+
+func TestRowToProto_PreCancunHasNoBlobGas(t *testing.T) {
+	row := &blockRow{
+		BlockNumber: 1,
+		BlockHash:   testBlockHash,
+		ParentHash:  testParentHash,
+		StateRoot:   testStateRoot,
+	}
+
+	out := blockRowToProto(row)
+
+	assert.Nil(t, out.GetBlobGasUsed())
+	assert.Nil(t, out.GetExcessBlobGas())
+}
+
+func uint64Ptr(v uint64) *uint64 {
+	return &v
 }
 
 func TestRowToProto_NonUTF8ExtraData(t *testing.T) {

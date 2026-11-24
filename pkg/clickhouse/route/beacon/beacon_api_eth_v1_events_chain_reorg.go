@@ -95,7 +95,7 @@ func (b *beaconApiEthV1EventsChainReorgBatch) appendPayload(event *xatu.Decorate
 	b.NewHeadBlock.Append([]byte(chainReorgV2.GetNewHeadBlock()))
 	b.OldHeadState.Append([]byte(chainReorgV2.GetOldHeadState()))
 	b.NewHeadState.Append([]byte(chainReorgV2.GetNewHeadState()))
-	b.ExecutionOptimistic.Append(false)
+	b.ExecutionOptimistic.Append(chainReorgV2.GetExecutionOptimistic())
 }
 
 func (b *beaconApiEthV1EventsChainReorgBatch) appendAdditionalData(event *xatu.DecoratedEvent) {

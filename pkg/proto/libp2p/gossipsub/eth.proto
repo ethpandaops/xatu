@@ -87,3 +87,60 @@ message MessagePayload {
     // RejectReason is the validation rejection reason. Empty for delivered messages.
     google.protobuf.StringValue reject_reason = 3 [json_name = "reject_reason"];
 }
+
+// PartialDataColumn is one gossipsub partial messages extension RPC part on a data column topic.
+message PartialDataColumn {
+    // Direction is RECV, SEND or DROP.
+    google.protobuf.StringValue direction = 1 [json_name = "direction"];
+    // CapturePoint is WIRE when read from the raw RPC, APP when read after the gossipsub router filtered it.
+    google.protobuf.StringValue capture_point = 2 [json_name = "capture_point"];
+    google.protobuf.StringValue group_id = 3 [json_name = "group_id"];
+    // GroupVersion is the group ID version byte: 0 for fulu, 1 for gloas.
+    google.protobuf.UInt32Value group_version = 4 [json_name = "group_version"];
+    google.protobuf.StringValue block_root = 5 [json_name = "block_root"];
+    google.protobuf.UInt64Value column_index = 6 [json_name = "column_index"];
+    google.protobuf.BoolValue has_message = 7 [json_name = "has_message"];
+    google.protobuf.UInt32Value cells_count = 8 [json_name = "cells_count"];
+    // CellsBitmap is the hex encoded SSZ cells_present_bitmap.
+    google.protobuf.StringValue cells_bitmap = 9 [json_name = "cells_bitmap"];
+    // BitmapLength is the bitlist length, equal to the block's blob count.
+    google.protobuf.UInt32Value bitmap_length = 10 [json_name = "bitmap_length"];
+    google.protobuf.BoolValue has_header = 11 [json_name = "has_header"];
+    google.protobuf.UInt32Value kzg_commitments_count = 12 [json_name = "kzg_commitments_count"];
+    google.protobuf.UInt64Value proposer_index = 13 [json_name = "proposer_index"];
+    google.protobuf.BoolValue has_metadata = 14 [json_name = "has_metadata"];
+    google.protobuf.UInt32Value metadata_size = 15 [json_name = "metadata_size"];
+    google.protobuf.UInt32Value metadata_available_count = 16 [json_name = "metadata_available_count"];
+    google.protobuf.UInt32Value metadata_requests_count = 17 [json_name = "metadata_requests_count"];
+    // MetadataAvailable is the hex encoded SSZ parts metadata available bitlist.
+    google.protobuf.StringValue metadata_available = 18 [json_name = "metadata_available"];
+    // MetadataRequests is the hex encoded SSZ parts metadata requests bitlist.
+    google.protobuf.StringValue metadata_requests = 19 [json_name = "metadata_requests"];
+}
+
+// DataColumnCompleted records a custody data column becoming fully available to the node, by whatever path.
+message DataColumnCompleted {
+    google.protobuf.StringValue block_root = 1 [json_name = "block_root"];
+    google.protobuf.UInt64Value column_index = 2 [json_name = "column_index"];
+    // CompletedVia is FULL_GOSSIP, PARTIAL_GOSSIP, EL, RECONSTRUCTION or UNKNOWN.
+    google.protobuf.StringValue completed_via = 3 [json_name = "completed_via"];
+    google.protobuf.UInt32Value cells_total = 4 [json_name = "cells_total"];
+    google.protobuf.UInt32Value cells_from_gossip = 5 [json_name = "cells_from_gossip"];
+    google.protobuf.UInt32Value cells_from_el = 6 [json_name = "cells_from_el"];
+    google.protobuf.UInt32Value contributing_peers = 7 [json_name = "contributing_peers"];
+    google.protobuf.UInt32Value kzg_commitments_count = 8 [json_name = "kzg_commitments_count"];
+}
+
+// PartialDataColumnOutcome is the validation verdict for one received partial data column message.
+message PartialDataColumnOutcome {
+    google.protobuf.StringValue group_id = 1 [json_name = "group_id"];
+    google.protobuf.StringValue block_root = 2 [json_name = "block_root"];
+    google.protobuf.UInt64Value column_index = 3 [json_name = "column_index"];
+    // Stage is DECODE, HEADER or CELLS.
+    google.protobuf.StringValue stage = 4 [json_name = "stage"];
+    // Outcome is ACCEPT, IGNORE or REJECT.
+    google.protobuf.StringValue outcome = 5 [json_name = "outcome"];
+    google.protobuf.StringValue reason = 6 [json_name = "reason"];
+    google.protobuf.UInt32Value cells_count = 7 [json_name = "cells_count"];
+    google.protobuf.UInt32Value new_cells_count = 8 [json_name = "new_cells_count"];
+}

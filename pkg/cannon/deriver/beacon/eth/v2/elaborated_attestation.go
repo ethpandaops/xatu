@@ -131,7 +131,7 @@ func (b *ElaboratedAttestationDeriver) run(rctx context.Context) {
 				}
 
 				// Process the epoch
-				events, err := b.processEpoch(ctx, position.Next)
+				events, err := iterator.DeriveEpochs(ctx, position.Epochs(), b.processEpoch)
 				if err != nil {
 					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
 
@@ -153,7 +153,7 @@ func (b *ElaboratedAttestationDeriver) run(rctx context.Context) {
 				}
 
 				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, position.LastEpoch(), position.Direction); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return "", err
@@ -391,6 +391,7 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 						},
 					},
 					ValidatorIndexes: committeeValidatorIndexes,
+					PayloadPresent:   attestationPayloadPresent(attestation.Version, attestationData),
 				}
 
 				//nolint:gosec // If we have that many attestations in a block we're cooked
@@ -408,6 +409,15 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 	}
 
 	return events, nil
+}
+
+// attestationPayloadPresent returns the payload vote the attestation data index carries from Gloas (EIP-7732).
+func attestationPayloadPresent(version spec.DataVersion, data *phase0.AttestationData) *wrapperspb.BoolValue {
+	if version < spec.DataVersionGloas {
+		return nil
+	}
+
+	return wrapperspb.Bool(data.Index == 1)
 }
 
 func (b *ElaboratedAttestationDeriver) getAttestatingValidatorIndexesPhase0(ctx context.Context, attestation *spec.VersionedAttestation) ([]*wrapperspb.UInt64Value, error) {

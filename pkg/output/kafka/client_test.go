@@ -4,10 +4,12 @@ import (
 	"testing"
 
 	"github.com/IBM/sarama"
+	"github.com/creasty/defaults"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"gopkg.in/yaml.v3"
 
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
@@ -419,4 +421,56 @@ func TestConfigValidate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSASLConfigDecode(t *testing.T) {
+	tests := []struct {
+		name      string
+		in        string
+		mechanism SASLMechanism
+		version   int16
+	}{
+		{
+			name:      "omitted fields get defaults",
+			in:        "brokers: localhost:9092\nsasl:\n  user: user\n  password: pass\n",
+			mechanism: SASLTypePlaintext,
+			version:   1,
+		},
+		{
+			name:      "explicit version 0 holds",
+			in:        "brokers: localhost:9092\nsasl:\n  user: user\n  password: pass\n  version: 0\n",
+			mechanism: SASLTypePlaintext,
+			version:   0,
+		},
+		{
+			name:      "explicit mechanism holds",
+			in:        "brokers: localhost:9092\nsasl:\n  mechanism: SCRAM-SHA-512\n  user: user\n  password: pass\n",
+			mechanism: SASLTypeSCRAMSHA512,
+			version:   1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conf := &Config{}
+			require.NoError(t, defaults.Set(conf))
+			require.NoError(t, yaml.Unmarshal([]byte(tt.in), conf))
+
+			require.NotNil(t, conf.SASLConfig)
+			assert.Equal(t, tt.mechanism, conf.SASLConfig.Mechanism)
+			assert.Equal(t, tt.version, conf.SASLConfig.Version)
+		})
+	}
+}
+
+func TestSASLConfigOmittedVersionPassesSaramaValidation(t *testing.T) {
+	conf := &Config{}
+	require.NoError(t, defaults.Set(conf))
+	require.NoError(t, yaml.Unmarshal([]byte("brokers: localhost:9092\nsasl:\n  user: user\n  password: pass\n"), conf))
+
+	sc, err := InitSaramaConfig(&conf.ProducerConfig, conf.MaxExportBatchSize)
+	require.NoError(t, err)
+
+	assert.Equal(t, sarama.SASLHandshakeV1, sc.Net.SASL.Version)
+	require.NoError(t, sc.Validate())
 }

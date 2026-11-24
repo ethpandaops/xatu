@@ -978,6 +978,40 @@ func BuildListBeaconApiEthV1EventsFastConfirmationQuery(req *ListBeaconApiEthV1E
 		}
 	}
 
+	// Add filter for column: current_slot
+	if req.CurrentSlot != nil {
+		switch filter := req.CurrentSlot.Filter.(type) {
+		case *NullableUInt32Filter_Eq:
+			qb.AddCondition("current_slot", "=", filter.Eq)
+		case *NullableUInt32Filter_Ne:
+			qb.AddCondition("current_slot", "!=", filter.Ne)
+		case *NullableUInt32Filter_Lt:
+			qb.AddCondition("current_slot", "<", filter.Lt)
+		case *NullableUInt32Filter_Lte:
+			qb.AddCondition("current_slot", "<=", filter.Lte)
+		case *NullableUInt32Filter_Gt:
+			qb.AddCondition("current_slot", ">", filter.Gt)
+		case *NullableUInt32Filter_Gte:
+			qb.AddCondition("current_slot", ">=", filter.Gte)
+		case *NullableUInt32Filter_Between:
+			qb.AddBetweenCondition("current_slot", filter.Between.Min, filter.Between.Max.GetValue())
+		case *NullableUInt32Filter_In:
+			if len(filter.In.Values) > 0 {
+				qb.AddInCondition("current_slot", UInt32SliceToInterface(filter.In.Values))
+			}
+		case *NullableUInt32Filter_NotIn:
+			if len(filter.NotIn.Values) > 0 {
+				qb.AddNotInCondition("current_slot", UInt32SliceToInterface(filter.NotIn.Values))
+			}
+		case *NullableUInt32Filter_IsNull:
+			qb.AddIsNullCondition("current_slot")
+		case *NullableUInt32Filter_IsNotNull:
+			qb.AddIsNotNullCondition("current_slot")
+		default:
+			// Unsupported filter type
+		}
+	}
+
 	// Handle pagination per AIP-132
 	// Validate page size
 	if req.PageSize < 0 {
@@ -1003,7 +1037,7 @@ func BuildListBeaconApiEthV1EventsFastConfirmationQuery(req *ListBeaconApiEthV1E
 	// Handle custom ordering if provided
 	var orderByClause string
 	if req.OrderBy != "" {
-		validFields := []string{"updated_date_time", "event_date_time", "slot", "slot_start_date_time", "propagation_slot_start_diff", "block", "epoch", "epoch_start_date_time", "wallclock_slot", "wallclock_slot_start_date_time", "wallclock_epoch", "wallclock_epoch_start_date_time", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation"}
+		validFields := []string{"updated_date_time", "event_date_time", "slot", "slot_start_date_time", "propagation_slot_start_diff", "block", "epoch", "epoch_start_date_time", "wallclock_slot", "wallclock_slot_start_date_time", "wallclock_epoch", "wallclock_epoch_start_date_time", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation", "current_slot"}
 		orderFields, err := ParseOrderBy(req.OrderBy, validFields)
 		if err != nil {
 			return SQLQuery{}, fmt.Errorf("invalid order_by: %w", err)
@@ -1015,7 +1049,7 @@ func BuildListBeaconApiEthV1EventsFastConfirmationQuery(req *ListBeaconApiEthV1E
 	}
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "propagation_slot_start_diff", "NULLIF(`block`, repeat('\x00', 66)) AS `block`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "wallclock_slot", "toUnixTimestamp(`wallclock_slot_start_date_time`) AS `wallclock_slot_start_date_time`", "wallclock_epoch", "toUnixTimestamp(`wallclock_epoch_start_date_time`) AS `wallclock_epoch_start_date_time`", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "propagation_slot_start_diff", "NULLIF(`block`, repeat('\x00', 66)) AS `block`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "wallclock_slot", "toUnixTimestamp(`wallclock_slot_start_date_time`) AS `wallclock_slot_start_date_time`", "wallclock_epoch", "toUnixTimestamp(`wallclock_epoch_start_date_time`) AS `wallclock_epoch_start_date_time`", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation", "current_slot"}
 
 	return BuildParameterizedQuery("beacon_api_eth_v1_events_fast_confirmation", columns, qb, orderByClause, limit, offset, options...)
 }
@@ -1035,7 +1069,7 @@ func BuildGetBeaconApiEthV1EventsFastConfirmationQuery(req *GetBeaconApiEthV1Eve
 	orderByClause := " ORDER BY meta_network_name, slot_start_date_time, meta_client_name, block"
 
 	// Build column list
-	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "propagation_slot_start_diff", "NULLIF(`block`, repeat('\x00', 66)) AS `block`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "wallclock_slot", "toUnixTimestamp(`wallclock_slot_start_date_time`) AS `wallclock_slot_start_date_time`", "wallclock_epoch", "toUnixTimestamp(`wallclock_epoch_start_date_time`) AS `wallclock_epoch_start_date_time`", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation"}
+	columns := []string{"toUnixTimestamp(`updated_date_time`) AS `updated_date_time`", "toUnixTimestamp64Micro(`event_date_time`) AS `event_date_time`", "slot", "toUnixTimestamp(`slot_start_date_time`) AS `slot_start_date_time`", "propagation_slot_start_diff", "NULLIF(`block`, repeat('\x00', 66)) AS `block`", "epoch", "toUnixTimestamp(`epoch_start_date_time`) AS `epoch_start_date_time`", "wallclock_slot", "toUnixTimestamp(`wallclock_slot_start_date_time`) AS `wallclock_slot_start_date_time`", "wallclock_epoch", "toUnixTimestamp(`wallclock_epoch_start_date_time`) AS `wallclock_epoch_start_date_time`", "meta_client_name", "meta_client_version", "meta_client_implementation", "meta_client_os", "meta_client_ip", "meta_client_geo_city", "meta_client_geo_country", "meta_client_geo_country_code", "meta_client_geo_continent_code", "meta_client_geo_longitude", "meta_client_geo_latitude", "meta_client_geo_autonomous_system_number", "meta_client_geo_autonomous_system_organization", "meta_network_name", "meta_consensus_version", "meta_consensus_version_major", "meta_consensus_version_minor", "meta_consensus_version_patch", "meta_consensus_implementation", "current_slot"}
 
 	// Return single record
 	return BuildParameterizedQuery("beacon_api_eth_v1_events_fast_confirmation", columns, qb, orderByClause, 1, 0, options...)

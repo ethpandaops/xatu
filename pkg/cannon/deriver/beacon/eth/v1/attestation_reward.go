@@ -33,7 +33,10 @@ const (
 )
 
 type AttestationRewardDeriverConfig struct {
-	Enabled  bool                                 `yaml:"enabled" default:"true"`
+	Enabled bool `yaml:"enabled" default:"true"`
+	// Workers is how many epochs of a backfill batch are derived and written at once.
+	// It only helps with iterator.backfill.epochsPerBatch above 1.
+	Workers  int                                  `yaml:"workers" default:"1"`
 	Iterator iterator.BackfillingCheckpointConfig `yaml:"iterator"`
 }
 
@@ -84,7 +87,10 @@ func (b *AttestationRewardDeriver) Start(ctx context.Context) error {
 
 	b.log.WithContext(ctx).Info("Attestation reward deriver enabled")
 
-	if err := b.iterator.Start(ctx, b.ActivationFork()); err != nil {
+	// Epoch E's rewards are paid at the end of epoch E+1, so the last phase0 epoch's attestations are rewarded by
+	// Altair's first transition, under Altair's rules, and the rewards endpoint serves them (Lighthouse does; Prysm
+	// rejects epochs before Altair). The phase0 reward deriver leaves that epoch to this one.
+	if err := b.iterator.StartEarly(ctx, b.ActivationFork(), 1); err != nil {
 		return errors.Wrap(err, "failed to start iterator")
 	}
 
@@ -95,6 +101,16 @@ func (b *AttestationRewardDeriver) Start(ctx context.Context) error {
 }
 
 func (b *AttestationRewardDeriver) Stop(ctx context.Context) error {
+	return nil
+}
+
+func (b *AttestationRewardDeriver) sendEvents(ctx context.Context, events []*xatu.DecoratedEvent) error {
+	for _, fn := range b.onEventsCallbacks {
+		if err := fn(ctx, events); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -133,9 +149,8 @@ func (b *AttestationRewardDeriver) run(rctx context.Context) {
 				}
 
 				// Process the epoch
-				events, err := b.processEpoch(ctx, position.Next)
-				if err != nil {
-					b.log.WithError(err).WithContext(ctx).Error("Failed to process epoch")
+				if err := iterator.DeriveAndSendEpochs(ctx, position.Epochs(), b.cfg.Workers, b.processEpoch, b.sendEvents); err != nil {
+					b.log.WithError(err).WithField("epoch", iterator.FailedEpoch(err, position.Next)).WithContext(ctx).Error("Failed to process epoch")
 
 					span.SetStatus(codes.Error, err.Error())
 
@@ -145,17 +160,8 @@ func (b *AttestationRewardDeriver) run(rctx context.Context) {
 				// Look ahead
 				b.lookAhead(ctx, position.LookAheads)
 
-				// Send the events
-				for _, fn := range b.onEventsCallbacks {
-					if err := fn(ctx, events); err != nil {
-						span.SetStatus(codes.Error, err.Error())
-
-						return "", errors.Wrap(err, "failed to send events")
-					}
-				}
-
 				// Update our location
-				if err := b.iterator.UpdateLocation(ctx, position.Next, position.Direction); err != nil {
+				if err := b.iterator.UpdateLocation(ctx, position.LastEpoch(), position.Direction); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 
 					return "", err
@@ -257,11 +263,11 @@ func (b *AttestationRewardDeriver) createEventFromAttestationReward(reward apiv1
 		Data: &xatu.DecoratedEvent_EthV1BeaconAttestationReward{
 			EthV1BeaconAttestationReward: &xatu.AttestationRewardData{
 				ValidatorIndex: wrapperspb.UInt64(uint64(reward.ValidatorIndex)),
-				Head:           wrapperspb.Int64(int64(reward.Head)), //nolint:gosec // reward value is bounded well within int64 range
+				Head:           wrapperspb.Int64(reward.Head),
 				Target:         wrapperspb.Int64(reward.Target),
 				Source:         wrapperspb.Int64(reward.Source),
 				InclusionDelay: inclusionDelay,
-				Inactivity:     wrapperspb.Int64(int64(reward.Inactivity)), //nolint:gosec // reward value is bounded well within int64 range
+				Inactivity:     wrapperspb.Int64(reward.Inactivity),
 			},
 		},
 	}

@@ -45,6 +45,7 @@ type beaconApiEthV1EventsFastConfirmationBatch struct {
 	MetaConsensusVersionMinor                 proto.ColStr
 	MetaConsensusVersionPatch                 proto.ColStr
 	MetaConsensusImplementation               proto.ColStr
+	CurrentSlot                               *proto.ColNullable[uint32]
 	rows                                      int
 }
 
@@ -64,6 +65,7 @@ func newbeaconApiEthV1EventsFastConfirmationBatch() *beaconApiEthV1EventsFastCon
 		MetaClientGeoLatitude:               new(proto.ColFloat64).Nullable(),
 		MetaClientGeoAutonomousSystemNumber: new(proto.ColUInt32).Nullable(),
 		MetaClientGeoAutonomousSystemOrganization: new(proto.ColStr).Nullable(),
+		CurrentSlot: new(proto.ColUInt32).Nullable(),
 	}
 }
 
@@ -150,6 +152,7 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) Input() proto.Input {
 		{Name: "meta_consensus_version_minor", Data: &b.MetaConsensusVersionMinor},
 		{Name: "meta_consensus_version_patch", Data: &b.MetaConsensusVersionPatch},
 		{Name: "meta_consensus_implementation", Data: &b.MetaConsensusImplementation},
+		{Name: "current_slot", Data: b.CurrentSlot},
 	}
 }
 
@@ -185,6 +188,7 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) Reset() {
 	b.MetaConsensusVersionMinor.Reset()
 	b.MetaConsensusVersionPatch.Reset()
 	b.MetaConsensusImplementation.Reset()
+	b.CurrentSlot.Reset()
 	b.rows = 0
 }
 
@@ -193,7 +197,7 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) Snapshot() []map[string]any 
 	out := make([]map[string]any, n)
 
 	for i := 0; i < n; i++ {
-		row := make(map[string]any, 31)
+		row := make(map[string]any, 32)
 		row["updated_date_time"] = b.UpdatedDateTime.Row(i).Unix()
 		row["event_date_time"] = b.EventDateTime.Row(i).UnixMilli()
 		row["slot"] = b.Slot.Row(i)
@@ -273,6 +277,11 @@ func (b *beaconApiEthV1EventsFastConfirmationBatch) Snapshot() []map[string]any 
 		row["meta_consensus_version_minor"] = b.MetaConsensusVersionMinor.Row(i)
 		row["meta_consensus_version_patch"] = b.MetaConsensusVersionPatch.Row(i)
 		row["meta_consensus_implementation"] = b.MetaConsensusImplementation.Row(i)
+		if v := b.CurrentSlot.Row(i); v.Set {
+			row["current_slot"] = v.Value
+		} else {
+			row["current_slot"] = nil
+		}
 		out[i] = row
 	}
 

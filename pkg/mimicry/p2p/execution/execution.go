@@ -322,15 +322,8 @@ func (p *Peer) Start(ctx context.Context) (<-chan error, error) {
 		if p.handlers.DecoratedEvent != nil && txs != nil {
 			now := time.Now()
 
-			transactions, decErr := (*eth.TransactionsPacket)(txs).Items()
-			if decErr != nil {
-				p.log.WithError(decErr).WithContext(ctx).Error("failed to decode transactions")
-
-				return nil
-			}
-
-			for _, tx := range transactions {
-				_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, ttlcache.WithTTL[string, bool](1*time.Hour))
+			for _, tx := range p.decodeTransactions(ctx, &(*eth.TransactionsPacket)(txs).RawList) {
+				_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.hash().String(), true, ttlcache.WithTTL[string, bool](1*time.Hour))
 				// transaction was just set in shared cache, so we need to handle it
 				if !retrieved {
 					event, errT := p.handleTransaction(ctx, now, tx)

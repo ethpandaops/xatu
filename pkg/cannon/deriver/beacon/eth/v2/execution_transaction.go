@@ -10,6 +10,7 @@ import (
 
 	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
@@ -26,6 +27,7 @@ import (
 
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
+	"github.com/ethpandaops/xatu/pkg/internal/frametx"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -397,7 +399,24 @@ func (b *ExecutionTransactionDeriver) deriveEvents(
 
 	signer := types.LatestSignerForChainID(chainID)
 
-	for index, transaction := range transactions {
+	for _, executionTransaction := range transactions {
+		index := executionTransaction.position
+
+		if executionTransaction.frame != nil {
+			event, err := b.deriveFrameTransactionEvent(ctx, block, envelope, executionTransaction.frame, index, blockIdentifier, chainID)
+			if err != nil {
+				return nil, err
+			}
+
+			if event != nil {
+				events = append(events, event)
+			}
+
+			continue
+		}
+
+		transaction := executionTransaction.tx
+
 		from, err := types.Sender(signer, transaction)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get transaction sender: %v", err)
@@ -467,7 +486,10 @@ func (b *ExecutionTransactionDeriver) deriveEvents(
 			tx.AuthorizationList = newSetCodeAuthorizations(transaction.SetCodeAuthorizations())
 		}
 
-		event, err := b.createEvent(ctx, tx, uint64(index), blockIdentifier, transaction, sidecarsSize, sidecarsEmptySize)
+		size := strconv.FormatUint(transaction.Size(), 10)
+		callDataSize := strconv.Itoa(len(transaction.Data()))
+
+		event, err := b.createEvent(ctx, tx, index, blockIdentifier, size, callDataSize, sidecarsSize, sidecarsEmptySize)
 		if err != nil {
 			b.log.WithError(err).WithContext(ctx).Error("Failed to create event")
 
@@ -478,6 +500,50 @@ func (b *ExecutionTransactionDeriver) deriveEvents(
 	}
 
 	return events, nil
+}
+
+// deriveFrameTransactionEvent builds the event for an EIP-8141 frame transaction. Each frame has its own
+// target, value and calldata, so to, value and input stay empty, and the payer is only in the receipt.
+// A frame transaction whose gas price cannot be derived, such as one carrying blobs, is skipped (nil event).
+func (b *ExecutionTransactionDeriver) deriveFrameTransactionEvent(
+	ctx context.Context,
+	block *spec.VersionedSignedBeaconBlock,
+	envelope *gloas.SignedExecutionPayloadEnvelope,
+	frame *frametx.Transaction,
+	positionInBlock uint64,
+	blockIdentifier *xatu.BlockIdentifier,
+	chainID *big.Int,
+) (*xatu.DecoratedEvent, error) {
+	baseFee, err := blockBaseFee(block, envelope)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transaction gas price: %v", err)
+	}
+
+	gas, err := frame.MaxGas()
+
+	var gasPrice *big.Int
+	if err == nil {
+		gasPrice, err = frame.GasPrice(baseFee)
+	}
+
+	if err != nil {
+		b.log.WithError(err).WithField("transaction", frame.Hash.Hex()).WithContext(ctx).Warn("Skipping frame transaction whose gas cannot be derived")
+
+		return nil, nil //nolint:nilnil // nil event skips the transaction
+	}
+
+	tx := &xatuethv1.Transaction{
+		Nonce:     wrapperspb.UInt64(frame.NonceSeq),
+		Gas:       wrapperspb.UInt64(gas),
+		GasPrice:  gasPrice.String(),
+		GasTipCap: frame.Fees.MaxPriorityFeePerGas.String(),
+		From:      frame.Sender.Hex(),
+		Hash:      frame.Hash.Hex(),
+		ChainId:   chainID.String(),
+		Type:      wrapperspb.UInt32(frametx.TxType),
+	}
+
+	return b.createEvent(ctx, tx, positionInBlock, blockIdentifier, strconv.FormatUint(frame.Size, 10), "", "0", "0")
 }
 
 // blobSidecarSizes sums a blob transaction's sidecar sizes, or returns empty sizes (NULL) and the missing hashes.
@@ -526,11 +592,20 @@ func newSetCodeAuthorizations(authorizations []types.SetCodeAuthorization) []*xa
 	return out
 }
 
+// executionTransaction is a block transaction at its position: tx, or frame for an EIP-8141 frame transaction.
+type executionTransaction struct {
+	position uint64
+	tx       *types.Transaction
+	frame    *frametx.Transaction
+}
+
+// getExecutionTransactions decodes the block's transactions. Transactions of a type that neither
+// go-ethereum nor frametx decodes are logged and left out, so a new type never stalls the slot.
 func (b *ExecutionTransactionDeriver) getExecutionTransactions(
 	ctx context.Context,
 	block *spec.VersionedSignedBeaconBlock,
 	envelope *gloas.SignedExecutionPayloadEnvelope,
-) ([]*types.Transaction, error) {
+) ([]executionTransaction, error) {
 	var rawTxs [][]byte
 
 	switch {
@@ -558,21 +633,42 @@ func (b *ExecutionTransactionDeriver) getExecutionTransactions(
 		}
 	}
 
-	transactions := make([]*types.Transaction, 0, len(rawTxs))
+	transactions := make([]executionTransaction, 0, len(rawTxs))
 
-	for _, raw := range rawTxs {
+	for i, raw := range rawTxs {
+		position := uint64(i)
+
 		ethTransaction := new(types.Transaction)
-		if err := ethTransaction.UnmarshalBinary(raw); err != nil {
+
+		err := ethTransaction.UnmarshalBinary(raw)
+		if err == nil {
+			transactions = append(transactions, executionTransaction{position: position, tx: ethTransaction})
+
+			continue
+		}
+
+		if !errors.Is(err, types.ErrTxTypeNotSupported) {
 			return nil, fmt.Errorf("failed to unmarshal transaction: %v", err)
 		}
 
-		transactions = append(transactions, ethTransaction)
+		frame, err := frametx.Decode(raw)
+		if err != nil {
+			b.log.WithError(err).WithFields(logrus.Fields{
+				"type":     raw[0],
+				"position": position,
+				"hash":     crypto.Keccak256Hash(raw).Hex(),
+			}).WithContext(ctx).Warn("Skipping transaction of unsupported type")
+
+			continue
+		}
+
+		transactions = append(transactions, executionTransaction{position: position, frame: frame})
 	}
 
 	return transactions, nil
 }
 
-func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transaction *xatuethv1.Transaction, positionInBlock uint64, blockIdentifier *xatu.BlockIdentifier, rlpTransaction *types.Transaction, sidecarsSize, sidecarsEmptySize string) (*xatu.DecoratedEvent, error) {
+func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transaction *xatuethv1.Transaction, positionInBlock uint64, blockIdentifier *xatu.BlockIdentifier, size, callDataSize, sidecarsSize, sidecarsEmptySize string) (*xatu.DecoratedEvent, error) {
 	// Make a clone of the metadata
 	metadata, ok := proto.Clone(b.clientMeta).(*xatu.ClientMeta)
 	if !ok {
@@ -597,8 +693,8 @@ func (b *ExecutionTransactionDeriver) createEvent(ctx context.Context, transacti
 		EthV2BeaconBlockExecutionTransaction: &xatu.ClientMeta_AdditionalEthV2BeaconBlockExecutionTransactionData{
 			Block:                 blockIdentifier,
 			PositionInBlock:       wrapperspb.UInt64(positionInBlock),
-			Size:                  strconv.FormatFloat(float64(rlpTransaction.Size()), 'f', 0, 64),
-			CallDataSize:          fmt.Sprintf("%d", len(rlpTransaction.Data())),
+			Size:                  size,
+			CallDataSize:          callDataSize,
 			BlobSidecarsSize:      sidecarsSize,
 			BlobSidecarsEmptySize: sidecarsEmptySize,
 		},
@@ -620,44 +716,9 @@ func GetGasPrice(
 	}
 
 	if transaction.Type() == 2 || transaction.Type() == 3 || transaction.Type() == 4 { // EIP-1559/blob/7702 transactions
-		baseFee := new(big.Int)
-
-		switch block.Version {
-		case spec.DataVersionBellatrix:
-			le := block.Bellatrix.Message.Body.ExecutionPayload.BaseFeePerGasLE
-
-			var be [32]byte
-			for i := 0; i < 32; i++ {
-				be[i] = le[31-i]
-			}
-
-			baseFee = new(big.Int).SetBytes(be[:])
-		case spec.DataVersionCapella:
-			le := block.Capella.Message.Body.ExecutionPayload.BaseFeePerGasLE
-
-			var be [32]byte
-			for i := 0; i < 32; i++ {
-				be[i] = le[31-i]
-			}
-
-			baseFee = new(big.Int).SetBytes(be[:])
-		case spec.DataVersionDeneb:
-			executionPayload := block.Deneb.Message.Body.ExecutionPayload
-			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
-		case spec.DataVersionElectra:
-			executionPayload := block.Electra.Message.Body.ExecutionPayload
-			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
-		case spec.DataVersionFulu:
-			executionPayload := block.Fulu.Message.Body.ExecutionPayload
-			baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
-		case spec.DataVersionGloas, spec.DataVersionHeze:
-			if envelope == nil || envelope.Message == nil || envelope.Message.Payload == nil {
-				return nil, errors.New("gloas envelope required to compute gas price but was nil")
-			}
-
-			baseFee.SetBytes(envelope.Message.Payload.BaseFeePerGas.Bytes())
-		default:
-			return nil, fmt.Errorf("unknown block version: %d", block.Version)
+		baseFee, err := blockBaseFee(block, envelope)
+		if err != nil {
+			return nil, err
 		}
 
 		// Calculate Effective Gas Price: min(max_fee_per_gas, base_fee + max_priority_fee_per_gas)
@@ -670,4 +731,49 @@ func GetGasPrice(
 	}
 
 	return nil, fmt.Errorf("unknown transaction type: %d", transaction.Type())
+}
+
+// blockBaseFee reads the block's base fee; from Gloas (EIP-7732) it is in the envelope's payload.
+func blockBaseFee(block *spec.VersionedSignedBeaconBlock, envelope *gloas.SignedExecutionPayloadEnvelope) (*big.Int, error) {
+	baseFee := new(big.Int)
+
+	switch block.Version {
+	case spec.DataVersionBellatrix:
+		le := block.Bellatrix.Message.Body.ExecutionPayload.BaseFeePerGasLE
+
+		var be [32]byte
+		for i := 0; i < 32; i++ {
+			be[i] = le[31-i]
+		}
+
+		baseFee = new(big.Int).SetBytes(be[:])
+	case spec.DataVersionCapella:
+		le := block.Capella.Message.Body.ExecutionPayload.BaseFeePerGasLE
+
+		var be [32]byte
+		for i := 0; i < 32; i++ {
+			be[i] = le[31-i]
+		}
+
+		baseFee = new(big.Int).SetBytes(be[:])
+	case spec.DataVersionDeneb:
+		executionPayload := block.Deneb.Message.Body.ExecutionPayload
+		baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
+	case spec.DataVersionElectra:
+		executionPayload := block.Electra.Message.Body.ExecutionPayload
+		baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
+	case spec.DataVersionFulu:
+		executionPayload := block.Fulu.Message.Body.ExecutionPayload
+		baseFee.SetBytes(executionPayload.BaseFeePerGas.Bytes())
+	case spec.DataVersionGloas, spec.DataVersionHeze:
+		if envelope == nil || envelope.Message == nil || envelope.Message.Payload == nil {
+			return nil, errors.New("gloas envelope required to compute gas price but was nil")
+		}
+
+		baseFee.SetBytes(envelope.Message.Payload.BaseFeePerGas.Bytes())
+	default:
+		return nil, fmt.Errorf("unknown block version: %d", block.Version)
+	}
+
+	return baseFee, nil
 }

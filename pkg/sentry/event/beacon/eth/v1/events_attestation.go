@@ -104,6 +104,28 @@ func (e *EventsAttestation) getData() (*xatuethv1.AttestationV2, error) {
 				},
 			},
 		}, nil
+	case spec.DataVersionPQ:
+		attestation := e.event.PQ
+		if attestation == nil {
+			return nil, fmt.Errorf("pq attestation is nil")
+		}
+
+		return &xatuethv1.AttestationV2{
+			AggregationBits: xatuethv1.BytesToString(attestation.AggregationBits),
+			Data: &xatuethv1.AttestationDataV2{
+				Slot:            &wrapperspb.UInt64Value{Value: uint64(attestation.Data.Slot)},
+				Index:           &wrapperspb.UInt64Value{Value: uint64(attestation.Data.Index)},
+				BeaconBlockRoot: xatuethv1.RootAsString(attestation.Data.BeaconBlockRoot),
+				Source: &xatuethv1.CheckpointV2{
+					Epoch: &wrapperspb.UInt64Value{Value: uint64(attestation.Data.Source.Epoch)},
+					Root:  xatuethv1.RootAsString(attestation.Data.Source.Root),
+				},
+				Target: &xatuethv1.CheckpointV2{
+					Epoch: &wrapperspb.UInt64Value{Value: uint64(attestation.Data.Target.Epoch)},
+					Root:  xatuethv1.RootAsString(attestation.Data.Target.Root),
+				},
+			},
+		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported attestation version: %s", e.event.Version)
 	}

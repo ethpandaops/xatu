@@ -213,23 +213,27 @@ func (b *ExecutionPayloadBidDeriver) processSlot(ctx context.Context, slot phase
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
-	if block.Gloas == nil || block.Gloas.Message == nil || block.Gloas.Message.Body == nil {
-		return []*xatu.DecoratedEvent{}, nil
+	rawBid, err := block.SignedExecutionPayloadBid()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get execution payload bid for slot %d", slot)
 	}
 
-	rawBid := block.Gloas.Message.Body.SignedExecutionPayloadBid
-	if rawBid == nil || rawBid.Message == nil {
+	var bid *xatuethv1.SignedExecutionPayloadBid
+
+	switch {
+	case rawBid.Gloas != nil:
+		bid = xatuethv1.NewSignedExecutionPayloadBidFromGloas(rawBid.Gloas)
+	case rawBid.Heze != nil:
+		bid = xatuethv1.NewSignedExecutionPayloadBidFromHeze(rawBid.Heze)
+	}
+
+	if bid == nil {
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
 	blockIdentifier, err := GetBlockIdentifier(block, b.beacon.Metadata().Wallclock())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
-	}
-
-	bid := xatuethv1.NewSignedExecutionPayloadBidFromGloas(rawBid)
-	if bid == nil {
-		return []*xatu.DecoratedEvent{}, nil
 	}
 
 	event, err := b.createEvent(ctx, bid, blockIdentifier)

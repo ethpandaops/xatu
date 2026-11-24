@@ -201,16 +201,16 @@ func extractKZGCommitments(block *spec.VersionedSignedBeaconBlock) ([]deneb.KZGC
 		if block.Fulu != nil && block.Fulu.Message != nil && block.Fulu.Message.Body != nil {
 			return block.Fulu.Message.Body.BlobKZGCommitments, nil
 		}
-	case spec.DataVersionGloas:
+	case spec.DataVersionGloas, spec.DataVersionHeze:
 		// EIP-7732: BlobKZGCommitments live inside the SignedExecutionPayloadBid
 		// (the bid the proposer chose); the block body no longer carries them
-		// inline. If the bid is absent (shouldn't happen for a valid Gloas block),
-		// there are no commitments to return.
-		if block.Gloas != nil && block.Gloas.Message != nil && block.Gloas.Message.Body != nil &&
-			block.Gloas.Message.Body.SignedExecutionPayloadBid != nil &&
-			block.Gloas.Message.Body.SignedExecutionPayloadBid.Message != nil {
-			return block.Gloas.Message.Body.SignedExecutionPayloadBid.Message.BlobKZGCommitments, nil
+		// inline.
+		bid, err := block.SignedExecutionPayloadBid()
+		if err != nil {
+			return nil, err
 		}
+
+		return bid.BlobKZGCommitments()
 	}
 
 	return nil, fmt.Errorf("block version %s does not support KZG commitments", block.Version)

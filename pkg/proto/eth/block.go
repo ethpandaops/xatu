@@ -12,6 +12,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/go-eth2-client/spec/heze"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
@@ -51,6 +52,8 @@ func NewEventBlockV2FromVersionedProposal(proposal *api.VersionedProposal) (*v2.
 		data = NewEventBlockFromFulu(proposal.Fulu.Block, nil)
 	case spec.DataVersionGloas:
 		data = NewEventBlockFromGloas(proposal.Gloas, nil)
+	case spec.DataVersionHeze:
+		data = NewEventBlockFromHeze(proposal.Heze, nil)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", proposal.Version)
 	}
@@ -78,6 +81,8 @@ func NewEventBlockV2FromVersionSignedBeaconBlock(block *spec.VersionedSignedBeac
 		data = NewEventBlockFromFulu(block.Fulu.Message, &block.Fulu.Signature)
 	case spec.DataVersionGloas:
 		data = NewEventBlockFromGloas(block.Gloas.Message, &block.Gloas.Signature)
+	case spec.DataVersionHeze:
+		data = NewEventBlockFromHeze(block.Heze.Message, &block.Heze.Signature)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", block.Version)
 	}
@@ -443,6 +448,47 @@ func NewEventBlockFromGloas(block *gloas.BeaconBlock, signature *phase0.BLSSigna
 					},
 					BlsToExecutionChanges:     v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
 					SignedExecutionPayloadBid: v1.NewSignedExecutionPayloadBidFromGloas(block.Body.SignedExecutionPayloadBid),
+					PayloadAttestations:       v1.NewPayloadAttestationsFromGloas(block.Body.PayloadAttestations),
+					ParentExecutionRequests:   v1.NewGloasExecutionRequestsFromGloas(block.Body.ParentExecutionRequests),
+				},
+			},
+		},
+	}
+
+	if signature != nil && !signature.IsZero() {
+		event.Signature = signature.String()
+	}
+
+	return event
+}
+
+// NewEventBlockFromHeze creates an EventBlockV2 from a Heze beacon block. A Heze
+// block has the Gloas shape minus eth1_data and deposits (EIP-8015) plus the
+// bid's inclusion list bits (EIP-7805), so it is carried in the Gloas message
+// with those fields left empty. Consumers tell the forks apart by the block
+// version in the event's additional data.
+func NewEventBlockFromHeze(block *heze.BeaconBlock, signature *phase0.BLSSignature) *v2.EventBlockV2 {
+	event := &v2.EventBlockV2{
+		Version: v2.BlockVersion_GLOAS,
+		Message: &v2.EventBlockV2_GloasBlock{
+			GloasBlock: &v2.BeaconBlockGloas{
+				Slot:          &wrapperspb.UInt64Value{Value: uint64(block.Slot)},
+				ProposerIndex: &wrapperspb.UInt64Value{Value: uint64(block.ProposerIndex)},
+				ParentRoot:    block.ParentRoot.String(),
+				StateRoot:     block.StateRoot.String(),
+				Body: &v2.BeaconBlockBodyGloas{
+					RandaoReveal:      block.Body.RANDAOReveal.String(),
+					Graffiti:          fmt.Sprintf("0x%x", block.Body.Graffiti[:]),
+					ProposerSlashings: v1.NewProposerSlashingsFromPhase0(block.Body.ProposerSlashings),
+					AttesterSlashings: v1.NewAttesterSlashingsFromGloas(block.Body.AttesterSlashings),
+					Attestations:      v1.NewAttestationsFromGloas(block.Body.Attestations),
+					VoluntaryExits:    v1.NewSignedVoluntaryExitsFromPhase0(block.Body.VoluntaryExits),
+					SyncAggregate: &v1.SyncAggregate{
+						SyncCommitteeBits:      fmt.Sprintf("0x%x", block.Body.SyncAggregate.SyncCommitteeBits),
+						SyncCommitteeSignature: block.Body.SyncAggregate.SyncCommitteeSignature.String(),
+					},
+					BlsToExecutionChanges:     v2.NewBLSToExecutionChangesFromCapella(block.Body.BLSToExecutionChanges),
+					SignedExecutionPayloadBid: v1.NewSignedExecutionPayloadBidFromHeze(block.Body.SignedExecutionPayloadBid),
 					PayloadAttestations:       v1.NewPayloadAttestationsFromGloas(block.Body.PayloadAttestations),
 					ParentExecutionRequests:   v1.NewGloasExecutionRequestsFromGloas(block.Body.ParentExecutionRequests),
 				},

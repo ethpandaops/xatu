@@ -86,7 +86,8 @@ func (b *ValidatorBlock) Filter(_ context.Context) bool {
 		}
 
 		hash = fuluBlock.FuluBlock.GetStateRoot()
-	case spec.DataVersionGloas.String():
+	// Heze blocks are carried in the Gloas message.
+	case spec.DataVersionGloas.String(), spec.DataVersionHeze.String():
 		gloasBlock, ok := data.EthV3ValidatorBlock.GetMessage().(*v2.EventBlockV2_GloasBlock)
 		if !ok {
 			b.log.Error("failed to cast message to GloasBlock")

@@ -85,7 +85,7 @@ var infinityRandaoReveal = phase0.BLSSignature{0xc0}
 func (s *Sentry) fetchValidatorBlock(ctx context.Context, slot phase0.Slot) (*v3.ValidatorBlock, error) {
 	snapshot := &v3.ValidatorBlockDataSnapshot{RequestAt: time.Now()}
 
-	postGloas, err := s.gloasActiveAt(slot)
+	fork, err := s.forkAt(slot)
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +95,8 @@ func (s *Sentry) fetchValidatorBlock(ctx context.Context, slot phase0.Slot) (*v3
 		envelope      *gloas.ExecutionPayloadEnvelope
 	)
 
-	if postGloas {
-		proposedBlock, envelope, err = s.produceBlockV4(ctx, slot, &infinityRandaoReveal)
+	if fork >= spec.DataVersionGloas {
+		proposedBlock, envelope, err = s.produceBlockV4(ctx, slot, fork, &infinityRandaoReveal)
 	} else {
 		proposedBlock, err = s.produceBlockV3(ctx, slot)
 	}
@@ -141,18 +141,18 @@ func (s *Sentry) produceBlockV3(ctx context.Context, slot phase0.Slot) (*api.Ver
 	return getVersionedProposalData(rsp)
 }
 
-func (s *Sentry) gloasActiveAt(slot phase0.Slot) (bool, error) {
+func (s *Sentry) forkAt(slot phase0.Slot) (spec.DataVersion, error) {
 	sp, err := s.beacon.Node().Spec()
 	if err != nil {
-		return false, fmt.Errorf("failed to get spec: %w", err)
+		return spec.DataVersionUnknown, fmt.Errorf("failed to get spec: %w", err)
 	}
 
 	fork, err := sp.ForkEpochs.CurrentFork(phase0.Epoch(uint64(slot) / uint64(sp.SlotsPerEpoch)))
 	if err != nil {
-		return false, fmt.Errorf("failed to get fork at slot %d: %w", slot, err)
+		return spec.DataVersionUnknown, fmt.Errorf("failed to get fork at slot %d: %w", slot, err)
 	}
 
-	return fork.Name >= spec.DataVersionGloas, nil
+	return fork.Name, nil
 }
 
 func (s *Sentry) fetchDecoratedValidatorBlock(ctx context.Context, slot phase0.Slot) error {

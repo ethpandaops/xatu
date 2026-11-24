@@ -3,7 +3,8 @@ package ethereum
 import (
 	"testing"
 
-	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/heze"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,7 @@ func TestBidPayloadWithheld(t *testing.T) {
 	promised := hash32(0x02)
 	unrelated := hash32(0x03)
 
-	bid := &gloas.ExecutionPayloadBid{
+	bid := &payloadBid{
 		ParentBlockHash: parent,
 		BlockHash:       promised,
 	}
@@ -52,7 +53,7 @@ func TestBidPayloadWithheld(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			nextBid := &gloas.ExecutionPayloadBid{
+			nextBid := &payloadBid{
 				ParentBlockHash: tt.nextParent,
 				BlockHash:       hash32(0x04),
 			}
@@ -76,11 +77,11 @@ func TestBidPayloadWithheld(t *testing.T) {
 func TestBidPayloadWithheldConsecutiveWithheld(t *testing.T) {
 	elHead := hash32(0x0a)
 
-	blockN := &gloas.ExecutionPayloadBid{
+	blockN := &payloadBid{
 		ParentBlockHash: elHead,
 		BlockHash:       hash32(0x0b),
 	}
-	blockN1 := &gloas.ExecutionPayloadBid{
+	blockN1 := &payloadBid{
 		ParentBlockHash: elHead,
 		BlockHash:       hash32(0x0c),
 	}
@@ -88,4 +89,22 @@ func TestBidPayloadWithheldConsecutiveWithheld(t *testing.T) {
 	withheld, err := bidPayloadWithheld(blockN, blockN1)
 	require.NoError(t, err)
 	assert.True(t, withheld)
+}
+
+// The withheld-payload check walks Heze blocks too, whose bid is a different type.
+func TestGloasBidHeze(t *testing.T) {
+	block := &spec.VersionedSignedBeaconBlock{
+		Version: spec.DataVersionHeze,
+		Heze: &heze.SignedBeaconBlock{Message: &heze.BeaconBlock{
+			Slot: 251427,
+			Body: &heze.BeaconBlockBody{SignedExecutionPayloadBid: &heze.SignedExecutionPayloadBid{
+				Message: &heze.ExecutionPayloadBid{ParentBlockHash: hash32(0x01), BlockHash: hash32(0x02)},
+			}},
+		}},
+	}
+
+	bid, slot, err := gloasBid(block)
+	require.NoError(t, err)
+	assert.Equal(t, phase0.Slot(251427), slot)
+	assert.Equal(t, &payloadBid{ParentBlockHash: hash32(0x01), BlockHash: hash32(0x02)}, bid)
 }

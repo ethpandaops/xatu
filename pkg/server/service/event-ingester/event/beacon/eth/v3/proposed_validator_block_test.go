@@ -47,8 +47,13 @@ func TestValidatorBlockFilter(t *testing.T) {
 			filter:  true,
 		},
 		{
+			name:    "heze rides in the gloas message",
+			version: spec.DataVersionHeze.String(),
+			block:   &v2.EventBlockV2{Message: &v2.EventBlockV2_GloasBlock{GloasBlock: &v2.BeaconBlockGloas{StateRoot: "0x01"}}},
+		},
+		{
 			name:    "unknown version",
-			version: "heze",
+			version: "unknown",
 			block:   &v2.EventBlockV2{Message: &v2.EventBlockV2_GloasBlock{GloasBlock: &v2.BeaconBlockGloas{StateRoot: "0x01"}}},
 			filter:  true,
 		},

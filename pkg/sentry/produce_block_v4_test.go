@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ethpandaops/xatu/pkg/proto/eth"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
 )
 
@@ -63,10 +64,28 @@ func TestDecodeProduceBlockV4_BlockOnly(t *testing.T) {
 	assert.Nil(t, envelope)
 }
 
+// The block is heze-devnet-2 slot 251427 from the beacon node.
+func TestDecodeProduceBlockV4_Heze(t *testing.T) {
+	body, err := os.ReadFile("testdata/produce_block_v4_heze.json")
+	require.NoError(t, err)
+
+	proposal, envelope, err := decodeProduceBlockV4(body)
+	require.NoError(t, err)
+
+	assert.Equal(t, spec.DataVersionHeze, proposal.Version)
+	require.NotNil(t, proposal.Heze)
+	assert.Equal(t, phase0.Slot(251427), proposal.Heze.Slot)
+	assert.Nil(t, envelope)
+
+	event, err := eth.NewEventBlockV2FromVersionedProposal(proposal)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(251427), event.GetGloasBlock().GetSlot().GetValue())
+}
+
 func TestDecodeProduceBlockV4_Errors(t *testing.T) {
 	tests := map[string]string{
 		"not json":         `nope`,
-		"other version":    `{"version":"heze","consensus_block_value":"1","execution_payload_value":"1","data":{}}`,
+		"other version":    `{"version":"fulu","consensus_block_value":"1","execution_payload_value":"1","data":{}}`,
 		"bad value":        `{"version":"gloas","consensus_block_value":"x","execution_payload_value":"1","data":{}}`,
 		"missing contents": `{"version":"gloas","consensus_block_value":"1","execution_payload_value":"1","execution_payload_included":true,"data":{}}`,
 	}
@@ -101,7 +120,7 @@ func TestProduceBlockV4_Request(t *testing.T) {
 		BeaconNodeHeaders: map[string]string{"Authorization": "Bearer token"},
 	}}}
 
-	proposal, envelope, err := s.produceBlockV4(context.Background(), 11300425, &infinityRandaoReveal)
+	proposal, envelope, err := s.produceBlockV4(context.Background(), 11300425, spec.DataVersionGloas, &infinityRandaoReveal)
 	require.NoError(t, err)
 	require.NotNil(t, proposal.Gloas)
 	require.NotNil(t, envelope)
@@ -124,6 +143,6 @@ func TestProduceBlockV4_ErrorStatus(t *testing.T) {
 
 	s := &Sentry{Config: &Config{Ethereum: ethereum.Config{BeaconNodeAddress: srv.URL}}}
 
-	_, _, err := s.produceBlockV4(context.Background(), 1, &infinityRandaoReveal)
+	_, _, err := s.produceBlockV4(context.Background(), 1, spec.DataVersionGloas, &infinityRandaoReveal)
 	require.ErrorContains(t, err, "Engine payload is not available")
 }

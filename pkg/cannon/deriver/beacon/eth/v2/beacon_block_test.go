@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ethpandaops/go-eth2-client/spec"
@@ -16,6 +17,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/capella"
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/go-eth2-client/spec/heze"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/golang/snappy"
 	dynssz "github.com/pk910/dynamic-ssz"
@@ -59,6 +61,9 @@ func loadEraBlock(t *testing.T, name string, version spec.DataVersion) *spec.Ver
 	case spec.DataVersionGloas:
 		block.Gloas = &gloas.SignedBeaconBlock{}
 		target = block.Gloas
+	case spec.DataVersionHeze:
+		block.Heze = &heze.SignedBeaconBlock{}
+		target = block.Heze
 	default:
 		t.Fatalf("no fixture decoder for %s", version)
 	}
@@ -109,6 +114,12 @@ func TestSetBlockSizes(t *testing.T) {
 			root:  "0x1a4161ae68d3aa561f4463754b17b53523972882f5ac745d50ecb57e1e01e7b6",
 			total: 1802, totalCompressed: 1482,
 		},
+		{
+			// Heze bodies drop eth1_data and deposits (EIP-8015); the root is the beacon node's for this slot.
+			fixture: "heze-devnet-2-251427", version: spec.DataVersionHeze,
+			root:  "0x7284fce2770571a280efca2e84ffb00c6ab5fc0fdb373f6821f372316cebb468",
+			total: 1204, totalCompressed: 855,
+		},
 	}
 
 	optional := func(t *testing.T, field string, want *uint64, got interface{ GetValue() uint64 }, isNil bool) {
@@ -144,6 +155,28 @@ func TestSetBlockSizes(t *testing.T) {
 			assert.NotNil(t, event.GetMessage())
 		})
 	}
+}
+
+// Expected values are the beacon node's JSON for heze-devnet-2 slot 251427.
+func TestHezeBlockEvents(t *testing.T) {
+	block := loadEraBlock(t, "heze-devnet-2-251427", spec.DataVersionHeze)
+
+	syncAggregate, err := (&BeaconBlockSyncAggregateDeriver{}).getSyncAggregate(block)
+	require.NoError(t, err)
+	assert.Equal(t, "0x"+strings.Repeat("f", 128), syncAggregate.GetSyncCommitteeBits())
+
+	event, err := eth.NewEventBlockV2FromVersionSignedBeaconBlock(block)
+	require.NoError(t, err)
+
+	gloasBlock := event.GetGloasBlock()
+	require.NotNil(t, gloasBlock)
+	assert.Equal(t, uint64(251427), gloasBlock.GetSlot().GetValue())
+	assert.Equal(t, "0x7d7598c5482d704ed6b9b97d4de8c960238a55000bbde2e8ee889daaae8464af", gloasBlock.GetStateRoot())
+	assert.Nil(t, gloasBlock.GetBody().GetEth1Data())
+	assert.Empty(t, gloasBlock.GetBody().GetDeposits())
+	assert.Equal(t, "0x6bbde1ae47edeb9dc2158a91590507ce46c3e3d782d3f69ad143e49fbb0a71fa",
+		gloasBlock.GetBody().GetSignedExecutionPayloadBid().GetMessage().GetBlockHash())
+	assert.Len(t, gloasBlock.GetBody().GetPayloadAttestations(), 1)
 }
 
 func TestSetPayloadPresent(t *testing.T) {

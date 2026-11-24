@@ -285,13 +285,12 @@ func (b *WithdrawalDeriver) getWithdrawals(ctx context.Context, block *spec.Vers
 }
 
 func (b *WithdrawalDeriver) getGloasWithdrawals(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.WithdrawalV2, error) {
-	if block.Gloas == nil || block.Gloas.Message == nil {
-		return []*xatuethv1.WithdrawalV2{}, nil
+	slot, err := block.Slot()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain block slot")
 	}
 
-	slot := uint64(block.Gloas.Message.Slot)
-
-	envelope, err := b.beacon.GetExecutionPayloadEnvelope(ctx, xatuethv1.SlotAsString(phase0.Slot(slot)))
+	envelope, err := b.beacon.GetExecutionPayloadEnvelope(ctx, xatuethv1.SlotAsString(slot))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch execution payload envelope for slot %d", slot)
 	}

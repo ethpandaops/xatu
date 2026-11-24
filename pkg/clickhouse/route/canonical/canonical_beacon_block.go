@@ -89,18 +89,6 @@ func (b *canonicalBeaconBlockBatch) validate(event *xatu.DecoratedEvent) error {
 		return fmt.Errorf("empty StateRoot: %w", route.ErrInvalidEvent)
 	}
 
-	if eth1Data == nil {
-		return fmt.Errorf("nil Eth1Data: %w", route.ErrInvalidEvent)
-	}
-
-	if eth1Data.GetBlockHash() == "" {
-		return fmt.Errorf("empty Eth1DataBlockHash: %w", route.ErrInvalidEvent)
-	}
-
-	if eth1Data.GetDepositRoot() == "" {
-		return fmt.Errorf("empty Eth1DataDepositRoot: %w", route.ErrInvalidEvent)
-	}
-
 	additional := event.GetMeta().GetClient().GetEthV2BeaconBlockV2()
 	if additional == nil {
 		return fmt.Errorf("nil additional EthV2BeaconBlockV2 data: %w", route.ErrInvalidEvent)
@@ -108,6 +96,21 @@ func (b *canonicalBeaconBlockBatch) validate(event *xatu.DecoratedEvent) error {
 
 	if additional.GetVersion() == "" {
 		return fmt.Errorf("empty BlockVersion: %w", route.ErrInvalidEvent)
+	}
+
+	// EIP-8015 removes eth1_data from Heze block bodies.
+	if additional.GetVersion() != "heze" {
+		if eth1Data == nil {
+			return fmt.Errorf("nil Eth1Data: %w", route.ErrInvalidEvent)
+		}
+
+		if eth1Data.GetBlockHash() == "" {
+			return fmt.Errorf("empty Eth1DataBlockHash: %w", route.ErrInvalidEvent)
+		}
+
+		if eth1Data.GetDepositRoot() == "" {
+			return fmt.Errorf("empty Eth1DataDepositRoot: %w", route.ErrInvalidEvent)
+		}
 	}
 
 	if additional.GetBlockRoot() == "" {

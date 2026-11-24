@@ -126,3 +126,19 @@ func TestSnapshot_canonical_beacon_block_gloas(t *testing.T) {
 		})
 	}
 }
+
+// Heze blocks arrive in the Gloas message without eth1_data (EIP-8015).
+func TestSnapshot_canonical_beacon_block_heze(t *testing.T) {
+	event := gloasBlockEvent(&xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{PayloadPresent: wrapperspb.Bool(false)})
+	event.GetMeta().GetClient().GetEthV2BeaconBlockV2().Version = "heze"
+	event.GetEthV2BeaconBlockV2().GetGloasBlock().GetBody().Eth1Data = nil
+
+	testfixture.AssertSnapshot(t, newcanonicalBeaconBlockBatch(), event, 1, map[string]any{
+		"block_version":          "heze",
+		"slot":                   uint32(100),
+		"eth1_data_block_hash":   "",
+		"eth1_data_deposit_root": "",
+		"payload_present":        false,
+		"builder_index":          uint64(3),
+	})
+}

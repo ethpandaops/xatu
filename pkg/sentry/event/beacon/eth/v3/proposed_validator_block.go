@@ -228,7 +228,21 @@ func (e *ValidatorBlock) getAdditionalData() (*xatu.ClientMeta_AdditionalEthV3Va
 
 			addTxData(gloasTxs)
 		}
+	case spec.DataVersionHeze:
+		// Heze proposals have the Gloas shape: the body has no execution payload.
+		totalBytes, totalBytesCompressed, err = computeBlockSize(e.event.Heze.Body)
+		if err != nil {
+			e.log.WithError(err).Warn("Failed to compute heze block size")
+		}
 
+		if e.envelope != nil && e.envelope.Payload != nil {
+			hezeTxs := make([][]byte, len(e.envelope.Payload.Transactions))
+			for i, tx := range e.envelope.Payload.Transactions {
+				hezeTxs[i] = tx
+			}
+
+			addTxData(hezeTxs)
+		}
 	default:
 		e.log.WithError(err).Warn("Failed to get block message to compute block size. Missing fork version?")
 	}

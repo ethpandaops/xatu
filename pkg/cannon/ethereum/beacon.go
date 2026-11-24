@@ -844,19 +844,39 @@ func (b *BeaconNode) payloadWithheld(ctx context.Context, blockID string) (bool,
 	return false, errors.Errorf("no canonical block within %d slots after slot %d", lookahead, slot)
 }
 
-// gloasBid extracts the execution payload bid and slot from a Gloas block.
-func gloasBid(block *spec.VersionedSignedBeaconBlock) (*gloas.ExecutionPayloadBid, phase0.Slot, error) {
+// payloadBid holds the two hashes of a Gloas+ execution payload bid that decide whether its payload was revealed.
+type payloadBid struct {
+	ParentBlockHash phase0.Hash32
+	BlockHash       phase0.Hash32
+}
+
+// gloasBid extracts the execution payload bid hashes and slot from a Gloas+ block.
+func gloasBid(block *spec.VersionedSignedBeaconBlock) (*payloadBid, phase0.Slot, error) {
 	if block.Version < spec.DataVersionGloas {
 		return nil, 0, errors.Errorf("block version %s predates gloas", block.Version)
 	}
 
-	if block.Gloas == nil || block.Gloas.Message == nil || block.Gloas.Message.Body == nil ||
-		block.Gloas.Message.Body.SignedExecutionPayloadBid == nil ||
-		block.Gloas.Message.Body.SignedExecutionPayloadBid.Message == nil {
-		return nil, 0, errors.New("gloas block is missing its execution payload bid")
+	slot, err := block.Slot()
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "failed to obtain block slot")
 	}
 
-	return block.Gloas.Message.Body.SignedExecutionPayloadBid.Message, block.Gloas.Message.Slot, nil
+	bid, err := block.SignedExecutionPayloadBid()
+	if err != nil {
+		return nil, 0, errors.Wrapf(err, "%s block is missing its execution payload bid", block.Version)
+	}
+
+	parent, err := bid.ParentBlockHash()
+	if err != nil {
+		return nil, 0, errors.Wrapf(err, "%s block is missing its execution payload bid", block.Version)
+	}
+
+	promised, err := bid.BlockHash()
+	if err != nil {
+		return nil, 0, errors.Wrapf(err, "%s block is missing its execution payload bid", block.Version)
+	}
+
+	return &payloadBid{ParentBlockHash: parent, BlockHash: promised}, slot, nil
 }
 
 // bidPayloadWithheld decides from two consecutive canonical bids whether the
@@ -864,7 +884,7 @@ func gloasBid(block *spec.VersionedSignedBeaconBlock) (*gloas.ExecutionPayloadBi
 // bid's block hash iff that payload was revealed, and on the earlier bid's
 // parent hash iff it was withheld. Anything else means our view of the chain
 // is inconsistent (e.g. a reorg between fetches), so fail rather than guess.
-func bidPayloadWithheld(bid, nextBid *gloas.ExecutionPayloadBid) (bool, error) {
+func bidPayloadWithheld(bid, nextBid *payloadBid) (bool, error) {
 	switch nextBid.ParentBlockHash {
 	case bid.BlockHash:
 		return false, nil

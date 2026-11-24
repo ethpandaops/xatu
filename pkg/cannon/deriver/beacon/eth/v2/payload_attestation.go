@@ -7,6 +7,7 @@ import (
 
 	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/go-eth2-client/spec"
+	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
@@ -214,11 +215,15 @@ func (b *PayloadAttestationDeriver) processSlot(ctx context.Context, slot phase0
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
-	if block.Gloas == nil || block.Gloas.Message == nil || block.Gloas.Message.Body == nil {
-		return []*xatu.DecoratedEvent{}, nil
+	var attestations []*gloas.PayloadAttestation
+
+	switch {
+	case block.Gloas != nil && block.Gloas.Message != nil && block.Gloas.Message.Body != nil:
+		attestations = block.Gloas.Message.Body.PayloadAttestations
+	case block.Heze != nil && block.Heze.Message != nil && block.Heze.Message.Body != nil:
+		attestations = block.Heze.Message.Body.PayloadAttestations
 	}
 
-	attestations := block.Gloas.Message.Body.PayloadAttestations
 	if len(attestations) == 0 {
 		return []*xatu.DecoratedEvent{}, nil
 	}

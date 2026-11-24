@@ -15,6 +15,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/go-eth2-client/spec/heze"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 )
 
@@ -35,7 +36,7 @@ type produceBlockV4Response struct {
 
 //nolint:tagliatelle // JSON tags match the beacon API.
 type produceBlockV4Contents struct {
-	Block                    *gloas.BeaconBlock              `json:"block"`
+	Block                    json.RawMessage                 `json:"block"`
 	ExecutionPayloadEnvelope *gloas.ExecutionPayloadEnvelope `json:"execution_payload_envelope"`
 }
 
@@ -45,6 +46,7 @@ type produceBlockV4Contents struct {
 func (s *Sentry) produceBlockV4(
 	ctx context.Context,
 	slot phase0.Slot,
+	fork spec.DataVersion,
 	randaoReveal *phase0.BLSSignature,
 ) (*api.VersionedProposal, *gloas.ExecutionPayloadEnvelope, error) {
 	u, err := url.Parse(s.Config.Ethereum.BeaconNodeAddress)
@@ -71,7 +73,7 @@ func (s *Sentry) produceBlockV4(
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Eth-Consensus-Version", spec.DataVersionGloas.String())
+	req.Header.Set("Eth-Consensus-Version", fork.String())
 
 	rsp, err := produceBlockV4Client.Do(req)
 	if err != nil {
@@ -97,7 +99,21 @@ func decodeProduceBlockV4(body []byte) (*api.VersionedProposal, *gloas.Execution
 		return nil, nil, fmt.Errorf("failed to decode beacon block proposal v4: %w", err)
 	}
 
-	if rsp.Version != spec.DataVersionGloas.String() {
+	proposal := &api.VersionedProposal{}
+
+	// Heze blocks keep the Gloas proposal flow; only the block type differs.
+	var block any
+
+	switch rsp.Version {
+	case spec.DataVersionGloas.String():
+		proposal.Version = spec.DataVersionGloas
+		proposal.Gloas = &gloas.BeaconBlock{}
+		block = proposal.Gloas
+	case spec.DataVersionHeze.String():
+		proposal.Version = spec.DataVersionHeze
+		proposal.Heze = &heze.BeaconBlock{}
+		block = proposal.Heze
+	default:
 		return nil, nil, fmt.Errorf("unsupported beacon block proposal v4 version %q", rsp.Version)
 	}
 
@@ -111,11 +127,10 @@ func decodeProduceBlockV4(body []byte) (*api.VersionedProposal, *gloas.Execution
 		return nil, nil, fmt.Errorf("invalid execution payload value %q", rsp.ExecutionPayloadValue)
 	}
 
-	proposal := &api.VersionedProposal{
-		Version:        spec.DataVersionGloas,
-		ConsensusValue: consensusValue,
-		ExecutionValue: executionValue,
-	}
+	proposal.ConsensusValue = consensusValue
+	proposal.ExecutionValue = executionValue
+
+	blockJSON := rsp.Data
 
 	var envelope *gloas.ExecutionPayloadEnvelope
 
@@ -125,17 +140,16 @@ func decodeProduceBlockV4(body []byte) (*api.VersionedProposal, *gloas.Execution
 			return nil, nil, fmt.Errorf("failed to decode beacon block contents: %w", err)
 		}
 
-		proposal.Gloas = contents.Block
+		blockJSON = contents.Block
 		envelope = contents.ExecutionPayloadEnvelope
-	} else {
-		proposal.Gloas = &gloas.BeaconBlock{}
-		if err := json.Unmarshal(rsp.Data, proposal.Gloas); err != nil {
-			return nil, nil, fmt.Errorf("failed to decode beacon block: %w", err)
-		}
 	}
 
-	if proposal.Gloas == nil {
+	if len(blockJSON) == 0 || string(blockJSON) == "null" {
 		return nil, nil, fmt.Errorf("beacon block proposal v4 has no block")
+	}
+
+	if err := json.Unmarshal(blockJSON, block); err != nil {
+		return nil, nil, fmt.Errorf("failed to decode beacon block: %w", err)
 	}
 
 	return proposal, envelope, nil

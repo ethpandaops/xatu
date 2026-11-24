@@ -13,6 +13,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/go-eth2-client/spec/heze"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -689,6 +690,35 @@ func NewSignedExecutionPayloadBidFromGloas(bid *gloas.SignedExecutionPayloadBid)
 		},
 		Signature: bid.Signature.String(),
 	}
+}
+
+// NewSignedExecutionPayloadBidFromHeze converts a Heze bid into the Gloas bid
+// proto. The proto has no field for the bid's EIP-7805 inclusion list bits, so
+// they are dropped.
+func NewSignedExecutionPayloadBidFromHeze(bid *heze.SignedExecutionPayloadBid) *SignedExecutionPayloadBid {
+	if bid == nil || bid.Message == nil {
+		return nil
+	}
+
+	msg := bid.Message
+
+	return NewSignedExecutionPayloadBidFromGloas(&gloas.SignedExecutionPayloadBid{
+		Message: &gloas.ExecutionPayloadBid{
+			ParentBlockHash:       msg.ParentBlockHash,
+			ParentBlockRoot:       msg.ParentBlockRoot,
+			BlockHash:             msg.BlockHash,
+			PrevRandao:            msg.PrevRandao,
+			FeeRecipient:          msg.FeeRecipient,
+			GasLimit:              msg.GasLimit,
+			BuilderIndex:          msg.BuilderIndex,
+			Slot:                  msg.Slot,
+			Value:                 msg.Value,
+			ExecutionPayment:      msg.ExecutionPayment,
+			BlobKZGCommitments:    msg.BlobKZGCommitments,
+			ExecutionRequestsRoot: msg.ExecutionRequestsRoot,
+		},
+		Signature: bid.Signature,
+	})
 }
 
 // NewSignedExecutionPayloadEnvelopeFromGloas converts the SDK's Gloas envelope

@@ -95,7 +95,8 @@ func (b *BeaconBlockV2) Filter(ctx context.Context) bool {
 		}
 
 		hash = fuluBlock.FuluBlock.StateRoot
-	case spec.DataVersionGloas.String():
+	// Heze blocks are carried in the Gloas message.
+	case spec.DataVersionGloas.String(), spec.DataVersionHeze.String():
 		gloasBlock, ok := data.EthV2BeaconBlockV2.GetMessage().(*v2.EventBlockV2_GloasBlock)
 		if !ok {
 			b.log.Error("failed to cast message to GloasBlock")

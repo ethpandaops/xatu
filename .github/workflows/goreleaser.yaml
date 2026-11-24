@@ -84,12 +84,16 @@ jobs:
             echo "  prerelease: true" >> .goreleaser.yaml.new
             echo "  make_latest: false" >> .goreleaser.yaml.new
           fi
+      # GORELEASER_CURRENT_TAG: release branches are cut from master, so their
+      # tags often share a commit with another release's tag, and goreleaser
+      # otherwise releases the highest tag on the commit, not the pushed one.
       - name: Run GoReleaser in Docker
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+            -e GORELEASER_CURRENT_TAG=${{ github.ref_name }} \
             -v "${HOME}/.docker/config.json:/root/.docker/config.json:ro" \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e RELEASE_SUFFIX=${{ env.RELEASE_SUFFIX }} \

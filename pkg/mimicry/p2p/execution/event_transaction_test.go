@@ -22,21 +22,26 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 )
 
-// Transactions 0x8d (type 2) and 0x1f (frame, type 6) of bogota-devnet-2 execution block 185501.
+// A type 2 transaction of daisugi-devnet-0 execution block 7104, and the frame transaction (type 6) of block 675,
+// which uses a keyed nonce and carries a secp256k1 signature.
 const (
-	devnetDynamicFeeTx = "0x02f8698501a5cdc3058293490e0e825208944d713ded9ad1cf80e4a439f168fd79e8504536e28080c001a06501dfe3910a599a5d92368f8d64f9ce72d675a31ff436b8f3e8cebe881bb7e6a0419df4095d204b3f719ba942313621a1c3fe7e372208b600dba89d1ea1468ae5"
-	devnetFrameTx      = "0x06f8e18501a5cdc305c08301717f9487f4e342fa4a02ba22d2cceaf889e74897d464cef866ca010380c4821388808080de02049420a518a530f6c882288b7eb134d5a67a02e7908cc4827530808080dc02049420a518a530f6c882288b7eb134d5a67a02e7908cc201808080de02809420a518a530f6c882288b7eb134d5a67a02e7908cc4827530808080f848f846018080b84101257063ab5e3dc0bbbb13cd3a82121e324232051af202968a1686a0e5f4b028eb32623a330d787d0a9160a7a26a98c2b968960036daa5040278014fd03edd0ef3cd8705e28155b2e8008477359400c0"
+	devnetDynamicFeeTx = "0x02f8798429d103d804847735940085010642ac07825b25947318bd88bfce048a0cab9bd0a8cd54214a8574918a14f6ccfe33851800000080c001a0a4e516cfd1ffb8329327cde8acfdc1b3b8faf8bcaf0cb56aeb0dea85add41c96a0547c78bf95f47b0d8f42da0f0e144d12d9eb2b2a806c1af44139fdeda1445d89"
+	devnetFrameTx      = "0x06f9012b8429d103d8c584ccbd53ec809405a20b6083bd71c58c10cbfa9db8036bf5a8e206f89bce010380c8830186a083017e808080f86b048080c48275308080b860000000000000000000000000000000000000000000000000000000000000001100000000000000000000000000000000000000000000000000000000000000004f0922a927365fec2cf13867145a3de76b3d26385681cd100c9b3d23c3c03d46de028094000000000000000000000000000000000000deadc482c350807b80f85cf85a019405a20b6083bd71c58c10cbfa9db8036bf5a8e20680b84101f9e4f70b43dcfddbd1ce7062d64373a45945d6772d68e28c35ca070c0fef77137420ebe89837279324ab8195934169a2b9f04542de1ec4eff441471a78c959c6cd8762bcad3f9900008477359400c0"
 )
 
 func TestPooledTransactionsWithFrameTransactions(t *testing.T) {
-	// A blob-carrying frame transaction in the EIP-7594 network wrapper, as PooledTransactions carries it.
-	blobFrame, err := frametx.Decode(hexutil.MustDecode(devnetFrameTx))
-	require.NoError(t, err)
+	// A blob-carrying frame transaction in the EIP-7594 network wrapper, as PooledTransactions carries it:
+	// the devnet frame transaction with one versioned hash as its last field.
+	var fields []rlp.RawValue
+	require.NoError(t, rlp.DecodeBytes(hexutil.MustDecode(devnetFrameTx)[1:], &fields))
 
 	blobHash := common.HexToHash("0x01aa")
-	blobFrame.BlobVersionedHashes = []common.Hash{blobHash}
+	blobHashes, err := rlp.EncodeToBytes([]common.Hash{blobHash})
+	require.NoError(t, err)
 
-	blobPayload, err := rlp.EncodeToBytes(blobFrame)
+	fields[len(fields)-1] = blobHashes
+
+	blobPayload, err := rlp.EncodeToBytes(fields)
 	require.NoError(t, err)
 
 	blob := make([]byte, 131072)
@@ -67,8 +72,8 @@ func TestPooledTransactionsWithFrameTransactions(t *testing.T) {
 
 	p := &Peer{
 		log:     logrus.New(),
-		signer:  types.LatestSignerForChainID(big.NewInt(0x1a5cdc305)),
-		network: &networks.Network{Name: "bogota-devnet-2", ID: 0x1a5cdc305},
+		signer:  types.LatestSignerForChainID(big.NewInt(0x29d103d8)),
+		network: &networks.Network{Name: "daisugi-devnet-0", ID: 0x29d103d8},
 		handlers: &handler.Peer{
 			CreateNewClientMeta: func(_ context.Context) (*xatu.ClientMeta, error) {
 				return &xatu.ClientMeta{Name: "test-mimicry"}, nil
@@ -89,21 +94,21 @@ func TestPooledTransactionsWithFrameTransactions(t *testing.T) {
 	}
 
 	dynamicFee := events[0].GetMeta().GetClient().GetMempoolTransactionV2()
-	assert.Equal(t, "0xd5fdc36e1076bc05ff7b397aeaece0395d5005236413fca57b88f8001e35f987", dynamicFee.GetHash())
+	assert.Equal(t, "0x37077c661934ede49d96c490e50a511949de213c33e958936067ce16c744601e", dynamicFee.GetHash())
 	assert.Equal(t, uint32(2), dynamicFee.GetType().GetValue())
 
-	// Expected values are the EL's eth_getBlockByNumber fields for this transaction.
+	// Expected values are Nethermind's eth_getBlockByNumber fields for this transaction.
 	frame := events[1].GetMeta().GetClient().GetMempoolTransactionV2()
-	assert.Equal(t, "0xf855ff365dc91ce3c2c928c49a6854cb31d177ea3b7f12145aa3b8468a204bcc", frame.GetHash())
+	assert.Equal(t, "0x576438a5eff9cac236779606800c9ed4b172faf3e760557eef527c3739477f38", frame.GetHash())
 	assert.Equal(t, uint32(6), frame.GetType().GetValue())
-	assert.Equal(t, common.HexToAddress("0x87f4e342fa4a02ba22d2cceaf889e74897d464ce").Hex(), frame.GetFrom())
-	assert.Equal(t, uint64(0x1717f), frame.GetNonce().GetValue())
-	assert.Equal(t, uint64(0x14385), frame.GetGas().GetValue())
+	assert.Equal(t, common.HexToAddress("0x05a20b6083bd71c58c10cbfa9db8036bf5a8e206").Hex(), frame.GetFrom())
+	assert.Equal(t, uint64(0), frame.GetNonce().GetValue())
+	assert.Equal(t, uint64(0x43da0), frame.GetGas().GetValue())
 	assert.Equal(t, "2000000000", frame.GetGasTipCap())
 	assert.Empty(t, frame.GetGasPrice())
 	assert.Empty(t, frame.GetGasFeeCap())
 	assert.Empty(t, frame.GetTo())
-	assert.Equal(t, "228", frame.GetSize())
+	assert.Equal(t, "303", frame.GetSize())
 	assert.Equal(t, devnetFrameTx, events[1].GetMempoolTransactionV2())
 
 	withBlob := events[2].GetMeta().GetClient().GetMempoolTransactionV2()

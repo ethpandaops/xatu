@@ -196,16 +196,13 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 func frameTransactionData(frame *frametx.Transaction, raw []byte) *xatu.ClientMeta_AdditionalMempoolTransactionV2Data {
 	extra := &xatu.ClientMeta_AdditionalMempoolTransactionV2Data{
 		Nonce:     wrapperspb.UInt64(frame.NonceSeq),
+		Gas:       wrapperspb.UInt64(frame.Gas()),
 		From:      frame.Sender.String(),
 		GasTipCap: frame.Fees.MaxPriorityFeePerGas.String(),
 		Hash:      frame.Hash.String(),
 		// Like go-ethereum's Size for blob transactions, this includes any blob sidecar.
 		Size: strconv.Itoa(len(raw)),
 		Type: wrapperspb.UInt32(frametx.TxType),
-	}
-
-	if gas, err := frame.MaxGas(); err == nil {
-		extra.Gas = wrapperspb.UInt64(gas)
 	}
 
 	if len(frame.BlobVersionedHashes) == 0 {

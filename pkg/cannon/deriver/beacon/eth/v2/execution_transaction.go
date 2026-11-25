@@ -409,9 +409,7 @@ func (b *ExecutionTransactionDeriver) deriveEvents(
 				return nil, err
 			}
 
-			if event != nil {
-				events = append(events, event)
-			}
+			events = append(events, event)
 
 			continue
 		}
@@ -505,7 +503,6 @@ func (b *ExecutionTransactionDeriver) deriveEvents(
 
 // deriveFrameTransactionEvent builds the event for an EIP-8141 frame transaction. Each frame has its own
 // target, value and calldata, so to, value and input stay empty, and the payer is only in the receipt.
-// A frame transaction whose gas price cannot be derived, such as one carrying blobs, is skipped (nil event).
 func (b *ExecutionTransactionDeriver) deriveFrameTransactionEvent(
 	ctx context.Context,
 	block *spec.VersionedSignedBeaconBlock,
@@ -520,23 +517,10 @@ func (b *ExecutionTransactionDeriver) deriveFrameTransactionEvent(
 		return nil, fmt.Errorf("failed to get transaction gas price: %v", err)
 	}
 
-	gas, err := frame.MaxGas()
-
-	var gasPrice *big.Int
-	if err == nil {
-		gasPrice, err = frame.GasPrice(baseFee)
-	}
-
-	if err != nil {
-		b.log.WithError(err).WithField("transaction", frame.Hash.Hex()).WithContext(ctx).Warn("Skipping frame transaction whose gas cannot be derived")
-
-		return nil, nil //nolint:nilnil // nil event skips the transaction
-	}
-
 	tx := &xatuethv1.Transaction{
 		Nonce:     wrapperspb.UInt64(frame.NonceSeq),
-		Gas:       wrapperspb.UInt64(gas),
-		GasPrice:  gasPrice.String(),
+		Gas:       wrapperspb.UInt64(frame.Gas()),
+		GasPrice:  frame.GasPrice(baseFee).String(),
 		GasTipCap: frame.Fees.MaxPriorityFeePerGas.String(),
 		From:      frame.Sender.Hex(),
 		Hash:      frame.Hash.Hex(),

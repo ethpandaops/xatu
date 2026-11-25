@@ -19,6 +19,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/bellatrix"
 	"github.com/ethpandaops/go-eth2-client/spec/capella"
+	"github.com/ethpandaops/go-eth2-client/spec/daisugi"
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
@@ -479,10 +480,10 @@ func TestResolveBlobSidecars(t *testing.T) {
 	}
 }
 
-// bogota-devnet-2 execution block 185501 carries EIP-8141 frame transactions (type 0x6) next to types 2, 3 and 4;
-// expected frame fields are the EL's eth_getBlockByNumber values.
+// daisugi-devnet-0 execution block 7104 carries EIP-8141 frame transactions (type 0x6) next to a type 2 one;
+// expected frame fields are Nethermind's eth_getBlockByNumber values.
 func TestExecutionTransactionDeriver_FrameTransactions(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("testdata", "bogota-devnet-2-185501.json"))
+	data, err := os.ReadFile(filepath.Join("testdata", "daisugi-devnet-0-7104.json"))
 	require.NoError(t, err)
 
 	var fixture struct {
@@ -499,9 +500,9 @@ func TestExecutionTransactionDeriver_FrameTransactions(t *testing.T) {
 		} `json:"frameTransactions"`
 	}
 	require.NoError(t, json.Unmarshal(data, &fixture))
-	require.Len(t, fixture.FrameTransactions, 17)
+	require.Len(t, fixture.FrameTransactions, 7)
 
-	payload := &gloas.ExecutionPayload{BaseFeePerGas: uint256.MustFromHex(fixture.BaseFeePerGas)}
+	payload := &daisugi.ExecutionPayload{BaseFeePerGas: uint256.MustFromHex(fixture.BaseFeePerGas)}
 	for _, raw := range fixture.Transactions {
 		payload.Transactions = append(payload.Transactions, hexutil.MustDecode(raw))
 	}
@@ -509,14 +510,16 @@ func TestExecutionTransactionDeriver_FrameTransactions(t *testing.T) {
 	// A transaction type nothing decodes yet must be left out without failing the slot.
 	payload.Transactions = append(payload.Transactions, []byte{0x7f, 0xc0})
 
-	block := &spec.VersionedSignedBeaconBlock{Version: spec.DataVersionGloas}
-	envelope := &gloas.SignedExecutionPayloadEnvelope{Message: &gloas.ExecutionPayloadEnvelope{Payload: payload}}
+	block := &spec.VersionedSignedBeaconBlock{
+		Version: spec.DataVersionDaisugi,
+		Daisugi: &daisugi.SignedBeaconBlock{Message: &daisugi.BeaconBlock{Body: &daisugi.BeaconBlockBody{ExecutionPayload: payload}}},
+	}
 	deriver := &ExecutionTransactionDeriver{
 		log:        logrus.New(),
 		clientMeta: &xatu.ClientMeta{Name: "cannon-test"},
 	}
 
-	events, err := deriver.deriveEvents(context.Background(), block, envelope, nil, testBlockIdentifier(), hexutil.MustDecodeBig("0x1a5cdc305"))
+	events, err := deriver.deriveEvents(context.Background(), block, nil, nil, testBlockIdentifier(), hexutil.MustDecodeBig("0x29d103d8"))
 	require.NoError(t, err)
 	require.Len(t, events, len(fixture.Transactions))
 

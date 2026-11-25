@@ -213,7 +213,7 @@ jobs:
             -w /workspace \
             -e BUILD_RELEASE="$NAME" \
             -e BUILD_COMMIT="$SHA7" \
-            goreleaser/goreleaser-cross:v1.27.3 build --snapshot --clean --config "$cfg"
+            goreleaser/goreleaser-cross:v1.26 build --snapshot --clean --config "$cfg"
 
           # goreleaser's docker pipe builds each image from a context holding
           # just the binary, which the Dockerfiles COPY as xatu*.

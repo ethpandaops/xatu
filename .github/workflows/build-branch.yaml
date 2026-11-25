@@ -1,0 +1,357 @@
+name: Build branch image
+
+# Publishes ghcr.io/ethpandaops/xatu (mirrored to docker.io/ethpandaops/xatu)
+# images for a branch, with only GITHUB_TOKEN:
+#
+#   <name>, <name>-<sha7>                scratch (distroless), amd64 + arm64
+#   <name>-debian, <name>-<sha7>-debian  debian, amd64 + arm64
+#   <name>-cryo, <name>-<sha7>-cryo      xatu+cryo (EL cannon), amd64 only
+#
+# <name> is <network> for release/<network> (the devnet images, e.g.
+# xatu:glamsterdam-devnet-11), else the branch name or the docker_tag input.
+# It is built on:
+#   - pushes to release/** (including creating the branch);
+#   - workflow_dispatch, which devnet-release-branches.yaml uses on the
+#     branches it creates (a GITHUB_TOKEN branch creation starts no push
+#     workflows, a GITHUB_TOKEN dispatch does);
+#   - same-repository pull requests labelled build-docker-image, built from
+#     the PR head commit, not the merge commit.
+# Outside release/ refs, names that would overwrite a release or a devnet
+# image are refused (see the prinfo job).
+#
+# This triggers on pull_request, NOT pull_request_target: fork PRs get no
+# secrets or package write access and are skipped. Dispatch the workflow on a
+# trusted branch to publish one.
+#
+# The binaries come from .goreleaser.yaml's builds (CGO, goreleaser-cross) and
+# go into the same Dockerfiles as goreleaser.yaml's release images; the cryo
+# image is built from ./Dockerfile as in goreleaser.yaml.
+
+on:
+  push:
+    branches:
+      - 'release/**'
+  pull_request:
+    types: [labeled, synchronize]
+  workflow_dispatch:
+    inputs:
+      docker_tag:
+        description: Image name (defaults to the branch name; ignored on release/ branches)
+        required: false
+
+# One build per PR or ref; a newer push cancels the running build. Adding any
+# other label to a PR gets its own group, so it can't cancel a running build.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.action == 'labeled' && github.event.label.name != 'build-docker-image' && github.run_id || github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  prinfo:
+    name: Get build info
+    runs-on: ubuntu-latest
+    permissions: {}
+    outputs:
+      build: ${{ steps.info.outputs.build }}
+      name: ${{ steps.info.outputs.name }}
+      sha: ${{ steps.info.outputs.sha }}
+      sha7: ${{ steps.info.outputs.sha7 }}
+      release: ${{ steps.info.outputs.release }}
+    steps:
+      - name: Work out the image name and whether to build
+        id: info
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          ADDED_LABEL: ${{ github.event.label.name }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'build-docker-image') }}
+          SAME_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          DOCKER_TAG: ${{ inputs.docker_tag }}
+          # The exact PR head, so the image is the branch's code and not the
+          # PR/master merge commit.
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          release=false
+          if [[ $GITHUB_REF == refs/heads/release/* ]]; then
+            release=true
+            name=${GITHUB_REF#refs/heads/release/}
+          else
+            name=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+            if [[ -n $DOCKER_TAG ]]; then
+              name=$DOCKER_TAG
+            fi
+          fi
+          # Docker tags allow [A-Za-z0-9_.-] only.
+          name=${name//[^A-Za-z0-9_.-]/-}
+          sha=${PR_HEAD_SHA:-$GITHUB_SHA}
+          sha7=${sha:0:7}
+
+          build=false
+          case $EVENT in
+            push | workflow_dispatch)
+              build=true
+              ;;
+            pull_request)
+              if [[ $HAS_LABEL != true ]]; then
+                echo "No build-docker-image label."
+              elif [[ $ACTION == labeled && $ADDED_LABEL != build-docker-image ]]; then
+                echo "The added label is ${ADDED_LABEL}, not build-docker-image."
+              elif [[ $SAME_REPOSITORY != true ]]; then
+                echo "::notice::Skipping a fork PR; dispatch this workflow on a trusted branch to publish it."
+              else
+                build=true
+              fi
+              ;;
+          esac
+
+          # Never overwrite a release, latest, sentry-logs or devnet image from
+          # a dev build.
+          if [[ $build == true && $release == false ]]; then
+            skip=""
+            if [[ $name == master || $name == main || $name == latest || $name == *-latest ]]; then
+              skip="${name} is reserved for releases"
+            elif [[ $name =~ ^v?[0-9] ]]; then
+              skip="${name} looks like a version"
+            elif [[ $name == sentry-logs-* ]]; then
+              skip="${name} is in the sentry-logs namespace"
+            else
+              # Compared after slugifying, as release/<a>/<b> publishes <a>-<b>.
+              while read -r _ ref; do
+                [[ $ref == refs/heads/release/* ]] || continue
+                taken=${ref#refs/heads/release/}
+                taken=${taken//[^A-Za-z0-9_.-]/-}
+                if [[ $taken == "$name" ]]; then
+                  skip="${name} is the image of ${ref#refs/heads/}"
+                  break
+                fi
+              done < <(git ls-remote --heads "https://github.com/${GITHUB_REPOSITORY}.git" 'release/*')
+            fi
+            if [[ -n $skip ]]; then
+              echo "::warning::Not building: ${skip}. Rename the branch or dispatch with another docker_tag."
+              build=false
+            fi
+          fi
+
+          # A Docker tag is at most 128 characters; the longest has the
+          # 15-character -<sha7>-debian suffix.
+          if [[ $build == true && ! $name =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,112}$ ]]; then
+            echo "::error::${name} can't be a Docker tag: it must start with [A-Za-z0-9_] and be at most 113 characters."
+            exit 1
+          fi
+
+          echo "event=${EVENT} release=${release} name=${name} sha=${sha} build=${build}"
+          {
+            echo "build=${build}"
+            echo "name=${name}"
+            echo "sha=${sha}"
+            echo "sha7=${sha7}"
+            echo "release=${release}"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build scratch and debian images
+    needs: prinfo
+    if: needs.prinfo.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    env:
+      IMAGE: ghcr.io/ethpandaops/xatu
+      NAME: ${{ needs.prinfo.outputs.name }}
+      SHA: ${{ needs.prinfo.outputs.sha }}
+      SHA7: ${{ needs.prinfo.outputs.sha7 }}
+    outputs:
+      digests: ${{ steps.attest-scratch.outputs.digests }} ${{ steps.attest-debian.outputs.digests }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: ${{ needs.prinfo.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      # .goreleaser.yaml's builds, with the version stamped as <name>-<sha7>
+      # (xatu.Short() is Release-GitCommit) instead of the tag. A branch has
+      # no release tag, and goreleaser's snapshot version needs a semver one.
+      - name: Build binaries with goreleaser
+        run: |
+          set -euo pipefail
+          cfg=.goreleaser.branch.yaml
+          sed -e 's/{{ *\.Tag *}}/{{ .Env.BUILD_RELEASE }}/g' \
+            -e 's/{{ *\.ShortCommit *}}/{{ .Env.BUILD_COMMIT }}/g' .goreleaser.yaml > "$cfg"
+          if grep -v '^[[:space:]]*#' "$cfg" | grep -E '\{\{ *\.(Tag|ShortCommit) *\}\}'; then
+            echo "::error::.goreleaser.yaml still uses .Tag or .ShortCommit after the rewrite above; update this step."
+            exit 1
+          fi
+          docker run --rm \
+            -v "${GITHUB_WORKSPACE}:/workspace" \
+            -w /workspace \
+            -e BUILD_RELEASE="$NAME" \
+            -e BUILD_COMMIT="$SHA7" \
+            goreleaser/goreleaser-cross:v1.27.3 build --snapshot --clean --config "$cfg"
+
+          # goreleaser's docker pipe builds each image from a context holding
+          # just the binary, which the Dockerfiles COPY as xatu*.
+          for arch in amd64 arm64; do
+            bin=$(jq -r --arg arch "$arch" '[.[] | select(.type == "Binary" and .goos == "linux" and .goarch == $arch) | .path]
+              | if length == 1 then .[0] else error("expected one linux/\($arch) binary, got \(length)") end' dist/artifacts.json)
+            mkdir -p "${RUNNER_TEMP}/context/${arch}"
+            cp "$bin" "${RUNNER_TEMP}/context/${arch}/xatu"
+            file "${RUNNER_TEMP}/context/${arch}/xatu"
+          done
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      - name: Login to GHCR
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      # Each platform is built from its own binary and pushed by digest, then
+      # the two are joined into one multi-arch manifest under both tags.
+      - name: Build and push images
+        id: images
+        run: |
+          set -euo pipefail
+          created=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          publish() {
+            local dockerfile=$1 suffix=$2 output=$3 arch meta refs=()
+            for arch in amd64 arm64; do
+              meta="${RUNNER_TEMP}/metadata-${output}-${arch}.json"
+              docker buildx build "${RUNNER_TEMP}/context/${arch}" \
+                --file "$dockerfile" \
+                --platform "linux/${arch}" \
+                --provenance=false \
+                --sbom=false \
+                --label "org.opencontainers.image.created=${created}" \
+                --label "org.opencontainers.image.title=xatu" \
+                --label "org.opencontainers.image.revision=${SHA}" \
+                --label "org.opencontainers.image.version=${NAME}-${SHA7}" \
+                --output "type=image,name=${IMAGE},push-by-digest=true,name-canonical=true,push=true" \
+                --metadata-file "$meta"
+              refs+=("${IMAGE}@$(jq -r '."containerimage.digest"' "$meta")")
+            done
+            docker buildx imagetools create \
+              --tag "${IMAGE}:${NAME}${suffix}" \
+              --tag "${IMAGE}:${NAME}-${SHA7}${suffix}" \
+              "${refs[@]}"
+            digest=$(docker buildx imagetools inspect "${IMAGE}:${NAME}-${SHA7}${suffix}" --format '{{json .Manifest}}' | jq -r .digest)
+            echo "${IMAGE}:${NAME}${suffix} and ${IMAGE}:${NAME}-${SHA7}${suffix} are ${digest}"
+            echo "${output}=${digest}" >> "$GITHUB_OUTPUT"
+          }
+          publish goreleaser-scratch.Dockerfile "" scratch
+          publish goreleaser-debian.Dockerfile -debian debian
+      - name: Attest scratch image
+        id: attest-scratch
+        uses: ethpandaops/actions/mirror-image@738aeadbcdc54f1c9af659d35f8ef29dd5c0fae6
+        with:
+          image: xatu
+          tags: |
+            ${{ env.NAME }}
+            ${{ env.NAME }}-${{ env.SHA7 }}
+          digest: ${{ steps.images.outputs.scratch }}
+          mirror: "false"
+      - name: Attest debian image
+        id: attest-debian
+        uses: ethpandaops/actions/mirror-image@738aeadbcdc54f1c9af659d35f8ef29dd5c0fae6
+        with:
+          image: xatu
+          tags: |
+            ${{ env.NAME }}-debian
+            ${{ env.NAME }}-${{ env.SHA7 }}-debian
+          digest: ${{ steps.images.outputs.debian }}
+          mirror: "false"
+
+  # As in goreleaser.yaml: cryo is compiled from Rust source in ./Dockerfile,
+  # amd64 only, reusing the ref-agnostic registry cache of the cryo-builder
+  # stage. Only release branches write that cache, as alpha releases did; PR
+  # and dispatched builds read it, like the PR smoke tests.
+  cryo:
+    name: Build xatu+cryo image
+    needs: prinfo
+    if: needs.prinfo.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    env:
+      NAME: ${{ needs.prinfo.outputs.name }}
+      SHA7: ${{ needs.prinfo.outputs.sha7 }}
+    outputs:
+      digests: ${{ steps.attest.outputs.digests }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: ${{ needs.prinfo.outputs.sha }}
+          persist-credentials: false
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      - name: Login to GHCR
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      # BuildKit's COPY cache key includes the source file's mode; see
+      # goreleaser.yaml.
+      - name: Normalize cryo patch permissions for the cache key
+        run: chmod 0644 deploy/cryo/*.patch
+      - name: Build and push xatu+cryo image
+        id: build
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          sbom: false
+          build-args: |
+            VERSION=${{ env.NAME }}
+            GIT_COMMIT=${{ env.SHA7 }}
+          tags: |
+            ghcr.io/ethpandaops/xatu:${{ env.NAME }}-cryo
+            ghcr.io/ethpandaops/xatu:${{ env.NAME }}-${{ env.SHA7 }}-cryo
+          cache-from: type=registry,ref=ghcr.io/ethpandaops/xatu-buildcache:cryo
+          cache-to: ${{ needs.prinfo.outputs.release == 'true' && 'type=registry,ref=ghcr.io/ethpandaops/xatu-buildcache:cryo,mode=max,ignore-error=true' || '' }}
+      - name: Attest xatu+cryo image
+        id: attest
+        uses: ethpandaops/actions/mirror-image@738aeadbcdc54f1c9af659d35f8ef29dd5c0fae6
+        with:
+          image: xatu
+          tags: |
+            ${{ env.NAME }}-cryo
+            ${{ env.NAME }}-${{ env.SHA7 }}-cryo
+          digest: ${{ steps.build.outputs.digest }}
+          mirror: "false"
+
+  # Separate job, so "Re-run failed jobs" retries only the mirror and never
+  # rebuilds the images.
+  mirror:
+    name: Mirror to Docker Hub
+    needs: [build, cryo]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    steps:
+      - name: Mirror to Docker Hub
+        uses: ethpandaops/actions/mirror-image@738aeadbcdc54f1c9af659d35f8ef29dd5c0fae6
+        with:
+          image: xatu
+          tags: ${{ needs.build.outputs.digests }} ${{ needs.cryo.outputs.digests }}
+          attest: "false"
+          mirror-url: ${{ secrets.IMAGE_MIRROR_URL }}

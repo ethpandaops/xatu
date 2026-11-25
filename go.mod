@@ -333,4 +333,4 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-replace github.com/ethpandaops/go-eth2-client => github.com/ethpandaops/go-eth2-client v0.1.13-0.20261124074446-b4bd15707f63
+replace github.com/ethpandaops/go-eth2-client => github.com/ethpandaops/go-eth2-client v0.1.13-0.20261125010143-54650ed42315

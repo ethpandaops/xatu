@@ -13,6 +13,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/ethpandaops/go-eth2-client/spec/pq"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	v1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
@@ -51,6 +52,8 @@ func NewEventBlockV2FromVersionedProposal(proposal *api.VersionedProposal) (*v2.
 		data = NewEventBlockFromFulu(proposal.Fulu.Block, nil)
 	case spec.DataVersionGloas:
 		data = NewEventBlockFromGloas(proposal.Gloas, nil)
+	case spec.DataVersionPQ:
+		data = NewEventBlockFromPQ(proposal.PQ, nil)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", proposal.Version)
 	}
@@ -78,6 +81,8 @@ func NewEventBlockV2FromVersionSignedBeaconBlock(block *spec.VersionedSignedBeac
 		data = NewEventBlockFromFulu(block.Fulu.Message, &block.Fulu.Signature)
 	case spec.DataVersionGloas:
 		data = NewEventBlockFromGloas(block.Gloas.Message, &block.Gloas.Signature)
+	case spec.DataVersionPQ:
+		data = NewEventBlockFromPQ(block.PQ.Message, &block.PQ.XMSSSignature)
 	default:
 		return nil, fmt.Errorf("unsupported block version: %v", block.Version)
 	}
@@ -452,6 +457,42 @@ func NewEventBlockFromGloas(block *gloas.BeaconBlock, signature *phase0.BLSSigna
 
 	if signature != nil && !signature.IsZero() {
 		event.Signature = signature.String()
+	}
+
+	return event
+}
+
+func NewEventBlockFromPQ(block *pq.BeaconBlock, signature *pq.XMSSSignature) *v2.EventBlockV2 {
+	event := &v2.EventBlockV2{
+		Version: v2.BlockVersion_PQ,
+		Message: &v2.EventBlockV2_PqBlock{
+			PqBlock: &v2.BeaconBlockPq{
+				Slot:          &wrapperspb.UInt64Value{Value: uint64(block.Slot)},
+				ProposerIndex: &wrapperspb.UInt64Value{Value: uint64(block.ProposerIndex)},
+				ParentRoot:    block.ParentRoot.String(),
+				StateRoot:     block.StateRoot.String(),
+				Body: &v2.BeaconBlockBodyPq{
+					RandaoReveal: v2.VRFProofToString(&block.Body.VRFReveal),
+					Eth1Data: &v1.Eth1Data{
+						DepositRoot:  block.Body.ETH1Data.DepositRoot.String(),
+						DepositCount: block.Body.ETH1Data.DepositCount,
+						BlockHash:    fmt.Sprintf("0x%x", block.Body.ETH1Data.BlockHash),
+					},
+					Graffiti:                  fmt.Sprintf("0x%x", block.Body.Graffiti[:]),
+					ProposerSlashings:         v2.NewProposerSlashingsFromPQ(block.Body.XMSSProposerSlashings),
+					AttesterSlashings:         v2.NewAttesterSlashingsFromPQ(block.Body.AttesterSlashings),
+					Attestations:              v2.NewAttestationsFromPQ(block.Body.Attestations),
+					Deposits:                  v1.NewDepositsFromPhase0(block.Body.Deposits),
+					SignedExecutionPayloadBid: v2.NewSignedExecutionPayloadBidFromPQ(block.Body.SignedExecutionPayloadBid),
+					ParentExecutionRequests:   v2.NewExecutionRequestsFromPQ(block.Body.ParentExecutionRequests),
+					Proof:                     fmt.Sprintf("%#x", block.Body.AttestationProof),
+				},
+			},
+		},
+	}
+
+	if signature != nil && !signature.IsZero() {
+		event.Signature = fmt.Sprintf("%#x", signature[:])
 	}
 
 	return event

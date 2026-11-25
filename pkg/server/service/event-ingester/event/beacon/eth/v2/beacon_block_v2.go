@@ -104,6 +104,15 @@ func (b *BeaconBlockV2) Filter(ctx context.Context) bool {
 		}
 
 		hash = gloasBlock.GloasBlock.GetStateRoot()
+	case spec.DataVersionPQ.String():
+		pqBlock, ok := data.EthV2BeaconBlockV2.GetMessage().(*v2.EventBlockV2_PqBlock)
+		if !ok {
+			b.log.WithContext(ctx).Error("failed to cast message to PqBlock")
+
+			return true
+		}
+
+		hash = pqBlock.PqBlock.GetStateRoot()
 	default:
 		b.log.WithContext(ctx).Error(fmt.Errorf("unknown version: %s", version))
 

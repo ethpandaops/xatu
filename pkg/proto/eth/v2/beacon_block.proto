@@ -228,6 +228,19 @@ message BeaconBlockGloas {
   BeaconBlockBodyGloas body = 5;
 }
 
+message BeaconBlockPq {
+  google.protobuf.UInt64Value slot = 1 [ json_name = "slot" ];
+
+  google.protobuf.UInt64Value proposer_index = 2
+      [ json_name = "proposer_index" ];
+
+  string parent_root = 3 [ json_name = "parent_root" ];
+
+  string state_root = 4 [ json_name = "state_root" ];
+
+  BeaconBlockBodyPq body = 5;
+}
+
 message BlindedBeaconBlockCapella {
   uint64 slot = 1;
 
@@ -585,6 +598,97 @@ message BeaconBlockBodyGloas {
   // existed before deferred processing was introduced.
   v1.ElectraExecutionRequests parent_execution_requests = 13
       [ json_name = "parent_execution_requests" ];
+}
+
+// BeaconBlockBodyPq mirrors the PQ devnet BeaconBlockBody: the Gloas ePBS
+// body with XMSS signatures, a VRF proof as the RANDAO reveal, a single
+// aggregated STARK proof for the attestations, and no sync aggregate, BLS
+// changes or payload attestations. Voluntary exits are execution requests.
+message BeaconBlockBodyPq {
+  // VRF proof: 32 roots, hex encoded as one string.
+  string randao_reveal = 1 [ json_name = "randao_reveal" ];
+
+  v1.Eth1Data eth1_data = 2 [ json_name = "eth1_data" ];
+
+  string graffiti = 3;
+
+  // Header signatures are XMSS signatures.
+  repeated v1.ProposerSlashing proposer_slashings = 4
+      [ json_name = "proposer_slashings" ];
+
+  repeated AttesterSlashingPq attester_slashings = 5
+      [ json_name = "attester_slashings" ];
+
+  // PQ attestations carry no signature; the block's proof covers them.
+  repeated v1.Attestation attestations = 6;
+
+  repeated v1.Deposit deposits = 7;
+
+  // The bid signature is an XMSS signature.
+  v1.SignedExecutionPayloadBid signed_execution_payload_bid = 8
+      [ json_name = "signed_execution_payload_bid" ];
+
+  ExecutionRequestsPq parent_execution_requests = 9
+      [ json_name = "parent_execution_requests" ];
+
+  string proof = 10;
+}
+
+message IndexedAttestationPq {
+  repeated uint64 attesting_indices = 1 [ json_name = "attesting_indices" ];
+
+  v1.AttestationData data = 2;
+
+  string proof = 3;
+}
+
+message AttesterSlashingPq {
+  IndexedAttestationPq attestation_1 = 1 [ json_name = "attestation_1" ];
+
+  IndexedAttestationPq attestation_2 = 2 [ json_name = "attestation_2" ];
+}
+
+message ExecutionRequestsPq {
+  repeated v1.ElectraExecutionRequestDeposit deposits = 1;
+
+  repeated v1.ElectraExecutionRequestWithdrawal withdrawals = 2;
+
+  repeated v1.ElectraExecutionRequestConsolidation consolidations = 3;
+
+  repeated v1.GloasBuilderDepositRequest builder_deposits = 4
+      [ json_name = "builder_deposits" ];
+
+  repeated v1.GloasBuilderExitRequest builder_exits = 5
+      [ json_name = "builder_exits" ];
+
+  repeated ValidatorPreregistrationRequestPq validator_preregistrations = 6
+      [ json_name = "validator_preregistrations" ];
+
+  repeated BuilderPreregistrationRequestPq builder_preregistrations = 7
+      [ json_name = "builder_preregistrations" ];
+
+  repeated VoluntaryExitRequestPq voluntary_exits = 8
+      [ json_name = "voluntary_exits" ];
+}
+
+message ValidatorPreregistrationRequestPq {
+  google.protobuf.StringValue pubkey = 1;
+
+  google.protobuf.StringValue withdrawal_credentials = 2
+      [ json_name = "withdrawal_credentials" ];
+
+  google.protobuf.StringValue vrf_root = 3 [ json_name = "vrf_root" ];
+}
+
+message BuilderPreregistrationRequestPq {
+  google.protobuf.StringValue pubkey = 1;
+
+  google.protobuf.StringValue withdrawal_credentials = 2
+      [ json_name = "withdrawal_credentials" ];
+}
+
+message VoluntaryExitRequestPq {
+  google.protobuf.StringValue pubkey = 1;
 }
 
 message BlindedBeaconBlockBodyCapella {

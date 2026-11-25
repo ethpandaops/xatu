@@ -71,7 +71,8 @@ func (b *beaconApiEthV2BeaconBlockBatch) validate(event *xatu.DecoratedEvent) er
 		payload.GetDenebBlock() == nil &&
 		payload.GetElectraBlock() == nil &&
 		payload.GetFuluBlock() == nil &&
-		payload.GetGloasBlock() == nil {
+		payload.GetGloasBlock() == nil &&
+		payload.GetPqBlock() == nil {
 		return fmt.Errorf("nil Message: %w", route.ErrInvalidEvent)
 	}
 
@@ -281,6 +282,31 @@ func (b *beaconApiEthV2BeaconBlockBatch) appendPayloadFromEventBlockV2(
 		// Gloas blocks have no inline execution payload — it arrives
 		// via the ExecutionPayloadEnvelope event. EPBS columns come
 		// from the bid in the block body.
+		b.appendNullInlinePayloadFields()
+		b.appendEpbsFromBid(body.GetSignedExecutionPayloadBid())
+
+		return nil
+	}
+
+	if pqBlock := eventBlock.GetPqBlock(); pqBlock != nil {
+		if slot := pqBlock.GetSlot(); slot != nil {
+			b.Slot.Append(uint32(slot.GetValue())) //nolint:gosec // slot fits uint32
+		} else {
+			b.Slot.Append(0)
+		}
+
+		b.ParentRoot.Append([]byte(pqBlock.GetParentRoot()))
+		b.StateRoot.Append([]byte(pqBlock.GetStateRoot()))
+
+		if pi := pqBlock.GetProposerIndex(); pi != nil {
+			b.ProposerIndex.Append(uint32(pi.GetValue())) //nolint:gosec // proposer index fits uint32
+		} else {
+			b.ProposerIndex.Append(0)
+		}
+
+		body := pqBlock.GetBody()
+		b.appendEth1Data(body.GetEth1Data())
+		b.appendGraffiti(body.GetGraffiti())
 		b.appendNullInlinePayloadFields()
 		b.appendEpbsFromBid(body.GetSignedExecutionPayloadBid())
 

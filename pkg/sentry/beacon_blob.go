@@ -211,6 +211,12 @@ func extractKZGCommitments(block *spec.VersionedSignedBeaconBlock) ([]deneb.KZGC
 			block.Gloas.Message.Body.SignedExecutionPayloadBid.Message != nil {
 			return block.Gloas.Message.Body.SignedExecutionPayloadBid.Message.BlobKZGCommitments, nil
 		}
+	case spec.DataVersionPQ:
+		if block.PQ != nil && block.PQ.Message != nil && block.PQ.Message.Body != nil &&
+			block.PQ.Message.Body.SignedExecutionPayloadBid != nil &&
+			block.PQ.Message.Body.SignedExecutionPayloadBid.Message != nil {
+			return block.PQ.Message.Body.SignedExecutionPayloadBid.Message.BlobKZGCommitments, nil
+		}
 	}
 
 	return nil, fmt.Errorf("block version %s does not support KZG commitments", block.Version)

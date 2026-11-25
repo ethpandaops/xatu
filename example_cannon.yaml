@@ -76,6 +76,7 @@ cryo:
   compression: "zstd 1"          # avoid lz4 (parquet-go mis-decodes it)
   requestsPerSecond: 0
   maxConcurrentChunks: 0
+  maxConcurrentRequests: 0       # in-flight RPC requests per cryo process (0 = cryo's 100)
 
 # Derivers are grouped by layer.
 derivers:

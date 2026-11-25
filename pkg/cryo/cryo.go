@@ -46,6 +46,10 @@ type Config struct {
 	RequestsPerSecond uint64 `yaml:"requestsPerSecond" default:"0"`
 	// MaxConcurrentChunks bounds cryo's internal chunk concurrency (0 = default).
 	MaxConcurrentChunks uint64 `yaml:"maxConcurrentChunks" default:"0"`
+	// MaxConcurrentRequests bounds cryo's in-flight RPC requests (0 = cryo
+	// default, 100). Every deriver runs its own cryo, so the total against one
+	// RPC is this times the number of derivers.
+	MaxConcurrentRequests uint64 `yaml:"maxConcurrentRequests" default:"0"`
 }
 
 // Validate checks the config is usable.
@@ -135,6 +139,10 @@ func (r *Runner) Collect(ctx context.Context, dataset string, from, to uint64, c
 
 	if r.cfg.MaxConcurrentChunks > 0 {
 		args = append(args, "--max-concurrent-chunks", strconv.FormatUint(r.cfg.MaxConcurrentChunks, 10))
+	}
+
+	if r.cfg.MaxConcurrentRequests > 0 {
+		args = append(args, "--max-concurrent-requests", strconv.FormatUint(r.cfg.MaxConcurrentRequests, 10))
 	}
 
 	if len(columns) > 0 {

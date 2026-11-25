@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	eth "github.com/ethereum/go-ethereum/eth/protocols/eth"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/google/uuid"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/pkg/errors"
@@ -18,10 +19,63 @@ import (
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 
 	"github.com/ethpandaops/xatu/pkg/cannon/ethereum"
+	"github.com/ethpandaops/xatu/pkg/internal/frametx"
 	"github.com/ethpandaops/xatu/pkg/observability"
 )
 
-func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event *types.Transaction) (*xatu.DecoratedEvent, error) {
+// mempoolTransaction is a transaction from a devp2p transaction list: tx, or frame with its
+// typed envelope raw for an EIP-8141 frame transaction.
+type mempoolTransaction struct {
+	tx    *types.Transaction
+	frame *frametx.Transaction
+	raw   []byte
+}
+
+func (m mempoolTransaction) hash() common.Hash {
+	if m.frame != nil {
+		return m.frame.Hash
+	}
+
+	return m.tx.Hash()
+}
+
+// decodeTransactions decodes each transaction of a devp2p transaction list on its own, so a
+// transaction that neither go-ethereum nor frametx decodes drops only itself, not the whole list.
+func (p *Peer) decodeTransactions(ctx context.Context, list *rlp.RawList[*types.Transaction]) []mempoolTransaction {
+	transactions := make([]mempoolTransaction, 0, list.Len())
+
+	it := list.ContentIterator()
+	for it.Next() {
+		tx := new(types.Transaction)
+
+		err := rlp.DecodeBytes(it.Value(), tx)
+		if err == nil {
+			transactions = append(transactions, mempoolTransaction{tx: tx})
+
+			continue
+		}
+
+		// A typed transaction is an RLP string holding its EIP-2718 envelope.
+		if _, envelope, _, splitErr := rlp.Split(it.Value()); splitErr == nil {
+			frame, frameErr := frametx.Decode(envelope)
+			if frameErr == nil {
+				transactions = append(transactions, mempoolTransaction{frame: frame, raw: envelope})
+
+				continue
+			}
+		}
+
+		p.log.WithError(err).WithContext(ctx).Warn("Failed to decode transaction")
+	}
+
+	if err := it.Err(); err != nil {
+		p.log.WithError(err).WithContext(ctx).Warn("Failed to decode transaction list")
+	}
+
+	return transactions
+}
+
+func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event mempoolTransaction) (*xatu.DecoratedEvent, error) {
 	p.log.WithContext(ctx).Debug("Transaction received")
 
 	meta, err := p.createNewClientMeta(ctx)
@@ -34,9 +88,12 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 		now = now.Add(time.Duration(meta.ClockDrift) * time.Millisecond)
 	}
 
-	tx, err := event.MarshalBinary()
-	if err != nil {
-		return nil, err
+	tx := event.raw
+	if event.frame == nil {
+		tx, err = event.tx.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	decoratedEvent := &xatu.DecoratedEvent{
@@ -53,7 +110,13 @@ func (p *Peer) handleTransaction(ctx context.Context, eventTime time.Time, event
 		},
 	}
 
-	additionalData, err := p.getTransactionData(ctx, event, meta, now)
+	var additionalData *xatu.ClientMeta_AdditionalMempoolTransactionV2Data
+	if event.frame != nil {
+		additionalData = frameTransactionData(event.frame, event.raw)
+	} else {
+		additionalData, err = p.getTransactionData(ctx, event.tx, meta, now)
+	}
+
 	if err != nil {
 		p.log.WithError(err).WithContext(ctx).Error("Failed to get extra transaction data")
 	} else {
@@ -125,6 +188,46 @@ func (p *Peer) getTransactionData(ctx context.Context, event *types.Transaction,
 	}
 
 	return extra, nil
+}
+
+// frameTransactionData describes an EIP-8141 frame transaction. Each frame has its own target, value
+// and calldata, so to, value and input stay empty; max_fee is a total budget rather than a per-gas cap,
+// so gas price and fee cap stay empty too.
+func frameTransactionData(frame *frametx.Transaction, raw []byte) *xatu.ClientMeta_AdditionalMempoolTransactionV2Data {
+	extra := &xatu.ClientMeta_AdditionalMempoolTransactionV2Data{
+		Nonce:     wrapperspb.UInt64(frame.NonceSeq),
+		Gas:       wrapperspb.UInt64(frame.Gas()),
+		From:      frame.Sender.String(),
+		GasTipCap: frame.Fees.MaxPriorityFeePerGas.String(),
+		Hash:      frame.Hash.String(),
+		// Like go-ethereum's Size for blob transactions, this includes any blob sidecar.
+		Size: strconv.Itoa(len(raw)),
+		Type: wrapperspb.UInt32(frametx.TxType),
+	}
+
+	if len(frame.BlobVersionedHashes) == 0 {
+		return extra
+	}
+
+	extra.BlobGas = wrapperspb.UInt64(frame.BlobGas())
+
+	for _, hash := range frame.BlobVersionedHashes {
+		extra.BlobHashes = append(extra.BlobHashes, hash.String())
+	}
+
+	if frame.Blobs != nil {
+		sidecarsSize, sidecarsEmptySize := 0, 0
+
+		for _, blob := range frame.Blobs {
+			sidecarsSize += len(blob)
+			sidecarsEmptySize += ethereum.CountConsecutiveEmptyBytes(blob, 4)
+		}
+
+		extra.BlobSidecarsSize = strconv.Itoa(sidecarsSize)
+		extra.BlobSidecarsEmptySize = strconv.Itoa(sidecarsEmptySize)
+	}
+
+	return extra
 }
 
 type TransactionHashItem struct {
@@ -225,22 +328,15 @@ func (p *Peer) fetchAndProcessTransactions(ctx context.Context, hashes []common.
 		return
 	}
 
-	transactions, err := (*eth.PooledTransactionsPacket)(txs).List.Items()
-	if err != nil {
-		p.log.WithError(err).WithContext(ctx).Warn("Failed to decode pooled transactions")
-
-		return
-	}
-
-	for _, tx := range transactions {
-		_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.Hash().String(), true, ttlcache.WithTTL[string, bool](1*time.Hour))
+	for _, tx := range p.decodeTransactions(ctx, &(*eth.PooledTransactionsPacket)(txs).List) {
+		_, retrieved := p.sharedCache.Transaction.GetOrSet(tx.hash().String(), true, ttlcache.WithTTL[string, bool](1*time.Hour))
 		// transaction was just set in shared cache, so we need to handle it
 		if !retrieved {
-			meta := metaMap[tx.Hash()]
+			meta := metaMap[tx.hash()]
 			seen := meta.Seen
 
 			if seen.IsZero() {
-				p.log.WithField("hash", tx.Hash().String()).WithContext(ctx).Error("Failed to find seen time for transaction")
+				p.log.WithField("hash", tx.hash().String()).WithContext(ctx).Error("Failed to find seen time for transaction")
 
 				seen = time.Now()
 			}

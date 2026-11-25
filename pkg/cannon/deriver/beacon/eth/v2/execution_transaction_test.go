@@ -3,18 +3,23 @@ package v2
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"math/big"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethpandaops/go-eth2-client/api"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/bellatrix"
 	"github.com/ethpandaops/go-eth2-client/spec/capella"
+	"github.com/ethpandaops/go-eth2-client/spec/daisugi"
 	"github.com/ethpandaops/go-eth2-client/spec/deneb"
 	"github.com/ethpandaops/go-eth2-client/spec/electra"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
@@ -266,7 +271,7 @@ func TestGetGasPrice_CapellaBlock(t *testing.T) {
 	require.Len(t, transactions, len(want))
 
 	for i, tx := range transactions {
-		got, err := GetGasPrice(block, tx, nil)
+		got, err := GetGasPrice(block, tx.tx, nil)
 		require.NoError(t, err)
 		assert.Equal(t, big.NewInt(want[i]), got, "transaction %d", i)
 	}
@@ -472,5 +477,67 @@ func TestResolveBlobSidecars(t *testing.T) {
 			require.Len(t, byHash, 1)
 			assert.Contains(t, byHash, "0x010527b04814534648ad8d0d594b4e8b723c88ca2ac0ee40f8723cd6d541dfd2")
 		})
+	}
+}
+
+// daisugi-devnet-0 execution block 7104 carries EIP-8141 frame transactions (type 0x6) next to a type 2 one;
+// expected frame fields are Nethermind's eth_getBlockByNumber values.
+func TestExecutionTransactionDeriver_FrameTransactions(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("testdata", "daisugi-devnet-0-7104.json"))
+	require.NoError(t, err)
+
+	var fixture struct {
+		BaseFeePerGas     string   `json:"baseFeePerGas"`
+		Transactions      []string `json:"transactions"`
+		FrameTransactions []struct {
+			TransactionIndex     string `json:"transactionIndex"`
+			Hash                 string `json:"hash"`
+			From                 string `json:"from"`
+			Nonce                string `json:"nonce"`
+			Gas                  string `json:"gas"`
+			GasPrice             string `json:"gasPrice"`
+			MaxPriorityFeePerGas string `json:"maxPriorityFeePerGas"`
+		} `json:"frameTransactions"`
+	}
+	require.NoError(t, json.Unmarshal(data, &fixture))
+	require.Len(t, fixture.FrameTransactions, 7)
+
+	payload := &daisugi.ExecutionPayload{BaseFeePerGas: uint256.MustFromHex(fixture.BaseFeePerGas)}
+	for _, raw := range fixture.Transactions {
+		payload.Transactions = append(payload.Transactions, hexutil.MustDecode(raw))
+	}
+
+	// A transaction type nothing decodes yet must be left out without failing the slot.
+	payload.Transactions = append(payload.Transactions, []byte{0x7f, 0xc0})
+
+	block := &spec.VersionedSignedBeaconBlock{
+		Version: spec.DataVersionDaisugi,
+		Daisugi: &daisugi.SignedBeaconBlock{Message: &daisugi.BeaconBlock{Body: &daisugi.BeaconBlockBody{ExecutionPayload: payload}}},
+	}
+	deriver := &ExecutionTransactionDeriver{
+		log:        logrus.New(),
+		clientMeta: &xatu.ClientMeta{Name: "cannon-test"},
+	}
+
+	events, err := deriver.deriveEvents(context.Background(), block, nil, nil, testBlockIdentifier(), hexutil.MustDecodeBig("0x29d103d8"))
+	require.NoError(t, err)
+	require.Len(t, events, len(fixture.Transactions))
+
+	for _, want := range fixture.FrameTransactions {
+		position := hexutil.MustDecodeUint64(want.TransactionIndex)
+		tx := events[position].GetEthV2BeaconBlockExecutionTransaction()
+		additional := events[position].GetMeta().GetClient().GetEthV2BeaconBlockExecutionTransaction()
+
+		assert.Equal(t, want.Hash, tx.GetHash())
+		assert.Equal(t, uint32(6), tx.GetType().GetValue())
+		assert.True(t, strings.EqualFold(want.From, tx.GetFrom()), "from %s, want %s", tx.GetFrom(), want.From)
+		assert.Equal(t, hexutil.MustDecodeUint64(want.Nonce), tx.GetNonce().GetValue())
+		assert.Equal(t, hexutil.MustDecodeUint64(want.Gas), tx.GetGas().GetValue())
+		assert.Equal(t, hexutil.MustDecodeBig(want.GasPrice).String(), tx.GetGasPrice())
+		assert.Equal(t, hexutil.MustDecodeBig(want.MaxPriorityFeePerGas).String(), tx.GetGasTipCap())
+		assert.Empty(t, tx.GetGasFeeCap())
+		assert.Empty(t, tx.GetTo())
+		assert.Equal(t, position, additional.GetPositionInBlock().GetValue())
+		assert.Equal(t, strconv.Itoa(len(payload.Transactions[position])), additional.GetSize())
 	}
 }

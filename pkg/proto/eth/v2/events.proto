@@ -26,6 +26,8 @@ enum BlockVersion {
   FULU = 7;
 
   GLOAS = 8;
+
+  PQ = 9;
 }
 
 message EventBlock {
@@ -69,6 +71,8 @@ message EventBlockV2 {
     v2.BeaconBlockFulu fulu_block = 9 [ json_name = "FULU" ];
 
     v2.BeaconBlockGloas gloas_block = 10 [ json_name = "GLOAS" ];
+
+    v2.BeaconBlockPq pq_block = 11 [ json_name = "PQ" ];
   }
 
   string signature = 5;

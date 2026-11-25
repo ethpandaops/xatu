@@ -1586,6 +1586,85 @@ func (x *BeaconBlockGloas) GetBody() *BeaconBlockBodyGloas {
 	return nil
 }
 
+type BeaconBlockPq struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Slot          *wrapperspb.UInt64Value `protobuf:"bytes,1,opt,name=slot,proto3" json:"slot,omitempty"`
+	ProposerIndex *wrapperspb.UInt64Value `protobuf:"bytes,2,opt,name=proposer_index,proto3" json:"proposer_index,omitempty"`
+	ParentRoot    string                  `protobuf:"bytes,3,opt,name=parent_root,proto3" json:"parent_root,omitempty"`
+	StateRoot     string                  `protobuf:"bytes,4,opt,name=state_root,proto3" json:"state_root,omitempty"`
+	Body          *BeaconBlockBodyPq      `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`
+}
+
+func (x *BeaconBlockPq) Reset() {
+	*x = BeaconBlockPq{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[24]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BeaconBlockPq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BeaconBlockPq) ProtoMessage() {}
+
+func (x *BeaconBlockPq) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[24]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BeaconBlockPq.ProtoReflect.Descriptor instead.
+func (*BeaconBlockPq) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *BeaconBlockPq) GetSlot() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.Slot
+	}
+	return nil
+}
+
+func (x *BeaconBlockPq) GetProposerIndex() *wrapperspb.UInt64Value {
+	if x != nil {
+		return x.ProposerIndex
+	}
+	return nil
+}
+
+func (x *BeaconBlockPq) GetParentRoot() string {
+	if x != nil {
+		return x.ParentRoot
+	}
+	return ""
+}
+
+func (x *BeaconBlockPq) GetStateRoot() string {
+	if x != nil {
+		return x.StateRoot
+	}
+	return ""
+}
+
+func (x *BeaconBlockPq) GetBody() *BeaconBlockBodyPq {
+	if x != nil {
+		return x.Body
+	}
+	return nil
+}
+
 type BlindedBeaconBlockCapella struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1601,7 +1680,7 @@ type BlindedBeaconBlockCapella struct {
 func (x *BlindedBeaconBlockCapella) Reset() {
 	*x = BlindedBeaconBlockCapella{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[24]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1614,7 +1693,7 @@ func (x *BlindedBeaconBlockCapella) String() string {
 func (*BlindedBeaconBlockCapella) ProtoMessage() {}
 
 func (x *BlindedBeaconBlockCapella) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[24]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1627,7 +1706,7 @@ func (x *BlindedBeaconBlockCapella) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlindedBeaconBlockCapella.ProtoReflect.Descriptor instead.
 func (*BlindedBeaconBlockCapella) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{24}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *BlindedBeaconBlockCapella) GetSlot() uint64 {
@@ -1680,7 +1759,7 @@ type BlindedBeaconBlockCapellaV2 struct {
 func (x *BlindedBeaconBlockCapellaV2) Reset() {
 	*x = BlindedBeaconBlockCapellaV2{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[25]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1693,7 +1772,7 @@ func (x *BlindedBeaconBlockCapellaV2) String() string {
 func (*BlindedBeaconBlockCapellaV2) ProtoMessage() {}
 
 func (x *BlindedBeaconBlockCapellaV2) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[25]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1706,7 +1785,7 @@ func (x *BlindedBeaconBlockCapellaV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlindedBeaconBlockCapellaV2.ProtoReflect.Descriptor instead.
 func (*BlindedBeaconBlockCapellaV2) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{25}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *BlindedBeaconBlockCapellaV2) GetSlot() *wrapperspb.UInt64Value {
@@ -1759,7 +1838,7 @@ type BeaconBlockAltair struct {
 func (x *BeaconBlockAltair) Reset() {
 	*x = BeaconBlockAltair{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[26]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1772,7 +1851,7 @@ func (x *BeaconBlockAltair) String() string {
 func (*BeaconBlockAltair) ProtoMessage() {}
 
 func (x *BeaconBlockAltair) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[26]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1785,7 +1864,7 @@ func (x *BeaconBlockAltair) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeaconBlockAltair.ProtoReflect.Descriptor instead.
 func (*BeaconBlockAltair) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{26}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *BeaconBlockAltair) GetSlot() uint64 {
@@ -1838,7 +1917,7 @@ type BeaconBlockAltairV2 struct {
 func (x *BeaconBlockAltairV2) Reset() {
 	*x = BeaconBlockAltairV2{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[27]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1851,7 +1930,7 @@ func (x *BeaconBlockAltairV2) String() string {
 func (*BeaconBlockAltairV2) ProtoMessage() {}
 
 func (x *BeaconBlockAltairV2) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[27]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1864,7 +1943,7 @@ func (x *BeaconBlockAltairV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeaconBlockAltairV2.ProtoReflect.Descriptor instead.
 func (*BeaconBlockAltairV2) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{27}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *BeaconBlockAltairV2) GetSlot() *wrapperspb.UInt64Value {
@@ -1922,7 +2001,7 @@ type BeaconBlockBodyBellatrix struct {
 func (x *BeaconBlockBodyBellatrix) Reset() {
 	*x = BeaconBlockBodyBellatrix{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[28]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1935,7 +2014,7 @@ func (x *BeaconBlockBodyBellatrix) String() string {
 func (*BeaconBlockBodyBellatrix) ProtoMessage() {}
 
 func (x *BeaconBlockBodyBellatrix) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[28]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1948,7 +2027,7 @@ func (x *BeaconBlockBodyBellatrix) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeaconBlockBodyBellatrix.ProtoReflect.Descriptor instead.
 func (*BeaconBlockBodyBellatrix) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{28}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *BeaconBlockBodyBellatrix) GetRandaoReveal() string {
@@ -2041,7 +2120,7 @@ type BeaconBlockBodyBellatrixV2 struct {
 func (x *BeaconBlockBodyBellatrixV2) Reset() {
 	*x = BeaconBlockBodyBellatrixV2{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[29]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2054,7 +2133,7 @@ func (x *BeaconBlockBodyBellatrixV2) String() string {
 func (*BeaconBlockBodyBellatrixV2) ProtoMessage() {}
 
 func (x *BeaconBlockBodyBellatrixV2) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[29]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2067,7 +2146,7 @@ func (x *BeaconBlockBodyBellatrixV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeaconBlockBodyBellatrixV2.ProtoReflect.Descriptor instead.
 func (*BeaconBlockBodyBellatrixV2) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{29}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *BeaconBlockBodyBellatrixV2) GetRandaoReveal() string {
@@ -2160,7 +2239,7 @@ type BlindedBeaconBlockBodyBellatrix struct {
 func (x *BlindedBeaconBlockBodyBellatrix) Reset() {
 	*x = BlindedBeaconBlockBodyBellatrix{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[30]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2173,7 +2252,7 @@ func (x *BlindedBeaconBlockBodyBellatrix) String() string {
 func (*BlindedBeaconBlockBodyBellatrix) ProtoMessage() {}
 
 func (x *BlindedBeaconBlockBodyBellatrix) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[30]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2186,7 +2265,7 @@ func (x *BlindedBeaconBlockBodyBellatrix) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlindedBeaconBlockBodyBellatrix.ProtoReflect.Descriptor instead.
 func (*BlindedBeaconBlockBodyBellatrix) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{30}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *BlindedBeaconBlockBodyBellatrix) GetRandaoReveal() string {
@@ -2279,7 +2358,7 @@ type BlindedBeaconBlockBodyBellatrixV2 struct {
 func (x *BlindedBeaconBlockBodyBellatrixV2) Reset() {
 	*x = BlindedBeaconBlockBodyBellatrixV2{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[31]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2292,7 +2371,7 @@ func (x *BlindedBeaconBlockBodyBellatrixV2) String() string {
 func (*BlindedBeaconBlockBodyBellatrixV2) ProtoMessage() {}
 
 func (x *BlindedBeaconBlockBodyBellatrixV2) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[31]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2305,7 +2384,7 @@ func (x *BlindedBeaconBlockBodyBellatrixV2) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use BlindedBeaconBlockBodyBellatrixV2.ProtoReflect.Descriptor instead.
 func (*BlindedBeaconBlockBodyBellatrixV2) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{31}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *BlindedBeaconBlockBodyBellatrixV2) GetRandaoReveal() string {
@@ -2399,7 +2478,7 @@ type BeaconBlockBodyCapella struct {
 func (x *BeaconBlockBodyCapella) Reset() {
 	*x = BeaconBlockBodyCapella{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[32]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2412,7 +2491,7 @@ func (x *BeaconBlockBodyCapella) String() string {
 func (*BeaconBlockBodyCapella) ProtoMessage() {}
 
 func (x *BeaconBlockBodyCapella) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[32]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2425,7 +2504,7 @@ func (x *BeaconBlockBodyCapella) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeaconBlockBodyCapella.ProtoReflect.Descriptor instead.
 func (*BeaconBlockBodyCapella) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{32}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *BeaconBlockBodyCapella) GetRandaoReveal() string {
@@ -2526,7 +2605,7 @@ type BeaconBlockBodyCapellaV2 struct {
 func (x *BeaconBlockBodyCapellaV2) Reset() {
 	*x = BeaconBlockBodyCapellaV2{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[33]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[34]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2539,7 +2618,7 @@ func (x *BeaconBlockBodyCapellaV2) String() string {
 func (*BeaconBlockBodyCapellaV2) ProtoMessage() {}
 
 func (x *BeaconBlockBodyCapellaV2) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[33]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[34]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2552,7 +2631,7 @@ func (x *BeaconBlockBodyCapellaV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeaconBlockBodyCapellaV2.ProtoReflect.Descriptor instead.
 func (*BeaconBlockBodyCapellaV2) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{33}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *BeaconBlockBodyCapellaV2) GetRandaoReveal() string {
@@ -2654,7 +2733,7 @@ type BeaconBlockBodyDeneb struct {
 func (x *BeaconBlockBodyDeneb) Reset() {
 	*x = BeaconBlockBodyDeneb{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[34]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[35]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2667,7 +2746,7 @@ func (x *BeaconBlockBodyDeneb) String() string {
 func (*BeaconBlockBodyDeneb) ProtoMessage() {}
 
 func (x *BeaconBlockBodyDeneb) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[34]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[35]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2680,7 +2759,7 @@ func (x *BeaconBlockBodyDeneb) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeaconBlockBodyDeneb.ProtoReflect.Descriptor instead.
 func (*BeaconBlockBodyDeneb) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{34}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *BeaconBlockBodyDeneb) GetRandaoReveal() string {
@@ -2790,7 +2869,7 @@ type BeaconBlockBodyElectra struct {
 func (x *BeaconBlockBodyElectra) Reset() {
 	*x = BeaconBlockBodyElectra{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[35]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[36]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2803,7 +2882,7 @@ func (x *BeaconBlockBodyElectra) String() string {
 func (*BeaconBlockBodyElectra) ProtoMessage() {}
 
 func (x *BeaconBlockBodyElectra) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[35]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[36]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2816,7 +2895,7 @@ func (x *BeaconBlockBodyElectra) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeaconBlockBodyElectra.ProtoReflect.Descriptor instead.
 func (*BeaconBlockBodyElectra) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{35}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *BeaconBlockBodyElectra) GetRandaoReveal() string {
@@ -2933,7 +3012,7 @@ type BeaconBlockBodyFulu struct {
 func (x *BeaconBlockBodyFulu) Reset() {
 	*x = BeaconBlockBodyFulu{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[36]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[37]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2946,7 +3025,7 @@ func (x *BeaconBlockBodyFulu) String() string {
 func (*BeaconBlockBodyFulu) ProtoMessage() {}
 
 func (x *BeaconBlockBodyFulu) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[36]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[37]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2959,7 +3038,7 @@ func (x *BeaconBlockBodyFulu) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeaconBlockBodyFulu.ProtoReflect.Descriptor instead.
 func (*BeaconBlockBodyFulu) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{36}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *BeaconBlockBodyFulu) GetRandaoReveal() string {
@@ -3088,7 +3167,7 @@ type BeaconBlockBodyGloas struct {
 func (x *BeaconBlockBodyGloas) Reset() {
 	*x = BeaconBlockBodyGloas{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[37]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[38]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3101,7 +3180,7 @@ func (x *BeaconBlockBodyGloas) String() string {
 func (*BeaconBlockBodyGloas) ProtoMessage() {}
 
 func (x *BeaconBlockBodyGloas) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[37]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[38]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3114,7 +3193,7 @@ func (x *BeaconBlockBodyGloas) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeaconBlockBodyGloas.ProtoReflect.Descriptor instead.
 func (*BeaconBlockBodyGloas) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{37}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *BeaconBlockBodyGloas) GetRandaoReveal() string {
@@ -3208,6 +3287,519 @@ func (x *BeaconBlockBodyGloas) GetParentExecutionRequests() *v1.ElectraExecution
 	return nil
 }
 
+// BeaconBlockBodyPq mirrors the PQ devnet BeaconBlockBody: the Gloas ePBS
+// body with XMSS signatures, a VRF proof as the RANDAO reveal, a single
+// aggregated STARK proof for the attestations, and no sync aggregate, BLS
+// changes or payload attestations. Voluntary exits are execution requests.
+type BeaconBlockBodyPq struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// VRF proof: 32 roots, hex encoded as one string.
+	RandaoReveal string       `protobuf:"bytes,1,opt,name=randao_reveal,proto3" json:"randao_reveal,omitempty"`
+	Eth1Data     *v1.Eth1Data `protobuf:"bytes,2,opt,name=eth1_data,proto3" json:"eth1_data,omitempty"`
+	Graffiti     string       `protobuf:"bytes,3,opt,name=graffiti,proto3" json:"graffiti,omitempty"`
+	// Header signatures are XMSS signatures.
+	ProposerSlashings []*v1.ProposerSlashing `protobuf:"bytes,4,rep,name=proposer_slashings,proto3" json:"proposer_slashings,omitempty"`
+	AttesterSlashings []*AttesterSlashingPq  `protobuf:"bytes,5,rep,name=attester_slashings,proto3" json:"attester_slashings,omitempty"`
+	// PQ attestations carry no signature; the block's proof covers them.
+	Attestations []*v1.Attestation `protobuf:"bytes,6,rep,name=attestations,proto3" json:"attestations,omitempty"`
+	Deposits     []*v1.Deposit     `protobuf:"bytes,7,rep,name=deposits,proto3" json:"deposits,omitempty"`
+	// The bid signature is an XMSS signature.
+	SignedExecutionPayloadBid *v1.SignedExecutionPayloadBid `protobuf:"bytes,8,opt,name=signed_execution_payload_bid,proto3" json:"signed_execution_payload_bid,omitempty"`
+	ParentExecutionRequests   *ExecutionRequestsPq          `protobuf:"bytes,9,opt,name=parent_execution_requests,proto3" json:"parent_execution_requests,omitempty"`
+	Proof                     string                        `protobuf:"bytes,10,opt,name=proof,proto3" json:"proof,omitempty"`
+}
+
+func (x *BeaconBlockBodyPq) Reset() {
+	*x = BeaconBlockBodyPq{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[39]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BeaconBlockBodyPq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BeaconBlockBodyPq) ProtoMessage() {}
+
+func (x *BeaconBlockBodyPq) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[39]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BeaconBlockBodyPq.ProtoReflect.Descriptor instead.
+func (*BeaconBlockBodyPq) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *BeaconBlockBodyPq) GetRandaoReveal() string {
+	if x != nil {
+		return x.RandaoReveal
+	}
+	return ""
+}
+
+func (x *BeaconBlockBodyPq) GetEth1Data() *v1.Eth1Data {
+	if x != nil {
+		return x.Eth1Data
+	}
+	return nil
+}
+
+func (x *BeaconBlockBodyPq) GetGraffiti() string {
+	if x != nil {
+		return x.Graffiti
+	}
+	return ""
+}
+
+func (x *BeaconBlockBodyPq) GetProposerSlashings() []*v1.ProposerSlashing {
+	if x != nil {
+		return x.ProposerSlashings
+	}
+	return nil
+}
+
+func (x *BeaconBlockBodyPq) GetAttesterSlashings() []*AttesterSlashingPq {
+	if x != nil {
+		return x.AttesterSlashings
+	}
+	return nil
+}
+
+func (x *BeaconBlockBodyPq) GetAttestations() []*v1.Attestation {
+	if x != nil {
+		return x.Attestations
+	}
+	return nil
+}
+
+func (x *BeaconBlockBodyPq) GetDeposits() []*v1.Deposit {
+	if x != nil {
+		return x.Deposits
+	}
+	return nil
+}
+
+func (x *BeaconBlockBodyPq) GetSignedExecutionPayloadBid() *v1.SignedExecutionPayloadBid {
+	if x != nil {
+		return x.SignedExecutionPayloadBid
+	}
+	return nil
+}
+
+func (x *BeaconBlockBodyPq) GetParentExecutionRequests() *ExecutionRequestsPq {
+	if x != nil {
+		return x.ParentExecutionRequests
+	}
+	return nil
+}
+
+func (x *BeaconBlockBodyPq) GetProof() string {
+	if x != nil {
+		return x.Proof
+	}
+	return ""
+}
+
+type IndexedAttestationPq struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	AttestingIndices []uint64            `protobuf:"varint,1,rep,packed,name=attesting_indices,proto3" json:"attesting_indices,omitempty"`
+	Data             *v1.AttestationData `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	Proof            string              `protobuf:"bytes,3,opt,name=proof,proto3" json:"proof,omitempty"`
+}
+
+func (x *IndexedAttestationPq) Reset() {
+	*x = IndexedAttestationPq{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[40]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *IndexedAttestationPq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IndexedAttestationPq) ProtoMessage() {}
+
+func (x *IndexedAttestationPq) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[40]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IndexedAttestationPq.ProtoReflect.Descriptor instead.
+func (*IndexedAttestationPq) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *IndexedAttestationPq) GetAttestingIndices() []uint64 {
+	if x != nil {
+		return x.AttestingIndices
+	}
+	return nil
+}
+
+func (x *IndexedAttestationPq) GetData() *v1.AttestationData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *IndexedAttestationPq) GetProof() string {
+	if x != nil {
+		return x.Proof
+	}
+	return ""
+}
+
+type AttesterSlashingPq struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Attestation_1 *IndexedAttestationPq `protobuf:"bytes,1,opt,name=attestation_1,proto3" json:"attestation_1,omitempty"`
+	Attestation_2 *IndexedAttestationPq `protobuf:"bytes,2,opt,name=attestation_2,proto3" json:"attestation_2,omitempty"`
+}
+
+func (x *AttesterSlashingPq) Reset() {
+	*x = AttesterSlashingPq{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[41]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *AttesterSlashingPq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AttesterSlashingPq) ProtoMessage() {}
+
+func (x *AttesterSlashingPq) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[41]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AttesterSlashingPq.ProtoReflect.Descriptor instead.
+func (*AttesterSlashingPq) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *AttesterSlashingPq) GetAttestation_1() *IndexedAttestationPq {
+	if x != nil {
+		return x.Attestation_1
+	}
+	return nil
+}
+
+func (x *AttesterSlashingPq) GetAttestation_2() *IndexedAttestationPq {
+	if x != nil {
+		return x.Attestation_2
+	}
+	return nil
+}
+
+type ExecutionRequestsPq struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Deposits                  []*v1.ElectraExecutionRequestDeposit       `protobuf:"bytes,1,rep,name=deposits,proto3" json:"deposits,omitempty"`
+	Withdrawals               []*v1.ElectraExecutionRequestWithdrawal    `protobuf:"bytes,2,rep,name=withdrawals,proto3" json:"withdrawals,omitempty"`
+	Consolidations            []*v1.ElectraExecutionRequestConsolidation `protobuf:"bytes,3,rep,name=consolidations,proto3" json:"consolidations,omitempty"`
+	BuilderDeposits           []*v1.GloasBuilderDepositRequest           `protobuf:"bytes,4,rep,name=builder_deposits,proto3" json:"builder_deposits,omitempty"`
+	BuilderExits              []*v1.GloasBuilderExitRequest              `protobuf:"bytes,5,rep,name=builder_exits,proto3" json:"builder_exits,omitempty"`
+	ValidatorPreregistrations []*ValidatorPreregistrationRequestPq       `protobuf:"bytes,6,rep,name=validator_preregistrations,proto3" json:"validator_preregistrations,omitempty"`
+	BuilderPreregistrations   []*BuilderPreregistrationRequestPq         `protobuf:"bytes,7,rep,name=builder_preregistrations,proto3" json:"builder_preregistrations,omitempty"`
+	VoluntaryExits            []*VoluntaryExitRequestPq                  `protobuf:"bytes,8,rep,name=voluntary_exits,proto3" json:"voluntary_exits,omitempty"`
+}
+
+func (x *ExecutionRequestsPq) Reset() {
+	*x = ExecutionRequestsPq{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[42]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExecutionRequestsPq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExecutionRequestsPq) ProtoMessage() {}
+
+func (x *ExecutionRequestsPq) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[42]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExecutionRequestsPq.ProtoReflect.Descriptor instead.
+func (*ExecutionRequestsPq) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *ExecutionRequestsPq) GetDeposits() []*v1.ElectraExecutionRequestDeposit {
+	if x != nil {
+		return x.Deposits
+	}
+	return nil
+}
+
+func (x *ExecutionRequestsPq) GetWithdrawals() []*v1.ElectraExecutionRequestWithdrawal {
+	if x != nil {
+		return x.Withdrawals
+	}
+	return nil
+}
+
+func (x *ExecutionRequestsPq) GetConsolidations() []*v1.ElectraExecutionRequestConsolidation {
+	if x != nil {
+		return x.Consolidations
+	}
+	return nil
+}
+
+func (x *ExecutionRequestsPq) GetBuilderDeposits() []*v1.GloasBuilderDepositRequest {
+	if x != nil {
+		return x.BuilderDeposits
+	}
+	return nil
+}
+
+func (x *ExecutionRequestsPq) GetBuilderExits() []*v1.GloasBuilderExitRequest {
+	if x != nil {
+		return x.BuilderExits
+	}
+	return nil
+}
+
+func (x *ExecutionRequestsPq) GetValidatorPreregistrations() []*ValidatorPreregistrationRequestPq {
+	if x != nil {
+		return x.ValidatorPreregistrations
+	}
+	return nil
+}
+
+func (x *ExecutionRequestsPq) GetBuilderPreregistrations() []*BuilderPreregistrationRequestPq {
+	if x != nil {
+		return x.BuilderPreregistrations
+	}
+	return nil
+}
+
+func (x *ExecutionRequestsPq) GetVoluntaryExits() []*VoluntaryExitRequestPq {
+	if x != nil {
+		return x.VoluntaryExits
+	}
+	return nil
+}
+
+type ValidatorPreregistrationRequestPq struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Pubkey                *wrapperspb.StringValue `protobuf:"bytes,1,opt,name=pubkey,proto3" json:"pubkey,omitempty"`
+	WithdrawalCredentials *wrapperspb.StringValue `protobuf:"bytes,2,opt,name=withdrawal_credentials,proto3" json:"withdrawal_credentials,omitempty"`
+	VrfRoot               *wrapperspb.StringValue `protobuf:"bytes,3,opt,name=vrf_root,proto3" json:"vrf_root,omitempty"`
+}
+
+func (x *ValidatorPreregistrationRequestPq) Reset() {
+	*x = ValidatorPreregistrationRequestPq{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[43]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ValidatorPreregistrationRequestPq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ValidatorPreregistrationRequestPq) ProtoMessage() {}
+
+func (x *ValidatorPreregistrationRequestPq) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[43]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ValidatorPreregistrationRequestPq.ProtoReflect.Descriptor instead.
+func (*ValidatorPreregistrationRequestPq) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *ValidatorPreregistrationRequestPq) GetPubkey() *wrapperspb.StringValue {
+	if x != nil {
+		return x.Pubkey
+	}
+	return nil
+}
+
+func (x *ValidatorPreregistrationRequestPq) GetWithdrawalCredentials() *wrapperspb.StringValue {
+	if x != nil {
+		return x.WithdrawalCredentials
+	}
+	return nil
+}
+
+func (x *ValidatorPreregistrationRequestPq) GetVrfRoot() *wrapperspb.StringValue {
+	if x != nil {
+		return x.VrfRoot
+	}
+	return nil
+}
+
+type BuilderPreregistrationRequestPq struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Pubkey                *wrapperspb.StringValue `protobuf:"bytes,1,opt,name=pubkey,proto3" json:"pubkey,omitempty"`
+	WithdrawalCredentials *wrapperspb.StringValue `protobuf:"bytes,2,opt,name=withdrawal_credentials,proto3" json:"withdrawal_credentials,omitempty"`
+}
+
+func (x *BuilderPreregistrationRequestPq) Reset() {
+	*x = BuilderPreregistrationRequestPq{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[44]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BuilderPreregistrationRequestPq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuilderPreregistrationRequestPq) ProtoMessage() {}
+
+func (x *BuilderPreregistrationRequestPq) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[44]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuilderPreregistrationRequestPq.ProtoReflect.Descriptor instead.
+func (*BuilderPreregistrationRequestPq) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *BuilderPreregistrationRequestPq) GetPubkey() *wrapperspb.StringValue {
+	if x != nil {
+		return x.Pubkey
+	}
+	return nil
+}
+
+func (x *BuilderPreregistrationRequestPq) GetWithdrawalCredentials() *wrapperspb.StringValue {
+	if x != nil {
+		return x.WithdrawalCredentials
+	}
+	return nil
+}
+
+type VoluntaryExitRequestPq struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Pubkey *wrapperspb.StringValue `protobuf:"bytes,1,opt,name=pubkey,proto3" json:"pubkey,omitempty"`
+}
+
+func (x *VoluntaryExitRequestPq) Reset() {
+	*x = VoluntaryExitRequestPq{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[45]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *VoluntaryExitRequestPq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VoluntaryExitRequestPq) ProtoMessage() {}
+
+func (x *VoluntaryExitRequestPq) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[45]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VoluntaryExitRequestPq.ProtoReflect.Descriptor instead.
+func (*VoluntaryExitRequestPq) Descriptor() ([]byte, []int) {
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *VoluntaryExitRequestPq) GetPubkey() *wrapperspb.StringValue {
+	if x != nil {
+		return x.Pubkey
+	}
+	return nil
+}
+
 type BlindedBeaconBlockBodyCapella struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3229,7 +3821,7 @@ type BlindedBeaconBlockBodyCapella struct {
 func (x *BlindedBeaconBlockBodyCapella) Reset() {
 	*x = BlindedBeaconBlockBodyCapella{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[38]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[46]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3242,7 +3834,7 @@ func (x *BlindedBeaconBlockBodyCapella) String() string {
 func (*BlindedBeaconBlockBodyCapella) ProtoMessage() {}
 
 func (x *BlindedBeaconBlockBodyCapella) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[38]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[46]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3255,7 +3847,7 @@ func (x *BlindedBeaconBlockBodyCapella) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlindedBeaconBlockBodyCapella.ProtoReflect.Descriptor instead.
 func (*BlindedBeaconBlockBodyCapella) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{38}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *BlindedBeaconBlockBodyCapella) GetRandaoReveal() string {
@@ -3356,7 +3948,7 @@ type BlindedBeaconBlockBodyCapellaV2 struct {
 func (x *BlindedBeaconBlockBodyCapellaV2) Reset() {
 	*x = BlindedBeaconBlockBodyCapellaV2{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[39]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[47]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3369,7 +3961,7 @@ func (x *BlindedBeaconBlockBodyCapellaV2) String() string {
 func (*BlindedBeaconBlockBodyCapellaV2) ProtoMessage() {}
 
 func (x *BlindedBeaconBlockBodyCapellaV2) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[39]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[47]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3382,7 +3974,7 @@ func (x *BlindedBeaconBlockBodyCapellaV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlindedBeaconBlockBodyCapellaV2.ProtoReflect.Descriptor instead.
 func (*BlindedBeaconBlockBodyCapellaV2) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{39}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *BlindedBeaconBlockBodyCapellaV2) GetRandaoReveal() string {
@@ -3482,7 +4074,7 @@ type BeaconBlockBodyAltair struct {
 func (x *BeaconBlockBodyAltair) Reset() {
 	*x = BeaconBlockBodyAltair{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[40]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[48]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3495,7 +4087,7 @@ func (x *BeaconBlockBodyAltair) String() string {
 func (*BeaconBlockBodyAltair) ProtoMessage() {}
 
 func (x *BeaconBlockBodyAltair) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[40]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[48]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3508,7 +4100,7 @@ func (x *BeaconBlockBodyAltair) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeaconBlockBodyAltair.ProtoReflect.Descriptor instead.
 func (*BeaconBlockBodyAltair) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{40}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *BeaconBlockBodyAltair) GetRandaoReveal() string {
@@ -3594,7 +4186,7 @@ type BeaconBlockBodyAltairV2 struct {
 func (x *BeaconBlockBodyAltairV2) Reset() {
 	*x = BeaconBlockBodyAltairV2{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[41]
+		mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[49]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3607,7 +4199,7 @@ func (x *BeaconBlockBodyAltairV2) String() string {
 func (*BeaconBlockBodyAltairV2) ProtoMessage() {}
 
 func (x *BeaconBlockBodyAltairV2) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[41]
+	mi := &file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[49]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3620,7 +4212,7 @@ func (x *BeaconBlockBodyAltairV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeaconBlockBodyAltairV2.ProtoReflect.Descriptor instead.
 func (*BeaconBlockBodyAltairV2) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{41}
+	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *BeaconBlockBodyAltairV2) GetRandaoReveal() string {
@@ -3978,7 +4570,23 @@ var file_pkg_proto_eth_v2_beacon_block_proto_rawDesc = []byte{
 	0x65, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x12, 0x35, 0x0a, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x18, 0x05,
 	0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e,
 	0x76, 0x32, 0x2e, 0x42, 0x65, 0x61, 0x63, 0x6f, 0x6e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x42, 0x6f,
-	0x64, 0x79, 0x47, 0x6c, 0x6f, 0x61, 0x73, 0x52, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x22, 0xd9, 0x01,
+	0x64, 0x79, 0x47, 0x6c, 0x6f, 0x61, 0x73, 0x52, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x22, 0xfd, 0x01,
+	0x0a, 0x0d, 0x42, 0x65, 0x61, 0x63, 0x6f, 0x6e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x50, 0x71, 0x12,
+	0x30, 0x0a, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e,
+	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
+	0x55, 0x49, 0x6e, 0x74, 0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x04, 0x73, 0x6c, 0x6f,
+	0x74, 0x12, 0x44, 0x0a, 0x0e, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x6e,
+	0x64, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
+	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x55, 0x49, 0x6e, 0x74,
+	0x36, 0x34, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x0e, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65,
+	0x72, 0x5f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x12, 0x20, 0x0a, 0x0b, 0x70, 0x61, 0x72, 0x65, 0x6e,
+	0x74, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x70, 0x61,
+	0x72, 0x65, 0x6e, 0x74, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x12, 0x1e, 0x0a, 0x0a, 0x73, 0x74, 0x61,
+	0x74, 0x65, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x73,
+	0x74, 0x61, 0x74, 0x65, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x12, 0x32, 0x0a, 0x04, 0x62, 0x6f, 0x64,
+	0x79, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65,
+	0x74, 0x68, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x65, 0x61, 0x63, 0x6f, 0x6e, 0x42, 0x6c, 0x6f, 0x63,
+	0x6b, 0x42, 0x6f, 0x64, 0x79, 0x50, 0x71, 0x52, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x22, 0xd9, 0x01,
 	0x0a, 0x19, 0x42, 0x6c, 0x69, 0x6e, 0x64, 0x65, 0x64, 0x42, 0x65, 0x61, 0x63, 0x6f, 0x6e, 0x42,
 	0x6c, 0x6f, 0x63, 0x6b, 0x43, 0x61, 0x70, 0x65, 0x6c, 0x6c, 0x61, 0x12, 0x12, 0x0a, 0x04, 0x73,
 	0x6c, 0x6f, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x12,
@@ -4516,9 +5124,276 @@ var file_pkg_proto_eth_v2_beacon_block_proto_rawDesc = []byte{
 	0x2e, 0x45, 0x6c, 0x65, 0x63, 0x74, 0x72, 0x61, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f,
 	0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x73, 0x52, 0x19, 0x70, 0x61, 0x72, 0x65, 0x6e,
 	0x74, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x72, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x73, 0x22, 0x81, 0x06, 0x0a, 0x1d, 0x42, 0x6c, 0x69, 0x6e, 0x64, 0x65, 0x64,
-	0x42, 0x65, 0x61, 0x63, 0x6f, 0x6e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x42, 0x6f, 0x64, 0x79, 0x43,
-	0x61, 0x70, 0x65, 0x6c, 0x6c, 0x61, 0x12, 0x24, 0x0a, 0x0d, 0x72, 0x61, 0x6e, 0x64, 0x61, 0x6f,
+	0x65, 0x73, 0x74, 0x73, 0x22, 0xfc, 0x04, 0x0a, 0x11, 0x42, 0x65, 0x61, 0x63, 0x6f, 0x6e, 0x42,
+	0x6c, 0x6f, 0x63, 0x6b, 0x42, 0x6f, 0x64, 0x79, 0x50, 0x71, 0x12, 0x24, 0x0a, 0x0d, 0x72, 0x61,
+	0x6e, 0x64, 0x61, 0x6f, 0x5f, 0x72, 0x65, 0x76, 0x65, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x0d, 0x72, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x5f, 0x72, 0x65, 0x76, 0x65, 0x61, 0x6c,
+	0x12, 0x33, 0x0a, 0x09, 0x65, 0x74, 0x68, 0x31, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76,
+	0x31, 0x2e, 0x45, 0x74, 0x68, 0x31, 0x44, 0x61, 0x74, 0x61, 0x52, 0x09, 0x65, 0x74, 0x68, 0x31,
+	0x5f, 0x64, 0x61, 0x74, 0x61, 0x12, 0x1a, 0x0a, 0x08, 0x67, 0x72, 0x61, 0x66, 0x66, 0x69, 0x74,
+	0x69, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x67, 0x72, 0x61, 0x66, 0x66, 0x69, 0x74,
+	0x69, 0x12, 0x4d, 0x0a, 0x12, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x5f, 0x73, 0x6c,
+	0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e,
+	0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x6f, 0x70,
+	0x6f, 0x73, 0x65, 0x72, 0x53, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x70, 0x72,
+	0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73,
+	0x12, 0x4f, 0x0a, 0x12, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61,
+	0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x78,
+	0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x32, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73,
+	0x74, 0x65, 0x72, 0x53, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x50, 0x71, 0x52, 0x12, 0x61,
+	0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67,
+	0x73, 0x12, 0x3c, 0x0a, 0x0c, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x73, 0x18, 0x06, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65,
+	0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x52, 0x0c, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12,
+	0x30, 0x0a, 0x08, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x18, 0x07, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x14, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e,
+	0x44, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x52, 0x08, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74,
+	0x73, 0x12, 0x6a, 0x0a, 0x1c, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x5f, 0x65, 0x78, 0x65, 0x63,
+	0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x5f, 0x62, 0x69,
+	0x64, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65,
+	0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x45, 0x78, 0x65, 0x63,
+	0x75, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x42, 0x69, 0x64, 0x52,
+	0x1c, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f,
+	0x6e, 0x5f, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x5f, 0x62, 0x69, 0x64, 0x12, 0x5e, 0x0a,
+	0x19, 0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f,
+	0x6e, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x73, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x20, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x32, 0x2e, 0x45,
+	0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x73,
+	0x50, 0x71, 0x52, 0x19, 0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75,
+	0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x73, 0x12, 0x14, 0x0a,
+	0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x70, 0x72,
+	0x6f, 0x6f, 0x66, 0x22, 0x8c, 0x01, 0x0a, 0x14, 0x49, 0x6e, 0x64, 0x65, 0x78, 0x65, 0x64, 0x41,
+	0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x71, 0x12, 0x2c, 0x0a, 0x11,
+	0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67, 0x5f, 0x69, 0x6e, 0x64, 0x69, 0x63, 0x65,
+	0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x04, 0x52, 0x11, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x69,
+	0x6e, 0x67, 0x5f, 0x69, 0x6e, 0x64, 0x69, 0x63, 0x65, 0x73, 0x12, 0x30, 0x0a, 0x04, 0x64, 0x61,
+	0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
+	0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x12, 0x14, 0x0a, 0x05,
+	0x70, 0x72, 0x6f, 0x6f, 0x66, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x70, 0x72, 0x6f,
+	0x6f, 0x66, 0x22, 0xa6, 0x01, 0x0a, 0x12, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72, 0x53,
+	0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x50, 0x71, 0x12, 0x47, 0x0a, 0x0d, 0x61, 0x74, 0x74,
+	0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x31, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x21, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x32, 0x2e, 0x49,
+	0x6e, 0x64, 0x65, 0x78, 0x65, 0x64, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x50, 0x71, 0x52, 0x0d, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x5f, 0x31, 0x12, 0x47, 0x0a, 0x0d, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x5f, 0x32, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x78, 0x61, 0x74, 0x75,
+	0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x32, 0x2e, 0x49, 0x6e, 0x64, 0x65, 0x78, 0x65, 0x64, 0x41,
+	0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x71, 0x52, 0x0d, 0x61, 0x74,
+	0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x32, 0x22, 0xd5, 0x05, 0x0a, 0x13,
+	0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x73, 0x50, 0x71, 0x12, 0x47, 0x0a, 0x08, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x18,
+	0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2b, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68,
+	0x2e, 0x76, 0x31, 0x2e, 0x45, 0x6c, 0x65, 0x63, 0x74, 0x72, 0x61, 0x45, 0x78, 0x65, 0x63, 0x75,
+	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x44, 0x65, 0x70, 0x6f, 0x73,
+	0x69, 0x74, 0x52, 0x08, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x12, 0x50, 0x0a, 0x0b,
+	0x77, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61, 0x6c, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x2e, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e,
+	0x45, 0x6c, 0x65, 0x63, 0x74, 0x72, 0x61, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x57, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61,
+	0x6c, 0x52, 0x0b, 0x77, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61, 0x6c, 0x73, 0x12, 0x59,
+	0x0a, 0x0e, 0x63, 0x6f, 0x6e, 0x73, 0x6f, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73,
+	0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x31, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74,
+	0x68, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x6c, 0x65, 0x63, 0x74, 0x72, 0x61, 0x45, 0x78, 0x65, 0x63,
+	0x75, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x43, 0x6f, 0x6e, 0x73,
+	0x6f, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0e, 0x63, 0x6f, 0x6e, 0x73, 0x6f,
+	0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x53, 0x0a, 0x10, 0x62, 0x75, 0x69,
+	0x6c, 0x64, 0x65, 0x72, 0x5f, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x18, 0x04, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76,
+	0x31, 0x2e, 0x47, 0x6c, 0x6f, 0x61, 0x73, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x44, 0x65,
+	0x70, 0x6f, 0x73, 0x69, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x10, 0x62, 0x75,
+	0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x12, 0x4a,
+	0x0a, 0x0d, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x65, 0x78, 0x69, 0x74, 0x73, 0x18,
+	0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68,
+	0x2e, 0x76, 0x31, 0x2e, 0x47, 0x6c, 0x6f, 0x61, 0x73, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72,
+	0x45, 0x78, 0x69, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x0d, 0x62, 0x75, 0x69,
+	0x6c, 0x64, 0x65, 0x72, 0x5f, 0x65, 0x78, 0x69, 0x74, 0x73, 0x12, 0x6e, 0x0a, 0x1a, 0x76, 0x61,
+	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x70, 0x72, 0x65, 0x72, 0x65, 0x67, 0x69, 0x73,
+	0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x06, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2e,
+	0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x32, 0x2e, 0x56, 0x61, 0x6c,
+	0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x50, 0x72, 0x65, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x50, 0x71, 0x52, 0x1a,
+	0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x70, 0x72, 0x65, 0x72, 0x65, 0x67,
+	0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x68, 0x0a, 0x18, 0x62, 0x75,
+	0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x70, 0x72, 0x65, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x07, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x78,
+	0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64,
+	0x65, 0x72, 0x50, 0x72, 0x65, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x50, 0x71, 0x52, 0x18, 0x62, 0x75, 0x69, 0x6c,
+	0x64, 0x65, 0x72, 0x5f, 0x70, 0x72, 0x65, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x73, 0x12, 0x4d, 0x0a, 0x0f, 0x76, 0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72,
+	0x79, 0x5f, 0x65, 0x78, 0x69, 0x74, 0x73, 0x18, 0x08, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x23, 0x2e,
+	0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x32, 0x2e, 0x56, 0x6f, 0x6c, 0x75,
+	0x6e, 0x74, 0x61, 0x72, 0x79, 0x45, 0x78, 0x69, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x50, 0x71, 0x52, 0x0f, 0x76, 0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x65, 0x78,
+	0x69, 0x74, 0x73, 0x22, 0xe9, 0x01, 0x0a, 0x21, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f,
+	0x72, 0x50, 0x72, 0x65, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x50, 0x71, 0x12, 0x34, 0x0a, 0x06, 0x70, 0x75, 0x62,
+	0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
+	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69,
+	0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x06, 0x70, 0x75, 0x62, 0x6b, 0x65, 0x79, 0x12,
+	0x54, 0x0a, 0x16, 0x77, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61, 0x6c, 0x5f, 0x63, 0x72,
+	0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x16, 0x77,
+	0x69, 0x74, 0x68, 0x64, 0x72, 0x61, 0x77, 0x61, 0x6c, 0x5f, 0x63, 0x72, 0x65, 0x64, 0x65, 0x6e,
+	0x74, 0x69, 0x61, 0x6c, 0x73, 0x12, 0x38, 0x0a, 0x08, 0x76, 0x72, 0x66, 0x5f, 0x72, 0x6f, 0x6f,
+	0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
+	0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x08, 0x76, 0x72, 0x66, 0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x22,
+	0xad, 0x01, 0x0a, 0x1f, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x50, 0x72, 0x65, 0x72, 0x65,
+	0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x50, 0x71, 0x12, 0x34, 0x0a, 0x06, 0x70, 0x75, 0x62, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75,
+	0x65, 0x52, 0x06, 0x70, 0x75, 0x62, 0x6b, 0x65, 0x79, 0x12, 0x54, 0x0a, 0x16, 0x77, 0x69, 0x74,
+	0x68, 0x64, 0x72, 0x61, 0x77, 0x61, 0x6c, 0x5f, 0x63, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69,
+	0x61, 0x6c, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
+	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69,
+	0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x16, 0x77, 0x69, 0x74, 0x68, 0x64, 0x72, 0x61,
+	0x77, 0x61, 0x6c, 0x5f, 0x63, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x73, 0x22,
+	0x4e, 0x0a, 0x16, 0x56, 0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x45, 0x78, 0x69, 0x74,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x50, 0x71, 0x12, 0x34, 0x0a, 0x06, 0x70, 0x75, 0x62,
+	0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
+	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x69,
+	0x6e, 0x67, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x06, 0x70, 0x75, 0x62, 0x6b, 0x65, 0x79, 0x22,
+	0x81, 0x06, 0x0a, 0x1d, 0x42, 0x6c, 0x69, 0x6e, 0x64, 0x65, 0x64, 0x42, 0x65, 0x61, 0x63, 0x6f,
+	0x6e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x42, 0x6f, 0x64, 0x79, 0x43, 0x61, 0x70, 0x65, 0x6c, 0x6c,
+	0x61, 0x12, 0x24, 0x0a, 0x0d, 0x72, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x5f, 0x72, 0x65, 0x76, 0x65,
+	0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x72, 0x61, 0x6e, 0x64, 0x61, 0x6f,
+	0x5f, 0x72, 0x65, 0x76, 0x65, 0x61, 0x6c, 0x12, 0x33, 0x0a, 0x09, 0x65, 0x74, 0x68, 0x31, 0x5f,
+	0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x78, 0x61, 0x74,
+	0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x74, 0x68, 0x31, 0x44, 0x61, 0x74,
+	0x61, 0x52, 0x09, 0x65, 0x74, 0x68, 0x31, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x12, 0x1a, 0x0a, 0x08,
+	0x67, 0x72, 0x61, 0x66, 0x66, 0x69, 0x74, 0x69, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08,
+	0x67, 0x72, 0x61, 0x66, 0x66, 0x69, 0x74, 0x69, 0x12, 0x4d, 0x0a, 0x12, 0x70, 0x72, 0x6f, 0x70,
+	0x6f, 0x73, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x18, 0x04,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e,
+	0x76, 0x31, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x53, 0x6c, 0x61, 0x73, 0x68,
+	0x69, 0x6e, 0x67, 0x52, 0x12, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x5f, 0x73, 0x6c,
+	0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x4d, 0x0a, 0x12, 0x61, 0x74, 0x74, 0x65, 0x73,
+	0x74, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x18, 0x05, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76,
+	0x31, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72, 0x53, 0x6c, 0x61, 0x73, 0x68, 0x69,
+	0x6e, 0x67, 0x52, 0x12, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61,
+	0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x3c, 0x0a, 0x0c, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x06, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x78,
+	0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73,
+	0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0c, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x73, 0x12, 0x30, 0x0a, 0x08, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73,
+	0x18, 0x07, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74,
+	0x68, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x52, 0x08, 0x64, 0x65,
+	0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x12, 0x4a, 0x0a, 0x0f, 0x76, 0x6f, 0x6c, 0x75, 0x6e, 0x74,
+	0x61, 0x72, 0x79, 0x5f, 0x65, 0x78, 0x69, 0x74, 0x73, 0x18, 0x08, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x20, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x69,
+	0x67, 0x6e, 0x65, 0x64, 0x56, 0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x45, 0x78, 0x69,
+	0x74, 0x52, 0x0f, 0x76, 0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x65, 0x78, 0x69,
+	0x74, 0x73, 0x12, 0x42, 0x0a, 0x0e, 0x73, 0x79, 0x6e, 0x63, 0x5f, 0x61, 0x67, 0x67, 0x72, 0x65,
+	0x67, 0x61, 0x74, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x78, 0x61, 0x74,
+	0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x41, 0x67, 0x67,
+	0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x52, 0x0e, 0x73, 0x79, 0x6e, 0x63, 0x5f, 0x61, 0x67, 0x67,
+	0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x12, 0x66, 0x0a, 0x18, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74,
+	0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x5f, 0x68, 0x65, 0x61, 0x64,
+	0x65, 0x72, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
+	0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e,
+	0x50, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x43, 0x61, 0x70,
+	0x65, 0x6c, 0x6c, 0x61, 0x52, 0x18, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f,
+	0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x5f, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x63,
+	0x0a, 0x18, 0x62, 0x6c, 0x73, 0x5f, 0x74, 0x6f, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69,
+	0x6f, 0x6e, 0x5f, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x18, 0x0b, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x27, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x32, 0x2e, 0x53,
+	0x69, 0x67, 0x6e, 0x65, 0x64, 0x42, 0x4c, 0x53, 0x54, 0x6f, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74,
+	0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x18, 0x62, 0x6c, 0x73, 0x5f, 0x74,
+	0x6f, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x63, 0x68, 0x61, 0x6e,
+	0x67, 0x65, 0x73, 0x22, 0x85, 0x06, 0x0a, 0x1f, 0x42, 0x6c, 0x69, 0x6e, 0x64, 0x65, 0x64, 0x42,
+	0x65, 0x61, 0x63, 0x6f, 0x6e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x42, 0x6f, 0x64, 0x79, 0x43, 0x61,
+	0x70, 0x65, 0x6c, 0x6c, 0x61, 0x56, 0x32, 0x12, 0x24, 0x0a, 0x0d, 0x72, 0x61, 0x6e, 0x64, 0x61,
+	0x6f, 0x5f, 0x72, 0x65, 0x76, 0x65, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d,
+	0x72, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x5f, 0x72, 0x65, 0x76, 0x65, 0x61, 0x6c, 0x12, 0x33, 0x0a,
+	0x09, 0x65, 0x74, 0x68, 0x31, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x15, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x45,
+	0x74, 0x68, 0x31, 0x44, 0x61, 0x74, 0x61, 0x52, 0x09, 0x65, 0x74, 0x68, 0x31, 0x5f, 0x64, 0x61,
+	0x74, 0x61, 0x12, 0x1a, 0x0a, 0x08, 0x67, 0x72, 0x61, 0x66, 0x66, 0x69, 0x74, 0x69, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x67, 0x72, 0x61, 0x66, 0x66, 0x69, 0x74, 0x69, 0x12, 0x4d,
+	0x0a, 0x12, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68,
+	0x69, 0x6e, 0x67, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x78, 0x61, 0x74,
+	0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65,
+	0x72, 0x53, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x70, 0x72, 0x6f, 0x70, 0x6f,
+	0x73, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x4d, 0x0a,
+	0x12, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69,
+	0x6e, 0x67, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x78, 0x61, 0x74, 0x75,
+	0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72,
+	0x53, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74,
+	0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x3c, 0x0a, 0x0c,
+	0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x06, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x18, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31,
+	0x2e, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0c, 0x61, 0x74,
+	0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x30, 0x0a, 0x08, 0x64, 0x65,
+	0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x18, 0x07, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x78,
+	0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x70, 0x6f, 0x73,
+	0x69, 0x74, 0x52, 0x08, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x12, 0x4a, 0x0a, 0x0f,
+	0x76, 0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x65, 0x78, 0x69, 0x74, 0x73, 0x18,
+	0x08, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68,
+	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x56, 0x6f, 0x6c, 0x75, 0x6e, 0x74,
+	0x61, 0x72, 0x79, 0x45, 0x78, 0x69, 0x74, 0x52, 0x0f, 0x76, 0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61,
+	0x72, 0x79, 0x5f, 0x65, 0x78, 0x69, 0x74, 0x73, 0x12, 0x42, 0x0a, 0x0e, 0x73, 0x79, 0x6e, 0x63,
+	0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x1a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x53,
+	0x79, 0x6e, 0x63, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x52, 0x0e, 0x73, 0x79,
+	0x6e, 0x63, 0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x12, 0x68, 0x0a, 0x18,
+	0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61,
+	0x64, 0x5f, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2c,
+	0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x65,
+	0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x48, 0x65, 0x61,
+	0x64, 0x65, 0x72, 0x43, 0x61, 0x70, 0x65, 0x6c, 0x6c, 0x61, 0x56, 0x32, 0x52, 0x18, 0x65, 0x78,
+	0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x5f,
+	0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x63, 0x0a, 0x18, 0x62, 0x6c, 0x73, 0x5f, 0x74, 0x6f,
+	0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x63, 0x68, 0x61, 0x6e, 0x67,
+	0x65, 0x73, 0x18, 0x0b, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
+	0x65, 0x74, 0x68, 0x2e, 0x76, 0x32, 0x2e, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x42, 0x4c, 0x53,
+	0x54, 0x6f, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67,
+	0x65, 0x52, 0x18, 0x62, 0x6c, 0x73, 0x5f, 0x74, 0x6f, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74,
+	0x69, 0x6f, 0x6e, 0x5f, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x22, 0xac, 0x04, 0x0a, 0x15,
+	0x42, 0x65, 0x61, 0x63, 0x6f, 0x6e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x42, 0x6f, 0x64, 0x79, 0x41,
+	0x6c, 0x74, 0x61, 0x69, 0x72, 0x12, 0x24, 0x0a, 0x0d, 0x72, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x5f,
+	0x72, 0x65, 0x76, 0x65, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x72, 0x61,
+	0x6e, 0x64, 0x61, 0x6f, 0x5f, 0x72, 0x65, 0x76, 0x65, 0x61, 0x6c, 0x12, 0x33, 0x0a, 0x09, 0x65,
+	0x74, 0x68, 0x31, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15,
+	0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x74, 0x68,
+	0x31, 0x44, 0x61, 0x74, 0x61, 0x52, 0x09, 0x65, 0x74, 0x68, 0x31, 0x5f, 0x64, 0x61, 0x74, 0x61,
+	0x12, 0x1a, 0x0a, 0x08, 0x67, 0x72, 0x61, 0x66, 0x66, 0x69, 0x74, 0x69, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x08, 0x67, 0x72, 0x61, 0x66, 0x66, 0x69, 0x74, 0x69, 0x12, 0x4d, 0x0a, 0x12,
+	0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e,
+	0x67, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
+	0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x53,
+	0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65,
+	0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x4d, 0x0a, 0x12, 0x61,
+	0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67,
+	0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65,
+	0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72, 0x53, 0x6c,
+	0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72,
+	0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x3c, 0x0a, 0x0c, 0x61, 0x74,
+	0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x06, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x18, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x41,
+	0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0c, 0x61, 0x74, 0x74, 0x65,
+	0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x30, 0x0a, 0x08, 0x64, 0x65, 0x70, 0x6f,
+	0x73, 0x69, 0x74, 0x73, 0x18, 0x07, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x78, 0x61, 0x74,
+	0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74,
+	0x52, 0x08, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x12, 0x4a, 0x0a, 0x0f, 0x76, 0x6f,
+	0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x65, 0x78, 0x69, 0x74, 0x73, 0x18, 0x08, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76,
+	0x31, 0x2e, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x56, 0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72,
+	0x79, 0x45, 0x78, 0x69, 0x74, 0x52, 0x0f, 0x76, 0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79,
+	0x5f, 0x65, 0x78, 0x69, 0x74, 0x73, 0x12, 0x42, 0x0a, 0x0e, 0x73, 0x79, 0x6e, 0x63, 0x5f, 0x61,
+	0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a,
+	0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e,
+	0x63, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x52, 0x0e, 0x73, 0x79, 0x6e, 0x63,
+	0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x22, 0xae, 0x04, 0x0a, 0x17, 0x42,
+	0x65, 0x61, 0x63, 0x6f, 0x6e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x42, 0x6f, 0x64, 0x79, 0x41, 0x6c,
+	0x74, 0x61, 0x69, 0x72, 0x56, 0x32, 0x12, 0x24, 0x0a, 0x0d, 0x72, 0x61, 0x6e, 0x64, 0x61, 0x6f,
 	0x5f, 0x72, 0x65, 0x76, 0x65, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x72,
 	0x61, 0x6e, 0x64, 0x61, 0x6f, 0x5f, 0x72, 0x65, 0x76, 0x65, 0x61, 0x6c, 0x12, 0x33, 0x0a, 0x09,
 	0x65, 0x74, 0x68, 0x31, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
@@ -4551,142 +5426,11 @@ var file_pkg_proto_eth_v2_beacon_block_proto_rawDesc = []byte{
 	0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b, 0x32,
 	0x1a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79,
 	0x6e, 0x63, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x52, 0x0e, 0x73, 0x79, 0x6e,
-	0x63, 0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x12, 0x66, 0x0a, 0x18, 0x65,
-	0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64,
-	0x5f, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e,
-	0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x65, 0x63,
-	0x75, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x48, 0x65, 0x61, 0x64,
-	0x65, 0x72, 0x43, 0x61, 0x70, 0x65, 0x6c, 0x6c, 0x61, 0x52, 0x18, 0x65, 0x78, 0x65, 0x63, 0x75,
-	0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x5f, 0x68, 0x65, 0x61,
-	0x64, 0x65, 0x72, 0x12, 0x63, 0x0a, 0x18, 0x62, 0x6c, 0x73, 0x5f, 0x74, 0x6f, 0x5f, 0x65, 0x78,
-	0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x18,
-	0x0b, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68,
-	0x2e, 0x76, 0x32, 0x2e, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x42, 0x4c, 0x53, 0x54, 0x6f, 0x45,
-	0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x18,
-	0x62, 0x6c, 0x73, 0x5f, 0x74, 0x6f, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e,
-	0x5f, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x22, 0x85, 0x06, 0x0a, 0x1f, 0x42, 0x6c, 0x69,
-	0x6e, 0x64, 0x65, 0x64, 0x42, 0x65, 0x61, 0x63, 0x6f, 0x6e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x42,
-	0x6f, 0x64, 0x79, 0x43, 0x61, 0x70, 0x65, 0x6c, 0x6c, 0x61, 0x56, 0x32, 0x12, 0x24, 0x0a, 0x0d,
-	0x72, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x5f, 0x72, 0x65, 0x76, 0x65, 0x61, 0x6c, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x0d, 0x72, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x5f, 0x72, 0x65, 0x76, 0x65,
-	0x61, 0x6c, 0x12, 0x33, 0x0a, 0x09, 0x65, 0x74, 0x68, 0x31, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68,
-	0x2e, 0x76, 0x31, 0x2e, 0x45, 0x74, 0x68, 0x31, 0x44, 0x61, 0x74, 0x61, 0x52, 0x09, 0x65, 0x74,
-	0x68, 0x31, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x12, 0x1a, 0x0a, 0x08, 0x67, 0x72, 0x61, 0x66, 0x66,
-	0x69, 0x74, 0x69, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x67, 0x72, 0x61, 0x66, 0x66,
-	0x69, 0x74, 0x69, 0x12, 0x4d, 0x0a, 0x12, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x5f,
-	0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32,
-	0x1d, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72,
-	0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x53, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x52, 0x12,
-	0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e,
-	0x67, 0x73, 0x12, 0x4d, 0x0a, 0x12, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x73,
-	0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d,
-	0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x74, 0x74,
-	0x65, 0x73, 0x74, 0x65, 0x72, 0x53, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x61,
-	0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67,
-	0x73, 0x12, 0x3c, 0x0a, 0x0c, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x73, 0x18, 0x06, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65,
-	0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x52, 0x0c, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12,
-	0x30, 0x0a, 0x08, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x18, 0x07, 0x20, 0x03, 0x28,
-	0x0b, 0x32, 0x14, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e,
-	0x44, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x52, 0x08, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74,
-	0x73, 0x12, 0x4a, 0x0a, 0x0f, 0x76, 0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x65,
-	0x78, 0x69, 0x74, 0x73, 0x18, 0x08, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x78, 0x61, 0x74,
-	0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x56,
-	0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x45, 0x78, 0x69, 0x74, 0x52, 0x0f, 0x76, 0x6f,
-	0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x65, 0x78, 0x69, 0x74, 0x73, 0x12, 0x42, 0x0a,
-	0x0e, 0x73, 0x79, 0x6e, 0x63, 0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x18,
-	0x09, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68,
-	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74,
-	0x65, 0x52, 0x0e, 0x73, 0x79, 0x6e, 0x63, 0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74,
-	0x65, 0x12, 0x68, 0x0a, 0x18, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x70,
-	0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x5f, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x0a, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76,
-	0x31, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x61, 0x79, 0x6c, 0x6f,
-	0x61, 0x64, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x43, 0x61, 0x70, 0x65, 0x6c, 0x6c, 0x61, 0x56,
-	0x32, 0x52, 0x18, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x61, 0x79,
-	0x6c, 0x6f, 0x61, 0x64, 0x5f, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x63, 0x0a, 0x18, 0x62,
-	0x6c, 0x73, 0x5f, 0x74, 0x6f, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f,
-	0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x18, 0x0b, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x27, 0x2e,
-	0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x32, 0x2e, 0x53, 0x69, 0x67, 0x6e,
-	0x65, 0x64, 0x42, 0x4c, 0x53, 0x54, 0x6f, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e,
-	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x18, 0x62, 0x6c, 0x73, 0x5f, 0x74, 0x6f, 0x5f, 0x65,
-	0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73,
-	0x22, 0xac, 0x04, 0x0a, 0x15, 0x42, 0x65, 0x61, 0x63, 0x6f, 0x6e, 0x42, 0x6c, 0x6f, 0x63, 0x6b,
-	0x42, 0x6f, 0x64, 0x79, 0x41, 0x6c, 0x74, 0x61, 0x69, 0x72, 0x12, 0x24, 0x0a, 0x0d, 0x72, 0x61,
-	0x6e, 0x64, 0x61, 0x6f, 0x5f, 0x72, 0x65, 0x76, 0x65, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x0d, 0x72, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x5f, 0x72, 0x65, 0x76, 0x65, 0x61, 0x6c,
-	0x12, 0x33, 0x0a, 0x09, 0x65, 0x74, 0x68, 0x31, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76,
-	0x31, 0x2e, 0x45, 0x74, 0x68, 0x31, 0x44, 0x61, 0x74, 0x61, 0x52, 0x09, 0x65, 0x74, 0x68, 0x31,
-	0x5f, 0x64, 0x61, 0x74, 0x61, 0x12, 0x1a, 0x0a, 0x08, 0x67, 0x72, 0x61, 0x66, 0x66, 0x69, 0x74,
-	0x69, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x67, 0x72, 0x61, 0x66, 0x66, 0x69, 0x74,
-	0x69, 0x12, 0x4d, 0x0a, 0x12, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x5f, 0x73, 0x6c,
-	0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e,
-	0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x6f, 0x70,
-	0x6f, 0x73, 0x65, 0x72, 0x53, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x70, 0x72,
-	0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73,
-	0x12, 0x4d, 0x0a, 0x12, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61,
-	0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x78,
-	0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73,
-	0x74, 0x65, 0x72, 0x53, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x61, 0x74, 0x74,
-	0x65, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x12,
-	0x3c, 0x0a, 0x0c, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18,
-	0x06, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68,
-	0x2e, 0x76, 0x31, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52,
-	0x0c, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x30, 0x0a,
-	0x08, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x18, 0x07, 0x20, 0x03, 0x28, 0x0b, 0x32,
-	0x14, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65,
-	0x70, 0x6f, 0x73, 0x69, 0x74, 0x52, 0x08, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x12,
-	0x4a, 0x0a, 0x0f, 0x76, 0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x65, 0x78, 0x69,
-	0x74, 0x73, 0x18, 0x08, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e,
-	0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x56, 0x6f, 0x6c,
-	0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x45, 0x78, 0x69, 0x74, 0x52, 0x0f, 0x76, 0x6f, 0x6c, 0x75,
-	0x6e, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x65, 0x78, 0x69, 0x74, 0x73, 0x12, 0x42, 0x0a, 0x0e, 0x73,
-	0x79, 0x6e, 0x63, 0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x18, 0x09, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76,
-	0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x52,
-	0x0e, 0x73, 0x79, 0x6e, 0x63, 0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x22,
-	0xae, 0x04, 0x0a, 0x17, 0x42, 0x65, 0x61, 0x63, 0x6f, 0x6e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x42,
-	0x6f, 0x64, 0x79, 0x41, 0x6c, 0x74, 0x61, 0x69, 0x72, 0x56, 0x32, 0x12, 0x24, 0x0a, 0x0d, 0x72,
-	0x61, 0x6e, 0x64, 0x61, 0x6f, 0x5f, 0x72, 0x65, 0x76, 0x65, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x0d, 0x72, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x5f, 0x72, 0x65, 0x76, 0x65, 0x61,
-	0x6c, 0x12, 0x33, 0x0a, 0x09, 0x65, 0x74, 0x68, 0x31, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e,
-	0x76, 0x31, 0x2e, 0x45, 0x74, 0x68, 0x31, 0x44, 0x61, 0x74, 0x61, 0x52, 0x09, 0x65, 0x74, 0x68,
-	0x31, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x12, 0x1a, 0x0a, 0x08, 0x67, 0x72, 0x61, 0x66, 0x66, 0x69,
-	0x74, 0x69, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x67, 0x72, 0x61, 0x66, 0x66, 0x69,
-	0x74, 0x69, 0x12, 0x4d, 0x0a, 0x12, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x5f, 0x73,
-	0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d,
-	0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x6f,
-	0x70, 0x6f, 0x73, 0x65, 0x72, 0x53, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x70,
-	0x72, 0x6f, 0x70, 0x6f, 0x73, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67,
-	0x73, 0x12, 0x4d, 0x0a, 0x12, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x73, 0x6c,
-	0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e,
-	0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x74, 0x74, 0x65,
-	0x73, 0x74, 0x65, 0x72, 0x53, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x61, 0x74,
-	0x74, 0x65, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x73, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x73,
-	0x12, 0x3c, 0x0a, 0x0c, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73,
-	0x18, 0x06, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74,
-	0x68, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x52, 0x0c, 0x61, 0x74, 0x74, 0x65, 0x73, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x30,
-	0x0a, 0x08, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73, 0x18, 0x07, 0x20, 0x03, 0x28, 0x0b,
-	0x32, 0x14, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x44,
-	0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x52, 0x08, 0x64, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x73,
-	0x12, 0x4a, 0x0a, 0x0f, 0x76, 0x6f, 0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x65, 0x78,
-	0x69, 0x74, 0x73, 0x18, 0x08, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x78, 0x61, 0x74, 0x75,
-	0x2e, 0x65, 0x74, 0x68, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x56, 0x6f,
-	0x6c, 0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x45, 0x78, 0x69, 0x74, 0x52, 0x0f, 0x76, 0x6f, 0x6c,
-	0x75, 0x6e, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x65, 0x78, 0x69, 0x74, 0x73, 0x12, 0x42, 0x0a, 0x0e,
-	0x73, 0x79, 0x6e, 0x63, 0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x18, 0x09,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x78, 0x61, 0x74, 0x75, 0x2e, 0x65, 0x74, 0x68, 0x2e,
-	0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65,
-	0x52, 0x0e, 0x73, 0x79, 0x6e, 0x63, 0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65,
-	0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65,
-	0x74, 0x68, 0x70, 0x61, 0x6e, 0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f,
-	0x70, 0x6b, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x65, 0x74, 0x68, 0x2f, 0x76, 0x32,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x63, 0x5f, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x42, 0x2e, 0x5a, 0x2c, 0x67,
+	0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68, 0x70, 0x61, 0x6e,
+	0x64, 0x61, 0x6f, 0x70, 0x73, 0x2f, 0x78, 0x61, 0x74, 0x75, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x65, 0x74, 0x68, 0x2f, 0x76, 0x32, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -4701,72 +5445,87 @@ func file_pkg_proto_eth_v2_beacon_block_proto_rawDescGZIP() []byte {
 	return file_pkg_proto_eth_v2_beacon_block_proto_rawDescData
 }
 
-var file_pkg_proto_eth_v2_beacon_block_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_pkg_proto_eth_v2_beacon_block_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
 var file_pkg_proto_eth_v2_beacon_block_proto_goTypes = []any{
-	(*SignedBeaconBlockBellatrix)(nil),          // 0: xatu.eth.v2.SignedBeaconBlockBellatrix
-	(*SignedBeaconBlockBellatrixV2)(nil),        // 1: xatu.eth.v2.SignedBeaconBlockBellatrixV2
-	(*SignedBeaconBlockCapella)(nil),            // 2: xatu.eth.v2.SignedBeaconBlockCapella
-	(*SignedBeaconBlockCapellaV2)(nil),          // 3: xatu.eth.v2.SignedBeaconBlockCapellaV2
-	(*SignedBeaconBlockDeneb)(nil),              // 4: xatu.eth.v2.SignedBeaconBlockDeneb
-	(*SignedBeaconBlockElectra)(nil),            // 5: xatu.eth.v2.SignedBeaconBlockElectra
-	(*SignedBeaconBlockFulu)(nil),               // 6: xatu.eth.v2.SignedBeaconBlockFulu
-	(*SignedBeaconBlockGloas)(nil),              // 7: xatu.eth.v2.SignedBeaconBlockGloas
-	(*SignedBlindedBeaconBlockBellatrix)(nil),   // 8: xatu.eth.v2.SignedBlindedBeaconBlockBellatrix
-	(*SignedBlindedBeaconBlockBellatrixV2)(nil), // 9: xatu.eth.v2.SignedBlindedBeaconBlockBellatrixV2
-	(*SignedBlindedBeaconBlockCapella)(nil),     // 10: xatu.eth.v2.SignedBlindedBeaconBlockCapella
-	(*SignedBlindedBeaconBlockCapellaV2)(nil),   // 11: xatu.eth.v2.SignedBlindedBeaconBlockCapellaV2
-	(*SignedBeaconBlockAltair)(nil),             // 12: xatu.eth.v2.SignedBeaconBlockAltair
-	(*SignedBeaconBlockAltairV2)(nil),           // 13: xatu.eth.v2.SignedBeaconBlockAltairV2
-	(*BeaconBlockBellatrix)(nil),                // 14: xatu.eth.v2.BeaconBlockBellatrix
-	(*BeaconBlockBellatrixV2)(nil),              // 15: xatu.eth.v2.BeaconBlockBellatrixV2
-	(*BlindedBeaconBlockBellatrix)(nil),         // 16: xatu.eth.v2.BlindedBeaconBlockBellatrix
-	(*BlindedBeaconBlockBellatrixV2)(nil),       // 17: xatu.eth.v2.BlindedBeaconBlockBellatrixV2
-	(*BeaconBlockCapella)(nil),                  // 18: xatu.eth.v2.BeaconBlockCapella
-	(*BeaconBlockCapellaV2)(nil),                // 19: xatu.eth.v2.BeaconBlockCapellaV2
-	(*BeaconBlockDeneb)(nil),                    // 20: xatu.eth.v2.BeaconBlockDeneb
-	(*BeaconBlockElectra)(nil),                  // 21: xatu.eth.v2.BeaconBlockElectra
-	(*BeaconBlockFulu)(nil),                     // 22: xatu.eth.v2.BeaconBlockFulu
-	(*BeaconBlockGloas)(nil),                    // 23: xatu.eth.v2.BeaconBlockGloas
-	(*BlindedBeaconBlockCapella)(nil),           // 24: xatu.eth.v2.BlindedBeaconBlockCapella
-	(*BlindedBeaconBlockCapellaV2)(nil),         // 25: xatu.eth.v2.BlindedBeaconBlockCapellaV2
-	(*BeaconBlockAltair)(nil),                   // 26: xatu.eth.v2.BeaconBlockAltair
-	(*BeaconBlockAltairV2)(nil),                 // 27: xatu.eth.v2.BeaconBlockAltairV2
-	(*BeaconBlockBodyBellatrix)(nil),            // 28: xatu.eth.v2.BeaconBlockBodyBellatrix
-	(*BeaconBlockBodyBellatrixV2)(nil),          // 29: xatu.eth.v2.BeaconBlockBodyBellatrixV2
-	(*BlindedBeaconBlockBodyBellatrix)(nil),     // 30: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix
-	(*BlindedBeaconBlockBodyBellatrixV2)(nil),   // 31: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2
-	(*BeaconBlockBodyCapella)(nil),              // 32: xatu.eth.v2.BeaconBlockBodyCapella
-	(*BeaconBlockBodyCapellaV2)(nil),            // 33: xatu.eth.v2.BeaconBlockBodyCapellaV2
-	(*BeaconBlockBodyDeneb)(nil),                // 34: xatu.eth.v2.BeaconBlockBodyDeneb
-	(*BeaconBlockBodyElectra)(nil),              // 35: xatu.eth.v2.BeaconBlockBodyElectra
-	(*BeaconBlockBodyFulu)(nil),                 // 36: xatu.eth.v2.BeaconBlockBodyFulu
-	(*BeaconBlockBodyGloas)(nil),                // 37: xatu.eth.v2.BeaconBlockBodyGloas
-	(*BlindedBeaconBlockBodyCapella)(nil),       // 38: xatu.eth.v2.BlindedBeaconBlockBodyCapella
-	(*BlindedBeaconBlockBodyCapellaV2)(nil),     // 39: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2
-	(*BeaconBlockBodyAltair)(nil),               // 40: xatu.eth.v2.BeaconBlockBodyAltair
-	(*BeaconBlockBodyAltairV2)(nil),             // 41: xatu.eth.v2.BeaconBlockBodyAltairV2
-	(*wrapperspb.UInt64Value)(nil),              // 42: google.protobuf.UInt64Value
-	(*v1.Eth1Data)(nil),                         // 43: xatu.eth.v1.Eth1Data
-	(*v1.ProposerSlashing)(nil),                 // 44: xatu.eth.v1.ProposerSlashing
-	(*v1.AttesterSlashing)(nil),                 // 45: xatu.eth.v1.AttesterSlashing
-	(*v1.Attestation)(nil),                      // 46: xatu.eth.v1.Attestation
-	(*v1.Deposit)(nil),                          // 47: xatu.eth.v1.Deposit
-	(*v1.SignedVoluntaryExit)(nil),              // 48: xatu.eth.v1.SignedVoluntaryExit
-	(*v1.SyncAggregate)(nil),                    // 49: xatu.eth.v1.SyncAggregate
-	(*v1.ExecutionPayload)(nil),                 // 50: xatu.eth.v1.ExecutionPayload
-	(*v1.ExecutionPayloadV2)(nil),               // 51: xatu.eth.v1.ExecutionPayloadV2
-	(*v1.ExecutionPayloadHeader)(nil),           // 52: xatu.eth.v1.ExecutionPayloadHeader
-	(*v1.ExecutionPayloadHeaderV2)(nil),         // 53: xatu.eth.v1.ExecutionPayloadHeaderV2
-	(*v1.ExecutionPayloadCapella)(nil),          // 54: xatu.eth.v1.ExecutionPayloadCapella
-	(*SignedBLSToExecutionChange)(nil),          // 55: xatu.eth.v2.SignedBLSToExecutionChange
-	(*v1.ExecutionPayloadCapellaV2)(nil),        // 56: xatu.eth.v1.ExecutionPayloadCapellaV2
-	(*v1.ExecutionPayloadDeneb)(nil),            // 57: xatu.eth.v1.ExecutionPayloadDeneb
-	(*v1.ExecutionPayloadElectra)(nil),          // 58: xatu.eth.v1.ExecutionPayloadElectra
-	(*v1.ElectraExecutionRequests)(nil),         // 59: xatu.eth.v1.ElectraExecutionRequests
-	(*v1.SignedExecutionPayloadBid)(nil),        // 60: xatu.eth.v1.SignedExecutionPayloadBid
-	(*v1.PayloadAttestation)(nil),               // 61: xatu.eth.v1.PayloadAttestation
-	(*v1.ExecutionPayloadHeaderCapella)(nil),    // 62: xatu.eth.v1.ExecutionPayloadHeaderCapella
-	(*v1.ExecutionPayloadHeaderCapellaV2)(nil),  // 63: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2
+	(*SignedBeaconBlockBellatrix)(nil),              // 0: xatu.eth.v2.SignedBeaconBlockBellatrix
+	(*SignedBeaconBlockBellatrixV2)(nil),            // 1: xatu.eth.v2.SignedBeaconBlockBellatrixV2
+	(*SignedBeaconBlockCapella)(nil),                // 2: xatu.eth.v2.SignedBeaconBlockCapella
+	(*SignedBeaconBlockCapellaV2)(nil),              // 3: xatu.eth.v2.SignedBeaconBlockCapellaV2
+	(*SignedBeaconBlockDeneb)(nil),                  // 4: xatu.eth.v2.SignedBeaconBlockDeneb
+	(*SignedBeaconBlockElectra)(nil),                // 5: xatu.eth.v2.SignedBeaconBlockElectra
+	(*SignedBeaconBlockFulu)(nil),                   // 6: xatu.eth.v2.SignedBeaconBlockFulu
+	(*SignedBeaconBlockGloas)(nil),                  // 7: xatu.eth.v2.SignedBeaconBlockGloas
+	(*SignedBlindedBeaconBlockBellatrix)(nil),       // 8: xatu.eth.v2.SignedBlindedBeaconBlockBellatrix
+	(*SignedBlindedBeaconBlockBellatrixV2)(nil),     // 9: xatu.eth.v2.SignedBlindedBeaconBlockBellatrixV2
+	(*SignedBlindedBeaconBlockCapella)(nil),         // 10: xatu.eth.v2.SignedBlindedBeaconBlockCapella
+	(*SignedBlindedBeaconBlockCapellaV2)(nil),       // 11: xatu.eth.v2.SignedBlindedBeaconBlockCapellaV2
+	(*SignedBeaconBlockAltair)(nil),                 // 12: xatu.eth.v2.SignedBeaconBlockAltair
+	(*SignedBeaconBlockAltairV2)(nil),               // 13: xatu.eth.v2.SignedBeaconBlockAltairV2
+	(*BeaconBlockBellatrix)(nil),                    // 14: xatu.eth.v2.BeaconBlockBellatrix
+	(*BeaconBlockBellatrixV2)(nil),                  // 15: xatu.eth.v2.BeaconBlockBellatrixV2
+	(*BlindedBeaconBlockBellatrix)(nil),             // 16: xatu.eth.v2.BlindedBeaconBlockBellatrix
+	(*BlindedBeaconBlockBellatrixV2)(nil),           // 17: xatu.eth.v2.BlindedBeaconBlockBellatrixV2
+	(*BeaconBlockCapella)(nil),                      // 18: xatu.eth.v2.BeaconBlockCapella
+	(*BeaconBlockCapellaV2)(nil),                    // 19: xatu.eth.v2.BeaconBlockCapellaV2
+	(*BeaconBlockDeneb)(nil),                        // 20: xatu.eth.v2.BeaconBlockDeneb
+	(*BeaconBlockElectra)(nil),                      // 21: xatu.eth.v2.BeaconBlockElectra
+	(*BeaconBlockFulu)(nil),                         // 22: xatu.eth.v2.BeaconBlockFulu
+	(*BeaconBlockGloas)(nil),                        // 23: xatu.eth.v2.BeaconBlockGloas
+	(*BeaconBlockPq)(nil),                           // 24: xatu.eth.v2.BeaconBlockPq
+	(*BlindedBeaconBlockCapella)(nil),               // 25: xatu.eth.v2.BlindedBeaconBlockCapella
+	(*BlindedBeaconBlockCapellaV2)(nil),             // 26: xatu.eth.v2.BlindedBeaconBlockCapellaV2
+	(*BeaconBlockAltair)(nil),                       // 27: xatu.eth.v2.BeaconBlockAltair
+	(*BeaconBlockAltairV2)(nil),                     // 28: xatu.eth.v2.BeaconBlockAltairV2
+	(*BeaconBlockBodyBellatrix)(nil),                // 29: xatu.eth.v2.BeaconBlockBodyBellatrix
+	(*BeaconBlockBodyBellatrixV2)(nil),              // 30: xatu.eth.v2.BeaconBlockBodyBellatrixV2
+	(*BlindedBeaconBlockBodyBellatrix)(nil),         // 31: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix
+	(*BlindedBeaconBlockBodyBellatrixV2)(nil),       // 32: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2
+	(*BeaconBlockBodyCapella)(nil),                  // 33: xatu.eth.v2.BeaconBlockBodyCapella
+	(*BeaconBlockBodyCapellaV2)(nil),                // 34: xatu.eth.v2.BeaconBlockBodyCapellaV2
+	(*BeaconBlockBodyDeneb)(nil),                    // 35: xatu.eth.v2.BeaconBlockBodyDeneb
+	(*BeaconBlockBodyElectra)(nil),                  // 36: xatu.eth.v2.BeaconBlockBodyElectra
+	(*BeaconBlockBodyFulu)(nil),                     // 37: xatu.eth.v2.BeaconBlockBodyFulu
+	(*BeaconBlockBodyGloas)(nil),                    // 38: xatu.eth.v2.BeaconBlockBodyGloas
+	(*BeaconBlockBodyPq)(nil),                       // 39: xatu.eth.v2.BeaconBlockBodyPq
+	(*IndexedAttestationPq)(nil),                    // 40: xatu.eth.v2.IndexedAttestationPq
+	(*AttesterSlashingPq)(nil),                      // 41: xatu.eth.v2.AttesterSlashingPq
+	(*ExecutionRequestsPq)(nil),                     // 42: xatu.eth.v2.ExecutionRequestsPq
+	(*ValidatorPreregistrationRequestPq)(nil),       // 43: xatu.eth.v2.ValidatorPreregistrationRequestPq
+	(*BuilderPreregistrationRequestPq)(nil),         // 44: xatu.eth.v2.BuilderPreregistrationRequestPq
+	(*VoluntaryExitRequestPq)(nil),                  // 45: xatu.eth.v2.VoluntaryExitRequestPq
+	(*BlindedBeaconBlockBodyCapella)(nil),           // 46: xatu.eth.v2.BlindedBeaconBlockBodyCapella
+	(*BlindedBeaconBlockBodyCapellaV2)(nil),         // 47: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2
+	(*BeaconBlockBodyAltair)(nil),                   // 48: xatu.eth.v2.BeaconBlockBodyAltair
+	(*BeaconBlockBodyAltairV2)(nil),                 // 49: xatu.eth.v2.BeaconBlockBodyAltairV2
+	(*wrapperspb.UInt64Value)(nil),                  // 50: google.protobuf.UInt64Value
+	(*v1.Eth1Data)(nil),                             // 51: xatu.eth.v1.Eth1Data
+	(*v1.ProposerSlashing)(nil),                     // 52: xatu.eth.v1.ProposerSlashing
+	(*v1.AttesterSlashing)(nil),                     // 53: xatu.eth.v1.AttesterSlashing
+	(*v1.Attestation)(nil),                          // 54: xatu.eth.v1.Attestation
+	(*v1.Deposit)(nil),                              // 55: xatu.eth.v1.Deposit
+	(*v1.SignedVoluntaryExit)(nil),                  // 56: xatu.eth.v1.SignedVoluntaryExit
+	(*v1.SyncAggregate)(nil),                        // 57: xatu.eth.v1.SyncAggregate
+	(*v1.ExecutionPayload)(nil),                     // 58: xatu.eth.v1.ExecutionPayload
+	(*v1.ExecutionPayloadV2)(nil),                   // 59: xatu.eth.v1.ExecutionPayloadV2
+	(*v1.ExecutionPayloadHeader)(nil),               // 60: xatu.eth.v1.ExecutionPayloadHeader
+	(*v1.ExecutionPayloadHeaderV2)(nil),             // 61: xatu.eth.v1.ExecutionPayloadHeaderV2
+	(*v1.ExecutionPayloadCapella)(nil),              // 62: xatu.eth.v1.ExecutionPayloadCapella
+	(*SignedBLSToExecutionChange)(nil),              // 63: xatu.eth.v2.SignedBLSToExecutionChange
+	(*v1.ExecutionPayloadCapellaV2)(nil),            // 64: xatu.eth.v1.ExecutionPayloadCapellaV2
+	(*v1.ExecutionPayloadDeneb)(nil),                // 65: xatu.eth.v1.ExecutionPayloadDeneb
+	(*v1.ExecutionPayloadElectra)(nil),              // 66: xatu.eth.v1.ExecutionPayloadElectra
+	(*v1.ElectraExecutionRequests)(nil),             // 67: xatu.eth.v1.ElectraExecutionRequests
+	(*v1.SignedExecutionPayloadBid)(nil),            // 68: xatu.eth.v1.SignedExecutionPayloadBid
+	(*v1.PayloadAttestation)(nil),                   // 69: xatu.eth.v1.PayloadAttestation
+	(*v1.AttestationData)(nil),                      // 70: xatu.eth.v1.AttestationData
+	(*v1.ElectraExecutionRequestDeposit)(nil),       // 71: xatu.eth.v1.ElectraExecutionRequestDeposit
+	(*v1.ElectraExecutionRequestWithdrawal)(nil),    // 72: xatu.eth.v1.ElectraExecutionRequestWithdrawal
+	(*v1.ElectraExecutionRequestConsolidation)(nil), // 73: xatu.eth.v1.ElectraExecutionRequestConsolidation
+	(*v1.GloasBuilderDepositRequest)(nil),           // 74: xatu.eth.v1.GloasBuilderDepositRequest
+	(*v1.GloasBuilderExitRequest)(nil),              // 75: xatu.eth.v1.GloasBuilderExitRequest
+	(*wrapperspb.StringValue)(nil),                  // 76: google.protobuf.StringValue
+	(*v1.ExecutionPayloadHeaderCapella)(nil),        // 77: xatu.eth.v1.ExecutionPayloadHeaderCapella
+	(*v1.ExecutionPayloadHeaderCapellaV2)(nil),      // 78: xatu.eth.v1.ExecutionPayloadHeaderCapellaV2
 }
 var file_pkg_proto_eth_v2_beacon_block_proto_depIdxs = []int32{
 	14,  // 0: xatu.eth.v2.SignedBeaconBlockBellatrix.message:type_name -> xatu.eth.v2.BeaconBlockBellatrix
@@ -4779,169 +5538,196 @@ var file_pkg_proto_eth_v2_beacon_block_proto_depIdxs = []int32{
 	23,  // 7: xatu.eth.v2.SignedBeaconBlockGloas.message:type_name -> xatu.eth.v2.BeaconBlockGloas
 	16,  // 8: xatu.eth.v2.SignedBlindedBeaconBlockBellatrix.message:type_name -> xatu.eth.v2.BlindedBeaconBlockBellatrix
 	17,  // 9: xatu.eth.v2.SignedBlindedBeaconBlockBellatrixV2.message:type_name -> xatu.eth.v2.BlindedBeaconBlockBellatrixV2
-	24,  // 10: xatu.eth.v2.SignedBlindedBeaconBlockCapella.message:type_name -> xatu.eth.v2.BlindedBeaconBlockCapella
-	25,  // 11: xatu.eth.v2.SignedBlindedBeaconBlockCapellaV2.message:type_name -> xatu.eth.v2.BlindedBeaconBlockCapellaV2
-	26,  // 12: xatu.eth.v2.SignedBeaconBlockAltair.message:type_name -> xatu.eth.v2.BeaconBlockAltair
-	27,  // 13: xatu.eth.v2.SignedBeaconBlockAltairV2.message:type_name -> xatu.eth.v2.BeaconBlockAltairV2
-	28,  // 14: xatu.eth.v2.BeaconBlockBellatrix.body:type_name -> xatu.eth.v2.BeaconBlockBodyBellatrix
-	42,  // 15: xatu.eth.v2.BeaconBlockBellatrixV2.slot:type_name -> google.protobuf.UInt64Value
-	42,  // 16: xatu.eth.v2.BeaconBlockBellatrixV2.proposer_index:type_name -> google.protobuf.UInt64Value
-	29,  // 17: xatu.eth.v2.BeaconBlockBellatrixV2.body:type_name -> xatu.eth.v2.BeaconBlockBodyBellatrixV2
-	30,  // 18: xatu.eth.v2.BlindedBeaconBlockBellatrix.body:type_name -> xatu.eth.v2.BlindedBeaconBlockBodyBellatrix
-	42,  // 19: xatu.eth.v2.BlindedBeaconBlockBellatrixV2.slot:type_name -> google.protobuf.UInt64Value
-	42,  // 20: xatu.eth.v2.BlindedBeaconBlockBellatrixV2.proposer_index:type_name -> google.protobuf.UInt64Value
-	31,  // 21: xatu.eth.v2.BlindedBeaconBlockBellatrixV2.body:type_name -> xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2
-	32,  // 22: xatu.eth.v2.BeaconBlockCapella.body:type_name -> xatu.eth.v2.BeaconBlockBodyCapella
-	42,  // 23: xatu.eth.v2.BeaconBlockCapellaV2.slot:type_name -> google.protobuf.UInt64Value
-	42,  // 24: xatu.eth.v2.BeaconBlockCapellaV2.proposer_index:type_name -> google.protobuf.UInt64Value
-	33,  // 25: xatu.eth.v2.BeaconBlockCapellaV2.body:type_name -> xatu.eth.v2.BeaconBlockBodyCapellaV2
-	42,  // 26: xatu.eth.v2.BeaconBlockDeneb.slot:type_name -> google.protobuf.UInt64Value
-	42,  // 27: xatu.eth.v2.BeaconBlockDeneb.proposer_index:type_name -> google.protobuf.UInt64Value
-	34,  // 28: xatu.eth.v2.BeaconBlockDeneb.body:type_name -> xatu.eth.v2.BeaconBlockBodyDeneb
-	42,  // 29: xatu.eth.v2.BeaconBlockElectra.slot:type_name -> google.protobuf.UInt64Value
-	42,  // 30: xatu.eth.v2.BeaconBlockElectra.proposer_index:type_name -> google.protobuf.UInt64Value
-	35,  // 31: xatu.eth.v2.BeaconBlockElectra.body:type_name -> xatu.eth.v2.BeaconBlockBodyElectra
-	42,  // 32: xatu.eth.v2.BeaconBlockFulu.slot:type_name -> google.protobuf.UInt64Value
-	42,  // 33: xatu.eth.v2.BeaconBlockFulu.proposer_index:type_name -> google.protobuf.UInt64Value
-	36,  // 34: xatu.eth.v2.BeaconBlockFulu.body:type_name -> xatu.eth.v2.BeaconBlockBodyFulu
-	42,  // 35: xatu.eth.v2.BeaconBlockGloas.slot:type_name -> google.protobuf.UInt64Value
-	42,  // 36: xatu.eth.v2.BeaconBlockGloas.proposer_index:type_name -> google.protobuf.UInt64Value
-	37,  // 37: xatu.eth.v2.BeaconBlockGloas.body:type_name -> xatu.eth.v2.BeaconBlockBodyGloas
-	38,  // 38: xatu.eth.v2.BlindedBeaconBlockCapella.body:type_name -> xatu.eth.v2.BlindedBeaconBlockBodyCapella
-	42,  // 39: xatu.eth.v2.BlindedBeaconBlockCapellaV2.slot:type_name -> google.protobuf.UInt64Value
-	42,  // 40: xatu.eth.v2.BlindedBeaconBlockCapellaV2.proposer_index:type_name -> google.protobuf.UInt64Value
-	39,  // 41: xatu.eth.v2.BlindedBeaconBlockCapellaV2.body:type_name -> xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2
-	40,  // 42: xatu.eth.v2.BeaconBlockAltair.body:type_name -> xatu.eth.v2.BeaconBlockBodyAltair
-	42,  // 43: xatu.eth.v2.BeaconBlockAltairV2.slot:type_name -> google.protobuf.UInt64Value
-	42,  // 44: xatu.eth.v2.BeaconBlockAltairV2.proposer_index:type_name -> google.protobuf.UInt64Value
-	41,  // 45: xatu.eth.v2.BeaconBlockAltairV2.body:type_name -> xatu.eth.v2.BeaconBlockBodyAltairV2
-	43,  // 46: xatu.eth.v2.BeaconBlockBodyBellatrix.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 47: xatu.eth.v2.BeaconBlockBodyBellatrix.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 48: xatu.eth.v2.BeaconBlockBodyBellatrix.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 49: xatu.eth.v2.BeaconBlockBodyBellatrix.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 50: xatu.eth.v2.BeaconBlockBodyBellatrix.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 51: xatu.eth.v2.BeaconBlockBodyBellatrix.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 52: xatu.eth.v2.BeaconBlockBodyBellatrix.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	50,  // 53: xatu.eth.v2.BeaconBlockBodyBellatrix.execution_payload:type_name -> xatu.eth.v1.ExecutionPayload
-	43,  // 54: xatu.eth.v2.BeaconBlockBodyBellatrixV2.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 55: xatu.eth.v2.BeaconBlockBodyBellatrixV2.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 56: xatu.eth.v2.BeaconBlockBodyBellatrixV2.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 57: xatu.eth.v2.BeaconBlockBodyBellatrixV2.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 58: xatu.eth.v2.BeaconBlockBodyBellatrixV2.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 59: xatu.eth.v2.BeaconBlockBodyBellatrixV2.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 60: xatu.eth.v2.BeaconBlockBodyBellatrixV2.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	51,  // 61: xatu.eth.v2.BeaconBlockBodyBellatrixV2.execution_payload:type_name -> xatu.eth.v1.ExecutionPayloadV2
-	43,  // 62: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 63: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 64: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 65: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 66: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 67: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 68: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	52,  // 69: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.execution_payload_header:type_name -> xatu.eth.v1.ExecutionPayloadHeader
-	43,  // 70: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 71: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 72: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 73: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 74: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 75: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 76: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	53,  // 77: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.execution_payload_header:type_name -> xatu.eth.v1.ExecutionPayloadHeaderV2
-	43,  // 78: xatu.eth.v2.BeaconBlockBodyCapella.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 79: xatu.eth.v2.BeaconBlockBodyCapella.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 80: xatu.eth.v2.BeaconBlockBodyCapella.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 81: xatu.eth.v2.BeaconBlockBodyCapella.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 82: xatu.eth.v2.BeaconBlockBodyCapella.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 83: xatu.eth.v2.BeaconBlockBodyCapella.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 84: xatu.eth.v2.BeaconBlockBodyCapella.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	54,  // 85: xatu.eth.v2.BeaconBlockBodyCapella.execution_payload:type_name -> xatu.eth.v1.ExecutionPayloadCapella
-	55,  // 86: xatu.eth.v2.BeaconBlockBodyCapella.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
-	43,  // 87: xatu.eth.v2.BeaconBlockBodyCapellaV2.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 88: xatu.eth.v2.BeaconBlockBodyCapellaV2.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 89: xatu.eth.v2.BeaconBlockBodyCapellaV2.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 90: xatu.eth.v2.BeaconBlockBodyCapellaV2.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 91: xatu.eth.v2.BeaconBlockBodyCapellaV2.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 92: xatu.eth.v2.BeaconBlockBodyCapellaV2.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 93: xatu.eth.v2.BeaconBlockBodyCapellaV2.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	56,  // 94: xatu.eth.v2.BeaconBlockBodyCapellaV2.execution_payload:type_name -> xatu.eth.v1.ExecutionPayloadCapellaV2
-	55,  // 95: xatu.eth.v2.BeaconBlockBodyCapellaV2.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
-	43,  // 96: xatu.eth.v2.BeaconBlockBodyDeneb.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 97: xatu.eth.v2.BeaconBlockBodyDeneb.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 98: xatu.eth.v2.BeaconBlockBodyDeneb.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 99: xatu.eth.v2.BeaconBlockBodyDeneb.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 100: xatu.eth.v2.BeaconBlockBodyDeneb.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 101: xatu.eth.v2.BeaconBlockBodyDeneb.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 102: xatu.eth.v2.BeaconBlockBodyDeneb.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	57,  // 103: xatu.eth.v2.BeaconBlockBodyDeneb.execution_payload:type_name -> xatu.eth.v1.ExecutionPayloadDeneb
-	55,  // 104: xatu.eth.v2.BeaconBlockBodyDeneb.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
-	43,  // 105: xatu.eth.v2.BeaconBlockBodyElectra.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 106: xatu.eth.v2.BeaconBlockBodyElectra.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 107: xatu.eth.v2.BeaconBlockBodyElectra.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 108: xatu.eth.v2.BeaconBlockBodyElectra.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 109: xatu.eth.v2.BeaconBlockBodyElectra.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 110: xatu.eth.v2.BeaconBlockBodyElectra.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 111: xatu.eth.v2.BeaconBlockBodyElectra.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	58,  // 112: xatu.eth.v2.BeaconBlockBodyElectra.execution_payload:type_name -> xatu.eth.v1.ExecutionPayloadElectra
-	55,  // 113: xatu.eth.v2.BeaconBlockBodyElectra.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
-	59,  // 114: xatu.eth.v2.BeaconBlockBodyElectra.execution_requests:type_name -> xatu.eth.v1.ElectraExecutionRequests
-	43,  // 115: xatu.eth.v2.BeaconBlockBodyFulu.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 116: xatu.eth.v2.BeaconBlockBodyFulu.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 117: xatu.eth.v2.BeaconBlockBodyFulu.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 118: xatu.eth.v2.BeaconBlockBodyFulu.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 119: xatu.eth.v2.BeaconBlockBodyFulu.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 120: xatu.eth.v2.BeaconBlockBodyFulu.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 121: xatu.eth.v2.BeaconBlockBodyFulu.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	58,  // 122: xatu.eth.v2.BeaconBlockBodyFulu.execution_payload:type_name -> xatu.eth.v1.ExecutionPayloadElectra
-	55,  // 123: xatu.eth.v2.BeaconBlockBodyFulu.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
-	59,  // 124: xatu.eth.v2.BeaconBlockBodyFulu.execution_requests:type_name -> xatu.eth.v1.ElectraExecutionRequests
-	43,  // 125: xatu.eth.v2.BeaconBlockBodyGloas.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 126: xatu.eth.v2.BeaconBlockBodyGloas.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 127: xatu.eth.v2.BeaconBlockBodyGloas.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 128: xatu.eth.v2.BeaconBlockBodyGloas.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 129: xatu.eth.v2.BeaconBlockBodyGloas.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 130: xatu.eth.v2.BeaconBlockBodyGloas.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 131: xatu.eth.v2.BeaconBlockBodyGloas.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	55,  // 132: xatu.eth.v2.BeaconBlockBodyGloas.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
-	60,  // 133: xatu.eth.v2.BeaconBlockBodyGloas.signed_execution_payload_bid:type_name -> xatu.eth.v1.SignedExecutionPayloadBid
-	61,  // 134: xatu.eth.v2.BeaconBlockBodyGloas.payload_attestations:type_name -> xatu.eth.v1.PayloadAttestation
-	59,  // 135: xatu.eth.v2.BeaconBlockBodyGloas.parent_execution_requests:type_name -> xatu.eth.v1.ElectraExecutionRequests
-	43,  // 136: xatu.eth.v2.BlindedBeaconBlockBodyCapella.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 137: xatu.eth.v2.BlindedBeaconBlockBodyCapella.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 138: xatu.eth.v2.BlindedBeaconBlockBodyCapella.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 139: xatu.eth.v2.BlindedBeaconBlockBodyCapella.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 140: xatu.eth.v2.BlindedBeaconBlockBodyCapella.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 141: xatu.eth.v2.BlindedBeaconBlockBodyCapella.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 142: xatu.eth.v2.BlindedBeaconBlockBodyCapella.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	62,  // 143: xatu.eth.v2.BlindedBeaconBlockBodyCapella.execution_payload_header:type_name -> xatu.eth.v1.ExecutionPayloadHeaderCapella
-	55,  // 144: xatu.eth.v2.BlindedBeaconBlockBodyCapella.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
-	43,  // 145: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 146: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 147: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 148: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 149: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 150: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 151: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	63,  // 152: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.execution_payload_header:type_name -> xatu.eth.v1.ExecutionPayloadHeaderCapellaV2
-	55,  // 153: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
-	43,  // 154: xatu.eth.v2.BeaconBlockBodyAltair.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 155: xatu.eth.v2.BeaconBlockBodyAltair.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 156: xatu.eth.v2.BeaconBlockBodyAltair.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 157: xatu.eth.v2.BeaconBlockBodyAltair.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 158: xatu.eth.v2.BeaconBlockBodyAltair.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 159: xatu.eth.v2.BeaconBlockBodyAltair.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 160: xatu.eth.v2.BeaconBlockBodyAltair.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	43,  // 161: xatu.eth.v2.BeaconBlockBodyAltairV2.eth1_data:type_name -> xatu.eth.v1.Eth1Data
-	44,  // 162: xatu.eth.v2.BeaconBlockBodyAltairV2.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
-	45,  // 163: xatu.eth.v2.BeaconBlockBodyAltairV2.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
-	46,  // 164: xatu.eth.v2.BeaconBlockBodyAltairV2.attestations:type_name -> xatu.eth.v1.Attestation
-	47,  // 165: xatu.eth.v2.BeaconBlockBodyAltairV2.deposits:type_name -> xatu.eth.v1.Deposit
-	48,  // 166: xatu.eth.v2.BeaconBlockBodyAltairV2.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
-	49,  // 167: xatu.eth.v2.BeaconBlockBodyAltairV2.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
-	168, // [168:168] is the sub-list for method output_type
-	168, // [168:168] is the sub-list for method input_type
-	168, // [168:168] is the sub-list for extension type_name
-	168, // [168:168] is the sub-list for extension extendee
-	0,   // [0:168] is the sub-list for field type_name
+	25,  // 10: xatu.eth.v2.SignedBlindedBeaconBlockCapella.message:type_name -> xatu.eth.v2.BlindedBeaconBlockCapella
+	26,  // 11: xatu.eth.v2.SignedBlindedBeaconBlockCapellaV2.message:type_name -> xatu.eth.v2.BlindedBeaconBlockCapellaV2
+	27,  // 12: xatu.eth.v2.SignedBeaconBlockAltair.message:type_name -> xatu.eth.v2.BeaconBlockAltair
+	28,  // 13: xatu.eth.v2.SignedBeaconBlockAltairV2.message:type_name -> xatu.eth.v2.BeaconBlockAltairV2
+	29,  // 14: xatu.eth.v2.BeaconBlockBellatrix.body:type_name -> xatu.eth.v2.BeaconBlockBodyBellatrix
+	50,  // 15: xatu.eth.v2.BeaconBlockBellatrixV2.slot:type_name -> google.protobuf.UInt64Value
+	50,  // 16: xatu.eth.v2.BeaconBlockBellatrixV2.proposer_index:type_name -> google.protobuf.UInt64Value
+	30,  // 17: xatu.eth.v2.BeaconBlockBellatrixV2.body:type_name -> xatu.eth.v2.BeaconBlockBodyBellatrixV2
+	31,  // 18: xatu.eth.v2.BlindedBeaconBlockBellatrix.body:type_name -> xatu.eth.v2.BlindedBeaconBlockBodyBellatrix
+	50,  // 19: xatu.eth.v2.BlindedBeaconBlockBellatrixV2.slot:type_name -> google.protobuf.UInt64Value
+	50,  // 20: xatu.eth.v2.BlindedBeaconBlockBellatrixV2.proposer_index:type_name -> google.protobuf.UInt64Value
+	32,  // 21: xatu.eth.v2.BlindedBeaconBlockBellatrixV2.body:type_name -> xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2
+	33,  // 22: xatu.eth.v2.BeaconBlockCapella.body:type_name -> xatu.eth.v2.BeaconBlockBodyCapella
+	50,  // 23: xatu.eth.v2.BeaconBlockCapellaV2.slot:type_name -> google.protobuf.UInt64Value
+	50,  // 24: xatu.eth.v2.BeaconBlockCapellaV2.proposer_index:type_name -> google.protobuf.UInt64Value
+	34,  // 25: xatu.eth.v2.BeaconBlockCapellaV2.body:type_name -> xatu.eth.v2.BeaconBlockBodyCapellaV2
+	50,  // 26: xatu.eth.v2.BeaconBlockDeneb.slot:type_name -> google.protobuf.UInt64Value
+	50,  // 27: xatu.eth.v2.BeaconBlockDeneb.proposer_index:type_name -> google.protobuf.UInt64Value
+	35,  // 28: xatu.eth.v2.BeaconBlockDeneb.body:type_name -> xatu.eth.v2.BeaconBlockBodyDeneb
+	50,  // 29: xatu.eth.v2.BeaconBlockElectra.slot:type_name -> google.protobuf.UInt64Value
+	50,  // 30: xatu.eth.v2.BeaconBlockElectra.proposer_index:type_name -> google.protobuf.UInt64Value
+	36,  // 31: xatu.eth.v2.BeaconBlockElectra.body:type_name -> xatu.eth.v2.BeaconBlockBodyElectra
+	50,  // 32: xatu.eth.v2.BeaconBlockFulu.slot:type_name -> google.protobuf.UInt64Value
+	50,  // 33: xatu.eth.v2.BeaconBlockFulu.proposer_index:type_name -> google.protobuf.UInt64Value
+	37,  // 34: xatu.eth.v2.BeaconBlockFulu.body:type_name -> xatu.eth.v2.BeaconBlockBodyFulu
+	50,  // 35: xatu.eth.v2.BeaconBlockGloas.slot:type_name -> google.protobuf.UInt64Value
+	50,  // 36: xatu.eth.v2.BeaconBlockGloas.proposer_index:type_name -> google.protobuf.UInt64Value
+	38,  // 37: xatu.eth.v2.BeaconBlockGloas.body:type_name -> xatu.eth.v2.BeaconBlockBodyGloas
+	50,  // 38: xatu.eth.v2.BeaconBlockPq.slot:type_name -> google.protobuf.UInt64Value
+	50,  // 39: xatu.eth.v2.BeaconBlockPq.proposer_index:type_name -> google.protobuf.UInt64Value
+	39,  // 40: xatu.eth.v2.BeaconBlockPq.body:type_name -> xatu.eth.v2.BeaconBlockBodyPq
+	46,  // 41: xatu.eth.v2.BlindedBeaconBlockCapella.body:type_name -> xatu.eth.v2.BlindedBeaconBlockBodyCapella
+	50,  // 42: xatu.eth.v2.BlindedBeaconBlockCapellaV2.slot:type_name -> google.protobuf.UInt64Value
+	50,  // 43: xatu.eth.v2.BlindedBeaconBlockCapellaV2.proposer_index:type_name -> google.protobuf.UInt64Value
+	47,  // 44: xatu.eth.v2.BlindedBeaconBlockCapellaV2.body:type_name -> xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2
+	48,  // 45: xatu.eth.v2.BeaconBlockAltair.body:type_name -> xatu.eth.v2.BeaconBlockBodyAltair
+	50,  // 46: xatu.eth.v2.BeaconBlockAltairV2.slot:type_name -> google.protobuf.UInt64Value
+	50,  // 47: xatu.eth.v2.BeaconBlockAltairV2.proposer_index:type_name -> google.protobuf.UInt64Value
+	49,  // 48: xatu.eth.v2.BeaconBlockAltairV2.body:type_name -> xatu.eth.v2.BeaconBlockBodyAltairV2
+	51,  // 49: xatu.eth.v2.BeaconBlockBodyBellatrix.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 50: xatu.eth.v2.BeaconBlockBodyBellatrix.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 51: xatu.eth.v2.BeaconBlockBodyBellatrix.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 52: xatu.eth.v2.BeaconBlockBodyBellatrix.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 53: xatu.eth.v2.BeaconBlockBodyBellatrix.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 54: xatu.eth.v2.BeaconBlockBodyBellatrix.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 55: xatu.eth.v2.BeaconBlockBodyBellatrix.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	58,  // 56: xatu.eth.v2.BeaconBlockBodyBellatrix.execution_payload:type_name -> xatu.eth.v1.ExecutionPayload
+	51,  // 57: xatu.eth.v2.BeaconBlockBodyBellatrixV2.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 58: xatu.eth.v2.BeaconBlockBodyBellatrixV2.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 59: xatu.eth.v2.BeaconBlockBodyBellatrixV2.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 60: xatu.eth.v2.BeaconBlockBodyBellatrixV2.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 61: xatu.eth.v2.BeaconBlockBodyBellatrixV2.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 62: xatu.eth.v2.BeaconBlockBodyBellatrixV2.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 63: xatu.eth.v2.BeaconBlockBodyBellatrixV2.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	59,  // 64: xatu.eth.v2.BeaconBlockBodyBellatrixV2.execution_payload:type_name -> xatu.eth.v1.ExecutionPayloadV2
+	51,  // 65: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 66: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 67: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 68: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 69: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 70: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 71: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	60,  // 72: xatu.eth.v2.BlindedBeaconBlockBodyBellatrix.execution_payload_header:type_name -> xatu.eth.v1.ExecutionPayloadHeader
+	51,  // 73: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 74: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 75: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 76: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 77: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 78: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 79: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	61,  // 80: xatu.eth.v2.BlindedBeaconBlockBodyBellatrixV2.execution_payload_header:type_name -> xatu.eth.v1.ExecutionPayloadHeaderV2
+	51,  // 81: xatu.eth.v2.BeaconBlockBodyCapella.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 82: xatu.eth.v2.BeaconBlockBodyCapella.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 83: xatu.eth.v2.BeaconBlockBodyCapella.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 84: xatu.eth.v2.BeaconBlockBodyCapella.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 85: xatu.eth.v2.BeaconBlockBodyCapella.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 86: xatu.eth.v2.BeaconBlockBodyCapella.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 87: xatu.eth.v2.BeaconBlockBodyCapella.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	62,  // 88: xatu.eth.v2.BeaconBlockBodyCapella.execution_payload:type_name -> xatu.eth.v1.ExecutionPayloadCapella
+	63,  // 89: xatu.eth.v2.BeaconBlockBodyCapella.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
+	51,  // 90: xatu.eth.v2.BeaconBlockBodyCapellaV2.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 91: xatu.eth.v2.BeaconBlockBodyCapellaV2.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 92: xatu.eth.v2.BeaconBlockBodyCapellaV2.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 93: xatu.eth.v2.BeaconBlockBodyCapellaV2.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 94: xatu.eth.v2.BeaconBlockBodyCapellaV2.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 95: xatu.eth.v2.BeaconBlockBodyCapellaV2.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 96: xatu.eth.v2.BeaconBlockBodyCapellaV2.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	64,  // 97: xatu.eth.v2.BeaconBlockBodyCapellaV2.execution_payload:type_name -> xatu.eth.v1.ExecutionPayloadCapellaV2
+	63,  // 98: xatu.eth.v2.BeaconBlockBodyCapellaV2.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
+	51,  // 99: xatu.eth.v2.BeaconBlockBodyDeneb.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 100: xatu.eth.v2.BeaconBlockBodyDeneb.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 101: xatu.eth.v2.BeaconBlockBodyDeneb.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 102: xatu.eth.v2.BeaconBlockBodyDeneb.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 103: xatu.eth.v2.BeaconBlockBodyDeneb.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 104: xatu.eth.v2.BeaconBlockBodyDeneb.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 105: xatu.eth.v2.BeaconBlockBodyDeneb.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	65,  // 106: xatu.eth.v2.BeaconBlockBodyDeneb.execution_payload:type_name -> xatu.eth.v1.ExecutionPayloadDeneb
+	63,  // 107: xatu.eth.v2.BeaconBlockBodyDeneb.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
+	51,  // 108: xatu.eth.v2.BeaconBlockBodyElectra.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 109: xatu.eth.v2.BeaconBlockBodyElectra.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 110: xatu.eth.v2.BeaconBlockBodyElectra.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 111: xatu.eth.v2.BeaconBlockBodyElectra.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 112: xatu.eth.v2.BeaconBlockBodyElectra.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 113: xatu.eth.v2.BeaconBlockBodyElectra.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 114: xatu.eth.v2.BeaconBlockBodyElectra.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	66,  // 115: xatu.eth.v2.BeaconBlockBodyElectra.execution_payload:type_name -> xatu.eth.v1.ExecutionPayloadElectra
+	63,  // 116: xatu.eth.v2.BeaconBlockBodyElectra.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
+	67,  // 117: xatu.eth.v2.BeaconBlockBodyElectra.execution_requests:type_name -> xatu.eth.v1.ElectraExecutionRequests
+	51,  // 118: xatu.eth.v2.BeaconBlockBodyFulu.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 119: xatu.eth.v2.BeaconBlockBodyFulu.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 120: xatu.eth.v2.BeaconBlockBodyFulu.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 121: xatu.eth.v2.BeaconBlockBodyFulu.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 122: xatu.eth.v2.BeaconBlockBodyFulu.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 123: xatu.eth.v2.BeaconBlockBodyFulu.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 124: xatu.eth.v2.BeaconBlockBodyFulu.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	66,  // 125: xatu.eth.v2.BeaconBlockBodyFulu.execution_payload:type_name -> xatu.eth.v1.ExecutionPayloadElectra
+	63,  // 126: xatu.eth.v2.BeaconBlockBodyFulu.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
+	67,  // 127: xatu.eth.v2.BeaconBlockBodyFulu.execution_requests:type_name -> xatu.eth.v1.ElectraExecutionRequests
+	51,  // 128: xatu.eth.v2.BeaconBlockBodyGloas.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 129: xatu.eth.v2.BeaconBlockBodyGloas.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 130: xatu.eth.v2.BeaconBlockBodyGloas.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 131: xatu.eth.v2.BeaconBlockBodyGloas.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 132: xatu.eth.v2.BeaconBlockBodyGloas.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 133: xatu.eth.v2.BeaconBlockBodyGloas.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 134: xatu.eth.v2.BeaconBlockBodyGloas.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	63,  // 135: xatu.eth.v2.BeaconBlockBodyGloas.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
+	68,  // 136: xatu.eth.v2.BeaconBlockBodyGloas.signed_execution_payload_bid:type_name -> xatu.eth.v1.SignedExecutionPayloadBid
+	69,  // 137: xatu.eth.v2.BeaconBlockBodyGloas.payload_attestations:type_name -> xatu.eth.v1.PayloadAttestation
+	67,  // 138: xatu.eth.v2.BeaconBlockBodyGloas.parent_execution_requests:type_name -> xatu.eth.v1.ElectraExecutionRequests
+	51,  // 139: xatu.eth.v2.BeaconBlockBodyPq.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 140: xatu.eth.v2.BeaconBlockBodyPq.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	41,  // 141: xatu.eth.v2.BeaconBlockBodyPq.attester_slashings:type_name -> xatu.eth.v2.AttesterSlashingPq
+	54,  // 142: xatu.eth.v2.BeaconBlockBodyPq.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 143: xatu.eth.v2.BeaconBlockBodyPq.deposits:type_name -> xatu.eth.v1.Deposit
+	68,  // 144: xatu.eth.v2.BeaconBlockBodyPq.signed_execution_payload_bid:type_name -> xatu.eth.v1.SignedExecutionPayloadBid
+	42,  // 145: xatu.eth.v2.BeaconBlockBodyPq.parent_execution_requests:type_name -> xatu.eth.v2.ExecutionRequestsPq
+	70,  // 146: xatu.eth.v2.IndexedAttestationPq.data:type_name -> xatu.eth.v1.AttestationData
+	40,  // 147: xatu.eth.v2.AttesterSlashingPq.attestation_1:type_name -> xatu.eth.v2.IndexedAttestationPq
+	40,  // 148: xatu.eth.v2.AttesterSlashingPq.attestation_2:type_name -> xatu.eth.v2.IndexedAttestationPq
+	71,  // 149: xatu.eth.v2.ExecutionRequestsPq.deposits:type_name -> xatu.eth.v1.ElectraExecutionRequestDeposit
+	72,  // 150: xatu.eth.v2.ExecutionRequestsPq.withdrawals:type_name -> xatu.eth.v1.ElectraExecutionRequestWithdrawal
+	73,  // 151: xatu.eth.v2.ExecutionRequestsPq.consolidations:type_name -> xatu.eth.v1.ElectraExecutionRequestConsolidation
+	74,  // 152: xatu.eth.v2.ExecutionRequestsPq.builder_deposits:type_name -> xatu.eth.v1.GloasBuilderDepositRequest
+	75,  // 153: xatu.eth.v2.ExecutionRequestsPq.builder_exits:type_name -> xatu.eth.v1.GloasBuilderExitRequest
+	43,  // 154: xatu.eth.v2.ExecutionRequestsPq.validator_preregistrations:type_name -> xatu.eth.v2.ValidatorPreregistrationRequestPq
+	44,  // 155: xatu.eth.v2.ExecutionRequestsPq.builder_preregistrations:type_name -> xatu.eth.v2.BuilderPreregistrationRequestPq
+	45,  // 156: xatu.eth.v2.ExecutionRequestsPq.voluntary_exits:type_name -> xatu.eth.v2.VoluntaryExitRequestPq
+	76,  // 157: xatu.eth.v2.ValidatorPreregistrationRequestPq.pubkey:type_name -> google.protobuf.StringValue
+	76,  // 158: xatu.eth.v2.ValidatorPreregistrationRequestPq.withdrawal_credentials:type_name -> google.protobuf.StringValue
+	76,  // 159: xatu.eth.v2.ValidatorPreregistrationRequestPq.vrf_root:type_name -> google.protobuf.StringValue
+	76,  // 160: xatu.eth.v2.BuilderPreregistrationRequestPq.pubkey:type_name -> google.protobuf.StringValue
+	76,  // 161: xatu.eth.v2.BuilderPreregistrationRequestPq.withdrawal_credentials:type_name -> google.protobuf.StringValue
+	76,  // 162: xatu.eth.v2.VoluntaryExitRequestPq.pubkey:type_name -> google.protobuf.StringValue
+	51,  // 163: xatu.eth.v2.BlindedBeaconBlockBodyCapella.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 164: xatu.eth.v2.BlindedBeaconBlockBodyCapella.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 165: xatu.eth.v2.BlindedBeaconBlockBodyCapella.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 166: xatu.eth.v2.BlindedBeaconBlockBodyCapella.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 167: xatu.eth.v2.BlindedBeaconBlockBodyCapella.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 168: xatu.eth.v2.BlindedBeaconBlockBodyCapella.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 169: xatu.eth.v2.BlindedBeaconBlockBodyCapella.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	77,  // 170: xatu.eth.v2.BlindedBeaconBlockBodyCapella.execution_payload_header:type_name -> xatu.eth.v1.ExecutionPayloadHeaderCapella
+	63,  // 171: xatu.eth.v2.BlindedBeaconBlockBodyCapella.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
+	51,  // 172: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 173: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 174: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 175: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 176: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 177: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 178: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	78,  // 179: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.execution_payload_header:type_name -> xatu.eth.v1.ExecutionPayloadHeaderCapellaV2
+	63,  // 180: xatu.eth.v2.BlindedBeaconBlockBodyCapellaV2.bls_to_execution_changes:type_name -> xatu.eth.v2.SignedBLSToExecutionChange
+	51,  // 181: xatu.eth.v2.BeaconBlockBodyAltair.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 182: xatu.eth.v2.BeaconBlockBodyAltair.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 183: xatu.eth.v2.BeaconBlockBodyAltair.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 184: xatu.eth.v2.BeaconBlockBodyAltair.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 185: xatu.eth.v2.BeaconBlockBodyAltair.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 186: xatu.eth.v2.BeaconBlockBodyAltair.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 187: xatu.eth.v2.BeaconBlockBodyAltair.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	51,  // 188: xatu.eth.v2.BeaconBlockBodyAltairV2.eth1_data:type_name -> xatu.eth.v1.Eth1Data
+	52,  // 189: xatu.eth.v2.BeaconBlockBodyAltairV2.proposer_slashings:type_name -> xatu.eth.v1.ProposerSlashing
+	53,  // 190: xatu.eth.v2.BeaconBlockBodyAltairV2.attester_slashings:type_name -> xatu.eth.v1.AttesterSlashing
+	54,  // 191: xatu.eth.v2.BeaconBlockBodyAltairV2.attestations:type_name -> xatu.eth.v1.Attestation
+	55,  // 192: xatu.eth.v2.BeaconBlockBodyAltairV2.deposits:type_name -> xatu.eth.v1.Deposit
+	56,  // 193: xatu.eth.v2.BeaconBlockBodyAltairV2.voluntary_exits:type_name -> xatu.eth.v1.SignedVoluntaryExit
+	57,  // 194: xatu.eth.v2.BeaconBlockBodyAltairV2.sync_aggregate:type_name -> xatu.eth.v1.SyncAggregate
+	195, // [195:195] is the sub-list for method output_type
+	195, // [195:195] is the sub-list for method input_type
+	195, // [195:195] is the sub-list for extension type_name
+	195, // [195:195] is the sub-list for extension extendee
+	0,   // [0:195] is the sub-list for field type_name
 }
 
 func init() { file_pkg_proto_eth_v2_beacon_block_proto_init() }
@@ -5240,7 +6026,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[24].Exporter = func(v any, i int) any {
-			switch v := v.(*BlindedBeaconBlockCapella); i {
+			switch v := v.(*BeaconBlockPq); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5252,7 +6038,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[25].Exporter = func(v any, i int) any {
-			switch v := v.(*BlindedBeaconBlockCapellaV2); i {
+			switch v := v.(*BlindedBeaconBlockCapella); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5264,7 +6050,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[26].Exporter = func(v any, i int) any {
-			switch v := v.(*BeaconBlockAltair); i {
+			switch v := v.(*BlindedBeaconBlockCapellaV2); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5276,7 +6062,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[27].Exporter = func(v any, i int) any {
-			switch v := v.(*BeaconBlockAltairV2); i {
+			switch v := v.(*BeaconBlockAltair); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5288,7 +6074,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[28].Exporter = func(v any, i int) any {
-			switch v := v.(*BeaconBlockBodyBellatrix); i {
+			switch v := v.(*BeaconBlockAltairV2); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5300,7 +6086,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[29].Exporter = func(v any, i int) any {
-			switch v := v.(*BeaconBlockBodyBellatrixV2); i {
+			switch v := v.(*BeaconBlockBodyBellatrix); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5312,7 +6098,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[30].Exporter = func(v any, i int) any {
-			switch v := v.(*BlindedBeaconBlockBodyBellatrix); i {
+			switch v := v.(*BeaconBlockBodyBellatrixV2); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5324,7 +6110,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[31].Exporter = func(v any, i int) any {
-			switch v := v.(*BlindedBeaconBlockBodyBellatrixV2); i {
+			switch v := v.(*BlindedBeaconBlockBodyBellatrix); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5336,7 +6122,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[32].Exporter = func(v any, i int) any {
-			switch v := v.(*BeaconBlockBodyCapella); i {
+			switch v := v.(*BlindedBeaconBlockBodyBellatrixV2); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5348,7 +6134,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[33].Exporter = func(v any, i int) any {
-			switch v := v.(*BeaconBlockBodyCapellaV2); i {
+			switch v := v.(*BeaconBlockBodyCapella); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5360,7 +6146,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[34].Exporter = func(v any, i int) any {
-			switch v := v.(*BeaconBlockBodyDeneb); i {
+			switch v := v.(*BeaconBlockBodyCapellaV2); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5372,7 +6158,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[35].Exporter = func(v any, i int) any {
-			switch v := v.(*BeaconBlockBodyElectra); i {
+			switch v := v.(*BeaconBlockBodyDeneb); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5384,7 +6170,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[36].Exporter = func(v any, i int) any {
-			switch v := v.(*BeaconBlockBodyFulu); i {
+			switch v := v.(*BeaconBlockBodyElectra); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5396,7 +6182,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[37].Exporter = func(v any, i int) any {
-			switch v := v.(*BeaconBlockBodyGloas); i {
+			switch v := v.(*BeaconBlockBodyFulu); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5408,7 +6194,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[38].Exporter = func(v any, i int) any {
-			switch v := v.(*BlindedBeaconBlockBodyCapella); i {
+			switch v := v.(*BeaconBlockBodyGloas); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5420,7 +6206,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[39].Exporter = func(v any, i int) any {
-			switch v := v.(*BlindedBeaconBlockBodyCapellaV2); i {
+			switch v := v.(*BeaconBlockBodyPq); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5432,7 +6218,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[40].Exporter = func(v any, i int) any {
-			switch v := v.(*BeaconBlockBodyAltair); i {
+			switch v := v.(*IndexedAttestationPq); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5444,6 +6230,102 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			}
 		}
 		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[41].Exporter = func(v any, i int) any {
+			switch v := v.(*AttesterSlashingPq); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[42].Exporter = func(v any, i int) any {
+			switch v := v.(*ExecutionRequestsPq); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[43].Exporter = func(v any, i int) any {
+			switch v := v.(*ValidatorPreregistrationRequestPq); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[44].Exporter = func(v any, i int) any {
+			switch v := v.(*BuilderPreregistrationRequestPq); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[45].Exporter = func(v any, i int) any {
+			switch v := v.(*VoluntaryExitRequestPq); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[46].Exporter = func(v any, i int) any {
+			switch v := v.(*BlindedBeaconBlockBodyCapella); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[47].Exporter = func(v any, i int) any {
+			switch v := v.(*BlindedBeaconBlockBodyCapellaV2); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[48].Exporter = func(v any, i int) any {
+			switch v := v.(*BeaconBlockBodyAltair); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_proto_eth_v2_beacon_block_proto_msgTypes[49].Exporter = func(v any, i int) any {
 			switch v := v.(*BeaconBlockBodyAltairV2); i {
 			case 0:
 				return &v.state
@@ -5462,7 +6344,7 @@ func file_pkg_proto_eth_v2_beacon_block_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_proto_eth_v2_beacon_block_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   42,
+			NumMessages:   50,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

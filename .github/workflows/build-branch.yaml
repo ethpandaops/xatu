@@ -325,8 +325,14 @@ jobs:
           password: ${{ github.token }}
       # BuildKit's COPY cache key includes the source file's mode; see
       # goreleaser.yaml.
+      # Branches cut before deploy/cryo existed have no patches to normalize.
       - name: Normalize cryo patch permissions for the cache key
-        run: chmod 0644 deploy/cryo/*.patch
+        run: |
+          shopt -s nullglob
+          patches=(deploy/cryo/*.patch)
+          if (( ${#patches[@]} )); then
+            chmod 0644 "${patches[@]}"
+          fi
       - name: Build and push xatu+cryo image
         id: build
         uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0

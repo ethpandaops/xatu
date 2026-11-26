@@ -12,6 +12,7 @@ import (
 	"github.com/ethpandaops/xatu/pkg/cannon/iterator"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
+	xatuethv2 "github.com/ethpandaops/xatu/pkg/proto/eth/v2"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -213,23 +214,14 @@ func (b *ExecutionPayloadBidDeriver) processSlot(ctx context.Context, slot phase
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
-	if block.Gloas == nil || block.Gloas.Message == nil || block.Gloas.Message.Body == nil {
-		return []*xatu.DecoratedEvent{}, nil
-	}
-
-	rawBid := block.Gloas.Message.Body.SignedExecutionPayloadBid
-	if rawBid == nil || rawBid.Message == nil {
+	bid := signedExecutionPayloadBid(block)
+	if bid == nil {
 		return []*xatu.DecoratedEvent{}, nil
 	}
 
 	blockIdentifier, err := GetBlockIdentifier(block, b.beacon.Metadata().Wallclock())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get block identifier for slot %d", slot)
-	}
-
-	bid := xatuethv1.NewSignedExecutionPayloadBidFromGloas(rawBid)
-	if bid == nil {
-		return []*xatu.DecoratedEvent{}, nil
 	}
 
 	event, err := b.createEvent(ctx, bid, blockIdentifier)
@@ -240,6 +232,28 @@ func (b *ExecutionPayloadBidDeriver) processSlot(ctx context.Context, slot phase
 	}
 
 	return []*xatu.DecoratedEvent{event}, nil
+}
+
+// signedExecutionPayloadBid returns the bid a Gloas or PQ block carries, or nil.
+func signedExecutionPayloadBid(block *spec.VersionedSignedBeaconBlock) *xatuethv1.SignedExecutionPayloadBid {
+	if block.Version == spec.DataVersionPQ {
+		if block.PQ == nil || block.PQ.Message == nil || block.PQ.Message.Body == nil {
+			return nil
+		}
+
+		rawBid := block.PQ.Message.Body.SignedExecutionPayloadBid
+		if rawBid == nil || rawBid.Message == nil {
+			return nil
+		}
+
+		return xatuethv2.NewSignedExecutionPayloadBidFromPQ(rawBid)
+	}
+
+	if block.Gloas == nil || block.Gloas.Message == nil || block.Gloas.Message.Body == nil {
+		return nil
+	}
+
+	return xatuethv1.NewSignedExecutionPayloadBidFromGloas(block.Gloas.Message.Body.SignedExecutionPayloadBid)
 }
 
 // lookAhead pre-loads upcoming epoch blocks so the iterator's next pass has them ready.

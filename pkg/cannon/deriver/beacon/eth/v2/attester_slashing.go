@@ -310,9 +310,16 @@ func convertIndexedAttestation(attestation *spec.VersionedIndexedAttestation) (*
 		return nil, errors.Wrap(err, "failed to obtain attestation data")
 	}
 
-	sig, err := attestation.Signature()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to obtain attestation signature")
+	// PQ indexed attestations carry a proof instead of a signature.
+	var signature string
+
+	if attestation.Version != spec.DataVersionPQ {
+		sig, err := attestation.Signature()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to obtain attestation signature")
+		}
+
+		signature = sig.String()
 	}
 
 	return &xatuethv1.IndexedAttestationV2{
@@ -330,7 +337,7 @@ func convertIndexedAttestation(attestation *spec.VersionedIndexedAttestation) (*
 				Root:  data.Target.Root.String(),
 			},
 		},
-		Signature: sig.String(),
+		Signature: signature,
 	}, nil
 }
 

@@ -2,12 +2,10 @@ package v1
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v5"
-	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/google/uuid"
@@ -187,7 +185,7 @@ func (b *ProposerDutyDeriver) processEpoch(ctx context.Context, epoch phase0.Epo
 	defer span.End()
 
 	// Get the proposer duties for this epoch
-	proposerDuties, err := b.beacon.Node().FetchProposerDuties(ctx, epoch)
+	proposerDuties, err := b.beacon.FetchProposerDuties(ctx, epoch)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch proposer duties")
 	}
@@ -231,7 +229,7 @@ func (b *ProposerDutyDeriver) lookAhead(ctx context.Context, epochs []phase0.Epo
 	}
 }
 
-func (b *ProposerDutyDeriver) createEventFromProposerDuty(ctx context.Context, duty *apiv1.ProposerDuty) (*xatu.DecoratedEvent, error) {
+func (b *ProposerDutyDeriver) createEventFromProposerDuty(ctx context.Context, duty *ethereum.ProposerDuty) (*xatu.DecoratedEvent, error) {
 	// Make a clone of the metadata
 	metadata, ok := proto.Clone(b.clientMeta).(*xatu.ClientMeta)
 	if !ok {
@@ -250,7 +248,7 @@ func (b *ProposerDutyDeriver) createEventFromProposerDuty(ctx context.Context, d
 		Data: &xatu.DecoratedEvent_EthV1ProposerDuty{
 			EthV1ProposerDuty: &xatuethv1.ProposerDuty{
 				Slot:           wrapperspb.UInt64(uint64(duty.Slot)),
-				Pubkey:         fmt.Sprintf("0x%s", hex.EncodeToString(duty.PubKey[:])),
+				Pubkey:         duty.PubKey,
 				ValidatorIndex: wrapperspb.UInt64(uint64(duty.ValidatorIndex)),
 			},
 		},
@@ -270,7 +268,7 @@ func (b *ProposerDutyDeriver) createEventFromProposerDuty(ctx context.Context, d
 	return decoratedEvent, nil
 }
 
-func (b *ProposerDutyDeriver) getAdditionalData(_ context.Context, duty *apiv1.ProposerDuty) (*xatu.ClientMeta_AdditionalEthV1ProposerDutyData, error) {
+func (b *ProposerDutyDeriver) getAdditionalData(_ context.Context, duty *ethereum.ProposerDuty) (*xatu.ClientMeta_AdditionalEthV1ProposerDutyData, error) {
 	extra := &xatu.ClientMeta_AdditionalEthV1ProposerDutyData{
 		StateId: xatuethv1.StateIDFinalized,
 	}

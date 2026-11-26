@@ -166,6 +166,10 @@ func canonicalBeaconBlockIdentityFields(eventBlock *ethv2.EventBlockV2) (parentR
 		blk := eventBlock.GetGloasBlock()
 
 		return blk.GetParentRoot(), blk.GetStateRoot(), blk.GetBody().GetEth1Data(), true
+	case eventBlock.GetPqBlock() != nil:
+		blk := eventBlock.GetPqBlock()
+
+		return blk.GetParentRoot(), blk.GetStateRoot(), blk.GetBody().GetEth1Data(), true
 	default:
 		return "", "", nil, false
 	}
@@ -357,6 +361,30 @@ func (b *canonicalBeaconBlockBatch) appendPayloadFromEventBlockV2(eventBlock *et
 		// Gloas blocks have no inline execution payload — it arrives
 		// via the ExecutionPayloadEnvelope event. EPBS columns are
 		// populated from the bid in the block body.
+		b.appendNullInlinePayloadFields()
+		b.appendEpbsFromBid(body.GetSignedExecutionPayloadBid(), additional.GetPayloadPresent())
+
+		return nil
+	}
+
+	if pqBlock := eventBlock.GetPqBlock(); pqBlock != nil {
+		if slot := pqBlock.GetSlot(); slot != nil {
+			b.Slot.Append(uint32(slot.GetValue()))
+		} else {
+			b.Slot.Append(0)
+		}
+
+		if proposerIndex := pqBlock.GetProposerIndex(); proposerIndex != nil {
+			b.ProposerIndex.Append(uint32(proposerIndex.GetValue()))
+		} else {
+			b.ProposerIndex.Append(0)
+		}
+
+		b.ParentRoot.Append([]byte(pqBlock.GetParentRoot()))
+		b.StateRoot.Append([]byte(pqBlock.GetStateRoot()))
+
+		body := pqBlock.GetBody()
+		b.appendEth1Data(body.GetEth1Data())
 		b.appendNullInlinePayloadFields()
 		b.appendEpbsFromBid(body.GetSignedExecutionPayloadBid(), additional.GetPayloadPresent())
 

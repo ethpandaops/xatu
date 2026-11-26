@@ -9,6 +9,7 @@ import (
 	apiv1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/ethpandaops/go-eth2-client/spec/pq"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -271,7 +272,7 @@ func (b *BeaconValidatorsDeriver) createEventFromValidators(ctx context.Context,
 			Balance: wrapperspb.UInt64(uint64(validator.Balance)),
 			Status:  wrapperspb.String(validator.Status.String()),
 			Data: &xatuethv1.ValidatorData{
-				Pubkey:                     wrapperspb.String(validator.Validator.PublicKey.String()),
+				Pubkey:                     wrapperspb.String(validatorPubkey(validator.Validator.PublicKey)),
 				WithdrawalCredentials:      wrapperspb.String(fmt.Sprintf("%#x", validator.Validator.WithdrawalCredentials)),
 				EffectiveBalance:           wrapperspb.UInt64(uint64(validator.Validator.EffectiveBalance)),
 				Slashed:                    wrapperspb.Bool(validator.Validator.Slashed),
@@ -320,4 +321,15 @@ func (b *BeaconValidatorsDeriver) getAdditionalData(_ context.Context, epoch pha
 			StartDateTime: timestamppb.New(epochInfo.TimeWindow().Start()),
 		},
 	}, nil
+}
+
+// validatorPubkey formats a validator's public key. go-eth2-client widens a PQ validator's 32-byte XMSS key to the
+// BLS width with 16 leading zero bytes (pq.XMSSPubKey.DepositPubKey); a compressed BLS key always sets the top bit of
+// its first byte, so those zeros mark an XMSS key, reported as its own 32 bytes.
+func validatorPubkey(pubkey phase0.BLSPubKey) string {
+	if [pq.DepositPrefixSize]byte(pubkey[:pq.DepositPrefixSize]) == [pq.DepositPrefixSize]byte{} {
+		return fmt.Sprintf("%#x", pubkey[pq.DepositPrefixSize:])
+	}
+
+	return pubkey.String()
 }

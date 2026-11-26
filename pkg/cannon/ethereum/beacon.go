@@ -15,6 +15,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/ethpandaops/go-eth2-client/spec/pq"
 	"github.com/jellydator/ttlcache/v3"
 	dynssz "github.com/pk910/dynamic-ssz"
 	"github.com/pkg/errors"
@@ -645,23 +646,10 @@ func (b *BeaconNode) GetValidators(ctx context.Context, identifier string) (map[
 
 		span.AddEvent("Semaphore acquired. Fetching validators from beacon api...")
 
-		client, err := b.getValidatorsClient()
+		validators, err := b.fetchValidators(ctx, identifier)
 		if err != nil {
 			return nil, err
 		}
-
-		// Not in the cache, so fetch it.
-		validatorsResponse, err := client.Validators(ctx, &api.ValidatorsOpts{
-			State: identifier,
-			Common: api.CommonOpts{
-				Timeout: 6 * time.Minute, // If we can't fetch 1 epoch of validators within 1 epoch we will never catch up.
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		validators := validatorsResponse.Data
 
 		span.AddEvent("Validators fetched from beacon node.")
 
@@ -679,6 +667,41 @@ func (b *BeaconNode) GetValidators(ctx context.Context, identifier string) (map[
 	span.AddEvent("Validators fetching complete.", trace.WithAttributes(attribute.Bool("shared", shared)))
 
 	return x.(map[phase0.ValidatorIndex]*apiv1.Validator), nil
+}
+
+func (b *BeaconNode) fetchValidators(ctx context.Context, identifier string) (map[phase0.ValidatorIndex]*apiv1.Validator, error) {
+	if slot, err := strconv.ParseUint(identifier, 10, 64); err == nil {
+		sp, err := b.beacon.Spec()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to obtain spec")
+		}
+
+		isPQ, err := b.isPQ(ctx, phase0.Epoch(slot/uint64(sp.SlotsPerEpoch)))
+		if err != nil {
+			return nil, err
+		}
+
+		if isPQ {
+			return b.fetchPQValidators(ctx, identifier)
+		}
+	}
+
+	provider, err := b.getValidatorsClient()
+	if err != nil {
+		return nil, err
+	}
+
+	validatorsResponse, err := provider.Validators(ctx, &api.ValidatorsOpts{
+		State: identifier,
+		Common: api.CommonOpts{
+			Timeout: 6 * time.Minute, // If we can't fetch 1 epoch of validators within 1 epoch we will never catch up.
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return validatorsResponse.Data, nil
 }
 
 func (b *BeaconNode) LazyLoadValidators(stateID string) {
@@ -762,6 +785,9 @@ func (b *BeaconNode) GetExecutionPayloadEnvelope(
 		var envelope *gloas.SignedExecutionPayloadEnvelope
 		if resp != nil && resp.Data != nil {
 			envelope = resp.Data.Gloas
+			if resp.Data.PQ != nil {
+				envelope = gloasEnvelopeFromPQ(resp.Data.PQ)
+			}
 		}
 
 		b.envelopeCache.Set(blockID, envelope, time.Hour)
@@ -844,10 +870,47 @@ func (b *BeaconNode) payloadWithheld(ctx context.Context, blockID string) (bool,
 	return false, errors.Errorf("no canonical block within %d slots after slot %d", lookahead, slot)
 }
 
-// gloasBid extracts the execution payload bid and slot from a Gloas block.
+// gloasEnvelopeFromPQ carries a PQ envelope's payload and the execution requests Gloas also has. The
+// XMSS signature and the PQ-only requests (preregistrations, voluntary exits) have no place in it.
+func gloasEnvelopeFromPQ(envelope *pq.SignedExecutionPayloadEnvelope) *gloas.SignedExecutionPayloadEnvelope {
+	if envelope.Message == nil {
+		return &gloas.SignedExecutionPayloadEnvelope{}
+	}
+
+	message := &gloas.ExecutionPayloadEnvelope{
+		Payload:               envelope.Message.Payload,
+		BuilderIndex:          envelope.Message.BuilderIndex,
+		BeaconBlockRoot:       envelope.Message.BeaconBlockRoot,
+		ParentBeaconBlockRoot: envelope.Message.ParentBeaconBlockRoot,
+	}
+
+	if requests := envelope.Message.ExecutionRequests; requests != nil {
+		message.ExecutionRequests = &gloas.ExecutionRequests{
+			Deposits:        requests.Deposits,
+			Withdrawals:     requests.Withdrawals,
+			Consolidations:  requests.Consolidations,
+			BuilderDeposits: requests.BuilderDeposits,
+			BuilderExits:    requests.BuilderExits,
+		}
+	}
+
+	return &gloas.SignedExecutionPayloadEnvelope{Message: message}
+}
+
+// gloasBid extracts the execution payload bid and slot from a Gloas or PQ block.
 func gloasBid(block *spec.VersionedSignedBeaconBlock) (*gloas.ExecutionPayloadBid, phase0.Slot, error) {
 	if block.Version < spec.DataVersionGloas {
 		return nil, 0, errors.Errorf("block version %s predates gloas", block.Version)
+	}
+
+	if block.Version == spec.DataVersionPQ {
+		if block.PQ == nil || block.PQ.Message == nil || block.PQ.Message.Body == nil ||
+			block.PQ.Message.Body.SignedExecutionPayloadBid == nil ||
+			block.PQ.Message.Body.SignedExecutionPayloadBid.Message == nil {
+			return nil, 0, errors.New("pq block is missing its execution payload bid")
+		}
+
+		return block.PQ.Message.Body.SignedExecutionPayloadBid.Message, block.PQ.Message.Slot, nil
 	}
 
 	if block.Gloas == nil || block.Gloas.Message == nil || block.Gloas.Message.Body == nil ||

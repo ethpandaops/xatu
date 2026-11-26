@@ -107,10 +107,6 @@ func (b *canonicalBeaconBlockAttesterSlashingBatch) validateIndexedAttestation(
 		return fmt.Errorf("nil %s: %w", label, route.ErrInvalidEvent)
 	}
 
-	if att.GetSignature() == "" {
-		return fmt.Errorf("empty %s_signature: %w", label, route.ErrInvalidEvent)
-	}
-
 	if att.GetData() == nil {
 		return fmt.Errorf("nil %s_data: %w", label, route.ErrInvalidEvent)
 	}

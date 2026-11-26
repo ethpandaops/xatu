@@ -126,3 +126,62 @@ func TestSnapshot_canonical_beacon_block_gloas(t *testing.T) {
 		})
 	}
 }
+
+func TestSnapshot_canonical_beacon_block_pq(t *testing.T) {
+	event := &xatu.DecoratedEvent{
+		Event: &xatu.Event{
+			Name:     xatu.Event_BEACON_API_ETH_V2_BEACON_BLOCK_V2,
+			DateTime: testfixture.TS(),
+			Id:       "cbb-pq",
+		},
+		Meta: testfixture.MetaWithAdditional(&xatu.ClientMeta{
+			AdditionalData: &xatu.ClientMeta_EthV2BeaconBlockV2{
+				EthV2BeaconBlockV2: &xatu.ClientMeta_AdditionalEthV2BeaconBlockV2Data{
+					FinalizedWhenRequested: true,
+					Slot:                   testfixture.SlotEpochAdditional(),
+					Epoch:                  testfixture.EpochAdditional(),
+					Version:                "pq",
+					BlockRoot:              "0xblockroot",
+					PayloadPresent:         wrapperspb.Bool(true),
+				},
+			},
+		}),
+		Data: &xatu.DecoratedEvent_EthV2BeaconBlockV2{
+			EthV2BeaconBlockV2: &ethv2.EventBlockV2{
+				Version: ethv2.BlockVersion_PQ,
+				Message: &ethv2.EventBlockV2_PqBlock{
+					PqBlock: &ethv2.BeaconBlockPq{
+						Slot:          wrapperspb.UInt64(2240),
+						ProposerIndex: wrapperspb.UInt64(3427),
+						ParentRoot:    "0xparentroot",
+						StateRoot:     "0xstateroot",
+						Body: &ethv2.BeaconBlockBodyPq{
+							Eth1Data: &ethv1.Eth1Data{
+								BlockHash:   "0xeth1blockhash",
+								DepositRoot: "0xeth1depositroot",
+							},
+							SignedExecutionPayloadBid: &ethv1.SignedExecutionPayloadBid{
+								Message: &ethv1.ExecutionPayloadBid{
+									BuilderIndex: wrapperspb.UInt64(7),
+									Value:        wrapperspb.UInt64(500),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	testfixture.AssertSnapshot(t, newcanonicalBeaconBlockBatch(), event, 1, map[string]any{
+		"block_version":                "pq",
+		"slot":                         uint32(2240),
+		"proposer_index":               uint32(3427),
+		"parent_root":                  "0xparentroot",
+		"eth1_data_block_hash":         "0xeth1blockhash",
+		"payload_present":              true,
+		"builder_index":                uint64(7),
+		"bid_value":                    uint64(500),
+		"execution_payload_block_hash": nil,
+	})
+}

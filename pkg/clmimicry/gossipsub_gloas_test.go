@@ -82,11 +82,16 @@ func TestGloasGossipHandlers(t *testing.T) {
 		committeeBits := bitfield.NewBitvector64()
 		committeeBits.SetBitAt(5, true)
 
+		aggregationBits := bitfield.NewBitlist(8)
+		for i := uint64(0); i < 8; i++ {
+			aggregationBits.SetBitAt(i, true)
+		}
+
 		agg := &ethtypes.SignedAggregateAttestationAndProofGloas{
 			Message: &ethtypes.AggregateAttestationAndProofGloas{
 				AggregatorIndex: primitives.ValidatorIndex(77),
 				Aggregate: &ethtypes.AttestationGloas{
-					AggregationBits: bitfield.NewBitlist(8),
+					AggregationBits: aggregationBits,
 					Data: &ethtypes.AttestationData{
 						Slot:            primitives.Slot(456),
 						BeaconBlockRoot: make([]byte, 32),
@@ -110,6 +115,7 @@ func TestGloasGossipHandlers(t *testing.T) {
 				assert.Equal(t, uint64(77), data.GetMessage().GetAggregatorIndex().GetValue())
 				assert.Equal(t, uint64(456), data.GetMessage().GetAggregate().GetData().GetSlot().GetValue())
 				assert.Equal(t, uint64(5), data.GetMessage().GetAggregate().GetData().GetIndex().GetValue())
+				assert.Equal(t, "0xff01", data.GetMessage().GetAggregate().GetAggregationBits())
 
 				return nil
 			}).

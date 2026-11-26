@@ -110,11 +110,12 @@ func TestCollectFailureRedactsRPC(t *testing.T) {
 	const password = "s3cret-pass"
 
 	rpc := "https://user:" + password + "@node.example:8545"
-	r := New(logrus.New(), &Config{BinaryPath: bin, OutputDir: filepath.Join(dir, "out"), MaxRangeSize: 1}, rpc)
+	r := New(logrus.New(), &Config{BinaryPath: bin, OutputDir: filepath.Join(dir, "out"), MaxRangeSize: 1, MaxConcurrentRequests: 7}, rpc)
 
 	_, err := r.Collect(context.Background(), "blocks", 1, 2, nil)
 	require.Error(t, err)
 	assert.NotContains(t, err.Error(), password)
 	assert.Contains(t, err.Error(), "rpc url: https://user:xxxxx@node.example:8545")
 	assert.NotContains(t, err.Error(), "--rpc")
+	assert.Contains(t, err.Error(), "--max-concurrent-requests 7")
 }

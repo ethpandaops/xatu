@@ -88,7 +88,7 @@ func (p *Processor) handleAggregateAndProofFromAttestation(
 		Message: &v1.AggregateAttestationAndProofV2{
 			AggregatorIndex: wrapperspb.UInt64(uint64(message.GetAggregatorIndex())),
 			Aggregate: &v1.AttestationV2{
-				AggregationBits: fmt.Sprintf("0x%x", attestation.GetAggregationBits().Bytes()),
+				AggregationBits: fmt.Sprintf("0x%x", []byte(attestation.GetAggregationBits())),
 				Data: &v1.AttestationDataV2{
 					Slot:            wrapperspb.UInt64(uint64(attestationData.GetSlot())),
 					BeaconBlockRoot: fmt.Sprintf("0x%x", attestationData.GetBeaconBlockRoot()),
@@ -166,7 +166,7 @@ func (p *Processor) handleAggregateAndProofFromCommitteeAttestation(
 		Message: &v1.AggregateAttestationAndProofV2{
 			AggregatorIndex: wrapperspb.UInt64(uint64(aggregatorIndex)),
 			Aggregate: &v1.AttestationV2{
-				AggregationBits: fmt.Sprintf("0x%x", attestation.GetAggregationBits().Bytes()),
+				AggregationBits: fmt.Sprintf("0x%x", []byte(attestation.GetAggregationBits())),
 				Data: &v1.AttestationDataV2{
 					Slot:            wrapperspb.UInt64(uint64(attestationData.GetSlot())),
 					BeaconBlockRoot: fmt.Sprintf("0x%x", attestationData.GetBeaconBlockRoot()),

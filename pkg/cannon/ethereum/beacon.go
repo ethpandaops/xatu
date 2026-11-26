@@ -622,12 +622,16 @@ func (b *BeaconNode) recordSlotGap(gap slotGap) {
 	}
 }
 
-// fetchSlotBlock returns the block at slot from the block cache or the beacon node, nil for none.
+// fetchSlotBlock returns the block at slot from the block cache, the block archive or the beacon node, nil for none.
 func (b *BeaconNode) fetchSlotBlock(ctx context.Context, slot uint64) (*spec.VersionedSignedBeaconBlock, error) {
 	id := strconv.FormatUint(slot, 10)
 
 	if item := b.blockCache.Get(id); item != nil && item.Value() != nil {
 		return item.Value(), nil
+	}
+
+	if block, ok := b.blockFromArchive(ctx, id); ok {
+		return block, nil
 	}
 
 	block, err := b.beacon.FetchBlock(ctx, id)

@@ -128,3 +128,19 @@ func TestGetBeaconBlockConfirmsSlotsInALongGap(t *testing.T) {
 	assert.Equal(t, phase0.Slot(100), parentSlot)
 	assert.Same(t, node.blocks["500"], next)
 }
+
+func TestNextCanonicalBlockReadsTheArchive(t *testing.T) {
+	archive := &fakeBlockArchive{slots: blocksOnly(map[phase0.Slot]*spec.VersionedSignedBeaconBlock{
+		100: testVersionedBlock(100),
+		101: nil,
+		102: testVersionedBlock(102),
+	})}
+	b, node := newArchiveTestNode(archive)
+	node.headerSlots = map[string]phase0.Slot{phase0.Root{}.String(): 100}
+
+	next, slot, _, err := b.nextCanonicalBlock(context.Background(), 101)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(102), slot)
+	assert.Same(t, archive.slots[102].Block, next)
+	assert.Empty(t, node.fetched, "the beacon node is not asked for archived blocks")
+}

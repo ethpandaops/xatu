@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
+	"github.com/ethpandaops/go-eth2-client/spec/pq"
 	"github.com/pkg/errors"
 
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
@@ -56,6 +57,15 @@ func getExecutionRequests(
 		requests.Gloas = envelope.Message.ExecutionRequests
 	case spec.DataVersionHeze:
 		requests.Heze = envelope.Message.ExecutionRequests
+	case spec.DataVersionPQ:
+		gloasRequests := envelope.Message.ExecutionRequests
+		requests.PQ = &pq.ExecutionRequests{
+			Deposits:        gloasRequests.Deposits,
+			Withdrawals:     gloasRequests.Withdrawals,
+			Consolidations:  gloasRequests.Consolidations,
+			BuilderDeposits: gloasRequests.BuilderDeposits,
+			BuilderExits:    gloasRequests.BuilderExits,
+		}
 	default:
 		return nil, errors.Errorf("unsupported block version %s for execution requests", block.Version)
 	}

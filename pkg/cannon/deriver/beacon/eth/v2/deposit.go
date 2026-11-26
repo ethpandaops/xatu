@@ -257,14 +257,25 @@ func (b *DepositDeriver) processSlot(ctx context.Context, slot phase0.Slot) ([]*
 func (b *DepositDeriver) getDeposits(ctx context.Context, block *spec.VersionedSignedBeaconBlock) ([]*xatuethv1.DepositV2, error) {
 	deposits := []*xatuethv1.DepositV2{}
 
-	// EIP-8015 removes deposits from Heze block bodies.
-	if block.Version >= spec.DataVersionHeze {
-		return deposits, nil
-	}
+	var dps []*phase0.Deposit
 
-	dps, err := block.Deposits()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to obtain deposits")
+	switch {
+	case block.Version == spec.DataVersionPQ:
+		if block.PQ == nil || block.PQ.Message == nil || block.PQ.Message.Body == nil {
+			return nil, errors.New("pq block has no body")
+		}
+
+		dps = block.PQ.Message.Body.Deposits
+	case block.Version >= spec.DataVersionHeze:
+		// EIP-8015 removes deposits from Heze block bodies.
+		return deposits, nil
+	default:
+		var err error
+
+		dps, err = block.Deposits()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to obtain deposits")
+		}
 	}
 
 	for _, deposit := range dps {

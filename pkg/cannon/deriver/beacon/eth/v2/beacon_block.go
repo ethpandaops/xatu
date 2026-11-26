@@ -424,6 +424,8 @@ func getBlockMessage(block *spec.VersionedSignedBeaconBlock) (ssz.Marshaler, err
 		return block.Fulu.Message, nil
 	case spec.DataVersionGloas:
 		return block.Gloas.Message, nil
+	case spec.DataVersionPQ:
+		return block.PQ.Message, nil
 	default:
 		return nil, fmt.Errorf("unsupported block version: %s", block.Version)
 	}

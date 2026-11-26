@@ -274,7 +274,7 @@ func (b *BlockAccessListDeriver) processSlot(
 	// EIP-7732: Gloas block bodies no longer carry ExecutionPayload inline.
 	// The payload (and its BlockAccessList) arrives in a separate
 	// ExecutionPayloadEnvelope, fetched here by block ID.
-	if block.Gloas == nil || block.Gloas.Message == nil || block.Gloas.Message.Body == nil {
+	if (block.Gloas == nil || block.Gloas.Message == nil || block.Gloas.Message.Body == nil) && block.PQ == nil {
 		return []*xatu.DecoratedEvent{}, nil
 	}
 

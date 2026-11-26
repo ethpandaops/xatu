@@ -271,7 +271,7 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 			return nil, errors.Wrap(err, "failed to obtain attestation data")
 		}
 
-		signature, err := attestation.Signature()
+		signature, err := attestationSignature(attestation)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to obtain attestation signature")
 		}
@@ -287,7 +287,7 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 
 			// Create a single elaborated attestation
 			elaboratedAttestation := &xatuethv1.ElaboratedAttestation{
-				Signature: signature.String(),
+				Signature: signature,
 				Data: &xatuethv1.AttestationDataV2{
 					Slot:            &wrapperspb.UInt64Value{Value: uint64(attestationData.Slot)},
 					Index:           &wrapperspb.UInt64Value{Value: uint64(attestationData.Index)},
@@ -375,7 +375,7 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 
 				// Create an elaborated attestation for this committee
 				elaboratedAttestation := &xatuethv1.ElaboratedAttestation{
-					Signature: signature.String(),
+					Signature: signature,
 					Data: &xatuethv1.AttestationDataV2{
 						Slot: &wrapperspb.UInt64Value{Value: uint64(attestationData.Slot)},
 						//nolint:gosec // This is capped at 64 committees in the spec
@@ -409,6 +409,21 @@ func (b *ElaboratedAttestationDeriver) getElaboratedAttestations(ctx context.Con
 	}
 
 	return events, nil
+}
+
+// attestationSignature returns the attestation's aggregate signature. PQ attestations carry none: the block's
+// attestation proof covers them.
+func attestationSignature(attestation *spec.VersionedAttestation) (string, error) {
+	if attestation.Version == spec.DataVersionPQ {
+		return "", nil
+	}
+
+	signature, err := attestation.Signature()
+	if err != nil {
+		return "", err
+	}
+
+	return signature.String(), nil
 }
 
 // attestationPayloadPresent returns the payload vote the attestation data index carries from Gloas (EIP-7732).

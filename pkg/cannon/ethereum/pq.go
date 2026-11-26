@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	client "github.com/ethpandaops/go-eth2-client"
 	"github.com/ethpandaops/go-eth2-client/api"
@@ -20,6 +21,10 @@ import (
 
 // go-eth2-client can't decode PQ proposer duties or states: it rejects any public key that is not 48 bytes, and its
 // PQ BeaconState JSON rejects Lighthouse's ptc_window. From the PQ fork on, both are read from the beacon API here.
+
+// beaconJSONTimeout bounds a raw beacon API read like the library bounds a validators fetch: an epoch's
+// validators that take longer than an epoch to fetch never catch up.
+const beaconJSONTimeout = 6 * time.Minute
 
 // ProposerDuty is one slot's proposer. PubKey is the hex public key as the beacon node reports it: 48 bytes of BLS
 // key, or 32 bytes of XMSS key on PQ.
@@ -159,6 +164,9 @@ func (b *BeaconNode) isPQ(ctx context.Context, epoch phase0.Epoch) (bool, error)
 
 // getBeaconJSON GETs path from the beacon node and decodes its JSON body into out.
 func (b *BeaconNode) getBeaconJSON(ctx context.Context, path string, out any) error {
+	ctx, cancel := context.WithTimeout(ctx, beaconJSONTimeout)
+	defer cancel()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimSuffix(b.config.Beacon.Address, "/")+path, http.NoBody)
 	if err != nil {
 		return err

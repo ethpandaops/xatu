@@ -58,11 +58,14 @@ func (b *canonicalBeaconBlockAttesterSlashingBatch) FlattenTo(event *xatu.Decora
 func (b *canonicalBeaconBlockAttesterSlashingBatch) validate(event *xatu.DecoratedEvent) error {
 	payload := event.GetEthV2BeaconBlockAttesterSlashing()
 
-	if err := b.validateIndexedAttestation(payload.GetAttestation_1(), "attestation_1"); err != nil {
+	// PQ indexed attestations carry a proof instead of a signature.
+	signed := event.GetMeta().GetClient().GetEthV2BeaconBlockAttesterSlashing().GetBlock().GetVersion() != "pq"
+
+	if err := b.validateIndexedAttestation(payload.GetAttestation_1(), "attestation_1", signed); err != nil {
 		return err
 	}
 
-	if err := b.validateIndexedAttestation(payload.GetAttestation_2(), "attestation_2"); err != nil {
+	if err := b.validateIndexedAttestation(payload.GetAttestation_2(), "attestation_2", signed); err != nil {
 		return err
 	}
 
@@ -102,9 +105,14 @@ func (b *canonicalBeaconBlockAttesterSlashingBatch) validate(event *xatu.Decorat
 func (b *canonicalBeaconBlockAttesterSlashingBatch) validateIndexedAttestation(
 	att *ethv1.IndexedAttestationV2,
 	label string,
+	signed bool,
 ) error {
 	if att == nil {
 		return fmt.Errorf("nil %s: %w", label, route.ErrInvalidEvent)
+	}
+
+	if signed && att.GetSignature() == "" {
+		return fmt.Errorf("empty %s_signature: %w", label, route.ErrInvalidEvent)
 	}
 
 	if att.GetData() == nil {

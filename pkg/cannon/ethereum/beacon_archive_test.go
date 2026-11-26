@@ -40,6 +40,8 @@ type fakeBeaconNode struct {
 	blocks map[string]*spec.VersionedSignedBeaconBlock
 	// headerSlots are the slots of the block headers the node has, by root.
 	headerSlots map[string]phase0.Slot
+	// headerParents are the parent roots of those headers, by root.
+	headerParents map[string]phase0.Root
 }
 
 // fakeEnvelopeService answers envelope requests the way the beacon API does for a revealed payload.
@@ -63,7 +65,7 @@ func (f *fakeEnvelopeService) SignedExecutionPayloadEnvelope(_ context.Context, 
 func (f *fakeEnvelopeService) BeaconBlockHeader(_ context.Context, opts *api.BeaconBlockHeaderOpts) (*api.Response[*apiv1.BeaconBlockHeader], error) {
 	if slot, ok := f.node.headerSlots[opts.Block]; ok {
 		return &api.Response[*apiv1.BeaconBlockHeader]{Data: &apiv1.BeaconBlockHeader{
-			Header: &phase0.SignedBeaconBlockHeader{Message: &phase0.BeaconBlockHeader{Slot: slot}},
+			Header: &phase0.SignedBeaconBlockHeader{Message: &phase0.BeaconBlockHeader{Slot: slot, ParentRoot: f.node.headerParents[opts.Block]}},
 		}}, nil
 	}
 

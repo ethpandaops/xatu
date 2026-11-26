@@ -76,6 +76,10 @@ type BeaconNode struct {
 	stateSem     chan struct{}
 	stateCodecMu sync.Mutex
 	stateCodec   *dynssz.DynSsz
+
+	// slotGaps are runs of empty slots longer than nextCanonicalBlock's lookahead, newest last.
+	slotGapsMu sync.Mutex
+	slotGaps   []slotGap
 }
 
 func NewBeaconNode(ctx context.Context, name string, config *Config, log observability.ContextualLogger) (*BeaconNode, error) {
@@ -465,71 +469,205 @@ func (b *BeaconNode) GetBeaconBlock(ctx context.Context, identifier string, igno
 // still backfilling, or pruned) answers 404 for it and has no such parent, so its 404 is an error the caller retries
 // instead of a missed slot.
 func (b *BeaconNode) confirmMissedSlot(ctx context.Context, slot uint64) error {
+	_, next, parentSlot, err := b.nextCanonicalBlock(ctx, slot)
+	if err != nil {
+		return err
+	}
+
+	if uint64(parentSlot) >= slot {
+		return errors.Errorf("beacon node has no block at slot %d, but the block at slot %d builds on a block at slot %d", slot, next, parentSlot)
+	}
+
+	return nil
+}
+
+// slotGap is a run of empty slots: the canonical block after slot `after` is at slot `next`.
+type slotGap struct {
+	after, next uint64
+}
+
+const maxSlotGaps = 32
+
+// nextCanonicalBlock returns the first canonical block after slot, its slot and its parent's slot. It looks at the
+// following slots one by one, and past two epochs of empty slots, such as a chain stall, it finds any later block
+// up to the node's head and walks its ancestry back to the slot.
+func (b *BeaconNode) nextCanonicalBlock(ctx context.Context, slot uint64) (*spec.VersionedSignedBeaconBlock, uint64, phase0.Slot, error) {
+	if gap, ok := b.knownSlotGap(slot); ok {
+		block, err := b.fetchSlotBlock(ctx, gap.next)
+		if err != nil {
+			return nil, 0, 0, err
+		}
+
+		if block != nil {
+			return block, gap.next, phase0.Slot(gap.after), nil
+		}
+	}
+
 	sp, err := b.beacon.Spec()
 	if err != nil {
-		return errors.Wrap(err, "failed to obtain spec")
+		return nil, 0, 0, errors.Wrap(err, "failed to obtain spec")
 	}
 
 	lookahead := 2 * uint64(sp.SlotsPerEpoch)
 
 	for next := slot + 1; next <= slot+lookahead; next++ {
-		block, err := b.beacon.FetchBlock(ctx, strconv.FormatUint(next, 10))
-		if err != nil {
-			return errors.Wrapf(err, "failed to get block at slot %d to confirm slot %d is empty", next, slot)
+		block, fetchErr := b.fetchSlotBlock(ctx, next)
+		if fetchErr != nil {
+			return nil, 0, 0, errors.Wrapf(fetchErr, "failed to get block at slot %d after slot %d", next, slot)
 		}
 
 		if block == nil {
 			continue
 		}
 
-		b.blockCache.Set(strconv.FormatUint(next, 10), block, time.Hour)
-
 		parentRoot, err := block.ParentRoot()
 		if err != nil {
-			return errors.Wrapf(err, "failed to get the parent root of the block at slot %d", next)
+			return nil, 0, 0, errors.Wrapf(err, "failed to get the parent root of the block at slot %d", next)
 		}
 
-		parentSlot, ok, err := b.blockHeaderSlot(ctx, parentRoot.String())
+		parent, ok, err := b.blockHeader(ctx, parentRoot.String())
 		if err != nil {
-			return err
+			return nil, 0, 0, err
 		}
 
 		if !ok {
-			return errors.Errorf("beacon node has no block at slot %d nor the parent of the block at slot %d: its block history does not reach slot %d", slot, next, slot)
+			return nil, 0, 0, errors.Errorf("beacon node has no block at slot %d nor the parent of the block at slot %d: its block history does not reach slot %d", slot, next, slot)
 		}
 
-		if uint64(parentSlot) >= slot {
-			return errors.Errorf("beacon node has no block at slot %d, but the block at slot %d builds on a block at slot %d", slot, next, parentSlot)
-		}
-
-		return nil
+		return block, next, parent.Slot, nil
 	}
 
-	return errors.Errorf("beacon node has no block at slot %d nor in the %d slots after it to confirm the slot is empty", slot, lookahead)
+	head, ok, err := b.blockHeader(ctx, "head")
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	if !ok {
+		return nil, 0, 0, errors.New("beacon node has no head block")
+	}
+
+	for probe := slot + 2*lookahead; probe <= uint64(head.Slot)+lookahead; probe += lookahead {
+		block, err := b.fetchSlotBlock(ctx, min(probe, uint64(head.Slot)))
+		if err != nil {
+			return nil, 0, 0, errors.Wrapf(err, "failed to get block at slot %d after slot %d", probe, slot)
+		}
+
+		if block == nil {
+			continue
+		}
+
+		childSlot, err := block.Slot()
+		if err != nil {
+			return nil, 0, 0, errors.Wrap(err, "failed to get block slot")
+		}
+
+		parentRoot, err := block.ParentRoot()
+		if err != nil {
+			return nil, 0, 0, errors.Wrapf(err, "failed to get the parent root of the block at slot %d", childSlot)
+		}
+
+		for {
+			parent, ok, err := b.blockHeader(ctx, parentRoot.String())
+			if err != nil {
+				return nil, 0, 0, err
+			}
+
+			if !ok {
+				return nil, 0, 0, errors.Errorf("beacon node has no block at slot %d nor the parent of the block at slot %d: its block history does not reach slot %d", slot, childSlot, slot)
+			}
+
+			if uint64(parent.Slot) <= slot {
+				b.recordSlotGap(slotGap{after: uint64(parent.Slot), next: uint64(childSlot)})
+
+				first, err := b.fetchSlotBlock(ctx, uint64(childSlot))
+				if err != nil {
+					return nil, 0, 0, err
+				}
+
+				if first == nil {
+					return nil, 0, 0, errors.Errorf("beacon node has no block at slot %d, the child of the block at slot %d", childSlot, parent.Slot)
+				}
+
+				return first, uint64(childSlot), parent.Slot, nil
+			}
+
+			childSlot, parentRoot = parent.Slot, parent.ParentRoot
+		}
+	}
+
+	return nil, 0, 0, errors.Errorf("beacon node has no block after slot %d up to its head at slot %d", slot, head.Slot)
 }
 
-// blockHeaderSlot is the slot of the block with the given root; ok is false when the node does not have it.
-func (b *BeaconNode) blockHeaderSlot(ctx context.Context, root string) (phase0.Slot, bool, error) {
-	provider, ok := b.beacon.Service().(client.BeaconBlockHeadersProvider)
-	if !ok {
-		return 0, false, errors.New("beacon block headers provider not available")
+// knownSlotGap returns the recorded gap that slot is the start of or inside.
+func (b *BeaconNode) knownSlotGap(slot uint64) (slotGap, bool) {
+	b.slotGapsMu.Lock()
+	defer b.slotGapsMu.Unlock()
+
+	for _, gap := range b.slotGaps {
+		if gap.after <= slot && slot < gap.next {
+			return gap, true
+		}
 	}
 
-	resp, err := provider.BeaconBlockHeader(ctx, &api.BeaconBlockHeaderOpts{Block: root})
+	return slotGap{}, false
+}
+
+func (b *BeaconNode) recordSlotGap(gap slotGap) {
+	b.slotGapsMu.Lock()
+	defer b.slotGapsMu.Unlock()
+
+	b.slotGaps = append(b.slotGaps, gap)
+	if len(b.slotGaps) > maxSlotGaps {
+		b.slotGaps = b.slotGaps[1:]
+	}
+}
+
+// fetchSlotBlock returns the block at slot from the block cache, the block archive or the beacon node, nil for none.
+func (b *BeaconNode) fetchSlotBlock(ctx context.Context, slot uint64) (*spec.VersionedSignedBeaconBlock, error) {
+	id := strconv.FormatUint(slot, 10)
+
+	if item := b.blockCache.Get(id); item != nil && item.Value() != nil {
+		return item.Value(), nil
+	}
+
+	if block, ok := b.blockFromArchive(ctx, id); ok {
+		return block, nil
+	}
+
+	block, err := b.beacon.FetchBlock(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if block != nil {
+		b.blockCache.Set(id, block, time.Hour)
+	}
+
+	return block, nil
+}
+
+// blockHeader is the header of the block with the given id; ok is false when the node does not have it.
+func (b *BeaconNode) blockHeader(ctx context.Context, id string) (*phase0.BeaconBlockHeader, bool, error) {
+	provider, ok := b.beacon.Service().(client.BeaconBlockHeadersProvider)
+	if !ok {
+		return nil, false, errors.New("beacon block headers provider not available")
+	}
+
+	resp, err := provider.BeaconBlockHeader(ctx, &api.BeaconBlockHeaderOpts{Block: id})
 	if err != nil {
 		var apiErr *api.Error
 		if errors.As(err, &apiErr) && apiErr.StatusCode == 404 {
-			return 0, false, nil
+			return nil, false, nil
 		}
 
-		return 0, false, errors.Wrapf(err, "failed to fetch block header %s", root)
+		return nil, false, errors.Wrapf(err, "failed to fetch block header %s", id)
 	}
 
 	if resp == nil || resp.Data == nil || resp.Data.Header == nil || resp.Data.Header.Message == nil {
-		return 0, false, errors.Errorf("empty block header response for %s", root)
+		return nil, false, errors.Errorf("empty block header response for %s", id)
 	}
 
-	return resp.Data.Header.Message.Slot, true, nil
+	return resp.Data.Header.Message, true, nil
 }
 
 // blockFromArchive serves a slot identifier from the block archive; ok is false when the beacon node must answer.
@@ -841,33 +979,17 @@ func (b *BeaconNode) payloadWithheld(ctx context.Context, blockID string) (bool,
 		return false, err
 	}
 
-	sp, err := b.beacon.Spec()
+	next, _, _, err := b.nextCanonicalBlock(ctx, uint64(slot))
 	if err != nil {
-		return false, errors.Wrap(err, "failed to obtain spec")
+		return false, errors.Wrapf(err, "failed to get the canonical block after slot %d", slot)
 	}
 
-	lookahead := 2 * uint64(sp.SlotsPerEpoch)
-
-	for i := uint64(1); i <= lookahead; i++ {
-		next, err := b.GetBeaconBlock(ctx, fmt.Sprintf("%d", uint64(slot)+i))
-		if err != nil {
-			return false, errors.Wrapf(err, "failed to get block at slot %d", uint64(slot)+i)
-		}
-
-		if next == nil {
-			// Empty slot, keep walking forward.
-			continue
-		}
-
-		nextBid, _, err := gloasBid(next)
-		if err != nil {
-			return false, err
-		}
-
-		return bidPayloadWithheld(bid, nextBid)
+	nextBid, _, err := gloasBid(next)
+	if err != nil {
+		return false, err
 	}
 
-	return false, errors.Errorf("no canonical block within %d slots after slot %d", lookahead, slot)
+	return bidPayloadWithheld(bid, nextBid)
 }
 
 // gloasEnvelopeFromPQ carries a PQ envelope's payload and the execution requests Gloas also has. The

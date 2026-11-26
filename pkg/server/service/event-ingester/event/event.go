@@ -166,6 +166,9 @@ var (
 	TypeLibP2PTraceGossipSubPayloadAttestationMessage Type = Type(libp2p.TraceGossipSubPayloadAttestationMessageType)
 	TypeLibP2PTraceGossipSubProposerPreferences       Type = Type(libp2p.TraceGossipSubProposerPreferencesType)
 
+	// EIP-7805 FOCIL: P2P gossip events
+	TypeLibP2PTraceGossipSubInclusionList Type = Type(libp2p.TraceGossipSubInclusionListType)
+
 	// EIP-7732 ePBS: synthesized observability events from beacon-node internals
 	// (TYSM-instrumented). No beacon API equivalent today.
 	TypeBeaconSyntheticPayloadStatusResolved           Type = synthetic.PayloadStatusResolvedType
@@ -435,6 +438,9 @@ func NewEventRouter(log observability.ContextualLogger, cache store.Cache, geoip
 	})
 	router.RegisterHandler(TypeLibP2PTraceGossipSubProposerPreferences, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
 		return libp2p.NewTraceGossipSubProposerPreferences(router.log, event), nil
+	})
+	router.RegisterHandler(TypeLibP2PTraceGossipSubInclusionList, func(event *xatu.DecoratedEvent, router *EventRouter) (Event, error) {
+		return libp2p.NewTraceGossipSubInclusionList(router.log, event), nil
 	})
 
 	// EIP-7732 ePBS: synthesized observability events (TYSM-instrumented)

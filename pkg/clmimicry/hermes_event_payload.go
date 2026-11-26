@@ -61,6 +61,16 @@ type TraceEventGloasBlock struct {
 	Block *ethtypes.SignedBeaconBlockGloas
 }
 
+// TraceEventHezeBlock represents a Heze beacon block event. It carries the
+// block's root, slot and proposer instead of the block, because the Prysm
+// version xatu builds against has no Heze block type.
+type TraceEventHezeBlock struct {
+	TraceEventPayloadMetaData
+	Root          [32]byte
+	Slot          uint64
+	ProposerIndex uint64
+}
+
 // TraceEventAttestation represents an attestation event.
 type TraceEventAttestation struct {
 	TraceEventPayloadMetaData
@@ -173,6 +183,17 @@ type TraceEventPayloadAttestationMessage struct {
 type TraceEventProposerPreferences struct {
 	TraceEventPayloadMetaData
 	ProposerPreferences *ethtypes.SignedProposerPreferences
+}
+
+// TraceEventInclusionList represents an inclusion_list gossip event (EIP-7805).
+// It carries plain fields because the Prysm version xatu builds against has no
+// inclusion list type.
+type TraceEventInclusionList struct {
+	TraceEventPayloadMetaData
+	Slot           uint64
+	ValidatorIndex uint64
+	DependentRoot  []byte
+	Transactions   [][]byte
 }
 
 // TraceEventMessagePayload represents a raw gossipsub message payload event.

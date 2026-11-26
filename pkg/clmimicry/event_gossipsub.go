@@ -24,6 +24,7 @@ const (
 	gossipExecutionPayloadBidMessage = "execution_payload_bid"
 	gossipPayloadAttestationMessage  = "payload_attestation_message"
 	gossipProposerPreferencesMessage = "proposer_preferences"
+	gossipInclusionListMessage       = "inclusion_list"
 )
 
 // Define a slice of all gossipsub event types.
@@ -46,6 +47,7 @@ var gossipsubTopicToXatuEventMap = map[string]string{
 	gossipExecutionPayloadBidMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID.String(),
 	gossipPayloadAttestationMessage:  xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE.String(),
 	gossipProposerPreferencesMessage: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES.String(),
+	gossipInclusionListMessage:       xatu.Event_LIBP2P_TRACE_GOSSIPSUB_INCLUSION_LIST.String(),
 }
 
 // handleHermesGossipSubEvent handles GossipSub protocol events.
@@ -267,6 +269,27 @@ func (p *Processor) handleHermesGossipSubEvent(
 
 		if err := p.handleGossipProposerPreferences(ctx, clientMeta, event, payload); err != nil {
 			return errors.Wrap(err, "failed to handle gossipsub proposer preferences")
+		}
+
+	case xatu.Event_LIBP2P_TRACE_GOSSIPSUB_INCLUSION_LIST.String():
+		if !p.events.GossipSubInclusionListEnabled {
+			return nil
+		}
+
+		networkStr := getNetworkID(clientMeta)
+		p.metrics.AddEvent(xatuEvent, networkStr)
+
+		if !p.ShouldTraceMessage(event, clientMeta, xatuEvent) {
+			return nil
+		}
+
+		payload, ok := event.Payload.(*TraceEventInclusionList)
+		if !ok {
+			return errors.New("invalid payload type for HandleMessage event")
+		}
+
+		if err := p.handleGossipInclusionList(ctx, clientMeta, event, payload); err != nil {
+			return errors.Wrap(err, "failed to handle gossipsub inclusion list")
 		}
 
 	default:

@@ -73,6 +73,16 @@ func NewGloasBlockPayload(block *ethtypes.SignedBeaconBlockGloas, meta *TraceEve
 	}
 }
 
+// NewHezeBlockPayload creates a Heze block payload from the block's root, slot and proposer.
+func NewHezeBlockPayload(root [32]byte, slot, proposerIndex uint64, meta *TraceEventPayloadMetaData) *TraceEventHezeBlock {
+	return &TraceEventHezeBlock{
+		TraceEventPayloadMetaData: *meta,
+		Root:                      root,
+		Slot:                      slot,
+		ProposerIndex:             proposerIndex,
+	}
+}
+
 // Attestation payload builders
 
 // NewAttestationPayload creates a pre-Electra attestation payload.
@@ -182,6 +192,22 @@ func NewProposerPreferencesPayload(prefs *ethtypes.SignedProposerPreferences, me
 	return &TraceEventProposerPreferences{
 		TraceEventPayloadMetaData: *meta,
 		ProposerPreferences:       prefs,
+	}
+}
+
+// NewInclusionListPayload creates an inclusion_list gossip payload (EIP-7805).
+func NewInclusionListPayload(
+	slot, validatorIndex uint64,
+	dependentRoot []byte,
+	transactions [][]byte,
+	meta *TraceEventPayloadMetaData,
+) *TraceEventInclusionList {
+	return &TraceEventInclusionList{
+		TraceEventPayloadMetaData: *meta,
+		Slot:                      slot,
+		ValidatorIndex:            validatorIndex,
+		DependentRoot:             dependentRoot,
+		Transactions:              transactions,
 	}
 }
 

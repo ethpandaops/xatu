@@ -43,9 +43,10 @@ func TestGetBeaconBlockConfirmsMissedSlots(t *testing.T) {
 			wantErr:     "builds on a block at slot 101",
 		},
 		{
-			name:    "no block after the slot",
-			blocks:  map[string]*spec.VersionedSignedBeaconBlock{},
-			wantErr: "nor in the 16 slots after it",
+			name:        "no block after the slot",
+			blocks:      map[string]*spec.VersionedSignedBeaconBlock{},
+			headerSlots: map[string]phase0.Slot{"head": 101},
+			wantErr:     "no block after slot 101 up to its head at slot 101",
 		},
 	}
 
@@ -92,4 +93,38 @@ func TestGetBeaconBlockLeavesRootNotFoundUnchecked(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, block)
 	assert.Len(t, node.fetched, 1)
+}
+
+// A chain stall leaves more empty slots after a block than the lookahead scans; the slot is confirmed from a later
+// block's ancestry.
+func TestGetBeaconBlockConfirmsSlotsInALongGap(t *testing.T) {
+	beforeGap, firstAfter, later := phase0.Root{0x01}, phase0.Root{0x02}, phase0.Root{0x03}
+
+	block := func(slot phase0.Slot, parent phase0.Root) *spec.VersionedSignedBeaconBlock {
+		return &spec.VersionedSignedBeaconBlock{
+			Version: spec.DataVersionPhase0,
+			Phase0:  &phase0.SignedBeaconBlock{Message: &phase0.BeaconBlock{Slot: slot, ParentRoot: parent}},
+		}
+	}
+
+	b, node := newArchiveTestNode(nil)
+	// Slots 101-499 are empty: 500 builds on 100, and 520 on 500.
+	node.blocks = map[string]*spec.VersionedSignedBeaconBlock{
+		"500": block(500, beforeGap),
+		"520": block(520, firstAfter),
+	}
+	node.headerSlots = map[string]phase0.Slot{beforeGap.String(): 100, firstAfter.String(): 500, later.String(): 520, "head": 520}
+	node.headerParents = map[string]phase0.Root{firstAfter.String(): beforeGap, later.String(): firstAfter}
+
+	for _, slot := range []string{"101", "300", "499"} {
+		missed, err := b.GetBeaconBlock(context.Background(), slot)
+		require.NoError(t, err, "slot %s", slot)
+		assert.Nil(t, missed)
+	}
+
+	next, slot, parentSlot, err := b.nextCanonicalBlock(context.Background(), 100)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(500), slot)
+	assert.Equal(t, phase0.Slot(100), parentSlot)
+	assert.Same(t, node.blocks["500"], next)
 }

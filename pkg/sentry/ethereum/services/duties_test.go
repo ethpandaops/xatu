@@ -11,6 +11,7 @@ import (
 
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/ethwallclock"
+	"github.com/ethpandaops/go-eth2-client/api"
 	v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/sirupsen/logrus"
@@ -18,15 +19,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// fakeDutiesNode serves committees.
+// fakeDutiesNode serves committees, or fails them with committeeErr.
 type fakeDutiesNode struct {
 	beacon.Node
 
+	committeeErr   error
 	committeeCalls atomic.Int32
 }
 
 func (f *fakeDutiesNode) FetchBeaconCommittees(_ context.Context, _ string, _ *phase0.Epoch) ([]*v1.BeaconCommittee, error) {
 	f.committeeCalls.Add(1)
+
+	if f.committeeErr != nil {
+		return nil, f.committeeErr
+	}
 
 	return []*v1.BeaconCommittee{{}}, nil
 }
@@ -122,4 +128,51 @@ func TestFetchProposerDutiesKeepsReportedKeys(t *testing.T) {
 		{Slot: 229, ValidatorIndex: 7, PubKey: strings.ToLower(xmssKey)},
 		{Slot: 230, ValidatorIndex: 9001, PubKey: blsKey},
 	}, duties)
+}
+
+func TestDutiesServiceReadyWithoutCommitteesEndpoint(t *testing.T) {
+	tests := []struct {
+		name      string
+		err       error
+		wantReady bool
+	}{
+		{name: "committees endpoint missing", err: &api.Error{Method: "GET", StatusCode: http.StatusNotFound}, wantReady: true},
+		{name: "committees endpoint failing", err: &api.Error{Method: "GET", StatusCode: http.StatusServiceUnavailable}, wantReady: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			node := &fakeDutiesNode{committeeErr: tt.err}
+			metadata := &MetadataService{
+				wallclock: ethwallclock.NewEthereumBeaconChain(time.Now().Add(-time.Hour), 12*time.Second, 32),
+			}
+
+			log := logrus.New()
+			log.SetLevel(logrus.PanicLevel)
+
+			duties := NewDutiesService(log, node, "http://127.0.0.1:1", nil, metadata, false, true)
+
+			ready := make(chan struct{})
+
+			duties.OnReady(ctx, func(context.Context) error {
+				close(ready)
+
+				return nil
+			})
+
+			require.NoError(t, duties.Start(ctx))
+
+			select {
+			case <-ready:
+				require.True(t, tt.wantReady, "became ready while committees were failing")
+				require.NoError(t, duties.Ready(ctx))
+			case <-time.After(2 * time.Second):
+				require.False(t, tt.wantReady, "did not become ready without a committees endpoint")
+				require.Error(t, duties.Ready(ctx))
+			}
+		})
+	}
 }

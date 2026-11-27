@@ -2,13 +2,17 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v5"
 	"github.com/ethpandaops/beacon/pkg/beacon"
 	"github.com/ethpandaops/ethwallclock"
+	"github.com/ethpandaops/go-eth2-client/api"
 	v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/jellydator/ttlcache/v3"
@@ -36,6 +40,10 @@ type DutiesService struct {
 
 	proposerDutiesEnabled   bool
 	beaconCommitteesEnabled bool
+
+	// committeesUnsupported is set while the beacon node answers committee requests with 404, as nodes without
+	// the committees endpoint do; the service is then ready without committees.
+	committeesUnsupported atomic.Bool
 
 	bootstrapped bool
 
@@ -97,7 +105,7 @@ func (m *DutiesService) Start(ctx context.Context) error {
 
 	go func() {
 		operation := func() (string, error) {
-			if err := m.fetchRequiredEpochDuties(ctx, false); err != nil {
+			if err := m.fetchRequiredEpochDuties(ctx, false); err != nil && !m.committeesUnsupported.Load() {
 				return "", err
 			}
 
@@ -300,7 +308,7 @@ func (m *DutiesService) NiceToHaveEpochDuties(ctx context.Context) []phase0.Epoc
 }
 
 func (m *DutiesService) Ready(ctx context.Context) error {
-	if !m.beaconCommitteesEnabled {
+	if !m.beaconCommitteesEnabled || m.committeesUnsupported.Load() {
 		return nil
 	}
 
@@ -393,10 +401,21 @@ func (m *DutiesService) fetchBeaconCommittee(ctx context.Context, epoch phase0.E
 
 	committees, err := m.beacon.FetchBeaconCommittees(ctx, "head", &epoch)
 	if err != nil {
+		var apiErr *api.Error
+		if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusNotFound {
+			if !m.committeesUnsupported.Swap(true) {
+				m.log.WithError(err).WithContext(ctx).Warn("Beacon node does not serve beacon committees, continuing without them")
+			}
+
+			return err
+		}
+
 		m.log.WithError(err).WithContext(ctx).Error("Failed to fetch beacon committees")
 
 		return err
 	}
+
+	m.committeesUnsupported.Store(false)
 
 	m.beaconCommittees.Set(epoch, committees, time.Minute*60)
 

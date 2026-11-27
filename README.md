@@ -65,6 +65,23 @@ Download the latest release from the [Releases page](https://github.com/ethpanda
 ./xatu <server|sentry|discovery|mimicry> --config your-config.yaml
 ```
 
+### Environment variables in config files
+
+The `server`, `mimicry`, `discovery` and `relay-monitor` config files can read values from environment variables, so credentials don't need to be written into the file:
+
+```yaml
+persistence:
+  connectionString: "postgres://xatu:${XATU_DB_PASSWORD}@postgres:5432/xatu"
+addr: "${XATU_ADDR:-:8080}"
+```
+
+- `${VAR}` is replaced with the value of `VAR`. If `VAR` is unset or empty, xatu exits at startup with an error naming it.
+- `${VAR:-default}` is replaced with the value of `VAR`, or with `default` when `VAR` is unset or empty.
+- A bare `$VAR`, `$$` and an unclosed `${` are left as written.
+- Only values are expanded, after the YAML is parsed, so a variable's value is used exactly as set, whatever characters it contains. Keys and comments are not expanded.
+- An unquoted placeholder takes the type of its value, so `port: ${PORT}` can set a number. A quoted placeholder, or a value such as `null` that would otherwise decode as empty, is always a string.
+- `${EVENT_NAME}` and `${event-name}` are not expanded, because the kafka output's `topicPattern` uses them.
+
 ### Install via bash script
 
 View the install script [here](./install.sh). You can run the following to install:

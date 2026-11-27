@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	eth2v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum/services"
 	v1 "github.com/ethpandaops/xatu/pkg/sentry/event/beacon/eth/v1"
 )
 
@@ -16,7 +16,7 @@ func (s *Sentry) startProposerDutyWatcher(ctx context.Context) error {
 	}
 
 	// Subscribe to future proposer duty events.
-	s.beacon.Duties().OnProposerDuties(func(epoch phase0.Epoch, duties []*eth2v1.ProposerDuty) error {
+	s.beacon.Duties().OnProposerDuties(func(epoch phase0.Epoch, duties []*services.ProposerDuty) error {
 		if err := s.createNewProposerDutyEvent(ctx, epoch, duties); err != nil {
 			s.log.WithError(err).WithContext(ctx).Error("Failed to create new proposer duties event")
 		}
@@ -50,7 +50,7 @@ func (s *Sentry) startProposerDutyWatcher(ctx context.Context) error {
 	return nil
 }
 
-func (s *Sentry) createNewProposerDutyEvent(ctx context.Context, epoch phase0.Epoch, duties []*eth2v1.ProposerDuty) error {
+func (s *Sentry) createNewProposerDutyEvent(ctx context.Context, epoch phase0.Epoch, duties []*services.ProposerDuty) error {
 	now := time.Now()
 
 	// Create an event for every duty.

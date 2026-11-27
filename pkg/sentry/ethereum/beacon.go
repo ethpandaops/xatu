@@ -48,7 +48,7 @@ func NewBeaconNode(ctx context.Context, name string, config *Config, log observa
 	}, "xatu_sentry", opts)
 
 	metadata := services.NewMetadataService(log, node, config.OverrideNetworkName)
-	duties := services.NewDutiesService(log, node, &metadata, opt.FetchProposerDuties, opt.FetchBeaconCommittees)
+	duties := services.NewDutiesService(log, node, config.BeaconNodeAddress, config.BeaconNodeHeaders, &metadata, opt.FetchProposerDuties, opt.FetchBeaconCommittees)
 
 	svcs := []services.Service{
 		&metadata,

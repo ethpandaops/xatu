@@ -18,15 +18,16 @@ import (
 )
 
 type DutiesService struct {
-	beacon beacon.Node
-	log    observability.ContextualLogger
+	beacon    beacon.Node
+	beaconAPI beaconAPI
+	log       observability.ContextualLogger
 
 	beaconCommittees *ttlcache.Cache[phase0.Epoch, []*v1.BeaconCommittee]
 
-	proposerDuties *ttlcache.Cache[phase0.Epoch, []*v1.ProposerDuty]
+	proposerDuties *ttlcache.Cache[phase0.Epoch, []*ProposerDuty]
 
 	onBeaconCommitteeSubscriptions []func(phase0.Epoch, []*v1.BeaconCommittee) error
-	onProposerDutiesSubscriptions  []func(phase0.Epoch, []*v1.ProposerDuty) error
+	onProposerDutiesSubscriptions  []func(phase0.Epoch, []*ProposerDuty) error
 
 	committeeMu sync.Mutex
 	proposerMu  sync.Mutex
@@ -43,21 +44,22 @@ type DutiesService struct {
 	lastSyncState bool
 }
 
-func NewDutiesService(log observability.ContextualLogger, sbeacon beacon.Node, metadata *MetadataService, proposerDutiesEnabled, beaconCommitteesEnabled bool) DutiesService {
+func NewDutiesService(log observability.ContextualLogger, sbeacon beacon.Node, beaconAddress string, beaconHeaders map[string]string, metadata *MetadataService, proposerDutiesEnabled, beaconCommitteesEnabled bool) DutiesService {
 	return DutiesService{
-		beacon: sbeacon,
-		log:    log.WithField("module", "sentry/ethereum/duties"),
+		beacon:    sbeacon,
+		beaconAPI: beaconAPI{address: beaconAddress, headers: beaconHeaders},
+		log:       log.WithField("module", "sentry/ethereum/duties"),
 		beaconCommittees: ttlcache.New(
 			ttlcache.WithTTL[phase0.Epoch, []*v1.BeaconCommittee](60 * time.Minute),
 		),
 		proposerDuties: ttlcache.New(
-			ttlcache.WithTTL[phase0.Epoch, []*v1.ProposerDuty](60 * time.Minute),
+			ttlcache.WithTTL[phase0.Epoch, []*ProposerDuty](60 * time.Minute),
 		),
 		committeeMu: sync.Mutex{},
 		proposerMu:  sync.Mutex{},
 
 		onBeaconCommitteeSubscriptions: []func(phase0.Epoch, []*v1.BeaconCommittee) error{},
-		onProposerDutiesSubscriptions:  []func(phase0.Epoch, []*v1.ProposerDuty) error{},
+		onProposerDutiesSubscriptions:  []func(phase0.Epoch, []*ProposerDuty) error{},
 		onReadyCallbacks:               []func(context.Context) error{},
 
 		metadata: metadata,
@@ -241,7 +243,7 @@ func (m *DutiesService) OnBeaconCommittee(fn func(phase0.Epoch, []*v1.BeaconComm
 	m.onBeaconCommitteeSubscriptions = append(m.onBeaconCommitteeSubscriptions, fn)
 }
 
-func (m *DutiesService) OnProposerDuties(fn func(phase0.Epoch, []*v1.ProposerDuty) error) {
+func (m *DutiesService) OnProposerDuties(fn func(phase0.Epoch, []*ProposerDuty) error) {
 	m.onProposerDutiesSubscriptions = append(m.onProposerDutiesSubscriptions, fn)
 }
 
@@ -359,7 +361,7 @@ func (m *DutiesService) fireOnBeaconCommitteeSubscriptions(epoch phase0.Epoch, c
 	}
 }
 
-func (m *DutiesService) fireOnProposerDutiesSubscriptions(epoch phase0.Epoch, duties []*v1.ProposerDuty) {
+func (m *DutiesService) fireOnProposerDutiesSubscriptions(epoch phase0.Epoch, duties []*ProposerDuty) {
 	for _, fn := range m.onProposerDutiesSubscriptions {
 		if err := fn(epoch, duties); err != nil {
 			m.log.WithError(err).Error("Failed to fire on proposer duties subscription")
@@ -431,7 +433,7 @@ func (m *DutiesService) fetchProposerDuties(ctx context.Context, epoch phase0.Ep
 		WithField("wallclock_epoch", wallclockEpoch.Number()).WithContext(ctx).
 		Debug("Fetching proposer duties")
 
-	duties, err := m.beacon.FetchProposerDuties(ctx, epoch)
+	duties, err := m.beaconAPI.fetchProposerDuties(ctx, epoch)
 	if err != nil {
 		m.log.WithError(err).WithContext(ctx).Error("Failed to fetch proposer duties")
 
@@ -454,7 +456,7 @@ func (m *DutiesService) GetAttestationDuties(epoch phase0.Epoch) ([]*v1.BeaconCo
 	return duties.Value(), nil
 }
 
-func (m *DutiesService) GetProposerDuties(epoch phase0.Epoch) ([]*v1.ProposerDuty, error) {
+func (m *DutiesService) GetProposerDuties(epoch phase0.Epoch) ([]*ProposerDuty, error) {
 	duties := m.proposerDuties.Get(epoch)
 	if duties == nil {
 		return nil, fmt.Errorf("duties for epoch %d are not known", epoch)

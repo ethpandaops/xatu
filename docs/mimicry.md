@@ -34,7 +34,7 @@ Flags:
 
 ## Configuration
 
-Mimicry requires a single `yaml` config file. An example file can be found [here](../example_mimicry.yaml)
+Mimicry requires a single `yaml` config file. An example file can be found [here](../example_mimicry.yaml). Values can be read from environment variables with `${VAR}`, see [Environment variables in config files](../README.md#environment-variables-in-config-files).
 
 | Name| Type | Default | Description                                                                                                                        |
 | --- | --- | --- |------------------------------------------------------------------------------------------------------------------------------------|

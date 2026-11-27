@@ -28,10 +28,11 @@ import (
 )
 
 type recordedCreateEventsCall struct {
-	traceparent string
-	eventCount  int
-	eventIDs    []string
-	eventNames  []pb.Event_Name
+	traceparent   string
+	authorization []string
+	eventCount    int
+	eventIDs      []string
+	eventNames    []pb.Event_Name
 }
 
 type recordingIngester struct {
@@ -60,10 +61,11 @@ func (r *recordingIngester) CreateEvents(ctx context.Context, req *pb.CreateEven
 	}
 
 	call := recordedCreateEventsCall{
-		traceparent: traceparent,
-		eventCount:  len(events),
-		eventIDs:    eventIDs,
-		eventNames:  eventNames,
+		traceparent:   traceparent,
+		authorization: md.Get("authorization"),
+		eventCount:    len(events),
+		eventIDs:      eventIDs,
+		eventNames:    eventNames,
 	}
 
 	r.mu.Lock()
@@ -293,6 +295,51 @@ func TestXatuSinkProcessorAttemptsSparseGroupsAfterEarlierGroupFailure(t *testin
 	assert.Equal(t, []string{"block-1"}, calls[2].eventIDs)
 	assert.Equal(t, headSpan.SpanContext().TraceID(), spanContextFromTraceparent(calls[1].traceparent).TraceID())
 	assert.Equal(t, blockSpan.SpanContext().TraceID(), spanContextFromTraceparent(calls[2].traceparent).TraceID())
+}
+
+func TestXatuSinkSetAuthorizationReplacesConfiguredHeader(t *testing.T) {
+	tests := map[string]map[string]string{
+		"no headers":                     nil,
+		"empty headers":                  {},
+		"lowercase authorization header": {"authorization": "Basic old", "x-extra": "kept"},
+		"canonical authorization header": {"Authorization": "Basic old", "x-extra": "kept"},
+	}
+
+	for name, headers := range tests {
+		t.Run(name, func(t *testing.T) {
+			addr, ingester := startRecordingIngester(t)
+
+			sink, err := New("test", &Config{
+				Address:            addr,
+				Headers:            headers,
+				MaxQueueSize:       10,
+				BatchTimeout:       time.Hour,
+				ExportTimeout:      5 * time.Second,
+				MaxExportBatchSize: 1,
+				Workers:            1,
+			}, logrus.New(), &pb.EventFilterConfig{}, processor.ShippingMethodSync)
+			require.NoError(t, err)
+
+			sink.SetAuthorization("Basic new")
+
+			require.NoError(t, sink.Start(context.Background()))
+
+			defer func() {
+				require.NoError(t, sink.Stop(context.Background()))
+			}()
+
+			for i := range 20 {
+				require.NoError(t, sink.HandleNewDecoratedEvent(context.Background(), newTestEvent(pb.Event_BEACON_API_ETH_V1_EVENTS_BLOCK, fmt.Sprintf("id-%d", i))))
+			}
+
+			calls := ingester.snapshotCalls()
+			require.Len(t, calls, 20)
+
+			for _, call := range calls {
+				assert.Equal(t, []string{"Basic new"}, call.authorization)
+			}
+		})
+	}
 }
 
 func startRecordingIngester(t *testing.T) (string, *recordingIngester) {

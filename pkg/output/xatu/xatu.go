@@ -3,6 +3,7 @@ package xatu
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/processor"
@@ -39,7 +40,7 @@ func New(name string, config *Config, log observability.ContextualLogger, filter
 		return nil, err
 	}
 
-	proc, err := processor.NewBatchItemProcessor[xatu.DecoratedEvent](exporter,
+	proc, err := processor.NewBatchItemProcessor[xatu.DecoratedEvent](&exporter,
 		xatu.ImplementationLower()+"_output_"+SinkType+"_"+name,
 		log,
 		processor.WithMaxQueueSize(config.MaxQueueSize),
@@ -111,14 +112,16 @@ func (h *Xatu) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.Deco
 	return h.proc.Write(ctx, filtered)
 }
 
+// SetAuthorization replaces any configured authorization header, whatever its case, with val.
+// It must be called before Start.
 func (h *Xatu) SetAuthorization(val string) {
-	if h.exporter.headers == nil {
-		h.exporter.headers = make(map[string]string)
+	headers := map[string]string{"authorization": val}
+
+	for key, value := range h.exporter.headers {
+		if !strings.EqualFold(key, "authorization") {
+			headers[key] = value
+		}
 	}
 
-	if h.exporter.headers["Authorization"] != "" {
-		delete(h.exporter.headers, "Authorization")
-	}
-
-	h.exporter.headers["Authorization"] = val
+	h.exporter.headers = headers
 }

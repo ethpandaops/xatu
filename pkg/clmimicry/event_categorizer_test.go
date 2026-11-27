@@ -20,12 +20,12 @@ func TestEventCategorization(t *testing.T) {
 		t.Logf("Group %d has %d events", group, len(events))
 	}
 
-	// We should have categorized all 39 currently emitted events
-	assert.Equal(t, 39, totalEvents, "Should have exactly 39 events categorized")
+	// We should have categorized all 40 currently emitted events
+	assert.Equal(t, 40, totalEvents, "Should have exactly 40 events categorized")
 
 	// Test specific group queries
 	groupA := ec.GetGroupAEvents()
-	assert.Len(t, groupA, 15, "Group A should have 15 events")
+	assert.Len(t, groupA, 16, "Group A should have 16 events")
 
 	groupB := ec.GetGroupBEvents()
 	assert.Len(t, groupB, 10, "Group B should have 10 events")
@@ -153,6 +153,7 @@ func TestEventCompleteness(t *testing.T) {
 		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_EXECUTION_PAYLOAD_BID,
 		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PAYLOAD_ATTESTATION_MESSAGE,
 		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES,
+		xatu.Event_LIBP2P_TRACE_GOSSIPSUB_INCLUSION_LIST,
 		xatu.Event_LIBP2P_TRACE_RPC_META_MESSAGE,
 		xatu.Event_LIBP2P_TRACE_RPC_META_CONTROL_IHAVE,
 		// Group B

@@ -43,6 +43,9 @@ type EventConfig struct {
 	GossipSubPayloadAttestationMessageEnabled bool `yaml:"gossipSubPayloadAttestationMessageEnabled" default:"true"`
 	GossipSubProposerPreferencesEnabled       bool `yaml:"gossipSubProposerPreferencesEnabled" default:"true"`
 
+	// EIP-7805 FOCIL gossip topic (Heze).
+	GossipSubInclusionListEnabled bool `yaml:"gossipSubInclusionListEnabled" default:"true"`
+
 	// Beacon synthetic events (TYSM-instrumented internals, EIP-7732 ePBS).
 	BeaconSyntheticPayloadStatusResolvedEnabled           bool `yaml:"beaconSyntheticPayloadStatusResolvedEnabled" default:"true"`
 	BeaconSyntheticBuilderPendingPaymentSettlementEnabled bool `yaml:"beaconSyntheticBuilderPendingPaymentSettlementEnabled" default:"true"`

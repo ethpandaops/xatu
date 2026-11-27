@@ -66,6 +66,11 @@ func TestMapGossipSubEventToXatuEvent(t *testing.T) {
 			expected: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_PROPOSER_PREFERENCES,
 		},
 		{
+			name:     "inclusion_list exact",
+			topic:    "/eth2/abcd1234/inclusion_list/ssz_snappy",
+			expected: xatu.Event_LIBP2P_TRACE_GOSSIPSUB_INCLUSION_LIST,
+		},
+		{
 			name:    "malformed topic (too few segments)",
 			topic:   "missing/slashes",
 			wantErr: true,

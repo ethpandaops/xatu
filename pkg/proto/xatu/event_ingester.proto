@@ -1555,6 +1555,20 @@ message ClientMeta {
     google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
   }
 
+  // AdditionalLibP2PTraceGossipSubInclusionListData contains additional
+  // data about inclusion list gossip (EIP-7805 FOCIL) from libp2p.
+  message AdditionalLibP2PTraceGossipSubInclusionListData {
+    EpochV2 epoch = 1;
+    SlotV2 slot = 2;
+    EpochV2 wallclock_epoch = 3 [ json_name = "wallclock_epoch" ];
+    SlotV2 wallclock_slot = 4 [ json_name = "wallclock_slot" ];
+    PropagationV2 propagation = 5;
+    xatu.libp2p.TraceEventMetadata metadata = 6;
+    google.protobuf.StringValue topic = 7;
+    google.protobuf.UInt32Value message_size = 8 [ json_name = "message_size" ];
+    google.protobuf.StringValue message_id = 9 [ json_name = "message_id" ];
+  }
+
   // AdditionalLibP2PTraceGossipSubProposerPreferencesData contains additional
   // data about proposer preferences gossip from libp2p.
   message AdditionalLibP2PTraceGossipSubProposerPreferencesData {
@@ -2595,6 +2609,8 @@ message ClientMeta {
     AdditionalEthV1BeaconBlockRewardData eth_v1_beacon_phase0_block_reward = 138 [ json_name = "BEACON_API_ETH_V1_BEACON_PHASE0_BLOCK_REWARD" ];
 
     AdditionalLibP2PTraceGoodbyeData libp2p_trace_goodbye = 139 [ json_name = "LIBP2P_TRACE_GOODBYE" ];
+
+    AdditionalLibP2PTraceGossipSubInclusionListData libp2p_trace_gossipsub_inclusion_list = 140 [ json_name = "LIBP2P_TRACE_GOSSIPSUB_INCLUSION_LIST" ];
   }
 
   // ModuleName contains the name of the module that sent the event.
@@ -2904,6 +2920,8 @@ message Event {
     // unincluded, and per-peer blob transaction announcements seen by mimicry.
     MEMPOOL_TRANSACTION_REMOVED = 152;
     MEMPOOL_BLOB_TRANSACTION_ANNOUNCEMENT = 153;
+
+    LIBP2P_TRACE_GOSSIPSUB_INCLUSION_LIST = 154;
   }
   // Name is the name of the event.
   Name name = 1;
@@ -3748,6 +3766,9 @@ message DecoratedEvent {
         [ json_name = "MEMPOOL_TRANSACTION_REMOVED" ];
     MempoolBlobTransactionAnnouncement mempool_blob_transaction_announcement = 274
         [ json_name = "MEMPOOL_BLOB_TRANSACTION_ANNOUNCEMENT" ];
+
+    xatu.libp2p.gossipsub.eth.InclusionList libp2p_trace_gossipsub_inclusion_list = 275
+        [ json_name = "LIBP2P_TRACE_GOSSIPSUB_INCLUSION_LIST" ];
   };
 }
 

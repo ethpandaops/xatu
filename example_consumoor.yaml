@@ -59,6 +59,9 @@ clickhouse:
   #   maxRetries: 3
   #   retryBaseDelay: 100ms
   #   retryMaxDelay: 2s
+  #   quorumRetryTimeout: 3m     # resend an INSERT that failed its quorum (TOO_FEW_LIVE_REPLICAS, UNKNOWN_STATUS_OF_INSERT) for this long; 0 disables
+  #   quorumRetryBaseDelay: 1s
+  #   quorumRetryMaxDelay: 15s
   #   maxConns: 64
   #   minConns: 1
   #   connMaxLifetime: 1h

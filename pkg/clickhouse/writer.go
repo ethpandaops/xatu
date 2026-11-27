@@ -399,32 +399,14 @@ func (w *Writer) doWithRetry(
 	operation string,
 	fn func(context.Context) error,
 ) error {
-	var lastErr error
+	var (
+		transientRetries int
+		quorumRetries    int
+		quorumStart      time.Time
+		quorumDelay      = w.chgoCfg.QuorumRetryBaseDelay
+	)
 
-	for attempt := 0; attempt <= w.chgoCfg.MaxRetries; attempt++ {
-		if attempt > 0 {
-			w.metrics.WriteRetries().WithLabelValues(operation).Inc()
-
-			delay := min(
-				w.chgoCfg.RetryBaseDelay*time.Duration(1<<(attempt-1)),
-				w.chgoCfg.RetryMaxDelay,
-			)
-
-			w.log.WithFields(logrus.Fields{
-				"operation": operation,
-				"attempt":   attempt,
-				"max":       w.chgoCfg.MaxRetries,
-				"delay":     delay,
-				"error":     lastErr,
-			}).WithContext(ctx).Debug("Retrying ch-go operation after transient error")
-
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(delay):
-			}
-		}
-
+	for {
 		attemptCtx, cancel := w.withQueryTimeout(ctx)
 		err := fn(attemptCtx)
 
@@ -434,21 +416,70 @@ func (w *Writer) doWithRetry(
 			return nil
 		}
 
-		lastErr = err
-
 		if IsLimiterRejected(err) {
 			return err
 		}
 
-		if !isRetryableError(err) {
+		var (
+			delay time.Duration
+			kind  string
+		)
+
+		switch {
+		case isQuorumError(err) && w.chgoCfg.QuorumRetryTimeout > 0:
+			if quorumStart.IsZero() {
+				quorumStart = time.Now()
+			}
+
+			if time.Since(quorumStart) >= w.chgoCfg.QuorumRetryTimeout {
+				return fmt.Errorf(
+					"ch-go operation %q still failing its insert quorum after %s (%d retries): %w",
+					operation,
+					w.chgoCfg.QuorumRetryTimeout,
+					quorumRetries,
+					err,
+				)
+			}
+
+			quorumRetries++
+			delay = quorumDelay
+			quorumDelay = min(quorumDelay*2, w.chgoCfg.QuorumRetryMaxDelay)
+			kind = "quorum"
+		case isRetryableError(err):
+			if transientRetries >= w.chgoCfg.MaxRetries {
+				return fmt.Errorf(
+					"ch-go operation %q exceeded max retries (%d): %w",
+					operation,
+					w.chgoCfg.MaxRetries,
+					err,
+				)
+			}
+
+			transientRetries++
+			delay = min(
+				w.chgoCfg.RetryBaseDelay*time.Duration(1<<(transientRetries-1)),
+				w.chgoCfg.RetryMaxDelay,
+			)
+			kind = "transient"
+		default:
 			return err
 		}
-	}
 
-	return fmt.Errorf(
-		"ch-go operation %q exceeded max retries (%d): %w",
-		operation,
-		w.chgoCfg.MaxRetries,
-		lastErr,
-	)
+		w.metrics.WriteRetries().WithLabelValues(operation).Inc()
+
+		w.log.WithFields(logrus.Fields{
+			"operation": operation,
+			"kind":      kind,
+			"attempt":   transientRetries + quorumRetries,
+			"max":       w.chgoCfg.MaxRetries,
+			"delay":     delay,
+			"error":     err,
+		}).WithContext(ctx).Debug("Retrying ch-go operation after transient error")
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+		}
+	}
 }

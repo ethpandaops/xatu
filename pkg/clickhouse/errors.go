@@ -161,6 +161,18 @@ func isPermanentCHException(exc *ch.Exception) bool {
 	)
 }
 
+// isQuorumError reports an INSERT that could not confirm its insert_quorum
+// because a replica of the target shard was briefly unavailable (a restart or a
+// lost Keeper session). TOO_FEW_LIVE_REPLICAS is raised before the shard writes
+// anything; UNKNOWN_STATUS_OF_INSERT after the local replica already wrote the
+// part. Resending the same block is safe for both: replicated tables
+// deduplicate it.
+func isQuorumError(err error) bool {
+	exc, ok := ch.AsException(err)
+
+	return ok && exc.IsCode(proto.ErrTooFewLiveReplicas, proto.ErrUnknownStatusOfInsert)
+}
+
 func isRetryableError(err error) bool {
 	if err == nil {
 		return false

@@ -395,6 +395,159 @@ func TestDoWithRetry_BackoffTiming(t *testing.T) {
 	}
 }
 
+func quorumException(code proto.Error) error {
+	return &ch.Exception{Code: code, Name: code.String(), Message: "insert quorum not reached"}
+}
+
+// newQuorumTestWriter allows no transient retries, so any retry it makes comes
+// from the quorum budget.
+func newQuorumTestWriter(quorumTimeout time.Duration) *Writer {
+	w := newTestWriter(0, time.Millisecond, time.Millisecond)
+	w.chgoCfg.QuorumRetryTimeout = quorumTimeout
+	w.chgoCfg.QuorumRetryBaseDelay = time.Millisecond
+	w.chgoCfg.QuorumRetryMaxDelay = 5 * time.Millisecond
+
+	return w
+}
+
+func TestDoWithRetry_QuorumErrorsRetryUntilSuccess(t *testing.T) {
+	w := newQuorumTestWriter(time.Minute)
+
+	failures := []error{
+		quorumException(proto.ErrTooFewLiveReplicas),
+		quorumException(proto.ErrTooFewLiveReplicas),
+		quorumException(proto.ErrUnknownStatusOfInsert),
+		quorumException(proto.ErrTooFewLiveReplicas),
+	}
+
+	var calls atomic.Int32
+
+	err := w.doWithRetry(context.Background(), "test_op", func(_ context.Context) error {
+		n := int(calls.Add(1))
+		if n <= len(failures) {
+			return failures[n-1]
+		}
+
+		return nil
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, int32(len(failures)+1), calls.Load())
+}
+
+func TestDoWithRetry_QuorumErrorGivesUpAfterTimeout(t *testing.T) {
+	const timeout = 30 * time.Millisecond
+
+	w := newQuorumTestWriter(timeout)
+
+	var calls atomic.Int32
+
+	start := time.Now()
+
+	err := w.doWithRetry(context.Background(), "test_op", func(_ context.Context) error {
+		calls.Add(1)
+
+		return quorumException(proto.ErrTooFewLiveReplicas)
+	})
+
+	require.Error(t, err)
+	assert.GreaterOrEqual(t, time.Since(start), timeout)
+	assert.Greater(t, calls.Load(), int32(2))
+	assert.Contains(t, err.Error(), "still failing its insert quorum")
+
+	exc, ok := ch.AsException(err)
+	require.True(t, ok, "the ClickHouse exception must stay in the error chain")
+	assert.True(t, exc.IsCode(proto.ErrTooFewLiveReplicas))
+
+	assert.False(t, IsPermanentWriteError(&tableWriteError{table: "quorum_test", cause: err}),
+		"a quorum failure must stay transient so consumoor retries instead of rejecting the batch")
+}
+
+func TestDoWithRetry_QuorumRetryDisabled(t *testing.T) {
+	w := newQuorumTestWriter(0)
+
+	var calls atomic.Int32
+
+	quorumErr := quorumException(proto.ErrTooFewLiveReplicas)
+
+	err := w.doWithRetry(context.Background(), "test_op", func(_ context.Context) error {
+		calls.Add(1)
+
+		return quorumErr
+	})
+
+	assert.Equal(t, quorumErr, err)
+	assert.Equal(t, int32(1), calls.Load())
+}
+
+// timestampBatch stamps each row with the time it is flattened, like the
+// updated_date_time column of the canonical routes, at nanosecond precision so
+// a block rebuilt for a retry would not encode the same.
+type timestampBatch struct {
+	col proto.ColDateTime64
+}
+
+func (b *timestampBatch) FlattenTo(_ *xatu.DecoratedEvent) error {
+	b.col.Append(time.Now())
+
+	return nil
+}
+
+func (b *timestampBatch) Rows() int { return b.col.Rows() }
+
+func (b *timestampBatch) Input() proto.Input {
+	return proto.Input{{Name: "updated_date_time", Data: &b.col}}
+}
+
+func (b *timestampBatch) Reset() { b.col.Reset() }
+
+func TestFlushRetriesQuorumErrorsWithTheSameBlock(t *testing.T) {
+	w := newQuorumTestWriter(time.Minute)
+
+	const table = "canonical_beacon_block"
+
+	var flattens atomic.Int32
+
+	w.batchFactories[table] = func() route.ColumnarBatch {
+		flattens.Add(1)
+
+		b := &timestampBatch{}
+		b.col.WithPrecision(proto.PrecisionNano)
+
+		return b
+	}
+
+	var sent [][]byte
+
+	w.poolDoFn = func(_ context.Context, q ch.Query) error {
+		var buf proto.Buffer
+		for _, c := range q.Input {
+			c.Data.EncodeColumn(&buf)
+		}
+
+		sent = append(sent, append([]byte(nil), buf.Buf...))
+
+		switch len(sent) {
+		case 1:
+			return quorumException(proto.ErrTooFewLiveReplicas)
+		case 2:
+			return quorumException(proto.ErrUnknownStatusOfInsert)
+		default:
+			return nil
+		}
+	}
+
+	result := w.FlushTableEvents(context.Background(), map[string][]*xatu.DecoratedEvent{
+		table: {{}, {}},
+	})
+
+	require.NoError(t, result.Err())
+	require.Len(t, sent, 3)
+	assert.Equal(t, sent[0], sent[1], "the retry after TOO_FEW_LIVE_REPLICAS must resend the same block")
+	assert.Equal(t, sent[0], sent[2], "the retry after UNKNOWN_STATUS_OF_INSERT must resend the same block")
+	assert.Equal(t, int32(1), flattens.Load(), "events must be flattened once, not rebuilt per attempt")
+}
+
 // ---------------------------------------------------------------------------
 // getOrCreateTableWriter tests
 // ---------------------------------------------------------------------------

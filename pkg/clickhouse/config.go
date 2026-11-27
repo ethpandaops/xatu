@@ -155,6 +155,17 @@ type ChGoConfig struct {
 	// RetryMaxDelay caps exponential retry backoff.
 	RetryMaxDelay time.Duration `yaml:"retryMaxDelay" default:"2s"`
 
+	// QuorumRetryTimeout is how long an INSERT that fails its quorum
+	// (TOO_FEW_LIVE_REPLICAS or UNKNOWN_STATUS_OF_INSERT) keeps being retried
+	// with the same block. ClickHouse deduplicates a resent block, so the retry
+	// writes each row once with the timestamps it was built with. Long enough
+	// to outlast a replica restart; 0 returns the error at once.
+	QuorumRetryTimeout time.Duration `yaml:"quorumRetryTimeout" default:"3m"`
+	// QuorumRetryBaseDelay is the delay before the first quorum retry.
+	QuorumRetryBaseDelay time.Duration `yaml:"quorumRetryBaseDelay" default:"1s"`
+	// QuorumRetryMaxDelay caps the exponential quorum retry backoff.
+	QuorumRetryMaxDelay time.Duration `yaml:"quorumRetryMaxDelay" default:"15s"`
+
 	// MaxConns is the maximum number of pooled ClickHouse connections.
 	MaxConns int32 `yaml:"maxConns" default:"64"`
 	// MinConns is the minimum number of pooled ClickHouse connections.
@@ -246,6 +257,14 @@ func (c *ChGoConfig) Validate() error {
 
 	if c.RetryMaxDelay <= 0 {
 		return errors.New("clickhouse.chgo: retryMaxDelay must be > 0")
+	}
+
+	if c.QuorumRetryTimeout < 0 {
+		return errors.New("clickhouse.chgo: quorumRetryTimeout must be >= 0")
+	}
+
+	if c.QuorumRetryTimeout > 0 && (c.QuorumRetryBaseDelay <= 0 || c.QuorumRetryMaxDelay <= 0) {
+		return errors.New("clickhouse.chgo: quorumRetryBaseDelay and quorumRetryMaxDelay must be > 0")
 	}
 
 	if c.MaxConns <= 0 {

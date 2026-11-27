@@ -227,6 +227,9 @@ outputs:
     #                                       synchronously, not best-effort async)
     # and insert_quorum_timeout 10s below chgo.queryTimeout, so an insert
     # waiting for a replica that is down is resent instead of timing out.
+    # With queryTimeout 5m that is 290s, longer than chgo.quorumRetryTimeout
+    # (3m), which is checked when an attempt returns: a 319 then gets one
+    # resend, about 580s in all.
     # Override per-table / per-default here. The common override is a SINGLE
     # replica per shard, where insert_quorum=auto has no peer to form a quorum
     # with and just adds contention:

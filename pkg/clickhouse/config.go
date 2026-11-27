@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maps"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -342,8 +343,10 @@ func (c *Config) TableConfigFor(table string) TableConfig {
 }
 
 const (
-	insertQuorumSetting        = "insert_quorum"
-	insertQuorumTimeoutSetting = "insert_quorum_timeout"
+	insertQuorumSetting                = "insert_quorum"
+	insertQuorumTimeoutSetting         = "insert_quorum_timeout"
+	distributedForegroundInsertSetting = "distributed_foreground_insert"
+	insertDistributedSyncSetting       = "insert_distributed_sync"
 )
 
 // applyQuorumTimeoutDefault sets insert_quorum_timeout below the per-attempt
@@ -352,7 +355,9 @@ const (
 // that is down would end in a client deadline, which is not retried, instead
 // of UNKNOWN_STATUS_OF_INSERT, which doWithRetry resends in place. Left unset
 // when quorum retries would end before QueryTimeout does: there the shorter
-// wait would fail INSERTs that the client deadline lets through.
+// wait would fail INSERTs that the client deadline lets through. Also left
+// unset for background Distributed inserts: the client gets its answer before
+// any quorum wait, and the timeout would only reach ClickHouse's own sender.
 func (c *Config) applyQuorumTimeoutDefault(cfg *TableConfig) {
 	if c.ChGo.QueryTimeout <= 0 {
 		return
@@ -364,8 +369,14 @@ func (c *Config) applyQuorumTimeoutDefault(cfg *TableConfig) {
 	}
 
 	quorum, ok := cfg.InsertSettings[insertQuorumSetting]
-	if !ok || fmt.Sprint(quorum) == "0" {
+	if !ok || settingIs(quorum, "0", "1") {
 		return
+	}
+
+	for _, name := range []string{distributedForegroundInsertSetting, insertDistributedSyncSetting} {
+		if v, ok := cfg.InsertSettings[name]; ok && settingIs(v, "0", "false") {
+			return
+		}
 	}
 
 	if _, ok := cfg.InsertSettings[insertQuorumTimeoutSetting]; ok {
@@ -373,6 +384,10 @@ func (c *Config) applyQuorumTimeoutDefault(cfg *TableConfig) {
 	}
 
 	cfg.InsertSettings[insertQuorumTimeoutSetting] = timeout.Milliseconds()
+}
+
+func settingIs(value any, want ...string) bool {
+	return slices.Contains(want, fmt.Sprint(value))
 }
 
 // quorumTimeoutFor leaves 10 s of QueryTimeout for writing the block and
@@ -401,8 +416,8 @@ func applyCanonicalTableDefaults(table string, cfg *TableConfig) {
 	// "success" that is only locally buffered can silently drop rows on a failed
 	// background forward, leaving gaps the cursor never revisits. (No-op for
 	// non-Distributed/single-node tables.)
-	if _, exists := cfg.InsertSettings["distributed_foreground_insert"]; !exists {
-		cfg.InsertSettings["distributed_foreground_insert"] = 1
+	if _, exists := cfg.InsertSettings[distributedForegroundInsertSetting]; !exists {
+		cfg.InsertSettings[distributedForegroundInsertSetting] = 1
 	}
 }
 

@@ -254,3 +254,57 @@ func TestAdaptiveLimiterConfig_Validate(t *testing.T) {
 		})
 	}
 }
+
+func TestTableConfigFor_QuorumTimeoutDefault(t *testing.T) {
+	const table = "canonical_beacon_block"
+
+	newConfig := func(queryTimeout, quorumRetry time.Duration, defaults, overrides map[string]any) *Config {
+		cfg := &Config{
+			Defaults: TableConfig{InsertSettings: defaults},
+			ChGo:     ChGoConfig{QueryTimeout: queryTimeout, QuorumRetryTimeout: quorumRetry},
+		}
+		if overrides != nil {
+			cfg.Tables = map[string]TableConfig{table: {InsertSettings: overrides}}
+		}
+
+		return cfg
+	}
+
+	tests := []struct {
+		name  string
+		cfg   *Config
+		table string
+		want  any
+	}{
+		{"default query timeout leaves 10s", newConfig(30*time.Second, 3*time.Minute, nil, nil), table, int64(20000)},
+		{"long query timeout leaves 10s", newConfig(5*time.Minute, 3*time.Minute, nil, nil), table, int64(290000)},
+		{"short query timeout takes half", newConfig(12*time.Second, 3*time.Minute, nil, nil), table, int64(6000)},
+		{"explicit default timeout is kept", newConfig(30*time.Second, 3*time.Minute, map[string]any{insertQuorumTimeoutSetting: 60000}, nil), table, 60000},
+		{"explicit table timeout is kept", newConfig(30*time.Second, 3*time.Minute, nil, map[string]any{insertQuorumTimeoutSetting: 45000}), table, 45000},
+		{"non-canonical table with explicit quorum", newConfig(30*time.Second, 3*time.Minute, map[string]any{insertQuorumSetting: 2}, nil), "beacon_api_eth_v1_events_head", int64(20000)},
+		{"quorum disabled", newConfig(30*time.Second, 3*time.Minute, nil, map[string]any{insertQuorumSetting: 0}), table, nil},
+		{"quorum disabled as string", newConfig(30*time.Second, 3*time.Minute, nil, map[string]any{insertQuorumSetting: "0"}), table, nil},
+		{"quorum of one", newConfig(30*time.Second, 3*time.Minute, nil, map[string]any{insertQuorumSetting: 1}), table, nil},
+		{"background distributed inserts, as consumoors run", newConfig(30*time.Second, 3*time.Minute, map[string]any{distributedForegroundInsertSetting: 0}, nil), table, nil},
+		{"background distributed inserts via the old name", newConfig(30*time.Second, 3*time.Minute, map[string]any{insertDistributedSyncSetting: "0"}, nil), table, nil},
+		{"foreground distributed inserts via the old name", newConfig(5*time.Minute, 3*time.Minute, map[string]any{insertDistributedSyncSetting: 1}, nil), table, int64(290000)},
+		{"quorum retries off", newConfig(30*time.Second, 0, nil, nil), table, nil},
+		{"quorum retries shorter than the rest of the query timeout", newConfig(30*time.Second, 5*time.Second, nil, nil), table, nil},
+		{"quorum retries as long as the rest of the query timeout", newConfig(30*time.Second, 10*time.Second, nil, nil), table, int64(20000)},
+		{"no query timeout", newConfig(0, 3*time.Minute, nil, nil), table, nil},
+		{"non-canonical table without quorum", newConfig(30*time.Second, 3*time.Minute, nil, nil), "beacon_api_eth_v1_events_head", nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := tt.cfg.TableConfigFor(tt.table).InsertSettings[insertQuorumTimeoutSetting]
+			if tt.want == nil {
+				assert.False(t, ok, "insert_quorum_timeout should not be set, got %v", got)
+
+				return
+			}
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

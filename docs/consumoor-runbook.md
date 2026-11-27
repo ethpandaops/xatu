@@ -98,7 +98,7 @@ All metrics use the prefix `xatu_consumoor_`.
 **What happens internally:**
 1. Table writer flush fails with a transient error (connection refused, timeout, etc.)
 2. `FlushTables` returns the error to `processGroup`, which retries only the failed tables in place with exponential backoff (`groupRetryBaseDelay` doubling up to `groupRetryMaxDelay`) until they succeed. Messages are NAK'd only on shutdown or after `groupRetryMaxAttempts` when that is set above 0
-3. Each flush attempt uses exponential backoff via `doWithRetry` (default 3 retries, 100ms base delay, 2s max delay)
+3. Each flush attempt uses exponential backoff via `doWithRetry` (default 3 retries, 100ms base delay, 2s max delay). An INSERT that fails its quorum because a replica is restarting (TOO_FEW_LIVE_REPLICAS, UNKNOWN_STATUS_OF_INSERT) is instead resent with the same block for up to `quorumRetryTimeout` (3m), logging only at debug level; ClickHouse deduplicates the resent block. A table with `insert_quorum` and no `insert_quorum_timeout` gets one 10s shorter than `queryTimeout` (20s by default; half of `queryTimeout` below 20s), so an INSERT waiting for a replica that is down ends in UNKNOWN_STATUS_OF_INSERT, which is resent, rather than the client deadline, which is not. With `distributed_foreground_insert: 0` the client never sees either code: the Distributed table queues the block and ClickHouse's background sender retries it, so the default is not applied
 4. The buffer channel fills up, blocking `Write()` calls, which backs up Benthos output and stalls Kafka consumption
 
 **Recovery:**
@@ -279,6 +279,7 @@ Common causes of startup failure:
 | `maxConns` | `clickhouse.chgo.maxConns` | 64 | Increase when `chgo_pool_empty_acquire_total` is high |
 | `queryTimeout` | `clickhouse.chgo.queryTimeout` | 30s | Increase if large batches legitimately take longer to insert |
 | `maxRetries` | `clickhouse.chgo.maxRetries` | 3 | Increase if transient ClickHouse errors are frequent but recover quickly |
+| `quorumRetryTimeout` | `clickhouse.chgo.quorumRetryTimeout` | 3m | How long an INSERT that failed its `insert_quorum` (TOO_FEW_LIVE_REPLICAS, UNKNOWN_STATUS_OF_INSERT) is resent with the same block, backing off from `quorumRetryBaseDelay` (1s) to `quorumRetryMaxDelay` (15s). Cover the longest replica restart; 0 hands the error straight to the group retry and leaves `insert_quorum_timeout` at the server default. The budget is checked when an attempt returns, so with `insert_quorum_timeout` longer than the budget (cannons: 290s against 3m) a 319 gets one resend, covering about `insert_quorum_timeout` × 2. Retries are counted in `write_retries_total{kind="quorum"}` |
 | `groupRetryMaxAttempts` | `clickhouse.chgo.groupRetryMaxAttempts` | 0 | 0 retries transient write failures in place until they succeed, so backpressure pauses the Kafka input. N > 0 NAKs the messages after N retries; Benthos then replays them one at a time with a 0.5-1s sleep each and reads nothing new until they drain, so keep it at 0 unless you need that |
 | `groupRetryMaxDelay` | `clickhouse.chgo.groupRetryMaxDelay` | 30s | Cap on the in-place retry backoff (starts at `groupRetryBaseDelay`, default 1s); lower it to resume sooner after ClickHouse recovers |
 | `sessionTimeoutMs` | `kafka.sessionTimeoutMs` | 30000 | Increase if rebalances are frequent due to slow processing |
@@ -305,7 +306,7 @@ clickhouse:
 
 ### Canonical Tables
 
-Tables with a `canonical_` prefix automatically get `insert_quorum: auto` applied to their INSERT statements (majority quorum). Override this per-table if needed:
+Tables with a `canonical_` prefix automatically get `insert_quorum: auto` applied to their INSERT statements (majority quorum). Any table with `insert_quorum` and no `insert_quorum_timeout` also gets `insert_quorum_timeout` 10s shorter than `queryTimeout` (half of it below 20s), unless `quorumRetryTimeout` is shorter than the time that leaves, or Distributed inserts run in the background (`distributed_foreground_insert: 0`). Override either per-table if needed:
 
 ```yaml
 clickhouse:

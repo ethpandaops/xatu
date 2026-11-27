@@ -31,7 +31,7 @@ At least one [Server](./server.md) running with the [Coordinator](./server.md#co
 
 ## Configuration
 
-Discovery requires a single `yaml` config file. An example file can be found [here](../example_discovery.yaml)
+Discovery requires a single `yaml` config file. An example file can be found [here](../example_discovery.yaml). Values can be read from environment variables with `${VAR}`, see [Environment variables in config files](../README.md#environment-variables-in-config-files).
 
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |

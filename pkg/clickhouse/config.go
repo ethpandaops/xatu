@@ -353,11 +353,16 @@ const (
 // QueryTimeout for a table that uses insert_quorum without one. ClickHouse's
 // default (600 s) outlasts QueryTimeout, so an INSERT waiting for a replica
 // that is down would end in a client deadline, which is not retried, instead
-// of UNKNOWN_STATUS_OF_INSERT, which doWithRetry resends in place. Left unset
-// when quorum retries would end before QueryTimeout does: there the shorter
-// wait would fail INSERTs that the client deadline lets through. Also left
-// unset for background Distributed inserts: the client gets its answer before
-// any quorum wait, and the timeout would only reach ClickHouse's own sender.
+// of UNKNOWN_STATUS_OF_INSERT, which doWithRetry resends in place.
+//
+// Left unset when quorumRetryTimeout is shorter than the time the shorter wait
+// gives up (QueryTimeout minus the timeout). A resend made while the replica
+// is still inactive fails at once with TOO_FEW_LIVE_REPLICAS rather than
+// waiting, so a short budget can run out before QueryTimeout would have, and
+// fail an INSERT whose quorum the client deadline would still have seen
+// complete. Also left unset for background Distributed inserts: the client
+// gets its answer before any quorum wait, and the timeout would only reach
+// ClickHouse's own sender.
 func (c *Config) applyQuorumTimeoutDefault(cfg *TableConfig) {
 	if c.ChGo.QueryTimeout <= 0 {
 		return

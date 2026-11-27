@@ -113,6 +113,7 @@ func (h *Xatu) HandleNewDecoratedEvents(ctx context.Context, events []*xatu.Deco
 }
 
 // SetAuthorization replaces any configured authorization header, whatever its case, with val.
+// It must be called before Start.
 func (h *Xatu) SetAuthorization(val string) {
 	headers := map[string]string{"authorization": val}
 

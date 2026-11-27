@@ -6,7 +6,6 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v3"
 
 	"github.com/ethpandaops/xatu/pkg/mimicry"
 	"github.com/ethpandaops/xatu/pkg/observability"
@@ -123,15 +122,9 @@ func loadMimicryConfigFromFile(file string) (*mimicry.Config, error) {
 		return nil, err
 	}
 
-	yamlFile, err := os.ReadFile(file)
-
-	if err != nil {
-		return nil, err
-	}
-
 	type plain mimicry.Config
 
-	if err := yaml.Unmarshal(yamlFile, (*plain)(config)); err != nil {
+	if err := loadConfigFile(file, (*plain)(config)); err != nil {
 		return nil, err
 	}
 

@@ -44,7 +44,7 @@ Flags:
 
 ## Configuration
 
-Server requires a single `yaml` config file. An example file can be found [here](../example_server.yaml)
+Server requires a single `yaml` config file. An example file can be found [here](../example_server.yaml). Values can be read from environment variables with `${VAR}`, see [Environment variables in config files](../README.md#environment-variables-in-config-files).
 
 | Name| Type | Default | Description |
 | --- | --- | --- | --- |

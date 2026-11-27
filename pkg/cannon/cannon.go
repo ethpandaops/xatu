@@ -167,14 +167,14 @@ func (c *Cannon) Start(ctx context.Context) error {
 		c.log.WithError(err).WithContext(ctx).Fatal("Failed to start crons")
 	}
 
+	if err := c.ApplyOverrideBeforeStartAfterCreation(ctx); err != nil {
+		return fmt.Errorf("failed to apply overrides before start: %w", err)
+	}
+
 	for _, sink := range c.sinks {
 		if err := sink.Start(ctx); err != nil {
 			return err
 		}
-	}
-
-	if err := c.ApplyOverrideBeforeStartAfterCreation(ctx); err != nil {
-		return fmt.Errorf("failed to apply overrides before start: %w", err)
 	}
 
 	if c.Config.Ethereum.OverrideNetworkName != "" {

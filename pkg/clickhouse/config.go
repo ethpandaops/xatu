@@ -54,8 +54,10 @@ type TableConfig struct {
 	// InsertSettings appends ClickHouse SETTINGS to INSERT statements.
 	// Canonical tables (name prefix "canonical_") default to
 	// insert_quorum=auto and distributed_foreground_insert=1 unless explicitly
-	// overridden. On a single replica per shard, override insert_quorum: 0
-	// (no peer to form a quorum with); on single-node/non-Distributed setups
+	// overridden. A table with insert_quorum gets insert_quorum_timeout below
+	// ChGo.QueryTimeout unless set (applyQuorumTimeoutDefault). On a single
+	// replica per shard, override insert_quorum: 0 (no peer to form a quorum
+	// with); on single-node/non-Distributed setups
 	// distributed_foreground_insert is a no-op.
 	// Example:
 	// insertSettings:
@@ -160,6 +162,9 @@ type ChGoConfig struct {
 	// with the same block. ClickHouse deduplicates a resent block, so the retry
 	// writes each row once with the timestamps it was built with. Long enough
 	// to outlast a replica restart; 0 returns the error at once.
+	// Tables with insert_quorum and no insert_quorum_timeout get one below
+	// QueryTimeout (see applyQuorumTimeoutDefault), so UNKNOWN_STATUS_OF_INSERT
+	// arrives before the client deadline.
 	QuorumRetryTimeout time.Duration `yaml:"quorumRetryTimeout" default:"3m"`
 	// QuorumRetryBaseDelay is the delay before the first quorum retry.
 	QuorumRetryBaseDelay time.Duration `yaml:"quorumRetryBaseDelay" default:"1s"`
@@ -315,6 +320,7 @@ func (c *Config) TableConfigFor(table string) TableConfig {
 	override, ok := c.Tables[table]
 	if !ok {
 		applyCanonicalTableDefaults(table, &cfg)
+		c.applyQuorumTimeoutDefault(&cfg)
 
 		return cfg
 	}
@@ -330,8 +336,49 @@ func (c *Config) TableConfigFor(table string) TableConfig {
 	}
 
 	applyCanonicalTableDefaults(table, &cfg)
+	c.applyQuorumTimeoutDefault(&cfg)
 
 	return cfg
+}
+
+const (
+	insertQuorumSetting        = "insert_quorum"
+	insertQuorumTimeoutSetting = "insert_quorum_timeout"
+)
+
+// applyQuorumTimeoutDefault sets insert_quorum_timeout below the per-attempt
+// QueryTimeout for a table that uses insert_quorum without one. ClickHouse's
+// default (600 s) outlasts QueryTimeout, so an INSERT waiting for a replica
+// that is down would end in a client deadline, which is not retried, instead
+// of UNKNOWN_STATUS_OF_INSERT, which doWithRetry resends in place. Left unset
+// when quorum retries would end before QueryTimeout does: there the shorter
+// wait would fail INSERTs that the client deadline lets through.
+func (c *Config) applyQuorumTimeoutDefault(cfg *TableConfig) {
+	if c.ChGo.QueryTimeout <= 0 {
+		return
+	}
+
+	timeout := quorumTimeoutFor(c.ChGo.QueryTimeout)
+	if c.ChGo.QuorumRetryTimeout <= 0 || c.ChGo.QuorumRetryTimeout < c.ChGo.QueryTimeout-timeout {
+		return
+	}
+
+	quorum, ok := cfg.InsertSettings[insertQuorumSetting]
+	if !ok || fmt.Sprint(quorum) == "0" {
+		return
+	}
+
+	if _, ok := cfg.InsertSettings[insertQuorumTimeoutSetting]; ok {
+		return
+	}
+
+	cfg.InsertSettings[insertQuorumTimeoutSetting] = timeout.Milliseconds()
+}
+
+// quorumTimeoutFor leaves 10 s of QueryTimeout for writing the block and
+// returning the error, or half of it for short timeouts.
+func quorumTimeoutFor(queryTimeout time.Duration) time.Duration {
+	return max(queryTimeout-10*time.Second, queryTimeout/2)
 }
 
 func applyCanonicalTableDefaults(table string, cfg *TableConfig) {
@@ -343,8 +390,8 @@ func applyCanonicalTableDefaults(table string, cfg *TableConfig) {
 		cfg.InsertSettings = make(map[string]any, 2)
 	}
 
-	if _, exists := cfg.InsertSettings["insert_quorum"]; !exists {
-		cfg.InsertSettings["insert_quorum"] = "auto"
+	if _, exists := cfg.InsertSettings[insertQuorumSetting]; !exists {
+		cfg.InsertSettings[insertQuorumSetting] = "auto"
 	}
 
 	// Make inserts into Distributed tables synchronous: the write must land on

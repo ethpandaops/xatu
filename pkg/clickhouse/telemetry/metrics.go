@@ -241,8 +241,8 @@ func NewMetrics(namespace, subsystem string) *Metrics {
 			Namespace: namespace,
 			Subsystem: subsystem,
 			Name:      "write_retries_total",
-			Help:      "Total number of ch-go operation retry attempts after transient errors.",
-		}, []string{"operation"}),
+			Help:      "Total number of ch-go operation retry attempts, by kind: transient errors or a failed insert quorum.",
+		}, []string{"operation", "kind"}),
 
 		groupRetries: promauto.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,

@@ -13,6 +13,8 @@ import (
 
 	"github.com/ClickHouse/ch-go"
 	"github.com/ClickHouse/ch-go/proto"
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -262,7 +264,7 @@ func TestDoWithRetry_SucceedsAfterRetries(t *testing.T) {
 
 	var calls atomic.Int32
 
-	err := w.doWithRetry(context.Background(), "test_op", func(_ context.Context) error {
+	err := w.doWithRetry(context.Background(), "transient_until_success", func(_ context.Context) error {
 		n := calls.Add(1)
 		if n < 3 {
 			return io.EOF // retryable
@@ -273,6 +275,10 @@ func TestDoWithRetry_SucceedsAfterRetries(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, int32(3), calls.Load())
+
+	retries := w.metrics.WriteRetries()
+	assert.InDelta(t, 2, counterValue(t, retries.WithLabelValues("transient_until_success", "transient")), 0)
+	assert.InDelta(t, 0, counterValue(t, retries.WithLabelValues("transient_until_success", "quorum")), 0)
 }
 
 func TestDoWithRetry_ExhaustsAllRetries(t *testing.T) {
@@ -422,7 +428,7 @@ func TestDoWithRetry_QuorumErrorsRetryUntilSuccess(t *testing.T) {
 
 	var calls atomic.Int32
 
-	err := w.doWithRetry(context.Background(), "test_op", func(_ context.Context) error {
+	err := w.doWithRetry(context.Background(), "quorum_until_success", func(_ context.Context) error {
 		n := int(calls.Add(1))
 		if n <= len(failures) {
 			return failures[n-1]
@@ -433,6 +439,10 @@ func TestDoWithRetry_QuorumErrorsRetryUntilSuccess(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, int32(len(failures)+1), calls.Load())
+
+	retries := w.metrics.WriteRetries()
+	assert.InDelta(t, float64(len(failures)), counterValue(t, retries.WithLabelValues("quorum_until_success", "quorum")), 0)
+	assert.InDelta(t, 0, counterValue(t, retries.WithLabelValues("quorum_until_success", "transient")), 0)
 }
 
 func TestDoWithRetry_QuorumErrorGivesUpAfterTimeout(t *testing.T) {
@@ -775,4 +785,13 @@ func TestTableConfigMergeSkipFlattenErrors(t *testing.T) {
 		tc := cfg.TableConfigFor("some_table")
 		assert.False(t, tc.SkipFlattenErrors)
 	})
+}
+
+func counterValue(t *testing.T, c prometheus.Counter) float64 {
+	t.Helper()
+
+	var m dto.Metric
+	require.NoError(t, c.Write(&m))
+
+	return m.GetCounter().GetValue()
 }

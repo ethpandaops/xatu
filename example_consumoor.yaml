@@ -81,6 +81,8 @@ clickhouse:
   # tables:
     # Canonical tables default to insertSettings.insert_quorum: auto (majority).
     # Set insertSettings.insert_quorum explicitly to override that behavior.
+    # A table with insert_quorum and no insert_quorum_timeout gets one 10s below
+    # chgo.queryTimeout, so a quorum wait ends before the client deadline.
     # beacon_api_eth_v1_beacon_committee:
     #   insertSettings:
     #     insert_quorum: 2

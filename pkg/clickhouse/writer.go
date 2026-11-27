@@ -465,16 +465,20 @@ func (w *Writer) doWithRetry(
 			return err
 		}
 
-		w.metrics.WriteRetries().WithLabelValues(operation).Inc()
+		w.metrics.WriteRetries().WithLabelValues(operation, kind).Inc()
 
-		w.log.WithFields(logrus.Fields{
+		fields := logrus.Fields{
 			"operation": operation,
 			"kind":      kind,
 			"attempt":   transientRetries + quorumRetries,
-			"max":       w.chgoCfg.MaxRetries,
 			"delay":     delay,
 			"error":     err,
-		}).WithContext(ctx).Debug("Retrying ch-go operation after transient error")
+		}
+		if kind == "transient" {
+			fields["max"] = w.chgoCfg.MaxRetries
+		}
+
+		w.log.WithFields(fields).WithContext(ctx).Debug("Retrying ch-go operation after transient error")
 
 		select {
 		case <-ctx.Done():

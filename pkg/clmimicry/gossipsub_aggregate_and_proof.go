@@ -58,6 +58,16 @@ func (p *Processor) handleGossipAggregateAndProof(
 		message := evt.SignedAggregateAttestationAndProofGloas.GetMessage()
 
 		return p.handleAggregateAndProofFromCommitteeAttestation(ctx, clientMeta, event, &evt.TraceEventPayloadMetaData, message.GetAggregatorIndex(), message.GetAggregate())
+	case *TraceEventSignedAggregateAttestationAndProofPQ:
+		if evt.Data == nil {
+			return fmt.Errorf("handleGossipAggregateAndProof() called with nil pq aggregate attestation data")
+		}
+
+		return p.handleAggregateAndProofFromCommitteeAttestation(ctx, clientMeta, event, &evt.TraceEventPayloadMetaData, primitives.ValidatorIndex(evt.AggregatorIndex), &ethtypes.AttestationElectra{
+			AggregationBits: evt.AggregationBits,
+			Data:            evt.Data,
+			CommitteeBits:   bitfield.Bitvector64(evt.CommitteeBits),
+		})
 	default:
 		return fmt.Errorf("unsupported payload type for aggregate and proof: %T", payload)
 	}

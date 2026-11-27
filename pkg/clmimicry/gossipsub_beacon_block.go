@@ -61,6 +61,10 @@ func (p *Processor) handleGossipBeaconBlock(
 		root, err = evt.Block.GetBlock().HashTreeRoot()
 		slot = evt.Block.GetBlock().GetSlot()
 		proposerIndex = evt.Block.GetBlock().GetProposerIndex()
+	case *TraceEventPQBlock:
+		root = evt.Root
+		slot = primitives.Slot(evt.Slot)
+		proposerIndex = primitives.ValidatorIndex(evt.ProposerIndex)
 	default:
 		return fmt.Errorf("handleGossipBeaconBlock(): called with unknown block type")
 	}
@@ -187,6 +191,11 @@ func (p *Processor) createAdditionalGossipSubBeaconBlockData(
 		extra.MessageId = wrapperspb.String(evt.MsgID)
 		extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
 	case *TraceEventGloasBlock:
+		extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
+		extra.Topic = wrapperspb.String(evt.Topic)
+		extra.MessageId = wrapperspb.String(evt.MsgID)
+		extra.MessageSize = wrapperspb.UInt32(uint32(evt.MsgSize))
+	case *TraceEventPQBlock:
 		extra.Metadata = &libp2p.TraceEventMetadata{PeerId: wrapperspb.String(evt.PeerID)}
 		extra.Topic = wrapperspb.String(evt.Topic)
 		extra.MessageId = wrapperspb.String(evt.MsgID)

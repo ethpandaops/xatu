@@ -7,8 +7,8 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/ethpandaops/beacon/pkg/human"
-	"gopkg.in/yaml.v3"
 
+	"github.com/ethpandaops/xatu/pkg/configenv"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/output"
 	"github.com/ethpandaops/xatu/pkg/processor"
@@ -84,7 +84,7 @@ func ParseConfig(data []byte) (*Config, error) {
 
 	type plain Config
 
-	if err := yaml.Unmarshal(data, (*plain)(config)); err != nil {
+	if err := configenv.Decode(data, (*plain)(config)); err != nil {
 		return nil, err
 	}
 

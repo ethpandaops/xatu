@@ -2,13 +2,12 @@
 package cmd
 
 import (
-	"bytes"
 	"os"
 
 	"github.com/creasty/defaults"
 	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v3"
 
+	"github.com/ethpandaops/xatu/pkg/configenv"
 	"github.com/ethpandaops/xatu/pkg/consumoor"
 	"github.com/ethpandaops/xatu/pkg/observability"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
@@ -149,10 +148,7 @@ func loadConsumoorConfigFromFile(file string) (*consumoor.Config, error) {
 
 	type plain consumoor.Config
 
-	dec := yaml.NewDecoder(bytes.NewReader(yamlFile))
-	dec.KnownFields(true)
-
-	if err := dec.Decode((*plain)(config)); err != nil {
+	if err := configenv.DecodeStrict(yamlFile, (*plain)(config)); err != nil {
 		return nil, err
 	}
 

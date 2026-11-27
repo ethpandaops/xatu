@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/OffchainLabs/prysm/v7/consensus-types/primitives"
+	ethtypes "github.com/OffchainLabs/prysm/v7/proto/prysm/v1alpha1"
 	"github.com/pkg/errors"
 
 	"github.com/ethpandaops/xatu/pkg/proto/libp2p"
@@ -98,6 +100,17 @@ func (p *Processor) handleHermesGossipSubEvent(
 		case *TraceEventSingleAttestation:
 			if err := p.handleGossipSingleAttestation(ctx, clientMeta, event, payload); err != nil {
 				return errors.Wrap(err, "failed to handle gossipsub single beacon attestation")
+			}
+		case *TraceEventSingleAttestationPQ:
+			if err := p.handleGossipSingleAttestation(ctx, clientMeta, event, &TraceEventSingleAttestation{
+				TraceEventPayloadMetaData: payload.TraceEventPayloadMetaData,
+				SingleAttestation: &ethtypes.SingleAttestation{
+					CommitteeId:   primitives.CommitteeIndex(payload.CommitteeIndex),
+					AttesterIndex: primitives.ValidatorIndex(payload.AttesterIndex),
+					Data:          payload.Data,
+				},
+			}); err != nil {
+				return errors.Wrap(err, "failed to handle gossipsub single PQ beacon attestation")
 			}
 		default:
 			return fmt.Errorf("invalid payload type for HandleMessage event: %T", event.Payload)

@@ -7,6 +7,7 @@ package clmimicry
 import (
 	"time"
 
+	"github.com/OffchainLabs/go-bitfield"
 	ethtypes "github.com/OffchainLabs/prysm/v7/proto/prysm/v1alpha1"
 	"github.com/libp2p/go-libp2p/core/peer"
 )
@@ -61,6 +62,16 @@ type TraceEventGloasBlock struct {
 	Block *ethtypes.SignedBeaconBlockGloas
 }
 
+// TraceEventPQBlock represents a PQ beacon block event. It carries the block's
+// root, slot and proposer instead of the block, because the Prysm version xatu
+// builds against has no PQ block type.
+type TraceEventPQBlock struct {
+	TraceEventPayloadMetaData
+	Root          [32]byte
+	Slot          uint64
+	ProposerIndex uint64
+}
+
 // TraceEventAttestation represents an attestation event.
 type TraceEventAttestation struct {
 	TraceEventPayloadMetaData
@@ -79,6 +90,16 @@ type TraceEventSingleAttestation struct {
 	SingleAttestation *ethtypes.SingleAttestation
 }
 
+// TraceEventSingleAttestationPQ represents a PQ single attestation event. It
+// carries plain fields because the Prysm version xatu builds against has no PQ
+// attestation type.
+type TraceEventSingleAttestationPQ struct {
+	TraceEventPayloadMetaData
+	CommitteeIndex uint64
+	AttesterIndex  uint64
+	Data           *ethtypes.AttestationData
+}
+
 // TraceEventSignedAggregateAttestationAndProof represents a signed aggregate attestation and proof event.
 type TraceEventSignedAggregateAttestationAndProof struct {
 	TraceEventPayloadMetaData
@@ -95,6 +116,18 @@ type TraceEventSignedAggregateAttestationAndProofElectra struct {
 type TraceEventSignedAggregateAttestationAndProofGloas struct {
 	TraceEventPayloadMetaData
 	SignedAggregateAttestationAndProofGloas *ethtypes.SignedAggregateAttestationAndProofGloas
+}
+
+// TraceEventSignedAggregateAttestationAndProofPQ represents a PQ signed
+// aggregate attestation and proof event. It carries plain fields because the
+// Prysm version xatu builds against has no PQ aggregate type. A PQ aggregate
+// has no signature of its own; it is attested by a proof instead.
+type TraceEventSignedAggregateAttestationAndProofPQ struct {
+	TraceEventPayloadMetaData
+	AggregatorIndex uint64
+	AggregationBits bitfield.Bitlist
+	CommitteeBits   []byte
+	Data            *ethtypes.AttestationData
 }
 
 // TraceEventSignedContributionAndProof represents a signed contribution and proof event.

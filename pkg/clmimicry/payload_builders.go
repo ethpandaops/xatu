@@ -3,6 +3,7 @@ package clmimicry
 import (
 	"time"
 
+	"github.com/OffchainLabs/go-bitfield"
 	ethtypes "github.com/OffchainLabs/prysm/v7/proto/prysm/v1alpha1"
 	"github.com/libp2p/go-libp2p/core/peer"
 )
@@ -73,6 +74,16 @@ func NewGloasBlockPayload(block *ethtypes.SignedBeaconBlockGloas, meta *TraceEve
 	}
 }
 
+// NewPQBlockPayload creates a PQ block payload from the block's root, slot and proposer.
+func NewPQBlockPayload(root [32]byte, slot, proposerIndex uint64, meta *TraceEventPayloadMetaData) *TraceEventPQBlock {
+	return &TraceEventPQBlock{
+		TraceEventPayloadMetaData: *meta,
+		Root:                      root,
+		Slot:                      slot,
+		ProposerIndex:             proposerIndex,
+	}
+}
+
 // Attestation payload builders
 
 // NewAttestationPayload creates a pre-Electra attestation payload.
@@ -99,6 +110,16 @@ func NewSingleAttestationPayload(att *ethtypes.SingleAttestation, meta *TraceEve
 	}
 }
 
+// NewSingleAttestationPQPayload creates a PQ single attestation payload.
+func NewSingleAttestationPQPayload(committeeIndex, attesterIndex uint64, data *ethtypes.AttestationData, meta *TraceEventPayloadMetaData) *TraceEventSingleAttestationPQ {
+	return &TraceEventSingleAttestationPQ{
+		TraceEventPayloadMetaData: *meta,
+		CommitteeIndex:            committeeIndex,
+		AttesterIndex:             attesterIndex,
+		Data:                      data,
+	}
+}
+
 // Aggregate attestation payload builders
 
 // NewSignedAggregateAttestationAndProofPayload creates a pre-Electra aggregate attestation payload.
@@ -122,6 +143,23 @@ func NewSignedAggregateAttestationAndProofGloasPayload(agg *ethtypes.SignedAggre
 	return &TraceEventSignedAggregateAttestationAndProofGloas{
 		TraceEventPayloadMetaData:               *meta,
 		SignedAggregateAttestationAndProofGloas: agg,
+	}
+}
+
+// NewSignedAggregateAttestationAndProofPQPayload creates a PQ signed aggregate attestation and proof payload.
+func NewSignedAggregateAttestationAndProofPQPayload(
+	aggregatorIndex uint64,
+	aggregationBits bitfield.Bitlist,
+	committeeBits []byte,
+	data *ethtypes.AttestationData,
+	meta *TraceEventPayloadMetaData,
+) *TraceEventSignedAggregateAttestationAndProofPQ {
+	return &TraceEventSignedAggregateAttestationAndProofPQ{
+		TraceEventPayloadMetaData: *meta,
+		AggregatorIndex:           aggregatorIndex,
+		AggregationBits:           aggregationBits,
+		CommitteeBits:             committeeBits,
+		Data:                      data,
 	}
 }
 

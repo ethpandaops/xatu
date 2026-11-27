@@ -12,6 +12,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/ethpandaops/go-eth2-client/spec/pq"
 	dynssz "github.com/pk910/dynamic-ssz"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel/attribute"
@@ -189,11 +190,17 @@ func (b *BeaconNode) fetchGloasEpochState(ctx context.Context, stateID string) (
 
 	defer rsp.Close()
 
-	if version := rsp.Header.Get("Eth-Consensus-Version"); version != spec.DataVersionGloas.String() {
-		return nil, fmt.Errorf("beacon state %s has consensus version %q, expected %s", stateID, version, spec.DataVersionGloas)
+	var projected *GloasEpochState
+
+	switch version := rsp.Header.Get("Eth-Consensus-Version"); version {
+	case spec.DataVersionGloas.String():
+		projected, err = decodeGloasEpochState(ds, rsp.Body, int(rsp.ContentLength))
+	case spec.DataVersionPQ.String():
+		projected, err = decodePQEpochState(ds, rsp.Body, int(rsp.ContentLength))
+	default:
+		return nil, fmt.Errorf("beacon state %s has consensus version %q, expected %s or %s", stateID, version, spec.DataVersionGloas, spec.DataVersionPQ)
 	}
 
-	projected, err := decodeGloasEpochState(ds, rsp.Body, int(rsp.ContentLength))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to decode beacon state %s", stateID)
 	}
@@ -210,6 +217,40 @@ func decodeGloasEpochState(ds *dynssz.DynSsz, r io.Reader, size int) (*GloasEpoc
 	}
 
 	return newGloasEpochState(state)
+}
+
+// decodePQEpochState streams a PQ state from r and reduces it like a Gloas state. Builder keys are XMSS keys,
+// widened to 48 bytes the way validator keys are (pq.XMSSPubKey.DepositPubKey).
+func decodePQEpochState(ds *dynssz.DynSsz, r io.Reader, size int) (*GloasEpochState, error) {
+	state := &pq.BeaconState{}
+
+	if err := ds.UnmarshalSSZReader(state, r, size); err != nil {
+		return nil, err
+	}
+
+	builders := make([]*gloas.Builder, len(state.XMSSBuilders))
+	for i, b := range state.XMSSBuilders {
+		builders[i] = &gloas.Builder{
+			PublicKey:         b.PublicKey.DepositPubKey(),
+			Version:           b.Version,
+			ExecutionAddress:  b.ExecutionAddress,
+			Balance:           b.Balance,
+			DepositEpoch:      b.DepositEpoch,
+			WithdrawableEpoch: b.WithdrawableEpoch,
+		}
+	}
+
+	return newGloasEpochState(&gloas.BeaconState{
+		Slot:                         state.Slot,
+		Fork:                         state.Fork,
+		LatestBlockHeader:            state.LatestBlockHeader,
+		FinalizedCheckpoint:          state.FinalizedCheckpoint,
+		PTCWindow:                    state.PTCWindow,
+		Builders:                     builders,
+		BuilderPendingPayments:       state.BuilderPendingPayments,
+		BuilderPendingWithdrawals:    state.BuilderPendingWithdrawals,
+		ExecutionPayloadAvailability: state.ExecutionPayloadAvailability,
+	})
 }
 
 // sszCodec returns an SSZ codec built from the node's spec so non-mainnet presets decode.

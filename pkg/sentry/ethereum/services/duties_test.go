@@ -2,7 +2,9 @@ package services
 
 import (
 	"context"
-	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -16,18 +18,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// fakeDutiesNode serves committees and fails proposer duties, like a syncing node that 503s validator endpoints.
+// fakeDutiesNode serves committees.
 type fakeDutiesNode struct {
 	beacon.Node
 
-	proposerCalls  atomic.Int32
 	committeeCalls atomic.Int32
-}
-
-func (f *fakeDutiesNode) FetchProposerDuties(_ context.Context, _ phase0.Epoch) ([]*v1.ProposerDuty, error) {
-	f.proposerCalls.Add(1)
-
-	return nil, errors.New("GET failed with status 503")
 }
 
 func (f *fakeDutiesNode) FetchBeaconCommittees(_ context.Context, _ string, _ *phase0.Epoch) ([]*v1.BeaconCommittee, error) {
@@ -57,6 +52,15 @@ func TestDutiesServiceReadyWhenProposerDutiesFail(t *testing.T) {
 			defer cancel()
 
 			node := &fakeDutiesNode{}
+
+			// A syncing node 503s validator endpoints.
+			var proposerCalls atomic.Int32
+
+			api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				proposerCalls.Add(1)
+				w.WriteHeader(http.StatusServiceUnavailable)
+			}))
+			defer api.Close()
 			metadata := &MetadataService{
 				wallclock: ethwallclock.NewEthereumBeaconChain(time.Now().Add(-time.Hour), 12*time.Second, 32),
 			}
@@ -64,7 +68,7 @@ func TestDutiesServiceReadyWhenProposerDutiesFail(t *testing.T) {
 			log := logrus.New()
 			log.SetLevel(logrus.PanicLevel)
 
-			duties := NewDutiesService(log, node, metadata, true, tt.beaconCommitteesEnabled)
+			duties := NewDutiesService(log, node, api.URL, nil, metadata, true, tt.beaconCommitteesEnabled)
 
 			ready := make(chan struct{})
 
@@ -82,11 +86,40 @@ func TestDutiesServiceReadyWhenProposerDutiesFail(t *testing.T) {
 				t.Fatal("duties service did not become ready while proposer duties were failing")
 			}
 
-			assert.Equal(t, int32(1), node.proposerCalls.Load())
+			assert.Equal(t, int32(1), proposerCalls.Load())
 
 			if tt.beaconCommitteesEnabled {
 				assert.Positive(t, node.committeeCalls.Load())
 			}
 		})
 	}
+}
+
+func TestFetchProposerDutiesKeepsReportedKeys(t *testing.T) {
+	const (
+		xmssKey = "0xFCF7A1B2C3D4E5F60718293A4B5C6D7E8F90A1B2C3D4E5F60718293A4B5C4C59"
+		blsKey  = "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a"
+	)
+
+	var gotPath, gotHeader string
+
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotHeader = r.Header.Get("X-Test")
+
+		_, _ = w.Write([]byte(`{"dependent_root":"0x00","execution_optimistic":false,"data":[` +
+			`{"pubkey":"` + xmssKey + `","validator_index":"7","slot":"229"},` +
+			`{"pubkey":"` + blsKey + `","validator_index":"9001","slot":"230"}]}`))
+	}))
+	defer api.Close()
+
+	duties, err := beaconAPI{address: api.URL + "/", headers: map[string]string{"X-Test": "yes"}}.fetchProposerDuties(context.Background(), 7)
+	require.NoError(t, err)
+
+	assert.Equal(t, "/eth/v1/validator/duties/proposer/7", gotPath)
+	assert.Equal(t, "yes", gotHeader)
+	assert.Equal(t, []*ProposerDuty{
+		{Slot: 229, ValidatorIndex: 7, PubKey: strings.ToLower(xmssKey)},
+		{Slot: 230, ValidatorIndex: 9001, PubKey: blsKey},
+	}, duties)
 }

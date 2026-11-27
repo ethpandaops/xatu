@@ -2,11 +2,9 @@ package event
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"time"
 
-	v1 "github.com/ethpandaops/go-eth2-client/api/v1"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
 	"github.com/google/uuid"
 	ttlcache "github.com/jellydator/ttlcache/v3"
@@ -19,6 +17,7 @@ import (
 	xatuethv1 "github.com/ethpandaops/xatu/pkg/proto/eth/v1"
 	"github.com/ethpandaops/xatu/pkg/proto/xatu"
 	"github.com/ethpandaops/xatu/pkg/sentry/ethereum"
+	"github.com/ethpandaops/xatu/pkg/sentry/ethereum/services"
 )
 
 type ProposerDuty struct {
@@ -26,7 +25,7 @@ type ProposerDuty struct {
 
 	now time.Time
 
-	duty  *v1.ProposerDuty
+	duty  *services.ProposerDuty
 	epoch phase0.Epoch
 
 	beacon         *ethereum.BeaconNode
@@ -35,7 +34,7 @@ type ProposerDuty struct {
 	id             uuid.UUID
 }
 
-func NewProposerDuty(log observability.ContextualLogger, duty *v1.ProposerDuty, epoch phase0.Epoch, now time.Time, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta, duplicateCache *ttlcache.Cache[string, time.Time]) *ProposerDuty {
+func NewProposerDuty(log observability.ContextualLogger, duty *services.ProposerDuty, epoch phase0.Epoch, now time.Time, beacon *ethereum.BeaconNode, clientMeta *xatu.ClientMeta, duplicateCache *ttlcache.Cache[string, time.Time]) *ProposerDuty {
 	return &ProposerDuty{
 		log:            log.WithField("event", "BEACON_API_ETH_V1_PROPOSER_DUTY"),
 		now:            now,
@@ -67,7 +66,7 @@ func (e *ProposerDuty) Decorate(ctx context.Context) (*xatu.DecoratedEvent, erro
 		Data: &xatu.DecoratedEvent_EthV1ProposerDuty{
 			EthV1ProposerDuty: &xatuethv1.ProposerDuty{
 				Slot:           wrapperspb.UInt64(uint64(e.duty.Slot)),
-				Pubkey:         fmt.Sprintf("0x%s", hex.EncodeToString(e.duty.PubKey[:])),
+				Pubkey:         e.duty.PubKey,
 				ValidatorIndex: wrapperspb.UInt64(uint64(e.duty.ValidatorIndex)),
 			},
 		},

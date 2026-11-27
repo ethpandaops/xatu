@@ -131,13 +131,8 @@ func (e *ItemExporter) sendUpstream(ctx, propagationCtx context.Context, items [
 
 	logCtx := e.log.WithField("num_events", len(items))
 
-	md := metadata.New(e.config.Headers)
 	ctx = processor.ContextWithPropagation(ctx, propagationCtx)
-	ctx = metadata.NewOutgoingContext(ctx, md)
-
-	for key, value := range e.headers {
-		md.Set(key, value)
-	}
+	ctx = metadata.NewOutgoingContext(ctx, metadata.New(e.headers))
 
 	var rsp *pb.CreateEventsResponse
 

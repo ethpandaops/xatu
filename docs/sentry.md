@@ -37,7 +37,7 @@ Flags:
 
 ## Configuration
 
-Sentry requires a single `yaml` config file. An example file can be found [here](../example_sentry.yaml)
+Sentry requires a single `yaml` config file. An example file can be found [here](../example_sentry.yaml). Values can be read from environment variables with `${VAR}`, see [Environment variables in config files](../README.md#environment-variables-in-config-files).
 
 | Name| Type | Default | Description                                                                                                                                   |
 | --- | --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------|

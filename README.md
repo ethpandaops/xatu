@@ -67,7 +67,7 @@ Download the latest release from the [Releases page](https://github.com/ethpanda
 
 ### Environment variables in config files
 
-The `server`, `mimicry`, `discovery` and `relay-monitor` config files can read values from environment variables, so credentials don't need to be written into the file:
+The `server`, `sentry`, `cannon`, `consumoor`, `mimicry`, `discovery` and `relay-monitor` config files can read values from environment variables, so credentials don't need to be written into the file:
 
 ```yaml
 persistence:

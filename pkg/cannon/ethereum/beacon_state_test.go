@@ -8,6 +8,7 @@ import (
 	"github.com/ethpandaops/go-eth2-client/spec/altair"
 	"github.com/ethpandaops/go-eth2-client/spec/gloas"
 	"github.com/ethpandaops/go-eth2-client/spec/phase0"
+	"github.com/ethpandaops/go-eth2-client/spec/pq"
 	dynssz "github.com/pk910/dynamic-ssz"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -99,6 +100,62 @@ func TestDecodeGloasEpochState(t *testing.T) {
 			assert.True(t, available)
 		})
 	}
+}
+
+func TestDecodePQEpochState(t *testing.T) {
+	g := newTestBeaconState(3200)
+	g.FinalizedCheckpoint.Epoch = 98
+	g.ExecutionPayloadAvailability[3199%8192/8] |= 1 << (3199 % 8)
+
+	var xmssKey pq.XMSSPubKey
+	for i := range xmssKey {
+		xmssKey[i] = byte(i + 1)
+	}
+
+	state := &pq.BeaconState{
+		Slot:                         g.Slot,
+		Fork:                         g.Fork,
+		LatestBlockHeader:            &phase0.BeaconBlockHeader{Slot: 3199},
+		BlockRoots:                   g.BlockRoots,
+		StateRoots:                   g.StateRoots,
+		ETH1Data:                     g.ETH1Data,
+		RANDAOMixes:                  g.RANDAOMixes,
+		Slashings:                    g.Slashings,
+		PreviousJustifiedCheckpoint:  g.PreviousJustifiedCheckpoint,
+		CurrentJustifiedCheckpoint:   g.CurrentJustifiedCheckpoint,
+		FinalizedCheckpoint:          g.FinalizedCheckpoint,
+		ProposerLookahead:            g.ProposerLookahead,
+		XMSSBuilders:                 []*pq.Builder{{PublicKey: xmssKey, Balance: 5, DepositEpoch: 7, WithdrawableEpoch: phase0.Epoch(math.MaxUint64)}},
+		ExecutionPayloadAvailability: g.ExecutionPayloadAvailability,
+		BuilderPendingPayments:       g.BuilderPendingPayments,
+		BuilderPendingWithdrawals:    g.BuilderPendingWithdrawals,
+		LatestExecutionPayloadBid:    g.LatestExecutionPayloadBid,
+		PTCWindow:                    g.PTCWindow,
+		AggregationCommitteeWindow:   make([][][]phase0.ValidatorIndex, 96),
+	}
+
+	ds := dynssz.GetGlobalDynSsz()
+
+	raw, err := ds.MarshalSSZ(state)
+	require.NoError(t, err)
+
+	got, err := decodePQEpochState(ds, bytes.NewReader(raw), len(raw))
+	require.NoError(t, err)
+
+	assert.Equal(t, phase0.Slot(3200), got.Slot)
+	assert.Equal(t, phase0.Slot(3199), got.LatestBlockHeaderSlot)
+	assert.Equal(t, phase0.Epoch(98), got.FinalizedEpoch)
+	require.Len(t, got.Builders, 1)
+	assert.Equal(t, xmssKey.DepositPubKey(), got.Builders[0].PublicKey)
+	assert.Equal(t, phase0.Gwei(5), got.Builders[0].Balance)
+	require.Len(t, got.BuilderPendingWithdrawals, 1)
+	assert.Equal(t, phase0.Gwei(9), got.BuilderPendingWithdrawals[0].Amount)
+	require.Len(t, got.PTCWindow, 96)
+	assert.Equal(t, phase0.ValidatorIndex(40_007), got.PTCWindow[40][7])
+
+	available, err := got.PayloadAvailable(3199)
+	require.NoError(t, err)
+	assert.True(t, available)
 }
 
 func TestDecodeGloasEpochStateRejectsTruncatedInput(t *testing.T) {
